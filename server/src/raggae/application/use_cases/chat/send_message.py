@@ -13,6 +13,7 @@ from raggae.application.interfaces.services.conversation_title_generator import 
 )
 from raggae.application.interfaces.services.llm_service import LLMService
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
+from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 
@@ -45,10 +46,14 @@ class SendMessage:
         conversation_id: UUID | None = None,
     ) -> ChatMessageResponseDTO:
         is_new_conversation = conversation_id is None
+        skip_user_message_save = False
         if is_new_conversation:
-            conversation = await self._conversation_repository.create(
-                project_id=project_id,
-                user_id=user_id,
+            conversation, skip_user_message_save = (
+                await self._get_or_create_pending_conversation(
+                    project_id=project_id,
+                    user_id=user_id,
+                    message=message,
+                )
             )
         else:
             conversation = await self._conversation_repository.find_by_id(conversation_id)
@@ -58,15 +63,16 @@ class SendMessage:
                 or conversation.user_id != user_id
             ):
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
-        await self._message_repository.save(
-            Message(
-                id=uuid4(),
-                conversation_id=conversation.id,
-                role="user",
-                content=message,
-                created_at=datetime.now(UTC),
+        if not skip_user_message_save:
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="user",
+                    content=message,
+                    created_at=datetime.now(UTC),
+                )
             )
-        )
         chunks = await self._query_relevant_chunks_use_case.execute(
             project_id=project_id,
             user_id=user_id,
@@ -174,5 +180,39 @@ class SendMessage:
             for chunk in chunks
             if chunk.score > 0.0 and chunk.content.strip()
         ]
+
+    async def _get_or_create_pending_conversation(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+        message: str,
+    ) -> tuple[Conversation, bool]:
+        latest_candidates = await self._conversation_repository.find_by_project_and_user(
+            project_id=project_id,
+            user_id=user_id,
+            limit=1,
+            offset=0,
+        )
+        if not latest_candidates:
+            created = await self._conversation_repository.create(
+                project_id=project_id,
+                user_id=user_id,
+            )
+            return created, False
+
+        latest = latest_candidates[0]
+        latest_message = await self._message_repository.find_latest_by_conversation_id(latest.id)
+        if (
+            latest_message is not None
+            and latest_message.role == "user"
+            and latest_message.content == message
+        ):
+            return latest, True
+
+        created = await self._conversation_repository.create(
+            project_id=project_id,
+            user_id=user_id,
+        )
+        return created, False
 
     _MAX_CONVERSATION_TITLE_LENGTH = 80

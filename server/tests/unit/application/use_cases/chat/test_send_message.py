@@ -43,6 +43,7 @@ class TestSendMessage:
         mock_llm_service: AsyncMock,
     ) -> SendMessage:
         conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = []
         conversation_repository.create.return_value = Conversation(
             id=uuid4(),
             project_id=uuid4(),

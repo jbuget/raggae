@@ -102,7 +102,24 @@ export function useSendMessage(projectId: string) {
             }
           }
         } catch {
-          const response = await sendMessage(token, projectId, data);
+          let retryConversationId = data.conversation_id ?? null;
+          if (!retryConversationId) {
+            const latestConversations = await listConversations(
+              token,
+              projectId,
+              1,
+              0,
+            );
+            const latest = latestConversations[0];
+            if (latest) {
+              retryConversationId = latest.id;
+            }
+          }
+
+          const response = await sendMessage(token, projectId, {
+            ...data,
+            conversation_id: retryConversationId,
+          });
           setStreamedContent(response.answer);
           setChunks(response.chunks);
           onConversationId?.(response.conversation_id);
