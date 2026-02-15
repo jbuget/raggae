@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     gemini_llm_model: str = "gemini-1.5-flash"
     ollama_base_url: str = "http://localhost:11434"
     ollama_llm_model: str = "llama3.1"
+    ollama_keep_alive: str = "10m"
+    llm_request_timeout_seconds: float = 120.0
     embedding_dimension: int = 1536
     chunk_size: int = 1000
     chunk_overlap: int = 100

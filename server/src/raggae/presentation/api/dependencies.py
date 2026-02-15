@@ -237,6 +237,8 @@ elif settings.llm_backend == "ollama":
     _llm_service = OllamaLLMService(
         base_url=settings.ollama_base_url,
         model=settings.ollama_llm_model,
+        timeout_seconds=settings.llm_request_timeout_seconds,
+        keep_alive=settings.ollama_keep_alive,
     )
 else:
     _llm_service = InMemoryLLMService()

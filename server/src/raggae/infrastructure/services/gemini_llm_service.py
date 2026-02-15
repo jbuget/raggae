@@ -1,7 +1,12 @@
+import logging
+from time import perf_counter
+
 import httpx
 
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiLLMService:
@@ -10,7 +15,7 @@ class GeminiLLMService:
     def __init__(self, api_key: str, model: str) -> None:
         self._api_key = api_key
         self._model = model
-        self._client = httpx.AsyncClient(timeout=30.0)
+        self._client = httpx.AsyncClient(timeout=120.0)
 
     async def generate_answer(
         self,
@@ -18,6 +23,16 @@ class GeminiLLMService:
         context_chunks: list[str],
         project_system_prompt: str | None = None,
     ) -> str:
+        started_at = perf_counter()
+        logger.info(
+            "llm_request_started",
+            extra={
+                "backend": "gemini",
+                "model": self._model,
+                "query_length": len(query),
+                "context_chunks_count": len(context_chunks),
+            },
+        )
         prompt = build_rag_prompt(
             query=query,
             context_chunks=context_chunks,
@@ -33,6 +48,24 @@ class GeminiLLMService:
             )
             response.raise_for_status()
             payload = response.json()
+            elapsed_ms = (perf_counter() - started_at) * 1000.0
+            logger.info(
+                "llm_request_succeeded",
+                extra={
+                    "backend": "gemini",
+                    "model": self._model,
+                    "elapsed_ms": round(elapsed_ms, 2),
+                },
+            )
             return str(payload["candidates"][0]["content"]["parts"][0]["text"])
         except Exception as exc:  # pragma: no cover - provider dependent
+            elapsed_ms = (perf_counter() - started_at) * 1000.0
+            logger.exception(
+                "llm_request_failed",
+                extra={
+                    "backend": "gemini",
+                    "model": self._model,
+                    "elapsed_ms": round(elapsed_ms, 2),
+                },
+            )
             raise LLMGenerationError(f"Failed to generate answer: {exc}") from exc
