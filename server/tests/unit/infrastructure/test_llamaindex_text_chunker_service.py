@@ -77,6 +77,7 @@ class TestLlamaIndexTextChunkerService:
         assert chunks == ["code chunk"]
         code_splitter.split_text.assert_called_once()
         sentence_splitter.split_text.assert_not_called()
+        assert service.last_splitter_name == "code"
 
     async def test_chunk_text_uses_token_splitter_for_long_unstructured_text(self) -> None:
         # Given
@@ -98,3 +99,4 @@ class TestLlamaIndexTextChunkerService:
         assert chunks == ["token chunk"]
         token_splitter.split_text.assert_called_once()
         sentence_splitter.split_text.assert_not_called()
+        assert service.last_splitter_name == "token"

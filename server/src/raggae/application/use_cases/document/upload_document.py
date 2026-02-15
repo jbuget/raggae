@@ -139,6 +139,11 @@ class UploadDocument:
             document = replace(document, processing_strategy=strategy)
             await self._document_repository.save(document)
             chunks = await self._text_chunker_service.chunk_text(sanitized_text, strategy=strategy)
+            llamaindex_splitter = None
+            if self._chunker_backend == "llamaindex":
+                splitter_name = getattr(self._text_chunker_service, "last_splitter_name", None)
+                if isinstance(splitter_name, str):
+                    llamaindex_splitter = splitter_name
             if chunks:
                 embeddings = await self._embedding_service.embed_texts(chunks)
                 document_chunks = [
@@ -154,6 +159,7 @@ class UploadDocument:
                             "processing_strategy": strategy.value,
                             "source_type": strategy.value,
                             "chunker_backend": self._chunker_backend,
+                            "llamaindex_splitter": llamaindex_splitter,
                         },
                     )
                     for index, chunk_text in enumerate(chunks)

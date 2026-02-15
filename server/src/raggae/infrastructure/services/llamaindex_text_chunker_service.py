@@ -25,6 +25,11 @@ class LlamaIndexTextChunkerService:
         self._sentence_splitter_factory = sentence_splitter_factory
         self._token_splitter_factory = token_splitter_factory
         self._code_splitter_factory = code_splitter_factory
+        self._last_splitter_name = "sentence"
+
+    @property
+    def last_splitter_name(self) -> str:
+        return self._last_splitter_name
 
     async def chunk_text(
         self,
@@ -41,9 +46,12 @@ class LlamaIndexTextChunkerService:
 
     def _build_splitter(self, text: str) -> _TextSplitter:
         if self._looks_like_code(text):
+            self._last_splitter_name = "code"
             return self._build_code_splitter()
         if self._looks_like_long_unstructured_text(text):
+            self._last_splitter_name = "token"
             return self._build_token_splitter()
+        self._last_splitter_name = "sentence"
         return self._build_sentence_splitter()
 
     def _build_sentence_splitter(self) -> _TextSplitter:

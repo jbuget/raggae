@@ -85,6 +85,7 @@ class TestUploadDocumentProcessing:
             is_published=False,
             created_at=datetime.now(UTC),
         )
+        mock_text_chunker_service.last_splitter_name = "sentence"
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -158,6 +159,7 @@ class TestUploadDocumentProcessing:
             is_published=False,
             created_at=datetime.now(UTC),
         )
+        mock_text_chunker_service.last_splitter_name = "sentence"
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -271,6 +273,7 @@ class TestUploadDocumentProcessing:
             is_published=False,
             created_at=datetime.now(UTC),
         )
+        mock_text_chunker_service.last_splitter_name = "sentence"
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -326,6 +329,7 @@ class TestUploadDocumentProcessing:
             is_published=False,
             created_at=datetime.now(UTC),
         )
+        mock_text_chunker_service.last_splitter_name = "sentence"
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -361,6 +365,7 @@ class TestUploadDocumentProcessing:
         assert saved_chunks[0].metadata_json["processing_strategy"] == "fixed_window"
         assert saved_chunks[0].metadata_json["source_type"] == "fixed_window"
         assert saved_chunks[0].metadata_json["chunker_backend"] == "llamaindex"
+        assert saved_chunks[0].metadata_json["llamaindex_splitter"] == "sentence"
 
     async def test_upload_document_invalid_processing_mode_raises_value_error(
         self,
