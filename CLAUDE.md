@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Raggae** (RAG Generator Agent Expert) — a platform to create, manage, and publish conversational agents based on RAG (Retrieval Augmented Generation). Currently a greenfield project: backend/ and frontend/ directories are empty, comprehensive documentation is in docs/.
+**Raggae** (RAG Generator Agent Expert) — a platform to create, manage, and publish conversational agents based on RAG (Retrieval Augmented Generation). Currently a greenfield project: server/ and client/ directories are empty, comprehensive documentation is in docs/.
 
 ## Tech Stack
 
@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Essential Commands (Backend)
 
-All backend commands run from `backend/`.
+All backend commands run from `server/`.
 
 ```bash
 # Setup
@@ -45,7 +45,7 @@ uvicorn src.raggae.presentation.main:app --reload
 ## Frontend Commands
 
 ```bash
-cd frontend && npm install && npm run dev
+cd client && npm install && npm run dev
 ```
 
 ## Architecture: Clean Architecture (Strict)
@@ -62,8 +62,8 @@ Infrastructure (SQLAlchemy repos, OpenAI/JWT/bcrypt services, config) — implem
 Presentation (FastAPI endpoints, Pydantic schemas, DI) — orchestrates use cases
 ```
 
-Backend source layout: `backend/src/raggae/{domain,application,infrastructure,presentation}/`
-Tests mirror source: `backend/tests/{unit,integration,e2e}/`
+Backend source layout: `server/src/raggae/{domain,application,infrastructure,presentation}/`
+Tests mirror source: `server/tests/{unit,integration,e2e}/`
 
 ## Mandatory Development Rules
 

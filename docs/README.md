@@ -27,7 +27,7 @@ Ce projet est développé selon les principes de **Clean Architecture** avec TDD
 
 ```
 raggae/
-├── backend/
+├── server/
 │   ├── src/raggae/
 │   │   ├── domain/          # Entités, Value Objects, Exceptions
 │   │   ├── application/     # Use Cases, Interfaces, DTOs
@@ -38,7 +38,7 @@ raggae/
 │   │   ├── integration/
 │   │   └── e2e/
 │   └── alembic/
-├── frontend/
+├── client/
 │   └── src/
 └── docs/                    # Documentation développeur
 ```
@@ -65,7 +65,7 @@ Documentation essentielle pour Claude Code :
 
 - Python 3.11+
 - PostgreSQL 16+ avec pgvector
-- Node.js 18+ (pour le frontend)
+- Node.js 18+ (pour le client)
 - Docker & Docker Compose (optionnel)
 
 ### Installation
@@ -79,7 +79,7 @@ cd raggae
 docker-compose up -d postgres
 
 # 3. Backend setup
-cd backend
+cd server
 python -m venv .venv
 source .venv/bin/activate  # ou .venv\Scripts\activate sur Windows
 pip install -e ".[dev]"
@@ -98,7 +98,7 @@ pytest
 uvicorn src.raggae.presentation.main:app --reload
 
 # 8. Frontend setup (dans un autre terminal)
-cd frontend
+cd client
 npm install
 npm run dev
 ```

@@ -68,7 +68,7 @@ Types autorisés :
 ## Structure du projet Backend (Clean Architecture)
 
 ```
-backend/
+server/
 ├── src/
 │   ├── raggae/
 │   │   ├── domain/                 # Couche Domaine
