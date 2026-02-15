@@ -20,19 +20,22 @@ class TestSendMessage:
     @pytest.fixture
     def mock_query_relevant_chunks(self) -> AsyncMock:
         use_case = AsyncMock()
+        doc_id = uuid4()
         use_case.execute.return_value = QueryRelevantChunksResultDTO(
             chunks=[
                 RetrievedChunkDTO(
                     chunk_id=uuid4(),
-                    document_id=uuid4(),
+                    document_id=doc_id,
                     content="chunk one",
                     score=0.9,
+                    chunk_index=0,
                 ),
                 RetrievedChunkDTO(
                     chunk_id=uuid4(),
-                    document_id=uuid4(),
+                    document_id=doc_id,
                     content="chunk two",
                     score=0.8,
+                    chunk_index=1,
                 ),
             ],
             strategy_used="hybrid",

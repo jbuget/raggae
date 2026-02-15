@@ -6,6 +6,7 @@ import pytest
 
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
+from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 
@@ -366,3 +367,287 @@ class TestQueryRelevantChunks:
         # Then — limit passed as-is (no multiplication)
         call_kwargs = mock_chunk_retrieval_service.retrieve_chunks.call_args.kwargs
         assert call_kwargs["limit"] == 5
+
+    async def test_query_expands_context_window_with_neighbors(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 2",
+                score=0.9,
+                chunk_index=2,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 5",
+                score=0.8,
+                chunk_index=5,
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        neighbor_chunks = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=doc_id,
+                chunk_index=i,
+                content=f"chunk {i}",
+                embedding=[],
+                created_at=datetime.now(UTC),
+            )
+            for i in [1, 3, 4, 6]
+        ]
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_document_id_and_indices.return_value = neighbor_chunks
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=1,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then — chunks 1,2,3,4,5,6 present, sorted by (document_id, chunk_index)
+        indices = [c.chunk_index for c in result.chunks]
+        assert indices == [1, 2, 3, 4, 5, 6]
+
+    async def test_query_no_expansion_when_window_is_zero(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        mock_chunk_repo = AsyncMock()
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_chunk_retrieval_service,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=0,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=5,
+        )
+
+        # Then — no expansion, repository not called
+        mock_chunk_repo.find_by_document_id_and_indices.assert_not_awaited()
+        assert len(result.chunks) == 2
+
+    async def test_query_deduplicates_overlapping_windows(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given — chunks 3 and 4 retrieved, window=1 → need 2,3,4,5
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 3",
+                score=0.9,
+                chunk_index=3,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 4",
+                score=0.8,
+                chunk_index=4,
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        # Only indices 2 and 5 are missing (3 and 4 already present)
+        neighbor_chunks = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=doc_id,
+                chunk_index=i,
+                content=f"chunk {i}",
+                embedding=[],
+                created_at=datetime.now(UTC),
+            )
+            for i in [2, 5]
+        ]
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_document_id_and_indices.return_value = neighbor_chunks
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=1,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then — 4 unique chunks, no duplicates
+        indices = [c.chunk_index for c in result.chunks]
+        assert indices == [2, 3, 4, 5]
+
+        # Repository called with only the missing indices {2, 5}
+        call_args = mock_chunk_repo.find_by_document_id_and_indices.call_args
+        assert call_args.kwargs["indices"] == {2, 5}
+
+    async def test_query_expansion_clamps_index_to_zero(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given — chunk 0 retrieved, window=1 → need {0, 1}, no negative
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 0",
+                score=0.9,
+                chunk_index=0,
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        neighbor_chunks = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=doc_id,
+                chunk_index=1,
+                content="chunk 1",
+                embedding=[],
+                created_at=datetime.now(UTC),
+            ),
+        ]
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_document_id_and_indices.return_value = neighbor_chunks
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=1,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then
+        indices = [c.chunk_index for c in result.chunks]
+        assert indices == [0, 1]
+
+        # Only index 1 requested (0 already present, no negative indices)
+        call_args = mock_chunk_repo.find_by_document_id_and_indices.call_args
+        assert call_args.kwargs["indices"] == {1}
+
+    async def test_query_expansion_preserves_original_scores(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 2",
+                score=0.95,
+                chunk_index=2,
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        neighbor_chunks = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=doc_id,
+                chunk_index=i,
+                content=f"chunk {i}",
+                embedding=[],
+                created_at=datetime.now(UTC),
+            )
+            for i in [1, 3]
+        ]
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_document_id_and_indices.return_value = neighbor_chunks
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=1,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then — original chunk keeps its score, neighbors get 0.0
+        scores_by_index = {c.chunk_index: c.score for c in result.chunks}
+        assert scores_by_index[2] == pytest.approx(0.95)
+        assert scores_by_index[1] == pytest.approx(0.0)
+        assert scores_by_index[3] == pytest.approx(0.0)

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     reranker_backend: str = "none"
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     reranker_candidate_multiplier: int = 3
+    retrieval_context_window_size: int = 1
     retrieval_default_strategy: str = "hybrid"
     retrieval_min_score: float = 0.3
     retrieval_default_chunk_limit: int = 8

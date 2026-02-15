@@ -149,6 +149,7 @@ class SendMessage:
             self._filter_relevant_chunks(retrieval_result.chunks),
             effective_limit,
         )
+        relevant_chunks.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
             await self._message_repository.save(
@@ -326,6 +327,7 @@ class SendMessage:
             self._filter_relevant_chunks(retrieval_result.chunks),
             effective_limit,
         )
+        relevant_chunks.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
             await self._message_repository.save(

@@ -54,6 +54,34 @@ class SQLAlchemyDocumentChunkRepository:
                 for model in models
             ]
 
+    async def find_by_document_id_and_indices(
+        self, document_id: UUID, indices: set[int]
+    ) -> list[DocumentChunk]:
+        if not indices:
+            return []
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(DocumentChunkModel)
+                .where(
+                    DocumentChunkModel.document_id == document_id,
+                    DocumentChunkModel.chunk_index.in_(indices),
+                )
+                .order_by(DocumentChunkModel.chunk_index)
+            )
+            models = result.scalars().all()
+            return [
+                DocumentChunk(
+                    id=model.id,
+                    document_id=model.document_id,
+                    chunk_index=model.chunk_index,
+                    content=model.content,
+                    embedding=list(model.embedding),
+                    metadata_json=model.metadata_json,
+                    created_at=model.created_at,
+                )
+                for model in models
+            ]
+
     async def delete_by_document_id(self, document_id: UUID) -> None:
         async with self._session_factory() as session:
             await session.execute(

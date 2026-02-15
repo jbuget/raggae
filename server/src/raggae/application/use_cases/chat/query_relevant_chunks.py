@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from time import perf_counter
 from uuid import UUID
 
 from raggae.application.dto.query_relevant_chunks_result_dto import (
     QueryRelevantChunksResultDTO,
+)
+from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
+from raggae.application.interfaces.repositories.document_chunk_repository import (
+    DocumentChunkRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.chunk_retrieval_service import ChunkRetrievalService
@@ -24,6 +29,8 @@ class QueryRelevantChunks:
         min_score: float = 0.0,
         reranker_service: RerankerService | None = None,
         reranker_candidate_multiplier: int = 3,
+        document_chunk_repository: DocumentChunkRepository | None = None,
+        context_window_size: int = 0,
     ) -> None:
         self._project_repository = project_repository
         self._embedding_service = embedding_service
@@ -31,6 +38,8 @@ class QueryRelevantChunks:
         self._min_score = min_score
         self._reranker_service = reranker_service
         self._reranker_candidate_multiplier = reranker_candidate_multiplier
+        self._document_chunk_repository = document_chunk_repository
+        self._context_window_size = context_window_size
 
     async def execute(
         self,
@@ -70,11 +79,63 @@ class QueryRelevantChunks:
         else:
             chunks = [chunk for chunk in chunks if chunk.score >= self._min_score]
 
+        chunks = await self._expand_context_window(chunks)
+
         return QueryRelevantChunksResultDTO(
             chunks=chunks,
             strategy_used=strategy_used,
             execution_time_ms=(perf_counter() - started_at) * 1000.0,
         )
+
+    async def _expand_context_window(
+        self, chunks: list[RetrievedChunkDTO]
+    ) -> list[RetrievedChunkDTO]:
+        if self._context_window_size <= 0 or self._document_chunk_repository is None:
+            return chunks
+
+        # Group chunks by document_id with their indices
+        doc_indices: dict[UUID, set[int]] = defaultdict(set)
+        for chunk in chunks:
+            if chunk.chunk_index is not None:
+                doc_indices[chunk.document_id].add(chunk.chunk_index)
+
+        if not doc_indices:
+            return chunks
+
+        # Compute needed neighbor indices per document
+        doc_needed: dict[UUID, set[int]] = {}
+        for doc_id, original_indices in doc_indices.items():
+            all_indices: set[int] = set()
+            for idx in original_indices:
+                for offset in range(-self._context_window_size, self._context_window_size + 1):
+                    neighbor = idx + offset
+                    if neighbor >= 0:
+                        all_indices.add(neighbor)
+            missing = all_indices - original_indices
+            if missing:
+                doc_needed[doc_id] = missing
+
+        # Fetch missing neighbor chunks
+        neighbor_dtos: list[RetrievedChunkDTO] = []
+        for doc_id, missing_indices in doc_needed.items():
+            neighbor_chunks = await self._document_chunk_repository.find_by_document_id_and_indices(
+                document_id=doc_id, indices=missing_indices
+            )
+            for nc in neighbor_chunks:
+                neighbor_dtos.append(
+                    RetrievedChunkDTO(
+                        chunk_id=nc.id,
+                        document_id=nc.document_id,
+                        content=nc.content,
+                        score=0.0,
+                        chunk_index=nc.chunk_index,
+                    )
+                )
+
+        # Merge and sort by (document_id, chunk_index)
+        merged = list(chunks) + neighbor_dtos
+        merged.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
+        return merged
 
 
 def _resolve_strategy(strategy: str, query_text: str) -> str:

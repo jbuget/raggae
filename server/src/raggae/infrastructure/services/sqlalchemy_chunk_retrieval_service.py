@@ -63,6 +63,7 @@ class SQLAlchemyChunkRetrievalService:
                     c.document_id AS document_id,
                     d.file_name AS document_file_name,
                     c.content AS content,
+                    c.chunk_index AS chunk_index,
                     1 - (c.embedding <=> CAST(:query_embedding AS vector))
                         AS vector_score
                 FROM document_chunks c
@@ -99,6 +100,7 @@ class SQLAlchemyChunkRetrievalService:
                     v.document_id,
                     v.document_file_name,
                     v.content,
+                    v.chunk_index,
                     v.vector_score,
                     COALESCE(f.fulltext_score, 0.0) AS fulltext_score
                 FROM vector_search v
@@ -109,6 +111,7 @@ class SQLAlchemyChunkRetrievalService:
                     c.document_id,
                     d.file_name AS document_file_name,
                     c.content,
+                    c.chunk_index,
                     0.0 AS vector_score,
                     f.fulltext_score
                 FROM fulltext_search f
@@ -129,6 +132,7 @@ class SQLAlchemyChunkRetrievalService:
                     c.document_id,
                     c.document_file_name,
                     c.content,
+                    c.chunk_index,
                     COALESCE(
                         c.vector_score / NULLIF(m.max_vector_score, 0),
                         0.0
@@ -145,6 +149,7 @@ class SQLAlchemyChunkRetrievalService:
                 document_id,
                 document_file_name,
                 content,
+                chunk_index,
                 normalized_vector_score AS vector_score,
                 normalized_fulltext_score AS fulltext_score,
                 (
@@ -187,6 +192,7 @@ class SQLAlchemyChunkRetrievalService:
                     document_id=row["document_id"],
                     content=row["content"],
                     score=float(row["final_score"]),
+                    chunk_index=row["chunk_index"],
                     document_file_name=row["document_file_name"],
                     vector_score=float(row["vector_score"]),
                     fulltext_score=float(row["fulltext_score"]),

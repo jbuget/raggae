@@ -57,6 +57,7 @@ class InMemoryChunkRetrievalService:
                         document_id=chunk.document_id,
                         content=chunk.content,
                         score=score,
+                        chunk_index=chunk.chunk_index,
                         document_file_name=document.file_name,
                         vector_score=vector_score,
                         fulltext_score=fulltext_score,

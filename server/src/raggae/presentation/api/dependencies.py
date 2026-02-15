@@ -358,6 +358,8 @@ def get_query_relevant_chunks_use_case() -> QueryRelevantChunks:
         min_score=settings.retrieval_min_score,
         reranker_service=_reranker_service,
         reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
+        document_chunk_repository=_document_chunk_repository,
+        context_window_size=settings.retrieval_context_window_size,
     )
 
 
