@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { renderMarkdown } from "@/lib/markdown/render-markdown";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -29,7 +30,11 @@ export function MessageBubble({
             : "bg-muted text-foreground",
         )}
       >
-        <p className="whitespace-pre-wrap text-sm">{content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap text-sm">{content}</p>
+        ) : (
+          renderMarkdown(content)
+        )}
         {!isUser && reliabilityPercent !== undefined && reliabilityPercent !== null && (
           <p className="mt-1 text-xs text-muted-foreground">
             Fiabilite: {reliabilityPercent}%
