@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteDocument,
+  getDocumentChunks,
   listDocuments,
   uploadDocuments,
 } from "@/lib/api/documents";
@@ -40,5 +41,18 @@ export function useDeleteDocument(projectId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
     },
+  });
+}
+
+export function useDocumentChunks(
+  projectId: string,
+  documentId: string | null,
+) {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["document-chunks", projectId, documentId],
+    queryFn: () => getDocumentChunks(token!, projectId, documentId!),
+    enabled: !!token && !!projectId && !!documentId,
   });
 }

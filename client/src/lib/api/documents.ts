@@ -1,4 +1,8 @@
-import type { DocumentResponse, UploadDocumentsResponse } from "@/lib/types/api";
+import type {
+  DocumentChunksResponse,
+  DocumentResponse,
+  UploadDocumentsResponse,
+} from "@/lib/types/api";
 import { apiFetch } from "./client";
 
 export function listDocuments(
@@ -39,5 +43,16 @@ export function deleteDocument(
   return apiFetch<void>(
     `/projects/${projectId}/documents/${documentId}`,
     { method: "DELETE", token },
+  );
+}
+
+export function getDocumentChunks(
+  token: string,
+  projectId: string,
+  documentId: string,
+): Promise<DocumentChunksResponse> {
+  return apiFetch<DocumentChunksResponse>(
+    `/projects/${projectId}/documents/${documentId}/chunks`,
+    { token },
   );
 }

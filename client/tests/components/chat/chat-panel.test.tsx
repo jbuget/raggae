@@ -44,15 +44,20 @@ vi.mock("@/lib/hooks/use-chat", () => ({
   }),
 }));
 
+vi.mock("@/lib/hooks/use-documents", () => ({
+  useDocumentChunks: () => ({
+    data: null,
+    isLoading: false,
+  }),
+}));
+
 describe("ChatPanel", () => {
-  it("should display unique document source name for assistant response", () => {
+  it("should display unique document source badge for assistant response", () => {
     renderWithProviders(
       <ChatPanel projectId="proj-1" conversationId="conv-1" />,
     );
 
-    expect(
-      screen.getByText(/sources: atelier-migration-24-11-2025.md/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText("atelier-migration-24-11-2025.md")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /show sources/i })).toBeNull();
   });
 });

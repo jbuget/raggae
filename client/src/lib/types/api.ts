@@ -57,6 +57,21 @@ export interface DocumentResponse {
   processing_strategy: string | null;
 }
 
+export interface DocumentChunkResponse {
+  id: string;
+  document_id: string;
+  chunk_index: number;
+  content: string;
+  created_at: string;
+  metadata_json?: Record<string, unknown> | null;
+}
+
+export interface DocumentChunksResponse {
+  document_id: string;
+  processing_strategy: string | null;
+  chunks: DocumentChunkResponse[];
+}
+
 export interface UploadDocumentsCreatedResponse {
   original_filename: string;
   stored_filename: string;

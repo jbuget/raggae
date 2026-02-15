@@ -3,11 +3,18 @@
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown/render-markdown";
 
+interface MessageSourceDocument {
+  documentId: string;
+  documentName: string;
+}
+
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
   reliabilityPercent?: number | null;
+  sourceDocuments?: MessageSourceDocument[];
+  onSourceClick?: (source: MessageSourceDocument) => void;
 }
 
 export function MessageBubble({
@@ -15,6 +22,8 @@ export function MessageBubble({
   content,
   timestamp,
   reliabilityPercent,
+  sourceDocuments = [],
+  onSourceClick,
 }: MessageBubbleProps) {
   const isUser = role === "user";
 
@@ -34,6 +43,20 @@ export function MessageBubble({
           <p className="whitespace-pre-wrap text-sm">{content}</p>
         ) : (
           renderMarkdown(content)
+        )}
+        {!isUser && sourceDocuments.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {sourceDocuments.map((documentName) => (
+              <button
+                key={documentName.documentId}
+                type="button"
+                onClick={() => onSourceClick?.(documentName)}
+                className="inline-flex items-center rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
+              >
+                {documentName.documentName}
+              </button>
+            ))}
+          </div>
         )}
         {!isUser && reliabilityPercent !== undefined && reliabilityPercent !== null && (
           <p className="mt-1 text-xs text-muted-foreground">

@@ -10,6 +10,10 @@ describe("MessageBubble", () => {
       <MessageBubble
         role="assistant"
         content={"## Title\nThis is **bold** and `code`\n- first\n- second"}
+        sourceDocuments={[
+          { documentId: "doc-a", documentName: "doc-a.md" },
+          { documentId: "doc-b", documentName: "doc-b.pdf" },
+        ]}
       />,
     );
 
@@ -18,5 +22,7 @@ describe("MessageBubble", () => {
     expect(screen.getByText("code").tagName).toBe("CODE");
     expect(screen.getByText("first")).toBeInTheDocument();
     expect(screen.getByText("second")).toBeInTheDocument();
+    expect(screen.getByText("doc-a.md")).toBeInTheDocument();
+    expect(screen.getByText("doc-b.pdf")).toBeInTheDocument();
   });
 });
