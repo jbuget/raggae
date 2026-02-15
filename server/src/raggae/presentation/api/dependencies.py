@@ -29,12 +29,24 @@ from raggae.infrastructure.services.in_memory_file_storage_service import (
     InMemoryFileStorageService,
 )
 from raggae.infrastructure.services.jwt_token_service import JwtTokenService
+from raggae.infrastructure.services.minio_file_storage_service import (
+    MinioFileStorageService,
+)
 
 _user_repository = InMemoryUserRepository()
 _project_repository = InMemoryProjectRepository()
 _document_repository = InMemoryDocumentRepository()
 _password_hasher = BcryptPasswordHasher()
-_file_storage_service = InMemoryFileStorageService()
+if settings.storage_backend == "minio":
+    _file_storage_service = MinioFileStorageService(
+        endpoint=settings.s3_endpoint_url,
+        access_key=settings.s3_access_key,
+        secret_key=settings.s3_secret_key,
+        bucket_name=settings.s3_bucket_name,
+        secure=settings.s3_secure,
+    )
+else:
+    _file_storage_service = InMemoryFileStorageService()
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
 
