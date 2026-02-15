@@ -1,4 +1,7 @@
+from io import BytesIO
+
 import pytest
+from docx import Document as DocxDocument
 
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
 from raggae.infrastructure.services.multiformat_document_text_extractor import (
@@ -82,6 +85,34 @@ class TestMultiFormatDocumentTextExtractor:
 
         # Then
         assert result == "docx text"
+
+    async def test_extract_text_docx_extracts_paragraphs_and_tables(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+    ) -> None:
+        # Given
+        document = DocxDocument()
+        document.add_paragraph("Transcript intro")
+        table = document.add_table(rows=1, cols=2)
+        table.cell(0, 0).text = "Action item"
+        table.cell(0, 1).text = "Prepare demo for next meeting"
+        buffer = BytesIO()
+        document.save(buffer)
+        content = buffer.getvalue()
+
+        # When
+        result = await extractor.extract_text(
+            file_name="meeting.docx",
+            content=content,
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
+        )
+
+        # Then
+        assert "Transcript intro" in result
+        assert "Action item" in result
+        assert "Prepare demo for next meeting" in result
 
     async def test_extract_text_doc_raises_not_supported_error(
         self,

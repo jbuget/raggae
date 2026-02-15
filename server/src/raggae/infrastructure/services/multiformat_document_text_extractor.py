@@ -55,7 +55,13 @@ class MultiFormatDocumentTextExtractor:
 
         try:
             document = DocxDocument(BytesIO(content))
-            return "\n".join(paragraph.text for paragraph in document.paragraphs)
+            parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
+            for table in document.tables:
+                for row in table.rows:
+                    row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                    if row_cells:
+                        parts.append(" | ".join(row_cells))
+            return "\n".join(parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract DOCX text: {exc}") from exc
 
