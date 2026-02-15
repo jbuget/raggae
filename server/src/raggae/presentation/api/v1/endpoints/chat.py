@@ -130,84 +130,76 @@ async def stream_message(
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[SendMessage, Depends(get_send_message_use_case)],
 ) -> StreamingResponse:
-    started_at = perf_counter()
-    try:
-        response = await use_case.execute(
-            project_id=project_id,
-            user_id=user_id,
-            message=data.message,
-            limit=data.limit,
-            offset=data.offset,
-            conversation_id=data.conversation_id,
-            start_new_conversation=data.start_new_conversation,
-            retrieval_strategy=data.retrieval_strategy,
-            retrieval_filters=(
-                data.retrieval_filters.model_dump(exclude_none=True)
-                if data.retrieval_filters is not None
-                else None
-            ),
-        )
-    except ProjectNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        ) from None
-    except ConversationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversation not found",
-        ) from None
-    except LLMGenerationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=str(exc),
-        ) from None
+    from raggae.application.dto.chat_stream_event import ChatStreamDone, ChatStreamToken
 
     async def event_stream() -> AsyncIterator[str]:
-        chunks_payload = [
-            {
-                "chunk_id": str(chunk.chunk_id),
-                "document_id": str(chunk.document_id),
-                "document_file_name": chunk.document_file_name,
-                "content": chunk.content,
-                "score": chunk.score,
-                "vector_score": chunk.vector_score,
-                "fulltext_score": chunk.fulltext_score,
-            }
-            for chunk in response.chunks
-        ]
-        tokens = response.answer.split()
-        for index, token in enumerate(tokens):
-            token_payload = token if index == len(tokens) - 1 else f"{token} "
-            yield f"data: {json.dumps({'token': token_payload})}\n\n"
-        yield (
-            "data: "
-            + json.dumps(
-                {
-                    "done": True,
-                    "conversation_id": str(response.conversation_id),
-                    "retrieval_strategy_used": response.retrieval_strategy_used,
-                    "retrieval_execution_time_ms": response.retrieval_execution_time_ms,
-                    "history_messages_used": response.history_messages_used,
-                    "chunks_used": response.chunks_used,
-                    "chunks": chunks_payload,
-                }
+        started_at = perf_counter()
+        try:
+            stream = use_case.execute_stream(
+                project_id=project_id,
+                user_id=user_id,
+                message=data.message,
+                limit=data.limit,
+                offset=data.offset,
+                conversation_id=data.conversation_id,
+                start_new_conversation=data.start_new_conversation,
+                retrieval_strategy=data.retrieval_strategy,
+                retrieval_filters=(
+                    data.retrieval_filters.model_dump(exclude_none=True)
+                    if data.retrieval_filters is not None
+                    else None
+                ),
             )
-            + "\n\n"
-        )
+            async for event in stream:
+                if isinstance(event, ChatStreamToken):
+                    yield f"data: {json.dumps({'token': event.token})}\n\n"
+                elif isinstance(event, ChatStreamDone):
+                    chunks_payload = [
+                        {
+                            "chunk_id": str(chunk.chunk_id),
+                            "document_id": str(chunk.document_id),
+                            "document_file_name": chunk.document_file_name,
+                            "content": chunk.content,
+                            "score": chunk.score,
+                            "vector_score": chunk.vector_score,
+                            "fulltext_score": chunk.fulltext_score,
+                        }
+                        for chunk in event.chunks
+                    ]
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            {
+                                "done": True,
+                                "conversation_id": str(event.conversation_id),
+                                "retrieval_strategy_used": event.retrieval_strategy_used,
+                                "retrieval_execution_time_ms": event.retrieval_execution_time_ms,
+                                "history_messages_used": event.history_messages_used,
+                                "chunks_used": event.chunks_used,
+                                "chunks": chunks_payload,
+                            }
+                        )
+                        + "\n\n"
+                    )
+                    elapsed_ms = (perf_counter() - started_at) * 1000.0
+                    logger.info(
+                        "chat_message_stream",
+                        extra={
+                            "project_id": str(project_id),
+                            "user_id": str(user_id),
+                            "limit": data.limit,
+                            "chunks_count": len(event.chunks),
+                            "llm_backend": settings.llm_backend,
+                            "elapsed_ms": round(elapsed_ms, 2),
+                        },
+                    )
+        except ProjectNotFoundError:
+            yield f"data: {json.dumps({'error': 'Project not found'})}\n\n"
+        except ConversationNotFoundError:
+            yield f"data: {json.dumps({'error': 'Conversation not found'})}\n\n"
+        except LLMGenerationError as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
 
-    elapsed_ms = (perf_counter() - started_at) * 1000.0
-    logger.info(
-        "chat_message_stream",
-        extra={
-            "project_id": str(project_id),
-            "user_id": str(user_id),
-            "limit": data.limit,
-            "chunks_count": len(response.chunks),
-            "llm_backend": settings.llm_backend,
-            "elapsed_ms": round(elapsed_ms, 2),
-        },
-    )
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 

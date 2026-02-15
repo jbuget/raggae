@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from time import perf_counter
 
 logger = logging.getLogger(__name__)
@@ -45,3 +46,18 @@ class InMemoryLLMService:
             },
         )
         return f"Answer based on {len(context_chunks)} chunks: {query}"
+
+    async def generate_answer_stream(
+        self,
+        query: str,
+        context_chunks: list[str],
+        project_system_prompt: str | None = None,
+        conversation_history: list[str] | None = None,
+    ) -> AsyncIterator[str]:
+        answer = await self.generate_answer(
+            query=query,
+            context_chunks=context_chunks,
+            project_system_prompt=project_system_prompt,
+            conversation_history=conversation_history,
+        )
+        yield answer

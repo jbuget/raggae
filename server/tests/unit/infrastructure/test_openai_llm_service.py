@@ -7,6 +7,11 @@ from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 
 
+async def _async_iter(items: list[object]):  # type: ignore[type-arg]
+    for item in items:
+        yield item
+
+
 class TestOpenAILLMService:
     async def test_generate_answer_success(self) -> None:
         # Given
@@ -34,3 +39,25 @@ class TestOpenAILLMService:
         # When / Then
         with pytest.raises(LLMGenerationError):
             await service.generate_answer(query="hello", context_chunks=[])
+
+    async def test_generate_answer_stream_yields_tokens(self) -> None:
+        # Given
+        service = OpenAILLMService(api_key="test-key", model="gpt-4o-mini")
+        service._client = AsyncMock()  # type: ignore[attr-defined]
+        chunks = [
+            SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="Hello"))]),
+            SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=" world"))]),
+            SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=None))]),
+        ]
+        service._client.chat.completions.create.return_value = _async_iter(chunks)
+
+        # When
+        tokens: list[str] = []
+        async for token in service.generate_answer_stream(
+            query="What is RAG?",
+            context_chunks=["chunk one"],
+        ):
+            tokens.append(token)
+
+        # Then
+        assert tokens == ["Hello", " world"]

@@ -1,4 +1,6 @@
+import json
 import logging
+from collections.abc import AsyncIterator
 from time import perf_counter
 
 import httpx
@@ -80,3 +82,66 @@ class OllamaLLMService:
                 },
             )
             raise LLMGenerationError(f"Failed to generate answer: {exc}") from exc
+
+    async def generate_answer_stream(
+        self,
+        query: str,
+        context_chunks: list[str],
+        project_system_prompt: str | None = None,
+        conversation_history: list[str] | None = None,
+    ) -> AsyncIterator[str]:
+        started_at = perf_counter()
+        logger.info(
+            "llm_stream_started",
+            extra={
+                "backend": "ollama",
+                "model": self._model,
+                "query_length": len(query),
+                "context_chunks_count": len(context_chunks),
+            },
+        )
+        prompt = build_rag_prompt(
+            query=query,
+            context_chunks=context_chunks,
+            project_system_prompt=project_system_prompt,
+            conversation_history=conversation_history,
+        )
+        try:
+            async with self._client.stream(
+                "POST",
+                f"{self._base_url}/api/generate",
+                json={
+                    "model": self._model,
+                    "prompt": prompt,
+                    "stream": True,
+                    "keep_alive": self._keep_alive,
+                },
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+                    payload = json.loads(line)
+                    token = payload.get("response", "")
+                    if token:
+                        yield token
+            elapsed_ms = (perf_counter() - started_at) * 1000.0
+            logger.info(
+                "llm_stream_succeeded",
+                extra={
+                    "backend": "ollama",
+                    "model": self._model,
+                    "elapsed_ms": round(elapsed_ms, 2),
+                },
+            )
+        except Exception as exc:  # pragma: no cover - provider dependent
+            elapsed_ms = (perf_counter() - started_at) * 1000.0
+            logger.exception(
+                "llm_stream_failed",
+                extra={
+                    "backend": "ollama",
+                    "model": self._model,
+                    "elapsed_ms": round(elapsed_ms, 2),
+                },
+            )
+            raise LLMGenerationError(f"Failed to stream answer: {exc}") from exc

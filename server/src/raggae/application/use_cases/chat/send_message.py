@@ -1,7 +1,13 @@
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.application.dto.chat_message_response_dto import ChatMessageResponseDTO
+from raggae.application.dto.chat_stream_event import (
+    ChatStreamDone,
+    ChatStreamEvent,
+    ChatStreamToken,
+)
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
@@ -223,6 +229,185 @@ class SendMessage:
             conversation_id=conversation.id,
             message=message,
             answer=answer,
+            chunks=relevant_chunks,
+            retrieval_strategy_used=retrieval_result.strategy_used,
+            retrieval_execution_time_ms=retrieval_result.execution_time_ms,
+            history_messages_used=len(conversation_history),
+            chunks_used=len(relevant_chunks),
+        )
+
+    async def execute_stream(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+        message: str,
+        limit: int | None = None,
+        offset: int = 0,
+        conversation_id: UUID | None = None,
+        start_new_conversation: bool = False,
+        retrieval_strategy: str = "hybrid",
+        retrieval_filters: dict[str, object] | None = None,
+    ) -> AsyncIterator[ChatStreamEvent]:
+        effective_limit = self._resolve_effective_chunk_limit(
+            message=message,
+            requested_limit=limit,
+            retrieval_strategy=retrieval_strategy,
+        )
+        is_new_conversation = conversation_id is None
+        skip_user_message_save = False
+        current_user_message_id: UUID | None = None
+        if is_new_conversation:
+            conversation, skip_user_message_save = await self._get_or_create_pending_conversation(
+                project_id=project_id,
+                user_id=user_id,
+                message=message,
+                start_new_conversation=start_new_conversation,
+            )
+        else:
+            conversation = await self._conversation_repository.find_by_id(conversation_id)
+            if (
+                conversation is None
+                or conversation.project_id != project_id
+                or conversation.user_id != user_id
+            ):
+                raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
+        if not skip_user_message_save:
+            current_user_message_id = uuid4()
+            await self._message_repository.save(
+                Message(
+                    id=current_user_message_id,
+                    conversation_id=conversation.id,
+                    role="user",
+                    content=message,
+                    created_at=datetime.now(UTC),
+                )
+            )
+        if self._chat_security_policy.is_disallowed_user_message(message):
+            refusal_answer = (
+                "I cannot disclose system or internal instructions. "
+                "I can help with project content or answer your business question instead."
+            )
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=refusal_answer,
+                    source_documents=[],
+                    reliability_percent=0,
+                    created_at=datetime.now(UTC),
+                )
+            )
+            if is_new_conversation:
+                title = await self._build_conversation_title(
+                    user_message=message,
+                    assistant_answer=refusal_answer,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
+            yield ChatStreamToken(token=refusal_answer)
+            yield ChatStreamDone(
+                conversation_id=conversation.id,
+                answer=refusal_answer,
+                chunks=[],
+                history_messages_used=0,
+                chunks_used=0,
+            )
+            return
+        retrieval_result = await self._query_relevant_chunks_use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query=message,
+            limit=effective_limit,
+            offset=offset,
+            strategy=retrieval_strategy,
+            metadata_filters=retrieval_filters,
+        )
+        relevant_chunks = self._select_useful_chunks(
+            self._filter_relevant_chunks(retrieval_result.chunks),
+            effective_limit,
+        )
+        if not relevant_chunks:
+            fallback_answer = "I could not find relevant context to answer your message."
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=fallback_answer,
+                    source_documents=[],
+                    reliability_percent=0,
+                    created_at=datetime.now(UTC),
+                )
+            )
+            if is_new_conversation:
+                title = await self._build_conversation_title(
+                    user_message=message,
+                    assistant_answer=fallback_answer,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
+            yield ChatStreamToken(token=fallback_answer)
+            yield ChatStreamDone(
+                conversation_id=conversation.id,
+                answer=fallback_answer,
+                chunks=[],
+                retrieval_strategy_used=retrieval_result.strategy_used,
+                retrieval_execution_time_ms=retrieval_result.execution_time_ms,
+                history_messages_used=0,
+                chunks_used=0,
+            )
+            return
+        project = await self._project_repository.find_by_id(project_id)
+        project_system_prompt = project.system_prompt if project is not None else None
+        conversation_history = await self._build_conversation_history(
+            conversation_id=conversation.id,
+            current_user_message_id=current_user_message_id,
+        )
+        accumulated_answer = ""
+        try:
+            stream = self._llm_service.generate_answer_stream(
+                query=message,
+                context_chunks=[chunk.content for chunk in relevant_chunks],
+                project_system_prompt=project_system_prompt,
+                conversation_history=conversation_history,
+            )
+            async for token in stream:
+                accumulated_answer += token
+                yield ChatStreamToken(token=token)
+            sanitized = self._chat_security_policy.sanitize_model_answer(accumulated_answer)
+            if sanitized != accumulated_answer:
+                accumulated_answer = sanitized
+                source_documents: list[dict[str, object]] = []
+                reliability_percent = 0
+            else:
+                source_documents = self._extract_source_documents(relevant_chunks)
+                reliability_percent = self._compute_reliability_percent(relevant_chunks)
+        except LLMGenerationError:
+            accumulated_answer = (
+                "I found relevant context but could not generate an answer right now. "
+                "Please try again in a few seconds."
+            )
+            source_documents = []
+            reliability_percent = 0
+        await self._message_repository.save(
+            Message(
+                id=uuid4(),
+                conversation_id=conversation.id,
+                role="assistant",
+                content=accumulated_answer,
+                source_documents=source_documents,
+                reliability_percent=reliability_percent,
+                created_at=datetime.now(UTC),
+            )
+        )
+        if is_new_conversation:
+            title = await self._build_conversation_title(
+                user_message=message,
+                assistant_answer=accumulated_answer,
+            )
+            await self._conversation_repository.update_title(conversation.id, title)
+        yield ChatStreamDone(
+            conversation_id=conversation.id,
+            answer=accumulated_answer,
             chunks=relevant_chunks,
             retrieval_strategy_used=retrieval_result.strategy_used,
             retrieval_execution_time_ms=retrieval_result.execution_time_ms,
