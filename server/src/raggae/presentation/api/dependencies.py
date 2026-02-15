@@ -169,6 +169,7 @@ if settings.persistence_backend == "postgres":
         vector_weight=settings.retrieval_vector_weight,
         fulltext_weight=settings.retrieval_fulltext_weight,
         candidate_multiplier=settings.retrieval_candidate_multiplier,
+        fulltext_language=settings.retrieval_fulltext_language,
     )
 else:
     _user_repository = InMemoryUserRepository()

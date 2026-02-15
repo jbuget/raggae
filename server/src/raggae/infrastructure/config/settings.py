@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     retrieval_vector_weight: float = 0.6
     retrieval_fulltext_weight: float = 0.4
     retrieval_candidate_multiplier: int = 5
+    retrieval_fulltext_language: str = "french"
     s3_endpoint_url: str = "http://localhost:9000"
     s3_access_key: str = "minioadmin"
     s3_secret_key: str = "minioadmin"

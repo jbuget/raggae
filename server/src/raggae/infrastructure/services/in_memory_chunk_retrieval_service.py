@@ -104,7 +104,7 @@ def _lexical_overlap_score(query_terms: set[str], content: str) -> float:
 def _resolve_strategy(strategy: str, query_text: str) -> str:
     if strategy != "auto":
         return strategy
-    has_quotes = '"' in query_text or "'" in query_text
+    has_quotes = '"' in query_text
     is_technical = any(character in query_text for character in ("_", "-")) or any(
         token.isupper() and len(token) > 1 for token in query_text.split()
     )

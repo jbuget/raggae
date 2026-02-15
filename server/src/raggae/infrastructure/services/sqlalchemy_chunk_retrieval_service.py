@@ -15,11 +15,13 @@ class SQLAlchemyChunkRetrievalService:
         vector_weight: float = 0.6,
         fulltext_weight: float = 0.4,
         candidate_multiplier: int = 5,
+        fulltext_language: str = "french",
     ) -> None:
         self._session_factory = session_factory
         self._vector_weight = vector_weight
         self._fulltext_weight = fulltext_weight
         self._candidate_multiplier = max(1, candidate_multiplier)
+        self._fulltext_language = fulltext_language
 
     async def retrieve_chunks(
         self,
@@ -60,14 +62,15 @@ class SQLAlchemyChunkRetrievalService:
                 SELECT
                     c.id AS chunk_id,
                     ts_rank_cd(
-                        to_tsvector('simple', c.content),
-                        plainto_tsquery('simple', :query_text)
+                        to_tsvector(:fulltext_language, c.content),
+                        plainto_tsquery(:fulltext_language, :query_text)
                     ) AS fulltext_score
                 FROM document_chunks c
                 JOIN documents d ON d.id = c.document_id
                 WHERE d.project_id = :project_id
                   {metadata_where}
-                  AND to_tsvector('simple', c.content) @@ plainto_tsquery('simple', :query_text)
+                  AND to_tsvector(:fulltext_language, c.content)
+                      @@ plainto_tsquery(:fulltext_language, :query_text)
                 ORDER BY fulltext_score DESC
                 LIMIT :candidate_limit
             ),
@@ -147,6 +150,7 @@ class SQLAlchemyChunkRetrievalService:
                         "candidate_limit": candidate_limit,
                         "vector_weight": vector_weight,
                         "fulltext_weight": fulltext_weight,
+                        "fulltext_language": self._fulltext_language,
                         "limit": limit,
                         "offset": offset,
                         "min_score": min_score,
@@ -182,7 +186,7 @@ def _to_pgvector_literal(values: list[float]) -> str:
 def _resolve_strategy(strategy: str, query_text: str) -> str:
     if strategy != "auto":
         return strategy
-    has_quotes = '"' in query_text or "'" in query_text
+    has_quotes = '"' in query_text
     is_technical = any(character in query_text for character in ("_", "-")) or any(
         token.isupper() and len(token) > 1 for token in query_text.split()
     )
