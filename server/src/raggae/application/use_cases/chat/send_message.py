@@ -36,6 +36,7 @@ class SendMessage:
         default_chunk_limit: int = 8,
         max_chunk_limit: int = 40,
         history_window_size: int = 8,
+        history_max_chars: int = 4000,
     ) -> None:
         self._query_relevant_chunks_use_case = query_relevant_chunks_use_case
         self._llm_service = llm_service
@@ -46,6 +47,7 @@ class SendMessage:
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
         self._history_window_size = max(1, history_window_size)
+        self._history_max_chars = max(128, history_max_chars)
         if chat_security_policy is None:
             self._chat_security_policy: ChatSecurityPolicy = StaticChatSecurityPolicy()
         else:
@@ -362,6 +364,16 @@ class SendMessage:
                 continue
             label = "User" if message.role == "user" else "Assistant"
             history.append(f"{label}: {message.content}")
-        return history[-self._history_window_size :]
+        return self._truncate_history_by_chars(history[-self._history_window_size :])
+
+    def _truncate_history_by_chars(self, history: list[str]) -> list[str]:
+        total_chars = sum(len(item) for item in history)
+        if total_chars <= self._history_max_chars:
+            return history
+        trimmed = history[:]
+        while trimmed and total_chars > self._history_max_chars:
+            removed = trimmed.pop(0)
+            total_chars -= len(removed)
+        return trimmed
 
     _MAX_CONVERSATION_TITLE_LENGTH = 80

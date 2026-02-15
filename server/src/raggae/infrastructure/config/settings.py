@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     retrieval_min_score: float = 0.0
     retrieval_default_chunk_limit: int = 8
     chat_history_window_size: int = 8
+    chat_history_max_chars: int = 4000
     retrieval_vector_weight: float = 0.6
     retrieval_fulltext_weight: float = 0.4
     retrieval_candidate_multiplier: int = 5
