@@ -7,8 +7,10 @@ from raggae.application.use_cases.document.upload_document import (
     UploadDocument,
     UploadDocumentItem,
 )
+from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class TestUploadDocuments:
@@ -103,7 +105,16 @@ class TestUploadDocuments:
             created_at=datetime.now(UTC),
         )
         mock_document_repository.find_by_project_id.return_value = [
-            AsyncMock(file_name="guide.md")
+            Document(
+                id=uuid4(),
+                project_id=project_id,
+                file_name="guide.md",
+                content_type="text/markdown",
+                file_size=123,
+                storage_key="projects/p/documents/d-guide.md",
+                created_at=datetime.now(UTC),
+                processing_strategy=None,
+            )
         ]
 
         # When
@@ -122,6 +133,59 @@ class TestUploadDocuments:
         # Then
         assert result.succeeded == 1
         assert result.created[0].stored_filename == "guide-copie-1.md"
+
+    async def test_upload_documents_skips_when_same_name_already_indexed(
+        self,
+        use_case: UploadDocument,
+        mock_project_repository: AsyncMock,
+        mock_document_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_document_repository.find_by_project_id.return_value = [
+            Document(
+                id=uuid4(),
+                project_id=project_id,
+                file_name="guide.md",
+                content_type="text/markdown",
+                file_size=123,
+                storage_key="projects/p/documents/d-guide.md",
+                created_at=datetime.now(UTC),
+                processing_strategy=ChunkingStrategy.FIXED_WINDOW,
+            )
+        ]
+
+        # When
+        result = await use_case.execute_many(
+            project_id=project_id,
+            user_id=user_id,
+            files=[
+                UploadDocumentItem(
+                    file_name="guide.md",
+                    file_content=b"# Guide",
+                    content_type="text/markdown",
+                )
+            ],
+        )
+
+        # Then
+        assert result.total == 1
+        assert result.succeeded == 0
+        assert result.failed == 1
+        assert result.errors[0].code == "ALREADY_INDEXED"
+        assert result.errors[0].filename == "guide.md"
+        mock_file_storage_service.upload_file.assert_not_called()
 
     async def test_upload_documents_processing_failure_cleans_up_and_continues(
         self,

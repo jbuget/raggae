@@ -133,6 +133,11 @@ class UploadDocument:
     ) -> UploadDocumentsResult:
         await self._assert_project_owner(project_id=project_id, user_id=user_id)
         existing_documents = await self._document_repository.find_by_project_id(project_id)
+        indexed_by_name = {
+            doc.file_name.lower()
+            for doc in existing_documents
+            if doc.processing_strategy is not None
+        }
         existing_names = {doc.file_name.lower() for doc in existing_documents}
         request_names: set[str] = set()
         created: list[UploadDocumentsCreatedItem] = []
@@ -150,6 +155,15 @@ class UploadDocument:
                 )
                 continue
             request_names.add(request_name)
+            if request_name in indexed_by_name:
+                errors.append(
+                    UploadDocumentsErrorItem(
+                        filename=item.file_name,
+                        code="ALREADY_INDEXED",
+                        message="Document already exists and is already indexed for this project.",
+                    )
+                )
+                continue
             stored_filename = self._resolve_unique_filename(item.file_name, existing_names)
             try:
                 document_dto = await self._execute_single(
