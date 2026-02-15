@@ -572,6 +572,38 @@ class TestChatEndpoints:
         assert second_response.status_code == 200
         assert first_response.json()["conversation_id"] == second_response.json()["conversation_id"]
 
+    async def test_send_message_without_conversation_id_appends_messages_to_same_thread(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+
+        # When
+        first_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "First context question", "limit": 3},
+            headers=headers,
+        )
+        conversation_id = first_response.json()["conversation_id"]
+        await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "Second follow-up", "limit": 3},
+            headers=headers,
+        )
+        messages_response = await client.get(
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/messages",
+            headers=headers,
+        )
+
+        # Then
+        assert messages_response.status_code == 200
+        payload = messages_response.json()
+        user_messages = [item for item in payload if item["role"] == "user"]
+        assert len(user_messages) == 2
+        assert user_messages[0]["content"] == "First context question"
+        assert user_messages[1]["content"] == "Second follow-up"
+
     async def test_send_message_without_conversation_id_can_force_new_conversation(
         self,
         client: AsyncClient,
