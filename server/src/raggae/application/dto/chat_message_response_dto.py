@@ -11,3 +11,5 @@ class ChatMessageResponseDTO:
     message: str
     answer: str
     chunks: list[RetrievedChunkDTO]
+    retrieval_strategy_used: str = "hybrid"
+    retrieval_execution_time_ms: float = 0.0

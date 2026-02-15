@@ -51,17 +51,18 @@ class SendMessage:
         user_id: UUID,
         message: str,
         limit: int = 5,
+        offset: int = 0,
         conversation_id: UUID | None = None,
+        retrieval_strategy: str = "hybrid",
+        retrieval_filters: dict[str, object] | None = None,
     ) -> ChatMessageResponseDTO:
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
         if is_new_conversation:
-            conversation, skip_user_message_save = (
-                await self._get_or_create_pending_conversation(
-                    project_id=project_id,
-                    user_id=user_id,
-                    message=message,
-                )
+            conversation, skip_user_message_save = await self._get_or_create_pending_conversation(
+                project_id=project_id,
+                user_id=user_id,
+                message=message,
             )
         else:
             conversation = await self._conversation_repository.find_by_id(conversation_id)
@@ -110,13 +111,16 @@ class SendMessage:
                 answer=refusal_answer,
                 chunks=[],
             )
-        chunks = await self._query_relevant_chunks_use_case.execute(
+        retrieval_result = await self._query_relevant_chunks_use_case.execute(
             project_id=project_id,
             user_id=user_id,
             query=message,
             limit=limit,
+            offset=offset,
+            strategy=retrieval_strategy,
+            metadata_filters=retrieval_filters,
         )
-        relevant_chunks = self._filter_relevant_chunks(chunks)
+        relevant_chunks = self._filter_relevant_chunks(retrieval_result.chunks)
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
             await self._message_repository.save(
@@ -142,6 +146,8 @@ class SendMessage:
                 message=message,
                 answer=fallback_answer,
                 chunks=[],
+                retrieval_strategy_used=retrieval_result.strategy_used,
+                retrieval_execution_time_ms=retrieval_result.execution_time_ms,
             )
         project = await self._project_repository.find_by_id(project_id)
         project_system_prompt = project.system_prompt if project is not None else None
@@ -189,6 +195,8 @@ class SendMessage:
             message=message,
             answer=answer,
             chunks=relevant_chunks,
+            retrieval_strategy_used=retrieval_result.strategy_used,
+            retrieval_execution_time_ms=retrieval_result.execution_time_ms,
         )
 
     async def _build_conversation_title(self, user_message: str, assistant_answer: str) -> str:
@@ -228,11 +236,7 @@ class SendMessage:
         return int(round(bounded * 100))
 
     def _filter_relevant_chunks(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
-        return [
-            chunk
-            for chunk in chunks
-            if chunk.score > 0.0 and chunk.content.strip()
-        ]
+        return [chunk for chunk in chunks if chunk.score > 0.0 and chunk.content.strip()]
 
     async def _get_or_create_pending_conversation(
         self,

@@ -78,6 +78,7 @@ class TestInMemoryChunkRetrievalService:
         # When
         result = await service.retrieve_chunks(
             project_id=project_id,
+            query_text="first content",
             query_embedding=[1.0, 0.0],
             limit=2,
         )
@@ -101,6 +102,7 @@ class TestInMemoryChunkRetrievalService:
         # When
         result = await service.retrieve_chunks(
             project_id=project_id,
+            query_text="unknown",
             query_embedding=[1.0, 0.0],
             limit=5,
         )
@@ -151,11 +153,183 @@ class TestInMemoryChunkRetrievalService:
         # When
         result = await service.retrieve_chunks(
             project_id=project_id,
+            query_text="first",
             query_embedding=[1.0, 0.0],
             limit=5,
-            min_score=0.9,
+            min_score=0.8,
         )
 
         # Then
         assert len(result) == 1
         assert result[0].content == "first"
+
+    async def test_retrieve_chunks_fulltext_strategy_prioritizes_exact_terms(self) -> None:
+        # Given
+        project_id = uuid4()
+        document_repository = InMemoryDocumentRepository()
+        chunk_repository = InMemoryDocumentChunkRepository()
+        service = InMemoryChunkRetrievalService(
+            document_repository=document_repository,
+            document_chunk_repository=chunk_repository,
+        )
+        doc = Document(
+            id=uuid4(),
+            project_id=project_id,
+            file_name="auth.txt",
+            content_type="text/plain",
+            file_size=10,
+            storage_key="auth",
+            created_at=datetime.now(UTC),
+        )
+        await document_repository.save(doc)
+        await chunk_repository.save_many(
+            [
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=0,
+                    content="JWT token expiration details",
+                    embedding=[0.1, 0.9],
+                    created_at=datetime.now(UTC),
+                    metadata_json={"source_type": "paragraph"},
+                ),
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=1,
+                    content="Authentication overview",
+                    embedding=[1.0, 0.0],
+                    created_at=datetime.now(UTC),
+                    metadata_json={"source_type": "heading"},
+                ),
+            ]
+        )
+
+        # When
+        result = await service.retrieve_chunks(
+            project_id=project_id,
+            query_text="JWT token expiration",
+            query_embedding=[1.0, 0.0],
+            limit=2,
+            strategy="fulltext",
+        )
+
+        # Then
+        assert len(result) == 2
+        assert result[0].content == "JWT token expiration details"
+
+    async def test_retrieve_chunks_applies_metadata_filters(self) -> None:
+        # Given
+        project_id = uuid4()
+        document_repository = InMemoryDocumentRepository()
+        chunk_repository = InMemoryDocumentChunkRepository()
+        service = InMemoryChunkRetrievalService(
+            document_repository=document_repository,
+            document_chunk_repository=chunk_repository,
+        )
+        doc = Document(
+            id=uuid4(),
+            project_id=project_id,
+            file_name="doc.txt",
+            content_type="text/plain",
+            file_size=10,
+            storage_key="doc",
+            created_at=datetime.now(UTC),
+        )
+        await document_repository.save(doc)
+        await chunk_repository.save_many(
+            [
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=0,
+                    content="paragraph chunk",
+                    embedding=[1.0, 0.0],
+                    created_at=datetime.now(UTC),
+                    metadata_json={"source_type": "paragraph"},
+                ),
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=1,
+                    content="heading chunk",
+                    embedding=[1.0, 0.0],
+                    created_at=datetime.now(UTC),
+                    metadata_json={"source_type": "heading"},
+                ),
+            ]
+        )
+
+        # When
+        result = await service.retrieve_chunks(
+            project_id=project_id,
+            query_text="chunk",
+            query_embedding=[1.0, 0.0],
+            limit=5,
+            metadata_filters={"source_type": "paragraph"},
+        )
+
+        # Then
+        assert len(result) == 1
+        assert result[0].content == "paragraph chunk"
+
+    async def test_retrieve_chunks_applies_offset_pagination(self) -> None:
+        # Given
+        project_id = uuid4()
+        document_repository = InMemoryDocumentRepository()
+        chunk_repository = InMemoryDocumentChunkRepository()
+        service = InMemoryChunkRetrievalService(
+            document_repository=document_repository,
+            document_chunk_repository=chunk_repository,
+        )
+        doc = Document(
+            id=uuid4(),
+            project_id=project_id,
+            file_name="doc.txt",
+            content_type="text/plain",
+            file_size=10,
+            storage_key="doc",
+            created_at=datetime.now(UTC),
+        )
+        await document_repository.save(doc)
+        await chunk_repository.save_many(
+            [
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=0,
+                    content="first hit",
+                    embedding=[1.0, 0.0],
+                    created_at=datetime.now(UTC),
+                ),
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=1,
+                    content="second hit",
+                    embedding=[0.9, 0.1],
+                    created_at=datetime.now(UTC),
+                ),
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=2,
+                    content="third hit",
+                    embedding=[0.8, 0.2],
+                    created_at=datetime.now(UTC),
+                ),
+            ]
+        )
+
+        # When
+        result = await service.retrieve_chunks(
+            project_id=project_id,
+            query_text="hit",
+            query_embedding=[1.0, 0.0],
+            limit=1,
+            offset=1,
+        )
+
+        # Then
+        assert len(result) == 1
+        assert result[0].content == "second hit"

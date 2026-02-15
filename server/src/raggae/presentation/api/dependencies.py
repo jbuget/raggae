@@ -165,7 +165,10 @@ if settings.persistence_backend == "postgres":
         session_factory=SessionFactory
     )
     _chunk_retrieval_service: ChunkRetrievalService = SQLAlchemyChunkRetrievalService(
-        session_factory=SessionFactory
+        session_factory=SessionFactory,
+        vector_weight=settings.retrieval_vector_weight,
+        fulltext_weight=settings.retrieval_fulltext_weight,
+        candidate_multiplier=settings.retrieval_candidate_multiplier,
     )
 else:
     _user_repository = InMemoryUserRepository()
@@ -177,6 +180,8 @@ else:
     _chunk_retrieval_service = InMemoryChunkRetrievalService(
         document_repository=_document_repository,
         document_chunk_repository=_document_chunk_repository,
+        vector_weight=settings.retrieval_vector_weight,
+        fulltext_weight=settings.retrieval_fulltext_weight,
     )
 _password_hasher = BcryptPasswordHasher()
 if settings.storage_backend == "minio":

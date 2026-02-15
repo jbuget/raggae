@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -6,10 +7,21 @@ from pydantic import BaseModel, Field
 from raggae.presentation.api.v1.schemas.query_schemas import RetrievedChunkResponse
 
 
+class RetrievalFiltersRequest(BaseModel):
+    document_type: list[str] | None = None
+    language: str | None = None
+    source_type: str | None = None
+    processing_strategy: str | None = None
+    tags: list[str] | None = None
+
+
 class SendMessageRequest(BaseModel):
     message: str = Field(..., min_length=1)
     limit: int = Field(default=5, ge=1, le=20)
+    offset: int = Field(default=0, ge=0)
     conversation_id: UUID | None = None
+    retrieval_strategy: Literal["vector", "fulltext", "hybrid", "auto"] = "hybrid"
+    retrieval_filters: RetrievalFiltersRequest | None = None
 
 
 class SendMessageResponse(BaseModel):
@@ -18,6 +30,8 @@ class SendMessageResponse(BaseModel):
     message: str
     answer: str
     chunks: list[RetrievedChunkResponse]
+    retrieval_strategy_used: Literal["vector", "fulltext", "hybrid"]
+    retrieval_execution_time_ms: float
 
 
 class MessageResponse(BaseModel):

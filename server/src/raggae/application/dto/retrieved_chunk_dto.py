@@ -11,3 +11,5 @@ class RetrievedChunkDTO:
     content: str
     score: float
     document_file_name: str | None = None
+    vector_score: float | None = None
+    fulltext_score: float | None = None

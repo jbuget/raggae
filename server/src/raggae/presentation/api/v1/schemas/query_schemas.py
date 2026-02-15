@@ -14,6 +14,8 @@ class RetrievedChunkResponse(BaseModel):
     document_file_name: str | None = None
     content: str
     score: float
+    vector_score: float | None = None
+    fulltext_score: float | None = None
 
 
 class QueryProjectResponse(BaseModel):

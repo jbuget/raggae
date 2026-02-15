@@ -61,7 +61,14 @@ async def send_message(
             user_id=user_id,
             message=data.message,
             limit=data.limit,
+            offset=data.offset,
             conversation_id=data.conversation_id,
+            retrieval_strategy=data.retrieval_strategy,
+            retrieval_filters=(
+                data.retrieval_filters.model_dump(exclude_none=True)
+                if data.retrieval_filters is not None
+                else None
+            ),
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -96,6 +103,8 @@ async def send_message(
         conversation_id=response.conversation_id,
         message=response.message,
         answer=response.answer,
+        retrieval_strategy_used=response.retrieval_strategy_used,
+        retrieval_execution_time_ms=response.retrieval_execution_time_ms,
         chunks=[
             RetrievedChunkResponse(
                 chunk_id=chunk.chunk_id,
@@ -103,6 +112,8 @@ async def send_message(
                 document_file_name=chunk.document_file_name,
                 content=chunk.content,
                 score=chunk.score,
+                vector_score=chunk.vector_score,
+                fulltext_score=chunk.fulltext_score,
             )
             for chunk in response.chunks
         ],
@@ -123,7 +134,14 @@ async def stream_message(
             user_id=user_id,
             message=data.message,
             limit=data.limit,
+            offset=data.offset,
             conversation_id=data.conversation_id,
+            retrieval_strategy=data.retrieval_strategy,
+            retrieval_filters=(
+                data.retrieval_filters.model_dump(exclude_none=True)
+                if data.retrieval_filters is not None
+                else None
+            ),
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -149,6 +167,8 @@ async def stream_message(
                 "document_file_name": chunk.document_file_name,
                 "content": chunk.content,
                 "score": chunk.score,
+                "vector_score": chunk.vector_score,
+                "fulltext_score": chunk.fulltext_score,
             }
             for chunk in response.chunks
         ]
@@ -162,6 +182,8 @@ async def stream_message(
                 {
                     "done": True,
                     "conversation_id": str(response.conversation_id),
+                    "retrieval_strategy_used": response.retrieval_strategy_used,
+                    "retrieval_execution_time_ms": response.retrieval_execution_time_ms,
                     "chunks": chunks_payload,
                 }
             )
@@ -188,9 +210,7 @@ async def list_conversation_messages(
     project_id: UUID,
     conversation_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        ListConversationMessages, Depends(get_list_conversation_messages_use_case)
-    ],
+    use_case: Annotated[ListConversationMessages, Depends(get_list_conversation_messages_use_case)],
     limit: int = 50,
     offset: int = 0,
 ) -> list[MessageResponse]:

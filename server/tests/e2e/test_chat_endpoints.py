@@ -58,6 +58,28 @@ class TestChatEndpoints:
         assert isinstance(data["answer"], str)
         assert isinstance(data["chunks"], list)
 
+    async def test_send_message_accepts_retrieval_strategy_and_filters(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+
+        # When
+        response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={
+                "message": "jwt token expiration",
+                "limit": 3,
+                "retrieval_strategy": "auto",
+                "retrieval_filters": {"source_type": "paragraph"},
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+
     async def test_send_message_other_user_project_returns_404(
         self,
         client: AsyncClient,
@@ -113,10 +135,27 @@ class TestChatEndpoints:
             "generate_answer",
             raise_llm_error,
         )
+
         async def retrieve_one_chunk(  # type: ignore[no-untyped-def]
-            project_id, query_embedding, limit, min_score
+            project_id,
+            query_text,
+            query_embedding,
+            limit,
+            offset,
+            min_score,
+            strategy,
+            metadata_filters,
         ):
-            del project_id, query_embedding, limit, min_score
+            del (
+                project_id,
+                query_text,
+                query_embedding,
+                limit,
+                offset,
+                min_score,
+                strategy,
+                metadata_filters,
+            )
             return [
                 RetrievedChunkDTO(
                     chunk_id=uuid4(),
