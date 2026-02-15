@@ -29,6 +29,8 @@ class TestSendMessagePersistence:
         ]
         llm_service = AsyncMock()
         llm_service.generate_answer.return_value = "assistant answer"
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
         conversation_repository = AsyncMock()
         conversation_repository.get_or_create.return_value = conversation
         message_repository = AsyncMock()
@@ -36,6 +38,7 @@ class TestSendMessagePersistence:
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
+            conversation_title_generator=title_generator,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
@@ -52,6 +55,14 @@ class TestSendMessagePersistence:
         conversation_repository.get_or_create.assert_awaited_once_with(
             project_id=project_id,
             user_id=user_id,
+        )
+        title_generator.generate_title.assert_awaited_once_with(
+            user_message="hello",
+            assistant_answer="assistant answer",
+        )
+        conversation_repository.update_title.assert_awaited_once_with(
+            conversation.id,
+            "Generated title",
         )
         assert message_repository.save.call_count == 2
         first_saved = message_repository.save.call_args_list[0].args[0]
@@ -73,12 +84,14 @@ class TestSendMessagePersistence:
         query_use_case = AsyncMock()
         query_use_case.execute.return_value = []
         llm_service = AsyncMock()
+        title_generator = AsyncMock()
         conversation_repository = AsyncMock()
         conversation_repository.find_by_id.return_value = conversation
         message_repository = AsyncMock()
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
+            conversation_title_generator=title_generator,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
@@ -95,4 +108,6 @@ class TestSendMessagePersistence:
         # Then
         conversation_repository.find_by_id.assert_awaited_once_with(conversation.id)
         conversation_repository.get_or_create.assert_not_called()
+        title_generator.generate_title.assert_not_called()
+        conversation_repository.update_title.assert_not_called()
         assert result.conversation_id == conversation.id
