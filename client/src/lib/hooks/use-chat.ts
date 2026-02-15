@@ -82,8 +82,10 @@ export function useSendMessage(projectId: string) {
           } else if ("done" in event) {
             const doneEvent = event as StreamDoneEvent;
             setChunks(doneEvent.chunks);
-            if (doneEvent.conversation_id) {
-              onConversationId?.(doneEvent.conversation_id);
+            const effectiveConversationId =
+              doneEvent.conversation_id || data.conversation_id;
+            if (effectiveConversationId) {
+              onConversationId?.(effectiveConversationId);
               queryClient.invalidateQueries({
                 queryKey: ["conversations", projectId],
               });
@@ -91,7 +93,7 @@ export function useSendMessage(projectId: string) {
                 queryKey: [
                   "messages",
                   projectId,
-                  doneEvent.conversation_id,
+                  effectiveConversationId,
                 ],
               });
             }

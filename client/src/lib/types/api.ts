@@ -57,6 +57,26 @@ export interface DocumentResponse {
   processing_strategy: string | null;
 }
 
+export interface UploadDocumentsCreatedResponse {
+  original_filename: string;
+  stored_filename: string;
+  document_id: string;
+}
+
+export interface UploadDocumentsErrorResponse {
+  filename: string;
+  code: string;
+  message: string;
+}
+
+export interface UploadDocumentsResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  created: UploadDocumentsCreatedResponse[];
+  errors: UploadDocumentsErrorResponse[];
+}
+
 // Chat
 export interface SendMessageRequest {
   message: string;

@@ -6,35 +6,42 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatFileSize } from "@/lib/utils/format";
 
 interface DocumentUploadProps {
-  onUpload: (file: File) => void;
+  onUpload: (files: File[]) => void;
   isUploading: boolean;
 }
 
 export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleFile = useCallback((file: File) => {
-    setSelectedFile(file);
+  const handleFiles = useCallback((files: File[]) => {
+    setSelectedFiles((previous) => {
+      const merged = [...previous, ...files];
+      const uniqueByName = new Map<string, File>();
+      for (const file of merged) {
+        uniqueByName.set(file.name, file);
+      }
+      return Array.from(uniqueByName.values());
+    });
   }, []);
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) handleFiles(files);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
+    const files = Array.from(e.target.files ?? []);
+    if (files.length > 0) handleFiles(files);
   }
 
   function handleUpload() {
-    if (selectedFile) {
-      onUpload(selectedFile);
-      setSelectedFile(null);
+    if (selectedFiles.length > 0) {
+      onUpload(selectedFiles);
+      setSelectedFiles([]);
       if (inputRef.current) inputRef.current.value = "";
     }
   }
@@ -62,25 +69,33 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
           <input
             ref={inputRef}
             type="file"
+            multiple
             onChange={handleChange}
             className="hidden"
-            aria-label="Select file"
+            aria-label="Select files"
           />
           <Button
             type="button"
             variant="outline"
             onClick={() => inputRef.current?.click()}
           >
-            Select File
+            Select Files
           </Button>
         </div>
 
-        {selectedFile && (
-          <div className="mt-4 flex items-center justify-between">
+        {selectedFiles.length > 0 && (
+          <div className="mt-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium">{selectedFile.name}</p>
+              <p className="text-sm font-medium">
+                {selectedFiles.length} file(s) selected
+              </p>
               <p className="text-xs text-muted-foreground">
-                {formatFileSize(selectedFile.size)}
+                {selectedFiles.map((file) => file.name).join(", ")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatFileSize(
+                  selectedFiles.reduce((total, file) => total + file.size, 0),
+                )}
               </p>
             </div>
             <Button onClick={handleUpload} disabled={isUploading}>

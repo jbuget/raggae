@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteDocument,
   listDocuments,
-  uploadDocument,
+  uploadDocuments,
 } from "@/lib/api/documents";
 import { useAuth } from "./use-auth";
 
@@ -23,7 +23,7 @@ export function useUploadDocument(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (file: File) => uploadDocument(token!, projectId, file),
+    mutationFn: (files: File[]) => uploadDocuments(token!, projectId, files),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
     },

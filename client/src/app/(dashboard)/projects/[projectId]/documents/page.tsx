@@ -22,9 +22,12 @@ export default function DocumentsPage() {
       <h1 className="text-2xl font-bold">Documents</h1>
 
       <DocumentUpload
-        onUpload={(file) => {
-          uploadDocument.mutate(file, {
-            onSuccess: () => toast.success("Document uploaded"),
+        onUpload={(files) => {
+          uploadDocument.mutate(files, {
+            onSuccess: (result) =>
+              toast.success(
+                `${result.succeeded} uploaded, ${result.failed} failed`,
+              ),
             onError: () => toast.error("Failed to upload document"),
           });
         }}

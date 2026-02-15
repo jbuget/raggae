@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   deleteDocument,
   listDocuments,
-  uploadDocument,
+  uploadDocuments,
 } from "@/lib/api/documents";
 import { server } from "../../../helpers/msw-server";
 
@@ -35,19 +35,44 @@ describe("listDocuments", () => {
   });
 });
 
-describe("uploadDocument", () => {
-  it("should upload a file and return document", async () => {
+describe("uploadDocuments", () => {
+  it("should upload files and return detailed batch result", async () => {
     server.use(
       http.post("/api/v1/projects/proj-1/documents", () => {
-        return HttpResponse.json(mockDoc, { status: 201 });
+        return HttpResponse.json(
+          {
+            total: 2,
+            succeeded: 1,
+            failed: 1,
+            created: [
+              {
+                original_filename: "test.pdf",
+                stored_filename: "test.pdf",
+                document_id: "doc-1",
+              },
+            ],
+            errors: [
+              {
+                filename: "bad.exe",
+                code: "INVALID_FILE_TYPE",
+                message: "Unsupported document type: exe",
+              },
+            ],
+          },
+          { status: 200 },
+        );
       }),
     );
 
-    const file = new File(["content"], "test.pdf", {
+    const fileOne = new File(["content"], "test.pdf", {
       type: "application/pdf",
     });
-    const result = await uploadDocument("token", "proj-1", file);
-    expect(result.file_name).toBe("test.pdf");
+    const fileTwo = new File(["content"], "bad.exe", {
+      type: "application/octet-stream",
+    });
+    const result = await uploadDocuments("token", "proj-1", [fileOne, fileTwo]);
+    expect(result.succeeded).toBe(1);
+    expect(result.failed).toBe(1);
   });
 });
 

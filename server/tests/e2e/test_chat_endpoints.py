@@ -1,7 +1,7 @@
+import json
 from uuid import uuid4
 
 from httpx import AsyncClient
-
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 
@@ -162,6 +162,19 @@ class TestChatEndpoints:
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/event-stream")
         assert "data:" in payload
+        data_events = [
+            line.removeprefix("data: ").strip()
+            for line in payload.splitlines()
+            if line.startswith("data: ")
+        ]
+        parsed_events = [json.loads(raw) for raw in data_events]
+        done_events = [event for event in parsed_events if event.get("done") is True]
+        assert len(done_events) == 1
+        assert "conversation_id" in done_events[0]
+        assert isinstance(done_events[0]["chunks"], list)
+        if done_events[0]["chunks"]:
+            first_chunk = done_events[0]["chunks"][0]
+            assert "content" in first_chunk
 
     async def test_stream_message_other_user_project_returns_404(
         self,

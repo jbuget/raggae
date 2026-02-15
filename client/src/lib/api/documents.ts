@@ -1,4 +1,4 @@
-import type { DocumentResponse } from "@/lib/types/api";
+import type { DocumentResponse, UploadDocumentsResponse } from "@/lib/types/api";
 import { apiFetch } from "./client";
 
 export function listDocuments(
@@ -11,15 +11,17 @@ export function listDocuments(
   );
 }
 
-export function uploadDocument(
+export function uploadDocuments(
   token: string,
   projectId: string,
-  file: File,
-): Promise<DocumentResponse> {
+  files: File[],
+): Promise<UploadDocumentsResponse> {
   const formData = new FormData();
-  formData.append("file", file);
+  for (const file of files) {
+    formData.append("files", file);
+  }
 
-  return apiFetch<DocumentResponse>(
+  return apiFetch<UploadDocumentsResponse>(
     `/projects/${projectId}/documents`,
     {
       method: "POST",

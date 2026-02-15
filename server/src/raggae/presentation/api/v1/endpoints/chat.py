@@ -145,13 +145,26 @@ async def stream_message(
             {
                 "chunk_id": str(chunk.chunk_id),
                 "document_id": str(chunk.document_id),
+                "content": chunk.content,
                 "score": chunk.score,
             }
             for chunk in response.chunks
         ]
-        for token in response.answer.split():
-            yield f"data: {json.dumps({'token': token})}\n\n"
-        yield f"data: {json.dumps({'done': True, 'chunks': chunks_payload})}\n\n"
+        tokens = response.answer.split()
+        for index, token in enumerate(tokens):
+            token_payload = token if index == len(tokens) - 1 else f"{token} "
+            yield f"data: {json.dumps({'token': token_payload})}\n\n"
+        yield (
+            "data: "
+            + json.dumps(
+                {
+                    "done": True,
+                    "conversation_id": str(response.conversation_id),
+                    "chunks": chunks_payload,
+                }
+            )
+            + "\n\n"
+        )
 
     elapsed_ms = (perf_counter() - started_at) * 1000.0
     logger.info(

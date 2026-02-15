@@ -1,10 +1,19 @@
 import { http, HttpResponse } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   deleteConversation,
   listConversations,
   listMessages,
   sendMessage,
+  streamMessage,
 } from "@/lib/api/chat";
 import { server } from "../../../helpers/msw-server";
 
@@ -102,5 +111,43 @@ describe("listMessages", () => {
     expect(result).toHaveLength(2);
     expect(result[0].role).toBe("user");
     expect(result[1].role).toBe("assistant");
+  });
+});
+
+describe("streamMessage", () => {
+  it("should parse token and done events with conversation_id", async () => {
+    const payload =
+      'data: {"token":"hello "}\n\n' +
+      'data: {"token":"world"}\n\n' +
+      'data: {"done":true,"conversation_id":"conv-1","chunks":[]}\n\n';
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(payload));
+        controller.close();
+      },
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }),
+      );
+
+    const events = [];
+    for await (const event of streamMessage("token", "proj-1", { message: "hi" })) {
+      events.push(event);
+    }
+
+    expect(events).toHaveLength(3);
+    expect(events[0]).toMatchObject({ token: "hello " });
+    expect(events[2]).toMatchObject({
+      done: true,
+      conversation_id: "conv-1",
+      chunks: [],
+    });
+    fetchMock.mockRestore();
   });
 });
