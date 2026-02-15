@@ -24,6 +24,7 @@ from raggae.presentation.api.dependencies import (
 )
 from raggae.presentation.api.v1.schemas.document_schemas import (
     DocumentChunkResponse,
+    DocumentChunksResponse,
     DocumentResponse,
 )
 
@@ -83,6 +84,7 @@ async def upload_document(
         content_type=document_dto.content_type,
         file_size=document_dto.file_size,
         created_at=document_dto.created_at,
+        processing_strategy=document_dto.processing_strategy,
     )
 
 
@@ -108,6 +110,7 @@ async def list_project_documents(
             content_type=doc.content_type,
             file_size=doc.file_size,
             created_at=doc.created_at,
+            processing_strategy=doc.processing_strategy,
         )
         for doc in document_dtos
     ]
@@ -144,9 +147,9 @@ async def list_document_chunks(
     document_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[ListDocumentChunks, Depends(get_list_document_chunks_use_case)],
-) -> list[DocumentChunkResponse]:
+) -> DocumentChunksResponse:
     try:
-        chunk_dtos = await use_case.execute(
+        chunks_dto = await use_case.execute(
             project_id=project_id,
             document_id=document_id,
             user_id=user_id,
@@ -162,13 +165,17 @@ async def list_document_chunks(
             detail="Document not found",
         ) from None
 
-    return [
-        DocumentChunkResponse(
-            id=chunk.id,
-            document_id=chunk.document_id,
-            chunk_index=chunk.chunk_index,
-            content=chunk.content,
-            created_at=chunk.created_at,
-        )
-        for chunk in chunk_dtos
-    ]
+    return DocumentChunksResponse(
+        document_id=chunks_dto.document_id,
+        processing_strategy=chunks_dto.processing_strategy,
+        chunks=[
+            DocumentChunkResponse(
+                id=chunk.id,
+                document_id=chunk.document_id,
+                chunk_index=chunk.chunk_index,
+                content=chunk.content,
+                created_at=chunk.created_at,
+            )
+            for chunk in chunks_dto.chunks
+        ],
+    )

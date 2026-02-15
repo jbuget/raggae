@@ -96,11 +96,13 @@ class TestListDocumentChunks:
         )
 
         # Then
-        assert len(result) == 2
-        assert result[0].chunk_index == 0
-        assert result[0].content == "chunk-0"
-        assert result[1].chunk_index == 1
-        assert result[1].content == "chunk-1"
+        assert result.document_id == document_id
+        assert result.processing_strategy == ChunkingStrategy.FIXED_WINDOW
+        assert len(result.chunks) == 2
+        assert result.chunks[0].chunk_index == 0
+        assert result.chunks[0].content == "chunk-0"
+        assert result.chunks[1].chunk_index == 1
+        assert result.chunks[1].content == "chunk-1"
 
     async def test_list_document_chunks_other_user_project_raises_error(
         self,

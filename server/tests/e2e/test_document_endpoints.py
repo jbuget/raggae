@@ -51,6 +51,7 @@ class TestDocumentEndpoints:
         data = response.json()
         assert data["project_id"] == project_id
         assert data["file_name"] == "notes.txt"
+        assert "processing_strategy" in data
 
     async def test_list_project_documents_returns_200(self, client: AsyncClient) -> None:
         # Given
@@ -72,6 +73,7 @@ class TestDocumentEndpoints:
         data = response.json()
         assert len(data) == 1
         assert data[0]["file_name"] == "guide.md"
+        assert "processing_strategy" in data[0]
 
     async def test_delete_document_returns_204(self, client: AsyncClient) -> None:
         # Given
@@ -110,7 +112,10 @@ class TestDocumentEndpoints:
 
         # Then
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
+        data = response.json()
+        assert data["document_id"] == document_id
+        assert "processing_strategy" in data
+        assert isinstance(data["chunks"], list)
 
     async def test_list_document_chunks_of_another_user_project_returns_404(
         self,

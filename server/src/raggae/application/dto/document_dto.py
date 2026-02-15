@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from raggae.domain.entities.document import Document
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 @dataclass
@@ -16,6 +17,7 @@ class DocumentDTO:
     file_size: int
     storage_key: str
     created_at: datetime
+    processing_strategy: ChunkingStrategy | None
 
     @classmethod
     def from_entity(cls, document: Document) -> "DocumentDTO":
@@ -27,4 +29,5 @@ class DocumentDTO:
             file_size=document.file_size,
             storage_key=document.storage_key,
             created_at=document.created_at,
+            processing_strategy=document.processing_strategy,
         )

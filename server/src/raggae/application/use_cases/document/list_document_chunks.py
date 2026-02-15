@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from raggae.application.dto.document_chunk_dto import DocumentChunkDTO
+from raggae.application.dto.document_chunks_dto import DocumentChunksDTO
 from raggae.application.interfaces.repositories.document_chunk_repository import (
     DocumentChunkRepository,
 )
@@ -28,7 +29,7 @@ class ListDocumentChunks:
         project_id: UUID,
         document_id: UUID,
         user_id: UUID,
-    ) -> list[DocumentChunkDTO]:
+    ) -> DocumentChunksDTO:
         project = await self._project_repository.find_by_id(project_id)
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
@@ -38,4 +39,8 @@ class ListDocumentChunks:
             raise DocumentNotFoundError(f"Document {document_id} not found")
 
         chunks = await self._document_chunk_repository.find_by_document_id(document_id)
-        return [DocumentChunkDTO.from_entity(chunk) for chunk in chunks]
+        return DocumentChunksDTO(
+            document_id=document.id,
+            processing_strategy=document.processing_strategy,
+            chunks=[DocumentChunkDTO.from_entity(chunk) for chunk in chunks],
+        )
