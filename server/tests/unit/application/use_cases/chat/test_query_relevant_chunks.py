@@ -291,7 +291,7 @@ class TestQueryRelevantChunks:
         assert len(result.chunks) == 2
         assert result.chunks[0].score == pytest.approx(0.95)
 
-    async def test_query_with_reranker_applies_min_score_after_rerank(
+    async def test_query_with_reranker_skips_min_score_filter(
         self,
         mock_project_repository: AsyncMock,
         mock_embedding_service: AsyncMock,
@@ -305,7 +305,7 @@ class TestQueryRelevantChunks:
         mock_retrieval.retrieve_chunks.return_value = [
             RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="relevant", score=0.5),
             RetrievedChunkDTO(
-                chunk_id=uuid4(), document_id=uuid4(), content="irrelevant", score=0.5
+                chunk_id=uuid4(), document_id=uuid4(), content="low score", score=0.5
             ),
         ]
 
@@ -313,7 +313,7 @@ class TestQueryRelevantChunks:
         mock_reranker.rerank.return_value = [
             RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="relevant", score=0.8),
             RetrievedChunkDTO(
-                chunk_id=uuid4(), document_id=uuid4(), content="irrelevant", score=0.1
+                chunk_id=uuid4(), document_id=uuid4(), content="low score", score=0.1
             ),
         ]
 
@@ -334,9 +334,8 @@ class TestQueryRelevantChunks:
             limit=5,
         )
 
-        # Then — only chunk with score >= 0.5 survives
-        assert len(result.chunks) == 1
-        assert result.chunks[0].content == "relevant"
+        # Then — reranker handles ranking via top_k, no post-filter on score
+        assert len(result.chunks) == 2
 
     async def test_query_without_reranker_does_not_overfetch(
         self,

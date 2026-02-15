@@ -67,10 +67,11 @@ class QueryRelevantChunks:
 
         if self._reranker_service is not None:
             chunks = await self._reranker_service.rerank(query, chunks, top_k=limit)
+        else:
+            chunks = [chunk for chunk in chunks if chunk.score >= self._min_score]
 
-        filtered_chunks = [chunk for chunk in chunks if chunk.score >= self._min_score]
         return QueryRelevantChunksResultDTO(
-            chunks=filtered_chunks,
+            chunks=chunks,
             strategy_used=strategy_used,
             execution_time_ms=(perf_counter() - started_at) * 1000.0,
         )

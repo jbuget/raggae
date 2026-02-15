@@ -454,7 +454,7 @@ class SendMessage:
         return int(round(bounded * 100))
 
     def _filter_relevant_chunks(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
-        return [chunk for chunk in chunks if chunk.score > 0.0 and chunk.content.strip()]
+        return [chunk for chunk in chunks if chunk.content.strip()]
 
     def _resolve_effective_chunk_limit(
         self,

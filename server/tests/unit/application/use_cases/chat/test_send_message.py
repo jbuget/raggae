@@ -170,13 +170,13 @@ class TestSendMessage:
         assert result.answer == "I could not find relevant context to answer your message."
         assert result.chunks == []
 
-    async def test_send_message_non_relevant_chunks_returns_fallback_without_sources(
+    async def test_send_message_empty_content_chunks_returns_fallback_without_sources(
         self,
         use_case: SendMessage,
         mock_query_relevant_chunks: AsyncMock,
         mock_llm_service: AsyncMock,
     ) -> None:
-        # Given
+        # Given — only chunks with empty content, which are filtered out
         mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
             chunks=[
                 RetrievedChunkDTO(
@@ -188,14 +188,8 @@ class TestSendMessage:
                 RetrievedChunkDTO(
                     chunk_id=uuid4(),
                     document_id=uuid4(),
-                    content="not relevant",
-                    score=0.0,
-                ),
-                RetrievedChunkDTO(
-                    chunk_id=uuid4(),
-                    document_id=uuid4(),
-                    content="also not relevant",
-                    score=-0.2,
+                    content="   ",
+                    score=0.5,
                 ),
             ],
             strategy_used="hybrid",
