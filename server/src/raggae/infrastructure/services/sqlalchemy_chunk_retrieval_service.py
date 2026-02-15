@@ -44,13 +44,27 @@ class SQLAlchemyChunkRetrievalService:
         metadata_where, metadata_params = _build_metadata_filters(metadata_filters)
         sql = text(
             """
-            WITH vector_search AS (
+            WITH fulltext_query AS (
+                SELECT CAST(
+                    regexp_replace(
+                        CAST(
+                            plainto_tsquery(
+                                CAST(:fulltext_language AS regconfig),
+                                :query_text
+                            ) AS text
+                        ),
+                        ' & ', ' | ', 'g'
+                    ) AS tsquery
+                ) AS q
+            ),
+            vector_search AS (
                 SELECT
                     c.id AS chunk_id,
                     c.document_id AS document_id,
                     d.file_name AS document_file_name,
                     c.content AS content,
-                    1 - (c.embedding <=> CAST(:query_embedding AS vector)) AS vector_score
+                    1 - (c.embedding <=> CAST(:query_embedding AS vector))
+                        AS vector_score
                 FROM document_chunks c
                 JOIN documents d ON d.id = c.document_id
                 WHERE d.project_id = :project_id
@@ -62,15 +76,20 @@ class SQLAlchemyChunkRetrievalService:
                 SELECT
                     c.id AS chunk_id,
                     ts_rank_cd(
-                        to_tsvector(:fulltext_language, c.content),
-                        plainto_tsquery(:fulltext_language, :query_text)
+                        to_tsvector(
+                            CAST(:fulltext_language AS regconfig),
+                            c.content
+                        ),
+                        fq.q
                     ) AS fulltext_score
                 FROM document_chunks c
                 JOIN documents d ON d.id = c.document_id
+                CROSS JOIN fulltext_query fq
                 WHERE d.project_id = :project_id
                   {metadata_where}
-                  AND to_tsvector(:fulltext_language, c.content)
-                      @@ plainto_tsquery(:fulltext_language, :query_text)
+                  AND to_tsvector(
+                      CAST(:fulltext_language AS regconfig), c.content
+                  ) @@ fq.q
                 ORDER BY fulltext_score DESC
                 LIMIT :candidate_limit
             ),
@@ -110,10 +129,14 @@ class SQLAlchemyChunkRetrievalService:
                     c.document_id,
                     c.document_file_name,
                     c.content,
-                    COALESCE(c.vector_score / NULLIF(m.max_vector_score, 0), 0.0)
-                        AS normalized_vector_score,
-                    COALESCE(c.fulltext_score / NULLIF(m.max_fulltext_score, 0), 0.0)
-                        AS normalized_fulltext_score
+                    COALESCE(
+                        c.vector_score / NULLIF(m.max_vector_score, 0),
+                        0.0
+                    ) AS normalized_vector_score,
+                    COALESCE(
+                        c.fulltext_score / NULLIF(m.max_fulltext_score, 0),
+                        0.0
+                    ) AS normalized_fulltext_score
                 FROM combined c
                 CROSS JOIN maxima m
             )
@@ -214,7 +237,9 @@ def _build_metadata_filters(
         clauses.append("(c.metadata_json->>'source_type') = :source_type")
         params["source_type"] = filters["source_type"]
     if isinstance(filters.get("processing_strategy"), str):
-        clauses.append("(c.metadata_json->>'processing_strategy') = :processing_strategy")
+        clauses.append(
+            "(c.metadata_json->>'processing_strategy') = :processing_strategy"
+        )
         params["processing_strategy"] = filters["processing_strategy"]
     if isinstance(filters.get("tags"), list):
         clauses.append("(c.metadata_json->'tags') ?| :tags")
