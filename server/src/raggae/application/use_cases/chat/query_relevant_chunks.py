@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from time import perf_counter
 from uuid import UUID
 
@@ -7,6 +9,7 @@ from raggae.application.dto.query_relevant_chunks_result_dto import (
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.chunk_retrieval_service import ChunkRetrievalService
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
+from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 
 
@@ -19,11 +22,15 @@ class QueryRelevantChunks:
         embedding_service: EmbeddingService,
         chunk_retrieval_service: ChunkRetrievalService,
         min_score: float = 0.0,
+        reranker_service: RerankerService | None = None,
+        reranker_candidate_multiplier: int = 3,
     ) -> None:
         self._project_repository = project_repository
         self._embedding_service = embedding_service
         self._chunk_retrieval_service = chunk_retrieval_service
         self._min_score = min_score
+        self._reranker_service = reranker_service
+        self._reranker_candidate_multiplier = reranker_candidate_multiplier
 
     async def execute(
         self,
@@ -42,16 +49,25 @@ class QueryRelevantChunks:
 
         query_embedding = (await self._embedding_service.embed_texts([query]))[0]
         strategy_used = _resolve_strategy(strategy, query)
+
+        fetch_limit = (
+            limit * self._reranker_candidate_multiplier if self._reranker_service else limit
+        )
+
         chunks = await self._chunk_retrieval_service.retrieve_chunks(
             project_id=project_id,
             query_text=query,
             query_embedding=query_embedding,
-            limit=limit,
+            limit=fetch_limit,
             offset=offset,
             min_score=self._min_score,
             strategy=strategy_used,
             metadata_filters=metadata_filters,
         )
+
+        if self._reranker_service is not None:
+            chunks = await self._reranker_service.rerank(query, chunks, top_k=limit)
+
         filtered_chunks = [chunk for chunk in chunks if chunk.score >= self._min_score]
         return QueryRelevantChunksResultDTO(
             chunks=filtered_chunks,

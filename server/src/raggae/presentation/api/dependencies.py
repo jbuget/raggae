@@ -31,6 +31,7 @@ from raggae.application.interfaces.services.document_text_extractor import (
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
@@ -249,6 +250,16 @@ elif settings.llm_backend == "ollama":
     )
 else:
     _llm_service = InMemoryLLMService()
+if settings.reranker_backend == "cross_encoder":
+    from raggae.infrastructure.services.cross_encoder_reranker_service import (
+        CrossEncoderRerankerService,
+    )
+
+    _reranker_service: RerankerService | None = CrossEncoderRerankerService(
+        model_name=settings.reranker_model
+    )
+else:
+    _reranker_service = None
 _conversation_title_generator: ConversationTitleGenerator = LLMConversationTitleGenerator(
     llm_service=_llm_service
 )
@@ -345,6 +356,8 @@ def get_query_relevant_chunks_use_case() -> QueryRelevantChunks:
         embedding_service=_embedding_service,
         chunk_retrieval_service=_chunk_retrieval_service,
         min_score=settings.retrieval_min_score,
+        reranker_service=_reranker_service,
+        reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
     )
 
 

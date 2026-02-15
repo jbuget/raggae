@@ -3,10 +3,23 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+
+
+def _make_project(project_id=None, user_id=None):
+    return Project(
+        id=project_id or uuid4(),
+        user_id=user_id or uuid4(),
+        name="Project",
+        description="",
+        system_prompt="",
+        is_published=False,
+        created_at=datetime.now(UTC),
+    )
 
 
 class TestQueryRelevantChunks:
@@ -62,15 +75,7 @@ class TestQueryRelevantChunks:
         # Given
         user_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = Project(
-            id=project_id,
-            user_id=user_id,
-            name="Project",
-            description="",
-            system_prompt="",
-            is_published=False,
-            created_at=datetime.now(UTC),
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
 
         # When
         result = await use_case.execute(
@@ -122,15 +127,7 @@ class TestQueryRelevantChunks:
     ) -> None:
         # Given
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = Project(
-            id=project_id,
-            user_id=uuid4(),
-            name="Project",
-            description="",
-            system_prompt="",
-            is_published=False,
-            created_at=datetime.now(UTC),
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id)
 
         # When / Then
         with pytest.raises(ProjectNotFoundError):
@@ -150,15 +147,7 @@ class TestQueryRelevantChunks:
         # Given
         user_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = Project(
-            id=project_id,
-            user_id=user_id,
-            name="Project",
-            description="",
-            system_prompt="",
-            is_published=False,
-            created_at=datetime.now(UTC),
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
         use_case = QueryRelevantChunks(
             project_repository=mock_project_repository,
             embedding_service=mock_embedding_service,
@@ -187,15 +176,7 @@ class TestQueryRelevantChunks:
         # Given
         user_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = Project(
-            id=project_id,
-            user_id=user_id,
-            name="Project",
-            description="",
-            system_prompt="",
-            is_published=False,
-            created_at=datetime.now(UTC),
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
 
         # When
         await use_case.execute(
@@ -224,15 +205,7 @@ class TestQueryRelevantChunks:
         project_id = uuid4()
         user_id = uuid4()
         project_repository = AsyncMock()
-        project_repository.find_by_id.return_value = Project(
-            id=project_id,
-            user_id=user_id,
-            name="Project",
-            description="",
-            system_prompt="",
-            is_published=False,
-            created_at=datetime.now(UTC),
-        )
+        project_repository.find_by_id.return_value = _make_project(project_id, user_id)
         embedding_service = AsyncMock()
         embedding_service.embed_texts.return_value = [[0.1, 0.2, 0.3]]
         retrieval_service = AsyncMock()
@@ -253,3 +226,144 @@ class TestQueryRelevantChunks:
 
         # Then
         assert result.strategy_used == "fulltext"
+
+    async def test_query_with_reranker_overfetches_and_reranks(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        raw_chunks = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(), document_id=uuid4(), content=f"chunk {i}", score=0.5
+            )
+            for i in range(6)
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = raw_chunks
+
+        reranked = [
+            RetrievedChunkDTO(
+                chunk_id=raw_chunks[1].chunk_id,
+                document_id=raw_chunks[1].document_id,
+                content="chunk 1",
+                score=0.95,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=raw_chunks[3].chunk_id,
+                document_id=raw_chunks[3].document_id,
+                content="chunk 3",
+                score=0.80,
+            ),
+        ]
+        mock_reranker = AsyncMock()
+        mock_reranker.rerank.return_value = reranked
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            reranker_service=mock_reranker,
+            reranker_candidate_multiplier=3,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test query",
+            limit=2,
+        )
+
+        # Then — retrieve_chunks called with limit * multiplier
+        mock_retrieval.retrieve_chunks.assert_awaited_once()
+        call_kwargs = mock_retrieval.retrieve_chunks.call_args.kwargs
+        assert call_kwargs["limit"] == 6  # 2 * 3
+
+        # reranker called with original limit as top_k
+        mock_reranker.rerank.assert_awaited_once_with("test query", raw_chunks, top_k=2)
+
+        # result contains reranked chunks
+        assert len(result.chunks) == 2
+        assert result.chunks[0].score == pytest.approx(0.95)
+
+    async def test_query_with_reranker_applies_min_score_after_rerank(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = [
+            RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="relevant", score=0.5),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(), document_id=uuid4(), content="irrelevant", score=0.5
+            ),
+        ]
+
+        mock_reranker = AsyncMock()
+        mock_reranker.rerank.return_value = [
+            RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="relevant", score=0.8),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(), document_id=uuid4(), content="irrelevant", score=0.1
+            ),
+        ]
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            min_score=0.5,
+            reranker_service=mock_reranker,
+            reranker_candidate_multiplier=2,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=5,
+        )
+
+        # Then — only chunk with score >= 0.5 survives
+        assert len(result.chunks) == 1
+        assert result.chunks[0].content == "relevant"
+
+    async def test_query_without_reranker_does_not_overfetch(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_chunk_retrieval_service,
+            reranker_service=None,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=5,
+        )
+
+        # Then — limit passed as-is (no multiplication)
+        call_kwargs = mock_chunk_retrieval_service.retrieve_chunks.call_args.kwargs
+        assert call_kwargs["limit"] == 5

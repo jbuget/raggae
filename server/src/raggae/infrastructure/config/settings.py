@@ -32,7 +32,10 @@ class Settings(BaseSettings):
     embedding_dimension: int = 1536
     chunk_size: int = 1000
     chunk_overlap: int = 100
-    retrieval_min_score: float = 0.0
+    reranker_backend: str = "none"
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_candidate_multiplier: int = 3
+    retrieval_min_score: float = 0.3
     retrieval_default_chunk_limit: int = 8
     chat_history_window_size: int = 8
     chat_history_max_chars: int = 4000
