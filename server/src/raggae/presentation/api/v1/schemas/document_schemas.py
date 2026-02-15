@@ -11,3 +11,11 @@ class DocumentResponse(BaseModel):
     content_type: str
     file_size: int
     created_at: datetime
+
+
+class DocumentChunkResponse(BaseModel):
+    id: UUID
+    document_id: UUID
+    chunk_index: int
+    content: str
+    created_at: datetime

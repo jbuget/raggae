@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from raggae.application.use_cases.document.delete_document import DeleteDocument
+from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.domain.exceptions.document_exceptions import (
@@ -17,10 +18,14 @@ from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_delete_document_use_case,
+    get_list_document_chunks_use_case,
     get_list_project_documents_use_case,
     get_upload_document_use_case,
 )
-from raggae.presentation.api.v1.schemas.document_schemas import DocumentResponse
+from raggae.presentation.api.v1.schemas.document_schemas import (
+    DocumentChunkResponse,
+    DocumentResponse,
+)
 
 router = APIRouter(
     prefix="/projects/{project_id}/documents",
@@ -131,3 +136,39 @@ async def delete_document(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found",
         ) from None
+
+
+@router.get("/{document_id}/chunks")
+async def list_document_chunks(
+    project_id: UUID,
+    document_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[ListDocumentChunks, Depends(get_list_document_chunks_use_case)],
+) -> list[DocumentChunkResponse]:
+    try:
+        chunk_dtos = await use_case.execute(
+            project_id=project_id,
+            document_id=document_id,
+            user_id=user_id,
+        )
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+    except DocumentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        ) from None
+
+    return [
+        DocumentChunkResponse(
+            id=chunk.id,
+            document_id=chunk.document_id,
+            chunk_index=chunk.chunk_index,
+            content=chunk.content,
+            created_at=chunk.created_at,
+        )
+        for chunk in chunk_dtos
+    ]

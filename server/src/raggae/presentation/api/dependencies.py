@@ -28,6 +28,7 @@ from raggae.application.services.chunking_strategy_selector import (
     DeterministicChunkingStrategySelector,
 )
 from raggae.application.use_cases.document.delete_document import DeleteDocument
+from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.application.use_cases.project.create_project import CreateProject
@@ -207,6 +208,14 @@ def get_upload_document_use_case() -> UploadDocument:
 def get_list_project_documents_use_case() -> ListProjectDocuments:
     return ListProjectDocuments(
         document_repository=_document_repository,
+        project_repository=_project_repository,
+    )
+
+
+def get_list_document_chunks_use_case() -> ListDocumentChunks:
+    return ListDocumentChunks(
+        document_repository=_document_repository,
+        document_chunk_repository=_document_chunk_repository,
         project_repository=_project_repository,
     )
 

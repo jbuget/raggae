@@ -92,6 +92,49 @@ class TestDocumentEndpoints:
         # Then
         assert response.status_code == 204
 
+    async def test_list_document_chunks_returns_200(self, client: AsyncClient) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        upload_response = await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files={"file": ("notes.txt", b"hello world", "text/plain")},
+            headers=headers,
+        )
+        document_id = upload_response.json()["id"]
+
+        # When
+        response = await client.get(
+            f"/api/v1/projects/{project_id}/documents/{document_id}/chunks",
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    async def test_list_document_chunks_of_another_user_project_returns_404(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        owner_headers, project_id = await self._create_project(client)
+        upload_response = await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files={"file": ("private.txt", b"secret", "text/plain")},
+            headers=owner_headers,
+        )
+        document_id = upload_response.json()["id"]
+        other_user_headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get(
+            f"/api/v1/projects/{project_id}/documents/{document_id}/chunks",
+            headers=other_user_headers,
+        )
+
+        # Then
+        assert response.status_code == 404
+
     async def test_upload_document_of_another_user_project_returns_404(
         self,
         client: AsyncClient,
