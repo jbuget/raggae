@@ -180,6 +180,8 @@ async def query_project_chunks(
                 document_file_name=chunk.document_file_name,
                 content=chunk.content,
                 score=chunk.score,
+                vector_score=chunk.vector_score,
+                fulltext_score=chunk.fulltext_score,
             )
             for chunk in result.chunks
         ],
