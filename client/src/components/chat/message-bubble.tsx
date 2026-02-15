@@ -51,7 +51,7 @@ export function MessageBubble({
                 key={documentName.documentId}
                 type="button"
                 onClick={() => onSourceClick?.(documentName)}
-                className="inline-flex items-center rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
+                className="inline-flex cursor-pointer items-center rounded-full border border-border bg-background px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
               >
                 {documentName.documentName}
               </button>
