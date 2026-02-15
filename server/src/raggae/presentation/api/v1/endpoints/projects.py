@@ -158,7 +158,7 @@ async def query_project_chunks(
     use_case: Annotated[QueryRelevantChunks, Depends(get_query_relevant_chunks_use_case)],
 ) -> QueryProjectResponse:
     try:
-        chunks = await use_case.execute(
+        result = await use_case.execute(
             project_id=project_id,
             user_id=user_id,
             query=data.query,
@@ -181,6 +181,6 @@ async def query_project_chunks(
                 content=chunk.content,
                 score=chunk.score,
             )
-            for chunk in chunks
+            for chunk in result.chunks
         ],
     )
