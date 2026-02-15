@@ -42,7 +42,7 @@ class SendMessage:
     ) -> ChatMessageResponseDTO:
         is_new_conversation = conversation_id is None
         if is_new_conversation:
-            conversation = await self._conversation_repository.get_or_create(
+            conversation = await self._conversation_repository.create(
                 project_id=project_id,
                 user_id=user_id,
             )

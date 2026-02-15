@@ -33,7 +33,7 @@ class TestSendMessagePersistence:
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
         conversation_repository = AsyncMock()
-        conversation_repository.get_or_create.return_value = conversation
+        conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
 
         use_case = SendMessage(
@@ -53,7 +53,7 @@ class TestSendMessagePersistence:
         )
 
         # Then
-        conversation_repository.get_or_create.assert_awaited_once_with(
+        conversation_repository.create.assert_awaited_once_with(
             project_id=project_id,
             user_id=user_id,
         )
@@ -108,7 +108,7 @@ class TestSendMessagePersistence:
 
         # Then
         conversation_repository.find_by_id.assert_awaited_once_with(conversation.id)
-        conversation_repository.get_or_create.assert_not_called()
+        conversation_repository.create.assert_not_called()
         title_generator.generate_title.assert_not_called()
         conversation_repository.update_title.assert_not_called()
         assert result.conversation_id == conversation.id
@@ -144,7 +144,7 @@ class TestSendMessagePersistence:
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = generated_title
         conversation_repository = AsyncMock()
-        conversation_repository.get_or_create.return_value = conversation
+        conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
@@ -186,7 +186,7 @@ class TestSendMessagePersistence:
         title_generator = AsyncMock()
         title_generator.generate_title.side_effect = RuntimeError("LLM down")
         conversation_repository = AsyncMock()
-        conversation_repository.get_or_create.return_value = conversation
+        conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,

@@ -14,6 +14,25 @@ class SQLAlchemyConversationRepository:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
+    async def create(self, project_id: UUID, user_id: UUID) -> Conversation:
+        async with self._session_factory() as session:
+            model = ConversationModel(
+                id=uuid4(),
+                project_id=project_id,
+                user_id=user_id,
+                created_at=datetime.now(UTC),
+                title="New conversation",
+            )
+            session.add(model)
+            await session.commit()
+            return Conversation(
+                id=model.id,
+                project_id=model.project_id,
+                user_id=model.user_id,
+                created_at=model.created_at,
+                title=model.title,
+            )
+
     async def get_or_create(self, project_id: UUID, user_id: UUID) -> Conversation:
         async with self._session_factory() as session:
             existing = (

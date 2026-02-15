@@ -11,11 +11,7 @@ class InMemoryConversationRepository:
     def __init__(self) -> None:
         self._conversations: dict[UUID, Conversation] = {}
 
-    async def get_or_create(self, project_id: UUID, user_id: UUID) -> Conversation:
-        for conversation in self._conversations.values():
-            if conversation.project_id == project_id and conversation.user_id == user_id:
-                return conversation
-
+    async def create(self, project_id: UUID, user_id: UUID) -> Conversation:
         created = Conversation(
             id=uuid4(),
             project_id=project_id,
@@ -25,6 +21,13 @@ class InMemoryConversationRepository:
         )
         self._conversations[created.id] = created
         return created
+
+    async def get_or_create(self, project_id: UUID, user_id: UUID) -> Conversation:
+        for conversation in self._conversations.values():
+            if conversation.project_id == project_id and conversation.user_id == user_id:
+                return conversation
+
+        return await self.create(project_id=project_id, user_id=user_id)
 
     async def find_by_id(self, conversation_id: UUID) -> Conversation | None:
         return self._conversations.get(conversation_id)

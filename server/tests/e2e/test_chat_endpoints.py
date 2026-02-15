@@ -497,6 +497,30 @@ class TestChatEndpoints:
         assert second_response.status_code == 200
         assert second_response.json()["conversation_id"] == conversation_id
 
+    async def test_send_message_without_conversation_id_creates_new_conversation_each_time(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+
+        # When
+        first_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "First", "limit": 3},
+            headers=headers,
+        )
+        second_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "Second", "limit": 3},
+            headers=headers,
+        )
+
+        # Then
+        assert first_response.status_code == 200
+        assert second_response.status_code == 200
+        assert first_response.json()["conversation_id"] != second_response.json()["conversation_id"]
+
     async def test_send_message_with_foreign_conversation_id_returns_404(
         self,
         client: AsyncClient,
