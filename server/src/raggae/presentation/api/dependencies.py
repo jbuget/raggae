@@ -140,27 +140,27 @@ _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
 _chunking_strategy_selector = DeterministicChunkingStrategySelector()
 if settings.text_chunker_backend == "llamaindex":
-    _fixed_window_chunker: TextChunkerService = LlamaIndexTextChunkerService(
+    _text_chunker_service: TextChunkerService = LlamaIndexTextChunkerService(
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
     )
 elif settings.text_chunker_backend == "native":
-    _fixed_window_chunker = SimpleTextChunkerService(
+    _fixed_window_chunker: TextChunkerService = SimpleTextChunkerService(
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
     )
+    _paragraph_chunker = ParagraphTextChunkerService(chunk_size=settings.chunk_size)
+    _heading_section_chunker = HeadingSectionTextChunkerService(
+        fallback_chunker=_fixed_window_chunker
+    )
+    _text_chunker_service = AdaptiveTextChunkerService(
+        fixed_window_chunker=_fixed_window_chunker,
+        paragraph_chunker=_paragraph_chunker,
+        heading_section_chunker=_heading_section_chunker,
+        context_window_size=settings.chunk_overlap,
+    )
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
-_paragraph_chunker = ParagraphTextChunkerService(chunk_size=settings.chunk_size)
-_heading_section_chunker = HeadingSectionTextChunkerService(
-    fallback_chunker=_fixed_window_chunker
-)
-_text_chunker_service: TextChunkerService = AdaptiveTextChunkerService(
-    fixed_window_chunker=_fixed_window_chunker,
-    paragraph_chunker=_paragraph_chunker,
-    heading_section_chunker=_heading_section_chunker,
-    context_window_size=settings.chunk_overlap,
-)
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
 

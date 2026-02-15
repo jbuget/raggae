@@ -33,6 +33,7 @@ from raggae.domain.exceptions.document_exceptions import (
     InvalidDocumentTypeError,
 )
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "doc", "docx"}
 
@@ -126,12 +127,15 @@ class UploadDocument:
                 content_type=content_type,
             )
             sanitized_text = await self._text_sanitizer_service.sanitize_text(extracted_text)
-            analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
-            strategy = self._chunking_strategy_selector.select(
-                has_headings=analysis.has_headings,
-                paragraph_count=analysis.paragraph_count,
-                average_paragraph_length=analysis.average_paragraph_length,
-            )
+            if self._chunker_backend == "llamaindex":
+                strategy = ChunkingStrategy.FIXED_WINDOW
+            else:
+                analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
+                strategy = self._chunking_strategy_selector.select(
+                    has_headings=analysis.has_headings,
+                    paragraph_count=analysis.paragraph_count,
+                    average_paragraph_length=analysis.average_paragraph_length,
+                )
             document = replace(document, processing_strategy=strategy)
             await self._document_repository.save(document)
             chunks = await self._text_chunker_service.chunk_text(sanitized_text, strategy=strategy)
