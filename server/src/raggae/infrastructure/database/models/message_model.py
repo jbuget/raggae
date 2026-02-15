@@ -28,4 +28,5 @@ class MessageModel(Base):
         JSONB,
         nullable=True,
     )
+    reliability_percent: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

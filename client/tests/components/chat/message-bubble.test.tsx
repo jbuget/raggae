@@ -42,4 +42,16 @@ describe("MessageBubble", () => {
     // timestamp is rendered as localeTimeString
     expect(screen.getByText(/\d{1,2}:\d{2}/)).toBeInTheDocument();
   });
+
+  it("should display reliability percent for assistant message", () => {
+    renderWithProviders(
+      <MessageBubble
+        role="assistant"
+        content="Hello"
+        reliabilityPercent={87}
+      />,
+    );
+
+    expect(screen.getByText(/fiabilite: 87%/i)).toBeInTheDocument();
+  });
 });

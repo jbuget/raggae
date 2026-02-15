@@ -26,6 +26,7 @@ class MessageResponse(BaseModel):
     role: str
     content: str
     source_documents: list[dict[str, str]] | None = None
+    reliability_percent: int | None = None
     created_at: datetime
 
 

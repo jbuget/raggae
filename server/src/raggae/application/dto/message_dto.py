@@ -14,6 +14,7 @@ class MessageDTO:
     content: str
     created_at: datetime
     source_documents: list[dict[str, Any]] | None
+    reliability_percent: int | None
 
     @classmethod
     def from_entity(cls, message: Message) -> "MessageDTO":
@@ -24,4 +25,5 @@ class MessageDTO:
             content=message.content,
             created_at=message.created_at,
             source_documents=message.source_documents,
+            reliability_percent=message.reliability_percent,
         )

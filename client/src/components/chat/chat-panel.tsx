@@ -101,6 +101,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
                 <MessageBubble
                   role={msg.role as "user" | "assistant"}
                   content={msg.content}
+                  reliabilityPercent={msg.reliability_percent}
                   timestamp={msg.created_at}
                 />
                 {msg.role === "assistant" && messageSourceDocuments.length > 0 && (

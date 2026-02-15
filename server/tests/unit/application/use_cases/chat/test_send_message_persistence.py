@@ -72,6 +72,8 @@ class TestSendMessagePersistence:
         assert second_saved.role == "assistant"
         assert second_saved.source_documents is not None
         assert len(second_saved.source_documents) == 1
+        assert second_saved.reliability_percent is not None
+        assert 0 <= second_saved.reliability_percent <= 100
         assert result.conversation_id == conversation.id
 
     async def test_send_message_with_existing_conversation_id_uses_it(self) -> None:

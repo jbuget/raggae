@@ -220,6 +220,7 @@ async def list_conversation_messages(
             role=message.role,
             content=message.content,
             source_documents=message.source_documents,
+            reliability_percent=message.reliability_percent,
             created_at=message.created_at,
         )
         for message in messages

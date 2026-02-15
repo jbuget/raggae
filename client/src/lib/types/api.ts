@@ -109,6 +109,7 @@ export interface MessageResponse {
     document_id: string;
     document_file_name?: string;
   }> | null;
+  reliability_percent?: number | null;
   created_at: string;
 }
 

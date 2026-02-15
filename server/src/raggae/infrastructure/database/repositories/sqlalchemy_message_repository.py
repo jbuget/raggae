@@ -21,6 +21,7 @@ class SQLAlchemyMessageRepository:
                 role=message.role,
                 content=message.content,
                 source_documents=message.source_documents,
+                reliability_percent=message.reliability_percent,
                 created_at=message.created_at,
             )
             session.add(model)
@@ -49,6 +50,7 @@ class SQLAlchemyMessageRepository:
                     role=model.role,
                     content=model.content,
                     source_documents=model.source_documents,
+                    reliability_percent=model.reliability_percent,
                     created_at=model.created_at,
                 )
                 for model in models
@@ -86,5 +88,6 @@ class SQLAlchemyMessageRepository:
                 role=model.role,
                 content=model.content,
                 source_documents=model.source_documents,
+                reliability_percent=model.reliability_percent,
                 created_at=model.created_at,
             )

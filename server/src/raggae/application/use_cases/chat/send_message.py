@@ -79,6 +79,7 @@ class SendMessage:
                     role="assistant",
                     content=fallback_answer,
                     source_documents=[],
+                    reliability_percent=0,
                     created_at=datetime.now(UTC),
                 )
             )
@@ -106,6 +107,7 @@ class SendMessage:
                 role="assistant",
                 content=answer,
                 source_documents=self._extract_source_documents(chunks),
+                reliability_percent=self._compute_reliability_percent(chunks),
                 created_at=datetime.now(UTC),
             )
         )
@@ -151,4 +153,11 @@ class SendMessage:
                 payload["document_file_name"] = chunk.document_file_name
             unique[key] = payload
         return list(unique.values())
+
+    def _compute_reliability_percent(self, chunks: list[RetrievedChunkDTO]) -> int:
+        if not chunks:
+            return 0
+        average_score = sum(chunk.score for chunk in chunks) / len(chunks)
+        bounded = min(max(average_score, 0.0), 1.0)
+        return int(round(bounded * 100))
     _MAX_CONVERSATION_TITLE_LENGTH = 80

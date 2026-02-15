@@ -217,8 +217,10 @@ class TestChatEndpoints:
         assert len(payload) >= 2
         assert payload[0]["role"] == "user"
         assert payload[0]["source_documents"] is None
+        assert payload[0]["reliability_percent"] is None
         assert payload[1]["role"] == "assistant"
         assert isinstance(payload[1]["source_documents"], list)
+        assert isinstance(payload[1]["reliability_percent"], int)
 
     async def test_list_conversation_messages_supports_pagination(
         self,

@@ -14,6 +14,7 @@ class Message:
     content: str
     created_at: datetime
     source_documents: list[dict[str, Any]] | None = None
+    reliability_percent: int | None = None
 
     def __post_init__(self) -> None:
         if self.role not in {"user", "assistant", "system"}:

@@ -6,9 +6,15 @@ interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
+  reliabilityPercent?: number | null;
 }
 
-export function MessageBubble({ role, content, timestamp }: MessageBubbleProps) {
+export function MessageBubble({
+  role,
+  content,
+  timestamp,
+  reliabilityPercent,
+}: MessageBubbleProps) {
   const isUser = role === "user";
 
   return (
@@ -24,6 +30,11 @@ export function MessageBubble({ role, content, timestamp }: MessageBubbleProps) 
         )}
       >
         <p className="whitespace-pre-wrap text-sm">{content}</p>
+        {!isUser && reliabilityPercent !== undefined && reliabilityPercent !== null && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Fiabilite: {reliabilityPercent}%
+          </p>
+        )}
         {timestamp && (
           <p
             className={cn(
