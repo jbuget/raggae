@@ -78,18 +78,39 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
     streamedContent.length > 0 &&
     (state === "streaming" || lastMessage?.role !== "assistant");
 
+  function getMessageSourceDocuments(message: MessageResponse): string[] {
+    const documents = message.source_documents ?? [];
+    const unique = new Map<string, string>();
+    for (const document of documents) {
+      const name = document.document_file_name || document.document_id;
+      if (!unique.has(document.document_id)) {
+        unique.set(document.document_id, name);
+      }
+    }
+    return Array.from(unique.values());
+  }
+
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              role={msg.role as "user" | "assistant"}
-              content={msg.content}
-              timestamp={msg.created_at}
-            />
-          ))}
+          {messages.map((msg) => {
+            const messageSourceDocuments = getMessageSourceDocuments(msg);
+            return (
+              <div key={msg.id} className="space-y-2">
+                <MessageBubble
+                  role={msg.role as "user" | "assistant"}
+                  content={msg.content}
+                  timestamp={msg.created_at}
+                />
+                {msg.role === "assistant" && messageSourceDocuments.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Sources: {messageSourceDocuments.join(", ")}
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
           {state === "sending" && <StreamingIndicator />}
 

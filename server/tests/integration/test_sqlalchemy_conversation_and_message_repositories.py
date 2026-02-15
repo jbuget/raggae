@@ -2,8 +2,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
 from raggae.domain.entities.message import Message
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.user import User
@@ -21,6 +19,7 @@ from raggae.infrastructure.database.repositories.sqlalchemy_project_repository i
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
 )
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class TestSQLAlchemyConversationAndMessageRepositories:
@@ -103,6 +102,12 @@ class TestSQLAlchemyConversationAndMessageRepositories:
                 conversation_id=conversation.id,
                 role="assistant",
                 content="world",
+                source_documents=[
+                    {
+                        "document_id": str(uuid4()),
+                        "document_file_name": "knowledge.md",
+                    }
+                ],
                 created_at=datetime.now(UTC),
             )
         )
@@ -113,6 +118,7 @@ class TestSQLAlchemyConversationAndMessageRepositories:
         assert len(messages) == 2
         assert messages[0].role == "user"
         assert messages[1].role == "assistant"
+        assert messages[1].source_documents is not None
 
     @pytest.mark.integration
     async def test_integration_find_by_project_and_user_sorted_and_delete_cascade(

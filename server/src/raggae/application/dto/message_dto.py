@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from raggae.domain.entities.message import Message
@@ -12,6 +13,7 @@ class MessageDTO:
     role: str
     content: str
     created_at: datetime
+    source_documents: list[dict[str, Any]] | None
 
     @classmethod
     def from_entity(cls, message: Message) -> "MessageDTO":
@@ -21,4 +23,5 @@ class MessageDTO:
             role=message.role,
             content=message.content,
             created_at=message.created_at,
+            source_documents=message.source_documents,
         )

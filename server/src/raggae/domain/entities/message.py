@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 
@@ -12,6 +13,7 @@ class Message:
     role: str
     content: str
     created_at: datetime
+    source_documents: list[dict[str, Any]] | None = None
 
     def __post_init__(self) -> None:
         if self.role not in {"user", "assistant", "system"}:

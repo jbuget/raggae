@@ -20,6 +20,7 @@ class SQLAlchemyMessageRepository:
                 conversation_id=message.conversation_id,
                 role=message.role,
                 content=message.content,
+                source_documents=message.source_documents,
                 created_at=message.created_at,
             )
             session.add(model)
@@ -47,6 +48,7 @@ class SQLAlchemyMessageRepository:
                     conversation_id=model.conversation_id,
                     role=model.role,
                     content=model.content,
+                    source_documents=model.source_documents,
                     created_at=model.created_at,
                 )
                 for model in models
@@ -83,5 +85,6 @@ class SQLAlchemyMessageRepository:
                 conversation_id=model.conversation_id,
                 role=model.role,
                 content=model.content,
+                source_documents=model.source_documents,
                 created_at=model.created_at,
             )

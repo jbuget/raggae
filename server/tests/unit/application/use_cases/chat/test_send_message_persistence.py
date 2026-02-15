@@ -70,6 +70,8 @@ class TestSendMessagePersistence:
         second_saved = message_repository.save.call_args_list[1].args[0]
         assert first_saved.role == "user"
         assert second_saved.role == "assistant"
+        assert second_saved.source_documents is not None
+        assert len(second_saved.source_documents) == 1
         assert result.conversation_id == conversation.id
 
     async def test_send_message_with_existing_conversation_id_uses_it(self) -> None:

@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.application.dto.chat_message_response_dto import ChatMessageResponseDTO
+from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
@@ -77,6 +78,7 @@ class SendMessage:
                     conversation_id=conversation.id,
                     role="assistant",
                     content=fallback_answer,
+                    source_documents=[],
                     created_at=datetime.now(UTC),
                 )
             )
@@ -103,6 +105,7 @@ class SendMessage:
                 conversation_id=conversation.id,
                 role="assistant",
                 content=answer,
+                source_documents=self._extract_source_documents(chunks),
                 created_at=datetime.now(UTC),
             )
         )
@@ -136,4 +139,16 @@ class SendMessage:
 
     def _normalize_title(self, value: str) -> str:
         return value.strip()[: self._MAX_CONVERSATION_TITLE_LENGTH].strip()
+
+    def _extract_source_documents(self, chunks: list[RetrievedChunkDTO]) -> list[dict[str, str]]:
+        unique: dict[str, dict[str, str]] = {}
+        for chunk in chunks:
+            key = str(chunk.document_id)
+            if key in unique:
+                continue
+            payload = {"document_id": key}
+            if chunk.document_file_name is not None:
+                payload["document_file_name"] = chunk.document_file_name
+            unique[key] = payload
+        return list(unique.values())
     _MAX_CONVERSATION_TITLE_LENGTH = 80

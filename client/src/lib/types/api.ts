@@ -105,6 +105,10 @@ export interface MessageResponse {
   conversation_id: string;
   role: string;
   content: string;
+  source_documents?: Array<{
+    document_id: string;
+    document_file_name?: string;
+  }> | null;
   created_at: string;
 }
 

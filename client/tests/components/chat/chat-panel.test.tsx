@@ -22,6 +22,16 @@ vi.mock("@/lib/hooks/use-chat", () => ({
         conversation_id: "conv-1",
         role: "assistant",
         content: "Hi there",
+        source_documents: [
+          {
+            document_id: "doc-1",
+            document_file_name: "atelier-migration-24-11-2025.md",
+          },
+          {
+            document_id: "doc-1",
+            document_file_name: "atelier-migration-24-11-2025.md",
+          },
+        ],
         created_at: "2026-01-01T00:00:01Z",
       },
     ],
@@ -30,22 +40,7 @@ vi.mock("@/lib/hooks/use-chat", () => ({
     send: vi.fn(),
     state: "idle",
     streamedContent: "",
-    chunks: [
-      {
-        chunk_id: "chunk-1",
-        document_id: "doc-1",
-        document_file_name: "atelier-migration-24-11-2025.md",
-        content: "chunk content",
-        score: 0.91,
-      },
-      {
-        chunk_id: "chunk-2",
-        document_id: "doc-1",
-        document_file_name: "atelier-migration-24-11-2025.md",
-        content: "another chunk",
-        score: 0.89,
-      },
-    ],
+    chunks: [],
   }),
 }));
 
@@ -58,8 +53,6 @@ describe("ChatPanel", () => {
     expect(
       screen.getByText(/sources: atelier-migration-24-11-2025.md/i),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /show sources \(1\)/i }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /show sources/i })).toBeNull();
   });
 });
