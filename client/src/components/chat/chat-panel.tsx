@@ -27,6 +27,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
     if (existingMessages) return [...existingMessages, ...optimisticMessages];
     return optimisticMessages;
   }, [existingMessages, optimisticMessages]);
+  const lastMessage = messages.at(-1);
   const citedDocuments = useMemo(() => {
     const unique = new Map<string, string>();
     for (const chunk of chunks) {
@@ -73,6 +74,10 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
     );
   }
 
+  const shouldRenderTransientAssistant =
+    streamedContent.length > 0 &&
+    (state === "streaming" || lastMessage?.role !== "assistant");
+
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
@@ -88,7 +93,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
 
           {state === "sending" && <StreamingIndicator />}
 
-          {state === "streaming" && streamedContent && (
+          {shouldRenderTransientAssistant && (
             <div className="space-y-2">
               <MessageBubble role="assistant" content={streamedContent} />
               {citedDocuments.length > 0 && (
@@ -98,6 +103,14 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
               )}
             </div>
           )}
+
+          {!shouldRenderTransientAssistant &&
+            lastMessage?.role === "assistant" &&
+            citedDocuments.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Sources: {citedDocuments.join(", ")}
+              </p>
+            )}
         </div>
       </ScrollArea>
 

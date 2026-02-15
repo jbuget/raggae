@@ -87,19 +87,21 @@ function ConversationItem({
   onDelete: (id: string) => void;
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const conversationLabel = conversation.title || formatDate(conversation.created_at);
 
   return (
     <div
       className={cn(
-        "group flex items-center justify-between rounded-md px-2 py-2 text-sm",
+        "group flex min-w-0 items-center justify-between rounded-md px-2 py-2 text-sm",
         isActive ? "bg-muted" : "hover:bg-muted/50",
       )}
     >
       <Link
         href={`/projects/${projectId}/chat/${conversation.id}`}
-        className="flex-1 truncate"
+        className="block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left [direction:rtl] [unicode-bidi:plaintext]"
+        title={conversationLabel}
       >
-        {conversation.title || formatDate(conversation.created_at)}
+        {conversationLabel}
       </Link>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

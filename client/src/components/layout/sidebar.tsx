@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { MoreHorizontal } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { cn } from "@/lib/utils";
 
@@ -47,19 +55,51 @@ export function Sidebar() {
           )}
           {!isLoading &&
             projects?.map((project) => (
-              <Link
+              <div
                 key={project.id}
-                href={`/projects/${project.id}`}
                 className={cn(
-                  "block truncate rounded-md px-3 py-2 text-sm transition-colors",
+                  "flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
                   pathname.startsWith(`/projects/${project.id}`)
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-primary/10"
+                    : "hover:bg-muted",
                 )}
-                title={project.name}
               >
-                {project.name}
-              </Link>
+                <Link
+                  href={`/projects/${project.id}`}
+                  className={cn(
+                    "min-w-0 flex-1 truncate rounded-md px-2 py-1",
+                    pathname.startsWith(`/projects/${project.id}`)
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  title={project.name}
+                >
+                  {project.name}
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      aria-label={`Project menu ${project.name}`}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/projects/${project.id}/chat`}>Chat</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/projects/${project.id}/documents`}>Documents</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ))}
         </div>
       </nav>
