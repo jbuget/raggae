@@ -36,7 +36,7 @@ class MultiFormatDocumentTextExtractor:
 
     def _extract_pdf(self, content: bytes) -> str:
         try:
-            from pypdf import PdfReader  # type: ignore[import-not-found]
+            from pypdf import PdfReader
         except ModuleNotFoundError as exc:  # pragma: no cover - dependency management
             raise DocumentExtractionError("pypdf is required for PDF extraction") from exc
 
@@ -49,7 +49,7 @@ class MultiFormatDocumentTextExtractor:
 
     def _extract_docx(self, content: bytes) -> str:
         try:
-            from docx import Document as DocxDocument  # type: ignore[import-not-found]
+            from docx import Document as DocxDocument
         except ModuleNotFoundError as exc:  # pragma: no cover - dependency management
             raise DocumentExtractionError("python-docx is required for DOCX extraction") from exc
 
