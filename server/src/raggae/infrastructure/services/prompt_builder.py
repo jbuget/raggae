@@ -12,9 +12,7 @@ def build_rag_prompt(
     )
     project_prompt = (project_system_prompt or "").strip()
     project_prompt_section = (
-        f"\n\nProject-level instructions:\n{project_prompt}"
-        if project_prompt
-        else ""
+        f"\n\nProject-level instructions:\n{project_prompt}" if project_prompt else ""
     )
     return (
         "You are a retrieval-augmented assistant.\n"

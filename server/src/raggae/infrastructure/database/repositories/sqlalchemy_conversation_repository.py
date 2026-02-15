@@ -36,13 +36,17 @@ class SQLAlchemyConversationRepository:
     async def get_or_create(self, project_id: UUID, user_id: UUID) -> Conversation:
         async with self._session_factory() as session:
             existing = (
-                await session.execute(
-                    select(ConversationModel).where(
-                        ConversationModel.project_id == project_id,
-                        ConversationModel.user_id == user_id,
+                (
+                    await session.execute(
+                        select(ConversationModel).where(
+                            ConversationModel.project_id == project_id,
+                            ConversationModel.user_id == user_id,
+                        )
                     )
                 )
-            ).scalars().first()
+                .scalars()
+                .first()
+            )
             if existing is not None:
                 return Conversation(
                     id=existing.id,

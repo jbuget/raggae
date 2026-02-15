@@ -18,9 +18,7 @@ class InMemoryDocumentChunkRepository:
 
     async def delete_by_document_id(self, document_id: UUID) -> None:
         chunk_ids = [
-            chunk_id
-            for chunk_id, chunk in self._chunks.items()
-            if chunk.document_id == document_id
+            chunk_id for chunk_id, chunk in self._chunks.items() if chunk.document_id == document_id
         ]
         for chunk_id in chunk_ids:
             self._chunks.pop(chunk_id, None)

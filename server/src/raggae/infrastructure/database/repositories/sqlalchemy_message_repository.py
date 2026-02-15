@@ -73,13 +73,17 @@ class SQLAlchemyMessageRepository:
     ) -> Message | None:
         async with self._session_factory() as session:
             model = (
-                await session.execute(
-                    select(MessageModel)
-                    .where(MessageModel.conversation_id == conversation_id)
-                    .order_by(MessageModel.created_at.desc())
-                    .limit(1)
+                (
+                    await session.execute(
+                        select(MessageModel)
+                        .where(MessageModel.conversation_id == conversation_id)
+                        .order_by(MessageModel.created_at.desc())
+                        .limit(1)
+                    )
                 )
-            ).scalars().first()
+                .scalars()
+                .first()
+            )
             if model is None:
                 return None
             return Message(

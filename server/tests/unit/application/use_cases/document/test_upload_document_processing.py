@@ -121,9 +121,7 @@ class TestUploadDocumentProcessing:
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
         )
-        mock_embedding_service.embed_texts.assert_called_once_with(
-            ["hello world", "from raggae"]
-        )
+        mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
         mock_document_chunk_repository.save_many.assert_called_once()
         saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
         assert saved_chunks[0].metadata_json is not None

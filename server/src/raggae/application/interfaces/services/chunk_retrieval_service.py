@@ -17,5 +17,4 @@ class ChunkRetrievalService(Protocol):
         min_score: float = 0.0,
         strategy: str = "hybrid",
         metadata_filters: dict[str, object] | None = None,
-    ) -> list[RetrievedChunkDTO]:
-        ...
+    ) -> list[RetrievedChunkDTO]: ...

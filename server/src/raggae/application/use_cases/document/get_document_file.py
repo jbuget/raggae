@@ -35,9 +35,7 @@ class GetDocumentFile:
         if document is None or document.project_id != project_id:
             raise DocumentNotFoundError(f"Document {document_id} not found")
 
-        content, content_type = await self._file_storage_service.download_file(
-            document.storage_key
-        )
+        content, content_type = await self._file_storage_service.download_file(document.storage_key)
         return DocumentFileDTO(
             document_id=document.id,
             file_name=document.file_name,

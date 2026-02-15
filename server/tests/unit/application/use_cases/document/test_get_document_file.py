@@ -67,7 +67,9 @@ class TestGetDocumentFile:
         )
         mock_file_storage_service.download_file.return_value = (b"hello", "text/plain")
 
-        result = await use_case.execute(project_id=project_id, document_id=document_id, user_id=user_id)
+        result = await use_case.execute(
+            project_id=project_id, document_id=document_id, user_id=user_id
+        )
 
         assert result.document_id == document_id
         assert result.file_name == "doc.txt"
