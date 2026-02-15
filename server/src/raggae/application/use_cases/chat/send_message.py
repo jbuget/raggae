@@ -81,7 +81,7 @@ class SendMessage:
                 )
             )
             if is_new_conversation:
-                title = await self._conversation_title_generator.generate_title(
+                title = await self._build_conversation_title(
                     user_message=message,
                     assistant_answer=fallback_answer,
                 )
@@ -107,7 +107,7 @@ class SendMessage:
             )
         )
         if is_new_conversation:
-            title = await self._conversation_title_generator.generate_title(
+            title = await self._build_conversation_title(
                 user_message=message,
                 assistant_answer=answer,
             )
@@ -119,3 +119,21 @@ class SendMessage:
             answer=answer,
             chunks=chunks,
         )
+
+    async def _build_conversation_title(self, user_message: str, assistant_answer: str) -> str:
+        fallback = self._normalize_title(user_message)
+        try:
+            generated = await self._conversation_title_generator.generate_title(
+                user_message=user_message,
+                assistant_answer=assistant_answer,
+            )
+        except Exception:
+            return fallback
+        normalized = self._normalize_title(generated)
+        if not normalized:
+            return fallback
+        return normalized
+
+    def _normalize_title(self, value: str) -> str:
+        return value.strip()[: self._MAX_CONVERSATION_TITLE_LENGTH].strip()
+    _MAX_CONVERSATION_TITLE_LENGTH = 80
