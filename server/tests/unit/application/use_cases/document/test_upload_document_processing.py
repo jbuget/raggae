@@ -28,7 +28,7 @@ class TestUploadDocumentProcessing:
     @pytest.fixture
     def mock_document_text_extractor(self) -> AsyncMock:
         extractor = AsyncMock()
-        extractor.extract_text.return_value = "hello world from raggae"
+        extractor.extract_text.return_value = "hello\x00 world\r\n\r\nfrom raggae   "
         return extractor
 
     @pytest.fixture
@@ -36,6 +36,12 @@ class TestUploadDocumentProcessing:
         chunker = AsyncMock()
         chunker.chunk_text.return_value = ["hello world", "from raggae"]
         return chunker
+
+    @pytest.fixture
+    def mock_text_sanitizer_service(self) -> AsyncMock:
+        sanitizer = AsyncMock()
+        sanitizer.sanitize_text.return_value = "hello world\n\nfrom raggae"
+        return sanitizer
 
     @pytest.fixture
     def mock_embedding_service(self) -> AsyncMock:
@@ -50,6 +56,7 @@ class TestUploadDocumentProcessing:
         mock_file_storage_service: AsyncMock,
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
     ) -> None:
@@ -73,6 +80,7 @@ class TestUploadDocumentProcessing:
             processing_mode="sync",
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
             text_chunker_service=mock_text_chunker_service,
             embedding_service=mock_embedding_service,
         )
@@ -88,7 +96,10 @@ class TestUploadDocumentProcessing:
 
         # Then
         mock_document_text_extractor.extract_text.assert_called_once()
-        mock_text_chunker_service.chunk_text.assert_called_once_with("hello world from raggae")
+        mock_text_sanitizer_service.sanitize_text.assert_called_once_with(
+            "hello\x00 world\r\n\r\nfrom raggae   "
+        )
+        mock_text_chunker_service.chunk_text.assert_called_once_with("hello world\n\nfrom raggae")
         mock_embedding_service.embed_texts.assert_called_once_with(
             ["hello world", "from raggae"]
         )
@@ -101,6 +112,7 @@ class TestUploadDocumentProcessing:
         mock_file_storage_service: AsyncMock,
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
     ) -> None:
@@ -124,6 +136,7 @@ class TestUploadDocumentProcessing:
             processing_mode="off",
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
             text_chunker_service=mock_text_chunker_service,
             embedding_service=mock_embedding_service,
         )
@@ -140,5 +153,6 @@ class TestUploadDocumentProcessing:
         # Then
         mock_document_chunk_repository.save_many.assert_not_called()
         mock_document_text_extractor.extract_text.assert_not_called()
+        mock_text_sanitizer_service.sanitize_text.assert_not_called()
         mock_text_chunker_service.chunk_text.assert_not_called()
         mock_embedding_service.embed_texts.assert_not_called()

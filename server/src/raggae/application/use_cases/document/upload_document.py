@@ -13,6 +13,9 @@ from raggae.application.interfaces.services.document_text_extractor import (
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
+from raggae.application.interfaces.services.text_sanitizer_service import (
+    TextSanitizerService,
+)
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.exceptions.document_exceptions import (
@@ -36,6 +39,7 @@ class UploadDocument:
         processing_mode: str = "off",
         document_chunk_repository: DocumentChunkRepository | None = None,
         document_text_extractor: DocumentTextExtractor | None = None,
+        text_sanitizer_service: TextSanitizerService | None = None,
         text_chunker_service: TextChunkerService | None = None,
         embedding_service: EmbeddingService | None = None,
     ) -> None:
@@ -46,6 +50,7 @@ class UploadDocument:
         self._processing_mode = processing_mode
         self._document_chunk_repository = document_chunk_repository
         self._document_text_extractor = document_text_extractor
+        self._text_sanitizer_service = text_sanitizer_service
         self._text_chunker_service = text_chunker_service
         self._embedding_service = embedding_service
 
@@ -88,6 +93,7 @@ class UploadDocument:
             self._processing_mode == "sync"
             and self._document_chunk_repository is not None
             and self._document_text_extractor is not None
+            and self._text_sanitizer_service is not None
             and self._text_chunker_service is not None
             and self._embedding_service is not None
         ):
@@ -96,7 +102,8 @@ class UploadDocument:
                 content=file_content,
                 content_type=content_type,
             )
-            chunks = await self._text_chunker_service.chunk_text(extracted_text)
+            sanitized_text = await self._text_sanitizer_service.sanitize_text(extracted_text)
+            chunks = await self._text_chunker_service.chunk_text(sanitized_text)
             if chunks:
                 embeddings = await self._embedding_service.embed_texts(chunks)
                 document_chunks = [

@@ -18,6 +18,9 @@ from raggae.application.interfaces.services.document_text_extractor import (
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
+from raggae.application.interfaces.services.text_sanitizer_service import (
+    TextSanitizerService,
+)
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
@@ -72,6 +75,9 @@ from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbedd
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
 )
+from raggae.infrastructure.services.simple_text_sanitizer_service import (
+    SimpleTextSanitizerService,
+)
 
 if settings.persistence_backend == "postgres":
     _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
@@ -108,6 +114,7 @@ if settings.embedding_backend == "openai":
 else:
     _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
+_text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _text_chunker_service: TextChunkerService = SimpleTextChunkerService(
     chunk_size=settings.chunk_size,
     chunk_overlap=settings.chunk_overlap,
@@ -160,6 +167,7 @@ def get_upload_document_use_case() -> UploadDocument:
         processing_mode=settings.processing_mode,
         document_chunk_repository=_document_chunk_repository,
         document_text_extractor=_document_text_extractor,
+        text_sanitizer_service=_text_sanitizer_service,
         text_chunker_service=_text_chunker_service,
         embedding_service=_embedding_service,
     )

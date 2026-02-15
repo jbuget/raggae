@@ -5,6 +5,9 @@ from raggae.application.interfaces.services.embedding_service import EmbeddingSe
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.password_hasher import PasswordHasher
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
+from raggae.application.interfaces.services.text_sanitizer_service import (
+    TextSanitizerService,
+)
 from raggae.application.interfaces.services.token_service import TokenService
 
 __all__ = [
@@ -13,5 +16,6 @@ __all__ = [
     "FileStorageService",
     "PasswordHasher",
     "TextChunkerService",
+    "TextSanitizerService",
     "TokenService",
 ]
