@@ -8,3 +8,7 @@ class DocumentTooLargeError(Exception):
 
 class DocumentNotFoundError(Exception):
     """Raised when a document cannot be found."""
+
+
+class DocumentExtractionError(Exception):
+    """Raised when text extraction from document content fails."""

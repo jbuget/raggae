@@ -65,10 +65,10 @@ from raggae.infrastructure.services.jwt_token_service import JwtTokenService
 from raggae.infrastructure.services.minio_file_storage_service import (
     MinioFileStorageService,
 )
-from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbeddingService
-from raggae.infrastructure.services.simple_document_text_extractor import (
-    SimpleDocumentTextExtractor,
+from raggae.infrastructure.services.multiformat_document_text_extractor import (
+    MultiFormatDocumentTextExtractor,
 )
+from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbeddingService
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
 )
@@ -107,7 +107,7 @@ if settings.embedding_backend == "openai":
     )
 else:
     _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
-_document_text_extractor: DocumentTextExtractor = SimpleDocumentTextExtractor()
+_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_chunker_service: TextChunkerService = SimpleTextChunkerService(
     chunk_size=settings.chunk_size,
     chunk_overlap=settings.chunk_overlap,

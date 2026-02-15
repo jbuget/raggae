@@ -7,6 +7,7 @@ from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.domain.exceptions.document_exceptions import (
+    DocumentExtractionError,
     DocumentNotFoundError,
     DocumentTooLargeError,
     InvalidDocumentTypeError,
@@ -57,6 +58,11 @@ async def upload_document(
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Document exceeds maximum allowed size",
+        ) from None
+    except DocumentExtractionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
         ) from None
 
     return DocumentResponse(

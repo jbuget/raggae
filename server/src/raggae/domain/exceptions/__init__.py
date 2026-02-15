@@ -1,4 +1,5 @@
 from raggae.domain.exceptions.document_exceptions import (
+    DocumentExtractionError,
     DocumentNotFoundError,
     DocumentTooLargeError,
     InvalidDocumentTypeError,
@@ -17,6 +18,7 @@ from raggae.domain.exceptions.validation_errors import InvalidEmailError, WeakPa
 __all__ = [
     "DocumentNotFoundError",
     "DocumentTooLargeError",
+    "DocumentExtractionError",
     "InvalidCredentialsError",
     "InvalidDocumentTypeError",
     "InvalidEmailError",
