@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.document_chunk import DocumentChunk
@@ -31,6 +31,26 @@ class SQLAlchemyDocumentChunkRepository:
             ]
             session.add_all(models)
             await session.commit()
+
+    async def find_by_document_id(self, document_id: UUID) -> list[DocumentChunk]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(DocumentChunkModel)
+                .where(DocumentChunkModel.document_id == document_id)
+                .order_by(DocumentChunkModel.chunk_index)
+            )
+            models = result.scalars().all()
+            return [
+                DocumentChunk(
+                    id=model.id,
+                    document_id=model.document_id,
+                    chunk_index=model.chunk_index,
+                    content=model.content,
+                    embedding=list(model.embedding),
+                    created_at=model.created_at,
+                )
+                for model in models
+            ]
 
     async def delete_by_document_id(self, document_id: UUID) -> None:
         async with self._session_factory() as session:

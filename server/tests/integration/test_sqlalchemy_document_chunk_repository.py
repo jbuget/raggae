@@ -59,4 +59,13 @@ class TestSQLAlchemyDocumentChunkRepository:
         ]
 
         await repository.save_many(chunks)
+        found = await repository.find_by_document_id(document_id)
+        assert len(found) == 2
+        assert found[0].chunk_index == 0
+        assert found[0].content == "chunk 1"
+        assert found[1].chunk_index == 1
+        assert found[1].content == "chunk 2"
+
         await repository.delete_by_document_id(document_id)
+        found_after_delete = await repository.find_by_document_id(document_id)
+        assert found_after_delete == []

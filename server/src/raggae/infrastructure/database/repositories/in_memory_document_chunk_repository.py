@@ -13,6 +13,9 @@ class InMemoryDocumentChunkRepository:
         for chunk in chunks:
             self._chunks[chunk.id] = chunk
 
+    async def find_by_document_id(self, document_id: UUID) -> list[DocumentChunk]:
+        return [chunk for chunk in self._chunks.values() if chunk.document_id == document_id]
+
     async def delete_by_document_id(self, document_id: UUID) -> None:
         chunk_ids = [
             chunk_id
