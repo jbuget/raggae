@@ -6,6 +6,22 @@
 
 Les tests définissent le comportement attendu du système. Ils sont écrits **AVANT** le code (TDD) et servent de documentation vivante.
 
+## Focus Sprint 4A (Documents upload)
+
+Comportements minimaux à couvrir :
+
+- Upload document accepté pour `txt`, `md`, `pdf`, `doc`, `docx`.
+- Rejet des extensions non autorisées.
+- Rejet des fichiers > `100 Mo`.
+- Ownership strict : un utilisateur ne peut ni lister ni supprimer les documents d'un projet qu'il ne possède pas.
+- Suppression document : suppression metadata + suppression objet S3-compatible.
+
+Répartition recommandée :
+
+- Unit tests : validations métier (`type`, `size`, ownership checks dans use cases).
+- Integration tests : adapter S3-compatible (MinIO) et repository document.
+- E2E tests : `POST/GET/DELETE /projects/{project_id}/documents` avec auth bearer.
+
 ## Pyramide des tests
 
 ```

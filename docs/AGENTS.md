@@ -400,10 +400,19 @@ dev = [
 3. API Project endpoints
 
 ### Sprint 4 : Documents & RAG
-1. Use Case UploadDocument
-2. Document Processing Service
-3. Embedding Service (OpenAI)
-4. Vector storage (pgvector)
+#### Sprint 4A : Upload & gestion documentaire (MVP)
+1. Entité `Document` + exceptions métier associées
+2. Use Case `UploadDocument` (formats `txt/md/pdf/doc/docx`, max 100Mo)
+3. Use Case `ListProjectDocuments`
+4. Use Case `DeleteDocument` (suppression storage + métadonnées)
+5. Port `FileStorageService` (S3-compatible) + adapter MinIO local
+6. Endpoints API documents sous `/projects/{project_id}/documents` (auth obligatoire)
+
+#### Sprint 4B : Processing & indexation (itération suivante)
+1. `Document Processing Service` (d'abord synchrone)
+2. `Embedding Service` (OpenAI)
+3. `DocumentChunk` + stockage embeddings en `pgvector`
+4. Possibilité d'activer un mode asynchrone via variable d'environnement
 
 ### Sprint 5 : Chat
 1. Use Case SendMessage

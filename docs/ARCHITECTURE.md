@@ -670,3 +670,54 @@ class UserRepository:
 - [Clean Architecture (Robert C. Martin)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
 - [DDD (Domain-Driven Design)](https://martinfowler.com/bliki/DomainDrivenDesign.html)
+
+## Décisions Sprint 4 (Documents)
+
+### Scope MVP (Sprint 4A)
+
+- Objectif immédiat : attacher des documents à un projet.
+- Aucun chunking, embedding, indexing dans cette première étape.
+- Formats acceptés : `txt`, `md`, `pdf`, `doc`, `docx`.
+- Taille maximale d'un fichier : `100 Mo`.
+- Stockage binaire : S3-compatible (MinIO en local via Docker Compose).
+
+### Modèle de données cible
+
+- `Document` (Domain Entity) rattaché à `Project` par `project_id`.
+- `DocumentChunk` sera introduit ensuite pour l'indexation.
+- Les embeddings seront stockés dans PostgreSQL via `pgvector` (phase ultérieure).
+
+### Ports applicatifs (contrats)
+
+- `DocumentRepository` : persistance des métadonnées documentaires.
+- `FileStorageService` : upload/download/delete dans storage objet S3-compatible.
+- `ProjectRepository` : vérification ownership projet (déjà en place).
+
+### Use cases Sprint 4A
+
+- `UploadDocument` :
+  - vérifie l'existence du projet et l'ownership utilisateur ;
+  - valide extension et taille ;
+  - upload le fichier vers S3-compatible ;
+  - persiste les métadonnées du document.
+- `ListProjectDocuments` : liste les documents d'un projet (ownership check).
+- `DeleteDocument` :
+  - ownership check ;
+  - suppression du binaire S3-compatible ;
+  - suppression metadata document (et chunks associés quand ils existeront).
+
+### API Sprint 4A
+
+- `POST /api/v1/projects/{project_id}/documents` (`multipart/form-data`)
+- `GET /api/v1/projects/{project_id}/documents`
+- `DELETE /api/v1/projects/{project_id}/documents/{document_id}`
+
+### Sécurité
+
+- Toutes les routes documents sont protégées par `access_token`.
+- Règle stricte : un utilisateur ne peut manipuler que les documents de ses propres projets.
+
+### Évolution prévue (Sprint 4B)
+
+- Traitement synchrone à l'upload pour `chunking + embeddings` au départ.
+- Préparer un toggle de configuration pour mode asynchrone plus tard (variable d'environnement).

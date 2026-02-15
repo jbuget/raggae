@@ -4,6 +4,30 @@
 
 Ce document décrit le workflow quotidien pour développer Raggae en TDD, Clean Architecture et baby steps.
 
+## Découpage validé Sprint 4 (Documents)
+
+Avant de coder, appliquer ce découpage en tâches atomiques :
+
+- [ ] Domain: ajouter l'entité `Document`
+- [ ] Domain: ajouter exceptions (`InvalidDocumentTypeError`, `DocumentTooLargeError`, `DocumentNotFoundError`)
+- [ ] Application: définir le port `DocumentRepository`
+- [ ] Application: définir le port `FileStorageService`
+- [ ] Application: implémenter `UploadDocument` (sans processing/indexing)
+- [ ] Application: implémenter `ListProjectDocuments`
+- [ ] Application: implémenter `DeleteDocument`
+- [ ] Infrastructure: repository in-memory document
+- [ ] Infrastructure: adapter S3-compatible (MinIO local)
+- [ ] Presentation: endpoint `POST /projects/{project_id}/documents`
+- [ ] Presentation: endpoint `GET /projects/{project_id}/documents`
+- [ ] Presentation: endpoint `DELETE /projects/{project_id}/documents/{document_id}`
+- [ ] Tests E2E: upload/list/delete + sécurité ownership
+
+Contraintes Sprint 4A :
+- formats autorisés : `txt`, `md`, `pdf`, `doc`, `docx`
+- taille max : `100 Mo`
+- binaire stocké en S3-compatible (MinIO)
+- aucun chunking/embedding/indexing dans cette phase
+
 ## Cycle de développement
 
 ### 1. Choisir une fonctionnalité
