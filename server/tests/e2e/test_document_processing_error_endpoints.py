@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
 
 
@@ -71,7 +70,7 @@ class TestDocumentProcessingErrorEndpoints:
         )
         return headers, response.json()["id"]
 
-    async def test_upload_doc_in_sync_mode_returns_422_for_extraction_error(
+    async def test_upload_doc_in_sync_mode_returns_processing_error_in_batch_payload(
         self,
         monkeypatch,
     ) -> None:
@@ -82,15 +81,18 @@ class TestDocumentProcessingErrorEndpoints:
         # When
         response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("legacy.doc", b"binary-doc", "application/msword")},
+            files=[("files", ("legacy.doc", b"binary-doc", "application/msword"))],
             headers=headers,
         )
 
         # Then
-        assert response.status_code == 422
+        assert response.status_code == 200
+        data = response.json()
+        assert data["failed"] == 1
+        assert data["errors"][0]["code"] == "PROCESSING_FAILED"
         await client.aclose()
 
-    async def test_upload_txt_in_sync_mode_returns_422_for_embedding_error(
+    async def test_upload_txt_in_sync_mode_returns_embedding_error_in_batch_payload(
         self,
         monkeypatch,
     ) -> None:
@@ -110,10 +112,13 @@ class TestDocumentProcessingErrorEndpoints:
         # When
         response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("notes.txt", b"hello", "text/plain")},
+            files=[("files", ("notes.txt", b"hello", "text/plain"))],
             headers=headers,
         )
 
         # Then
-        assert response.status_code == 422
+        assert response.status_code == 200
+        data = response.json()
+        assert data["failed"] == 1
+        assert data["errors"][0]["code"] == "PROCESSING_FAILED"
         await client.aclose()

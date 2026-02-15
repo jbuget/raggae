@@ -6,13 +6,12 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
-from raggae.application.use_cases.document.upload_document import UploadDocument
+from raggae.application.use_cases.document.upload_document import (
+    UploadDocument,
+    UploadDocumentItem,
+)
 from raggae.domain.exceptions.document_exceptions import (
-    DocumentExtractionError,
     DocumentNotFoundError,
-    DocumentTooLargeError,
-    EmbeddingGenerationError,
-    InvalidDocumentTypeError,
 )
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.presentation.api.dependencies import (
@@ -26,6 +25,7 @@ from raggae.presentation.api.v1.schemas.document_schemas import (
     DocumentChunkResponse,
     DocumentChunksResponse,
     DocumentResponse,
+    UploadDocumentsResponse,
 )
 
 router = APIRouter(
@@ -35,56 +35,68 @@ router = APIRouter(
 )
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+MAX_UPLOAD_FILES_PER_REQUEST = 10
+
+
+@router.post("", status_code=status.HTTP_200_OK)
 async def upload_document(
     project_id: UUID,
-    file: Annotated[UploadFile, File(...)],
+    files: Annotated[list[UploadFile], File(...)],
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[UploadDocument, Depends(get_upload_document_use_case)],
-) -> DocumentResponse:
+) -> UploadDocumentsResponse:
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one file is required",
+        )
+    if len(files) > MAX_UPLOAD_FILES_PER_REQUEST:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Maximum {MAX_UPLOAD_FILES_PER_REQUEST} files are allowed per request",
+        )
+
     try:
-        file_content = await file.read()
-        document_dto = await use_case.execute(
+        upload_items = []
+        for upload in files:
+            upload_items.append(
+                UploadDocumentItem(
+                    file_name=upload.filename or "file",
+                    file_content=await upload.read(),
+                    content_type=upload.content_type or "application/octet-stream",
+                )
+            )
+        result = await use_case.execute_many(
             project_id=project_id,
             user_id=user_id,
-            file_name=file.filename or "file",
-            file_content=file_content,
-            content_type=file.content_type or "application/octet-stream",
+            files=upload_items,
         )
     except ProjectNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         ) from None
-    except InvalidDocumentTypeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from None
-    except DocumentTooLargeError:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Document exceeds maximum allowed size",
-        ) from None
-    except DocumentExtractionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=str(exc),
-        ) from None
-    except EmbeddingGenerationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=str(exc),
-        ) from None
 
-    return DocumentResponse(
-        id=document_dto.id,
-        project_id=document_dto.project_id,
-        file_name=document_dto.file_name,
-        content_type=document_dto.content_type,
-        file_size=document_dto.file_size,
-        created_at=document_dto.created_at,
-        processing_strategy=document_dto.processing_strategy,
+    return UploadDocumentsResponse(
+        total=result.total,
+        succeeded=result.succeeded,
+        failed=result.failed,
+        created=[
+            {
+                "original_filename": item.original_filename,
+                "stored_filename": item.stored_filename,
+                "document_id": item.document_id,
+            }
+            for item in result.created
+        ],
+        errors=[
+            {
+                "filename": error.filename,
+                "code": error.code,
+                "message": error.message,
+            }
+            for error in result.errors
+        ],
     )
 
 

@@ -12,7 +12,10 @@ from raggae.presentation.api.v1.schemas.chat_schemas import (
     SendMessageResponse,
     UpdateConversationRequest,
 )
-from raggae.presentation.api.v1.schemas.document_schemas import DocumentResponse
+from raggae.presentation.api.v1.schemas.document_schemas import (
+    DocumentResponse,
+    UploadDocumentsResponse,
+)
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
     ProjectResponse,
@@ -29,6 +32,7 @@ __all__ = [
     "ConversationResponse",
     "ConversationDetailResponse",
     "DocumentResponse",
+    "UploadDocumentsResponse",
     "LoginUserRequest",
     "ProjectResponse",
     "MessageResponse",

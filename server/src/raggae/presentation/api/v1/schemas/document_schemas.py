@@ -17,6 +17,26 @@ class DocumentResponse(BaseModel):
     processing_strategy: ChunkingStrategy | None
 
 
+class UploadDocumentsCreatedResponse(BaseModel):
+    original_filename: str
+    stored_filename: str
+    document_id: UUID
+
+
+class UploadDocumentsErrorResponse(BaseModel):
+    filename: str
+    code: str
+    message: str
+
+
+class UploadDocumentsResponse(BaseModel):
+    total: int
+    succeeded: int
+    failed: int
+    created: list[UploadDocumentsCreatedResponse]
+    errors: list[UploadDocumentsErrorResponse]
+
+
 class DocumentChunkResponse(BaseModel):
     id: UUID
     document_id: UUID

@@ -35,30 +35,35 @@ class TestDocumentEndpoints:
         )
         return headers, response.json()["id"]
 
-    async def test_upload_document_returns_201(self, client: AsyncClient) -> None:
+    async def test_upload_document_returns_detailed_batch_response(
+        self, client: AsyncClient
+    ) -> None:
         # Given
         headers, project_id = await self._create_project(client)
 
         # When
         response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("notes.txt", b"hello", "text/plain")},
+            files=[("files", ("notes.txt", b"hello", "text/plain"))],
             headers=headers,
         )
 
         # Then
-        assert response.status_code == 201
+        assert response.status_code == 200
         data = response.json()
-        assert data["project_id"] == project_id
-        assert data["file_name"] == "notes.txt"
-        assert "processing_strategy" in data
+        assert data["total"] == 1
+        assert data["succeeded"] == 1
+        assert data["failed"] == 0
+        assert len(data["created"]) == 1
+        assert data["created"][0]["original_filename"] == "notes.txt"
+        assert data["created"][0]["stored_filename"] == "notes.txt"
 
     async def test_list_project_documents_returns_200(self, client: AsyncClient) -> None:
         # Given
         headers, project_id = await self._create_project(client)
         await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("guide.md", b"# Guide", "text/markdown")},
+            files=[("files", ("guide.md", b"# Guide", "text/markdown"))],
             headers=headers,
         )
 
@@ -80,10 +85,10 @@ class TestDocumentEndpoints:
         headers, project_id = await self._create_project(client)
         upload_response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("to-delete.pdf", b"pdf-content", "application/pdf")},
+            files=[("files", ("to-delete.pdf", b"pdf-content", "application/pdf"))],
             headers=headers,
         )
-        document_id = upload_response.json()["id"]
+        document_id = upload_response.json()["created"][0]["document_id"]
 
         # When
         response = await client.delete(
@@ -99,10 +104,10 @@ class TestDocumentEndpoints:
         headers, project_id = await self._create_project(client)
         upload_response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("notes.txt", b"hello world", "text/plain")},
+            files=[("files", ("notes.txt", b"hello world", "text/plain"))],
             headers=headers,
         )
-        document_id = upload_response.json()["id"]
+        document_id = upload_response.json()["created"][0]["document_id"]
 
         # When
         response = await client.get(
@@ -127,10 +132,10 @@ class TestDocumentEndpoints:
         owner_headers, project_id = await self._create_project(client)
         upload_response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("private.txt", b"secret", "text/plain")},
+            files=[("files", ("private.txt", b"secret", "text/plain"))],
             headers=owner_headers,
         )
-        document_id = upload_response.json()["id"]
+        document_id = upload_response.json()["created"][0]["document_id"]
         other_user_headers = await self._auth_headers(client)
 
         # When
@@ -153,9 +158,24 @@ class TestDocumentEndpoints:
         # When
         response = await client.post(
             f"/api/v1/projects/{project_id}/documents",
-            files={"file": ("notes.txt", b"hello", "text/plain")},
+            files=[("files", ("notes.txt", b"hello", "text/plain"))],
             headers=other_user_headers,
         )
 
         # Then
         assert response.status_code == 404
+
+    async def test_upload_documents_rejects_more_than_ten_files(self, client: AsyncClient) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        files = [("files", (f"doc-{idx}.txt", b"hello", "text/plain")) for idx in range(11)]
+
+        # When
+        response = await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files=files,
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 400
