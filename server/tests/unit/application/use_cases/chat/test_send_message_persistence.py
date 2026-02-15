@@ -3,6 +3,10 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+
+from raggae.application.dto.query_relevant_chunks_result_dto import (
+    QueryRelevantChunksResultDTO,
+)
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.domain.entities.conversation import Conversation
@@ -22,14 +26,18 @@ class TestSendMessagePersistence:
             created_at=datetime.now(UTC),
         )
         query_use_case = AsyncMock()
-        query_use_case.execute.return_value = [
-            RetrievedChunkDTO(
-                chunk_id=uuid4(),
-                document_id=uuid4(),
-                content="chunk one",
-                score=0.91,
-            )
-        ]
+        query_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=uuid4(),
+                    content="chunk one",
+                    score=0.91,
+                )
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=5.0,
+        )
         llm_service = AsyncMock()
         llm_service.generate_answer.return_value = "assistant answer"
         title_generator = AsyncMock()
@@ -48,6 +56,8 @@ class TestSendMessagePersistence:
         conversation_repository.find_by_project_and_user.return_value = []
         conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
 
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
@@ -101,7 +111,11 @@ class TestSendMessagePersistence:
             created_at=datetime.now(UTC),
         )
         query_use_case = AsyncMock()
-        query_use_case.execute.return_value = []
+        query_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[],
+            strategy_used="hybrid",
+            execution_time_ms=2.0,
+        )
         llm_service = AsyncMock()
         title_generator = AsyncMock()
         project_repository = AsyncMock()
@@ -117,6 +131,8 @@ class TestSendMessagePersistence:
         conversation_repository = AsyncMock()
         conversation_repository.find_by_id.return_value = conversation
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
@@ -168,7 +184,9 @@ class TestSendMessagePersistence:
             created_at=datetime.now(UTC),
         )
         query_use_case = AsyncMock()
-        query_use_case.execute.return_value = []
+        query_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[], strategy_used="hybrid", execution_time_ms=2.0
+        )
         llm_service = AsyncMock()
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = generated_title
@@ -186,6 +204,8 @@ class TestSendMessagePersistence:
         conversation_repository.find_by_project_and_user.return_value = []
         conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
@@ -222,7 +242,9 @@ class TestSendMessagePersistence:
             created_at=datetime.now(UTC),
         )
         query_use_case = AsyncMock()
-        query_use_case.execute.return_value = []
+        query_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[], strategy_used="hybrid", execution_time_ms=2.0
+        )
         llm_service = AsyncMock()
         title_generator = AsyncMock()
         title_generator.generate_title.side_effect = RuntimeError("LLM down")
@@ -240,6 +262,8 @@ class TestSendMessagePersistence:
         conversation_repository.find_by_project_and_user.return_value = []
         conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         use_case = SendMessage(
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
@@ -276,14 +300,18 @@ class TestSendMessagePersistence:
             created_at=datetime.now(UTC),
         )
         query_use_case = AsyncMock()
-        query_use_case.execute.return_value = [
-            RetrievedChunkDTO(
-                chunk_id=uuid4(),
-                document_id=uuid4(),
-                content="chunk one",
-                score=0.9,
-            )
-        ]
+        query_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=uuid4(),
+                    content="chunk one",
+                    score=0.9,
+                )
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=5.0,
+        )
         llm_service = AsyncMock()
         llm_service.generate_answer.return_value = "assistant answer"
         title_generator = AsyncMock()
@@ -301,6 +329,8 @@ class TestSendMessagePersistence:
         conversation_repository = AsyncMock()
         conversation_repository.find_by_project_and_user.return_value = [conversation]
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 1
+        message_repository.find_by_conversation_id.return_value = []
         message_repository.find_latest_by_conversation_id.return_value = Message(
             id=uuid4(),
             conversation_id=conversation.id,

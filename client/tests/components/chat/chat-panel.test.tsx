@@ -34,10 +34,12 @@ vi.mock("@/lib/hooks/use-chat", () => ({
           {
             document_id: "doc-1",
             document_file_name: "atelier-migration-24-11-2025.md",
+            chunk_ids: ["chunk-aaa", "chunk-bbb"],
           },
           {
             document_id: "doc-1",
             document_file_name: "atelier-migration-24-11-2025.md",
+            chunk_ids: ["chunk-aaa", "chunk-bbb"],
           },
         ],
         created_at: "2026-01-01T00:00:01Z",
@@ -92,5 +94,26 @@ describe("ChatPanel", () => {
     expect(
       screen.getByRole("heading", { name: "atelier-migration-24-11-2025.md" }),
     ).toBeInTheDocument();
+  });
+
+  it("displays chunk IDs in document popup with copy buttons", async () => {
+    getDocumentFileBlobMock.mockResolvedValue(
+      new Blob(["hello"], { type: "text/plain" }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ChatPanel projectId="proj-1" conversationId="conv-1" />,
+    );
+
+    await user.click(screen.getByText("atelier-migration-24-11-2025.md"));
+
+    expect(screen.getByText("chunk-aaa")).toBeInTheDocument();
+    expect(screen.getByText("chunk-bbb")).toBeInTheDocument();
+    const copyButtons = screen.getAllByRole("button", { name: /copy/i });
+    // Subtract the Close button from the dialog
+    const chunkCopyButtons = copyButtons.filter(
+      (btn) => btn.getAttribute("title") === "Copy chunk ID",
+    );
+    expect(chunkCopyButtons).toHaveLength(2);
   });
 });
