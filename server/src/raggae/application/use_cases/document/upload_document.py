@@ -143,6 +143,11 @@ class UploadDocument:
                         content=chunk_text,
                         embedding=embeddings[index],
                         created_at=datetime.now(UTC),
+                        metadata_json={
+                            "metadata_version": 1,
+                            "processing_strategy": strategy.value,
+                            "source_type": strategy.value,
+                        },
                     )
                     for index, chunk_text in enumerate(chunks)
                 ]

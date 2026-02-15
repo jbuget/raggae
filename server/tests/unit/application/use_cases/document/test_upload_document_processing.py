@@ -124,6 +124,11 @@ class TestUploadDocumentProcessing:
             ["hello world", "from raggae"]
         )
         mock_document_chunk_repository.save_many.assert_called_once()
+        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        assert saved_chunks[0].metadata_json is not None
+        assert saved_chunks[0].metadata_json["metadata_version"] == 1
+        assert saved_chunks[0].metadata_json["processing_strategy"] == "paragraph"
+        assert saved_chunks[0].metadata_json["source_type"] == "paragraph"
         assert mock_document_repository.save.call_count == 2
         second_saved_document = mock_document_repository.save.call_args_list[1].args[0]
         assert second_saved_document.processing_strategy == ChunkingStrategy.PARAGRAPH

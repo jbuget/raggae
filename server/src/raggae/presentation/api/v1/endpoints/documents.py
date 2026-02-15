@@ -175,6 +175,7 @@ async def list_document_chunks(
                 chunk_index=chunk.chunk_index,
                 content=chunk.content,
                 created_at=chunk.created_at,
+                metadata_json=chunk.metadata_json,
             )
             for chunk in chunks_dto.chunks
         ],

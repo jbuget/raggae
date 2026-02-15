@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
 from sqlalchemy import DateTime, ForeignKey, Integer, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,4 +23,5 @@ class DocumentChunkModel(Base):
     chunk_index: Mapped[int] = mapped_column(Integer(), nullable=False)
     content: Mapped[str] = mapped_column(Text(), nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(1536), nullable=False)
+    metadata_json: Mapped[dict[str, object] | None] = mapped_column(JSONB(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

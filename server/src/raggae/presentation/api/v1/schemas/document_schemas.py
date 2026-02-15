@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -22,6 +23,7 @@ class DocumentChunkResponse(BaseModel):
     chunk_index: int
     content: str
     created_at: datetime
+    metadata_json: dict[str, Any] | None
 
 
 class DocumentChunksResponse(BaseModel):

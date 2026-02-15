@@ -25,6 +25,7 @@ class SQLAlchemyDocumentChunkRepository:
                     chunk_index=chunk.chunk_index,
                     content=chunk.content,
                     embedding=chunk.embedding,
+                    metadata_json=chunk.metadata_json,
                     created_at=chunk.created_at,
                 )
                 for chunk in chunks
@@ -47,6 +48,7 @@ class SQLAlchemyDocumentChunkRepository:
                     chunk_index=model.chunk_index,
                     content=model.content,
                     embedding=list(model.embedding),
+                    metadata_json=model.metadata_json,
                     created_at=model.created_at,
                 )
                 for model in models

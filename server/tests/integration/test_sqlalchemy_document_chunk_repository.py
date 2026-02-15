@@ -47,6 +47,7 @@ class TestSQLAlchemyDocumentChunkRepository:
                 content="chunk 1",
                 embedding=[0.1] * 1536,
                 created_at=datetime.now(UTC),
+                metadata_json={"metadata_version": 1, "source_type": "paragraph"},
             ),
             DocumentChunk(
                 id=uuid4(),
@@ -55,6 +56,7 @@ class TestSQLAlchemyDocumentChunkRepository:
                 content="chunk 2",
                 embedding=[0.2] * 1536,
                 created_at=datetime.now(UTC),
+                metadata_json={"metadata_version": 1, "source_type": "paragraph"},
             ),
         ]
 
@@ -63,8 +65,10 @@ class TestSQLAlchemyDocumentChunkRepository:
         assert len(found) == 2
         assert found[0].chunk_index == 0
         assert found[0].content == "chunk 1"
+        assert found[0].metadata_json == {"metadata_version": 1, "source_type": "paragraph"}
         assert found[1].chunk_index == 1
         assert found[1].content == "chunk 2"
+        assert found[1].metadata_json == {"metadata_version": 1, "source_type": "paragraph"}
 
         await repository.delete_by_document_id(document_id)
         found_after_delete = await repository.find_by_document_id(document_id)

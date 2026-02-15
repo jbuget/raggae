@@ -77,6 +77,7 @@ class TestListDocumentChunks:
                 content="chunk-0",
                 embedding=[0.1, 0.2],
                 created_at=datetime.now(UTC),
+                metadata_json={"source_type": "paragraph"},
             ),
             DocumentChunk(
                 id=uuid4(),
@@ -85,6 +86,7 @@ class TestListDocumentChunks:
                 content="chunk-1",
                 embedding=[0.3, 0.4],
                 created_at=datetime.now(UTC),
+                metadata_json={"source_type": "paragraph"},
             ),
         ]
 
@@ -101,6 +103,7 @@ class TestListDocumentChunks:
         assert len(result.chunks) == 2
         assert result.chunks[0].chunk_index == 0
         assert result.chunks[0].content == "chunk-0"
+        assert result.chunks[0].metadata_json == {"source_type": "paragraph"}
         assert result.chunks[1].chunk_index == 1
         assert result.chunks[1].content == "chunk-1"
 

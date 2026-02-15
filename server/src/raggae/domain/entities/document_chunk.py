@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 
@@ -13,3 +14,4 @@ class DocumentChunk:
     content: str
     embedding: list[float]
     created_at: datetime
+    metadata_json: dict[str, Any] | None = None

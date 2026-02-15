@@ -116,6 +116,8 @@ class TestDocumentEndpoints:
         assert data["document_id"] == document_id
         assert "processing_strategy" in data
         assert isinstance(data["chunks"], list)
+        if data["chunks"]:
+            assert "metadata_json" in data["chunks"][0]
 
     async def test_list_document_chunks_of_another_user_project_returns_404(
         self,
