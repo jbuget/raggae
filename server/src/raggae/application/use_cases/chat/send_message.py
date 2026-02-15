@@ -8,10 +8,12 @@ from raggae.application.interfaces.repositories.conversation_repository import (
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.services.chat_security_policy import ChatSecurityPolicy
 from raggae.application.interfaces.services.conversation_title_generator import (
     ConversationTitleGenerator,
 )
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.services.chat_security_policy import StaticChatSecurityPolicy
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
@@ -30,6 +32,7 @@ class SendMessage:
         project_repository: ProjectRepository,
         conversation_repository: ConversationRepository,
         message_repository: MessageRepository,
+        chat_security_policy: ChatSecurityPolicy | None = None,
     ) -> None:
         self._query_relevant_chunks_use_case = query_relevant_chunks_use_case
         self._llm_service = llm_service
@@ -37,6 +40,10 @@ class SendMessage:
         self._project_repository = project_repository
         self._conversation_repository = conversation_repository
         self._message_repository = message_repository
+        if chat_security_policy is None:
+            self._chat_security_policy: ChatSecurityPolicy = StaticChatSecurityPolicy()
+        else:
+            self._chat_security_policy = chat_security_policy
 
     async def execute(
         self,
@@ -73,6 +80,35 @@ class SendMessage:
                     content=message,
                     created_at=datetime.now(UTC),
                 )
+            )
+        if self._chat_security_policy.is_disallowed_user_message(message):
+            refusal_answer = (
+                "I cannot disclose system or internal instructions. "
+                "I can help with project content or answer your business question instead."
+            )
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=refusal_answer,
+                    source_documents=[],
+                    reliability_percent=0,
+                    created_at=datetime.now(UTC),
+                )
+            )
+            if is_new_conversation:
+                title = await self._build_conversation_title(
+                    user_message=message,
+                    assistant_answer=refusal_answer,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
+            return ChatMessageResponseDTO(
+                project_id=project_id,
+                conversation_id=conversation.id,
+                message=message,
+                answer=refusal_answer,
+                chunks=[],
             )
         chunks = await self._query_relevant_chunks_use_case.execute(
             project_id=project_id,
@@ -115,8 +151,14 @@ class SendMessage:
                 context_chunks=[chunk.content for chunk in relevant_chunks],
                 project_system_prompt=project_system_prompt,
             )
-            source_documents = self._extract_source_documents(relevant_chunks)
-            reliability_percent = self._compute_reliability_percent(relevant_chunks)
+            sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
+            if sanitized_answer != answer:
+                answer = sanitized_answer
+                source_documents = []
+                reliability_percent = 0
+            else:
+                source_documents = self._extract_source_documents(relevant_chunks)
+                reliability_percent = self._compute_reliability_percent(relevant_chunks)
         except LLMGenerationError:
             answer = (
                 "I found relevant context but could not generate an answer right now. "
