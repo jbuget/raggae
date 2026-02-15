@@ -72,6 +72,7 @@ class SendMessage:
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
+        current_user_message_id: UUID | None = None
         if is_new_conversation:
             conversation, skip_user_message_save = await self._get_or_create_pending_conversation(
                 project_id=project_id,
@@ -88,9 +89,10 @@ class SendMessage:
             ):
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
         if not skip_user_message_save:
+            current_user_message_id = uuid4()
             await self._message_repository.save(
                 Message(
-                    id=uuid4(),
+                    id=current_user_message_id,
                     conversation_id=conversation.id,
                     role="user",
                     content=message,
@@ -175,7 +177,7 @@ class SendMessage:
         project_system_prompt = project.system_prompt if project is not None else None
         conversation_history = await self._build_conversation_history(
             conversation_id=conversation.id,
-            current_user_message=message,
+            current_user_message_id=current_user_message_id,
         )
         try:
             answer = await self._llm_service.generate_answer(
@@ -349,7 +351,7 @@ class SendMessage:
     async def _build_conversation_history(
         self,
         conversation_id: UUID,
-        current_user_message: str,
+        current_user_message_id: UUID | None,
     ) -> list[str]:
         total_messages = await self._message_repository.count_by_conversation_id(conversation_id)
         offset = max(0, total_messages - self._history_window_size)
@@ -360,7 +362,7 @@ class SendMessage:
         )
         history: list[str] = []
         for message in messages:
-            if message.role == "user" and message.content == current_user_message:
+            if current_user_message_id is not None and message.id == current_user_message_id:
                 continue
             label = "User" if message.role == "user" else "Assistant"
             history.append(f"{label}: {message.content}")

@@ -693,3 +693,81 @@ class TestSendMessage:
         # Then
         kwargs = mock_llm_service.generate_answer.await_args.kwargs
         assert kwargs["conversation_history"] == ["Assistant: " + ("c" * 30)]
+
+    async def test_send_message_keeps_older_same_content_messages_in_history(self) -> None:
+        # Given
+        conversation_id = uuid4()
+        previous_user_message = Message(
+            id=uuid4(),
+            conversation_id=conversation_id,
+            role="user",
+            content="Repeated question",
+            created_at=datetime.now(UTC),
+        )
+        mock_query_relevant_chunks = AsyncMock()
+        mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=uuid4(),
+                    content="chunk one",
+                    score=0.9,
+                )
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=2.0,
+        )
+        mock_llm_service = AsyncMock()
+        mock_llm_service.generate_answer.return_value = "answer"
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = [
+            Conversation(
+                id=conversation_id,
+                project_id=uuid4(),
+                user_id=uuid4(),
+                created_at=datetime.now(UTC),
+            )
+        ]
+        message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 2
+        message_repository.find_by_conversation_id.return_value = [
+            previous_user_message,
+            Message(
+                id=uuid4(),
+                conversation_id=conversation_id,
+                role="assistant",
+                content="Previous answer",
+                created_at=datetime.now(UTC),
+            ),
+        ]
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=mock_query_relevant_chunks,
+            llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="Repeated question",
+        )
+
+        # Then
+        history = mock_llm_service.generate_answer.await_args.kwargs["conversation_history"]
+        assert history == ["User: Repeated question", "Assistant: Previous answer"]
