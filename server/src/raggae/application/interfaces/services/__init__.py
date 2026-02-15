@@ -1,3 +1,6 @@
+from raggae.application.interfaces.services.document_structure_analyzer import (
+    DocumentStructureAnalyzer,
+)
 from raggae.application.interfaces.services.document_text_extractor import (
     DocumentTextExtractor,
 )
@@ -11,6 +14,7 @@ from raggae.application.interfaces.services.text_sanitizer_service import (
 from raggae.application.interfaces.services.token_service import TokenService
 
 __all__ = [
+    "DocumentStructureAnalyzer",
     "DocumentTextExtractor",
     "EmbeddingService",
     "FileStorageService",
