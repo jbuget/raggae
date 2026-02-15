@@ -4,6 +4,12 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from raggae.application.interfaces.repositories.document_repository import (
+    DocumentRepository,
+)
+from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.user_repository import UserRepository
+from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
@@ -24,6 +30,16 @@ from raggae.infrastructure.database.repositories.in_memory_project_repository im
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
 )
+from raggae.infrastructure.database.repositories.sqlalchemy_document_repository import (
+    SQLAlchemyDocumentRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
+    SQLAlchemyProjectRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
+    SQLAlchemyUserRepository,
+)
+from raggae.infrastructure.database.session import SessionFactory
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
 from raggae.infrastructure.services.in_memory_file_storage_service import (
     InMemoryFileStorageService,
@@ -33,12 +49,21 @@ from raggae.infrastructure.services.minio_file_storage_service import (
     MinioFileStorageService,
 )
 
-_user_repository = InMemoryUserRepository()
-_project_repository = InMemoryProjectRepository()
-_document_repository = InMemoryDocumentRepository()
+if settings.persistence_backend == "postgres":
+    _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
+    _project_repository: ProjectRepository = SQLAlchemyProjectRepository(
+        session_factory=SessionFactory
+    )
+    _document_repository: DocumentRepository = SQLAlchemyDocumentRepository(
+        session_factory=SessionFactory
+    )
+else:
+    _user_repository = InMemoryUserRepository()
+    _project_repository = InMemoryProjectRepository()
+    _document_repository = InMemoryDocumentRepository()
 _password_hasher = BcryptPasswordHasher()
 if settings.storage_backend == "minio":
-    _file_storage_service = MinioFileStorageService(
+    _file_storage_service: FileStorageService = MinioFileStorageService(
         endpoint=settings.s3_endpoint_url,
         access_key=settings.s3_access_key,
         secret_key=settings.s3_secret_key,

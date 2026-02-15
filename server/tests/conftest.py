@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 async def client() -> AsyncClient:
     """Async HTTP client for testing the FastAPI app."""
     os.environ["STORAGE_BACKEND"] = "inmemory"
+    os.environ["PERSISTENCE_BACKEND"] = "inmemory"
     from raggae.presentation.main import app
 
     transport = ASGITransport(app=app)
