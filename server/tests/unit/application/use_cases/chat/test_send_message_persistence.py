@@ -1,0 +1,98 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
+from uuid import uuid4
+
+from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
+from raggae.application.use_cases.chat.send_message import SendMessage
+from raggae.domain.entities.conversation import Conversation
+
+
+class TestSendMessagePersistence:
+    async def test_send_message_persists_user_and_assistant_messages(self) -> None:
+        # Given
+        project_id = uuid4()
+        user_id = uuid4()
+        conversation = Conversation(
+            id=uuid4(),
+            project_id=project_id,
+            user_id=user_id,
+            created_at=datetime.now(UTC),
+        )
+        query_use_case = AsyncMock()
+        query_use_case.execute.return_value = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=uuid4(),
+                content="chunk one",
+                score=0.91,
+            )
+        ]
+        llm_service = AsyncMock()
+        llm_service.generate_answer.return_value = "assistant answer"
+        conversation_repository = AsyncMock()
+        conversation_repository.get_or_create.return_value = conversation
+        message_repository = AsyncMock()
+
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=query_use_case,
+            llm_service=llm_service,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            message="hello",
+            limit=3,
+        )
+
+        # Then
+        conversation_repository.get_or_create.assert_awaited_once_with(
+            project_id=project_id,
+            user_id=user_id,
+        )
+        assert message_repository.save.call_count == 2
+        first_saved = message_repository.save.call_args_list[0].args[0]
+        second_saved = message_repository.save.call_args_list[1].args[0]
+        assert first_saved.role == "user"
+        assert second_saved.role == "assistant"
+        assert result.conversation_id == conversation.id
+
+    async def test_send_message_with_existing_conversation_id_uses_it(self) -> None:
+        # Given
+        project_id = uuid4()
+        user_id = uuid4()
+        conversation = Conversation(
+            id=uuid4(),
+            project_id=project_id,
+            user_id=user_id,
+            created_at=datetime.now(UTC),
+        )
+        query_use_case = AsyncMock()
+        query_use_case.execute.return_value = []
+        llm_service = AsyncMock()
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_id.return_value = conversation
+        message_repository = AsyncMock()
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=query_use_case,
+            llm_service=llm_service,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            message="hello",
+            limit=3,
+            conversation_id=conversation.id,
+        )
+
+        # Then
+        conversation_repository.find_by_id.assert_awaited_once_with(conversation.id)
+        conversation_repository.get_or_create.assert_not_called()
+        assert result.conversation_id == conversation.id

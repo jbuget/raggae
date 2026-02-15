@@ -1,0 +1,7 @@
+from typing import Protocol
+
+
+class LLMService(Protocol):
+    """Interface for text generation from retrieved context."""
+
+    async def generate_answer(self, query: str, context_chunks: list[str]) -> str: ...

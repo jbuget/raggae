@@ -1,0 +1,51 @@
+from uuid import UUID
+
+from raggae.application.dto.message_dto import MessageDTO
+from raggae.application.interfaces.repositories.conversation_repository import (
+    ConversationRepository,
+)
+from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
+from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+
+
+class ListConversationMessages:
+    """Use Case: List messages for a conversation owned by the user."""
+
+    def __init__(
+        self,
+        project_repository: ProjectRepository,
+        conversation_repository: ConversationRepository,
+        message_repository: MessageRepository,
+    ) -> None:
+        self._project_repository = project_repository
+        self._conversation_repository = conversation_repository
+        self._message_repository = message_repository
+
+    async def execute(
+        self,
+        project_id: UUID,
+        conversation_id: UUID,
+        user_id: UUID,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[MessageDTO]:
+        project = await self._project_repository.find_by_id(project_id)
+        if project is None or project.user_id != user_id:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+
+        conversation = await self._conversation_repository.find_by_id(conversation_id)
+        if (
+            conversation is None
+            or conversation.project_id != project_id
+            or conversation.user_id != user_id
+        ):
+            raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
+
+        messages = await self._message_repository.find_by_conversation_id(
+            conversation_id,
+            limit=limit,
+            offset=offset,
+        )
+        return [MessageDTO.from_entity(message) for message in messages]

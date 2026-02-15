@@ -1,0 +1,118 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageBubble } from "./message-bubble";
+import { MessageInput } from "./message-input";
+import { StreamingIndicator } from "./streaming-indicator";
+import { useMessages, useSendMessage } from "@/lib/hooks/use-chat";
+import type { MessageResponse } from "@/lib/types/api";
+import { Button } from "@/components/ui/button";
+
+interface ChatPanelProps {
+  projectId: string;
+  conversationId: string | null;
+}
+
+export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
+  const router = useRouter();
+  const { data: existingMessages } = useMessages(projectId, conversationId);
+  const { send, state, streamedContent, chunks } = useSendMessage(projectId);
+  const [optimisticMessages, setOptimisticMessages] = useState<MessageResponse[]>([]);
+  const [showChunks, setShowChunks] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const messages = useMemo(() => {
+    if (existingMessages) return [...existingMessages, ...optimisticMessages];
+    return optimisticMessages;
+  }, [existingMessages, optimisticMessages]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, streamedContent]);
+
+  async function handleSend(content: string) {
+    const userMessage: MessageResponse = {
+      id: `temp-${Date.now()}`,
+      conversation_id: conversationId ?? "",
+      role: "user",
+      content,
+      created_at: new Date().toISOString(),
+    };
+
+    setOptimisticMessages((prev) => [...prev, userMessage]);
+
+    await send(
+      {
+        message: content,
+        conversation_id: conversationId,
+      },
+      (newConversationId) => {
+        setOptimisticMessages([]);
+        if (!conversationId) {
+          router.push(
+            `/projects/${projectId}/chat/${newConversationId}`,
+          );
+        }
+      },
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+        <div className="space-y-4">
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              role={msg.role as "user" | "assistant"}
+              content={msg.content}
+              timestamp={msg.created_at}
+            />
+          ))}
+
+          {state === "sending" && <StreamingIndicator />}
+
+          {state === "streaming" && streamedContent && (
+            <MessageBubble role="assistant" content={streamedContent} />
+          )}
+        </div>
+      </ScrollArea>
+
+      {chunks.length > 0 && (
+        <div className="border-t px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowChunks(!showChunks)}
+          >
+            {showChunks ? "Hide" : "Show"} sources ({chunks.length})
+          </Button>
+          {showChunks && (
+            <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
+              {chunks.map((chunk, i) => (
+                <div
+                  key={chunk.chunk_id}
+                  className="rounded-md bg-muted p-2 text-xs"
+                >
+                  <p className="font-medium">Source {i + 1} (score: {chunk.score.toFixed(2)})</p>
+                  <p className="mt-1 line-clamp-3">{chunk.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="border-t p-4">
+        <MessageInput
+          onSend={handleSend}
+          disabled={state !== "idle"}
+        />
+      </div>
+    </div>
+  );
+}

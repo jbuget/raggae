@@ -16,3 +16,7 @@ class DocumentExtractionError(Exception):
 
 class EmbeddingGenerationError(Exception):
     """Raised when embeddings cannot be generated."""
+
+
+class LLMGenerationError(Exception):
+    """Raised when an LLM provider cannot generate an answer."""

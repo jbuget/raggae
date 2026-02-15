@@ -1,9 +1,11 @@
+from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.domain.exceptions.document_exceptions import (
     DocumentExtractionError,
     DocumentNotFoundError,
     DocumentTooLargeError,
     EmbeddingGenerationError,
     InvalidDocumentTypeError,
+    LLMGenerationError,
 )
 from raggae.domain.exceptions.project_exceptions import (
     ProjectAlreadyPublishedError,
@@ -19,8 +21,10 @@ from raggae.domain.exceptions.validation_errors import InvalidEmailError, WeakPa
 __all__ = [
     "DocumentNotFoundError",
     "DocumentTooLargeError",
+    "ConversationNotFoundError",
     "DocumentExtractionError",
     "EmbeddingGenerationError",
+    "LLMGenerationError",
     "InvalidCredentialsError",
     "InvalidDocumentTypeError",
     "InvalidEmailError",

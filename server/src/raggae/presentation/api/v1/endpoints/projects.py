@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
@@ -15,12 +16,18 @@ from raggae.presentation.api.dependencies import (
     get_delete_project_use_case,
     get_get_project_use_case,
     get_list_projects_use_case,
+    get_query_relevant_chunks_use_case,
     get_update_project_use_case,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
     ProjectResponse,
     UpdateProjectRequest,
+)
+from raggae.presentation.api.v1.schemas.query_schemas import (
+    QueryProjectRequest,
+    QueryProjectResponse,
+    RetrievedChunkResponse,
 )
 
 router = APIRouter(
@@ -140,4 +147,39 @@ async def update_project(
         system_prompt=project_dto.system_prompt,
         is_published=project_dto.is_published,
         created_at=project_dto.created_at,
+    )
+
+
+@router.post("/{project_id}/query")
+async def query_project_chunks(
+    project_id: UUID,
+    data: QueryProjectRequest,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[QueryRelevantChunks, Depends(get_query_relevant_chunks_use_case)],
+) -> QueryProjectResponse:
+    try:
+        chunks = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query=data.query,
+            limit=data.limit,
+        )
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+
+    return QueryProjectResponse(
+        project_id=project_id,
+        query=data.query,
+        chunks=[
+            RetrievedChunkResponse(
+                chunk_id=chunk.chunk_id,
+                document_id=chunk.document_id,
+                content=chunk.content,
+                score=chunk.score,
+            )
+            for chunk in chunks
+        ],
     )

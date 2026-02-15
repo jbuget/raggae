@@ -11,6 +11,7 @@ async def client() -> AsyncClient:
     os.environ.setdefault("PERSISTENCE_BACKEND", "inmemory")
     os.environ.setdefault("PROCESSING_MODE", "off")
     os.environ.setdefault("EMBEDDING_BACKEND", "inmemory")
+    os.environ.setdefault("LLM_BACKEND", "inmemory")
     from raggae.presentation.main import app
 
     transport = ASGITransport(app=app)

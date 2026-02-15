@@ -4,19 +4,41 @@ from raggae.presentation.api.v1.schemas.auth_schemas import (
     TokenResponse,
     UserResponse,
 )
+from raggae.presentation.api.v1.schemas.chat_schemas import (
+    ConversationDetailResponse,
+    ConversationResponse,
+    MessageResponse,
+    SendMessageRequest,
+    SendMessageResponse,
+    UpdateConversationRequest,
+)
 from raggae.presentation.api.v1.schemas.document_schemas import DocumentResponse
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
     ProjectResponse,
     UpdateProjectRequest,
 )
+from raggae.presentation.api.v1.schemas.query_schemas import (
+    QueryProjectRequest,
+    QueryProjectResponse,
+    RetrievedChunkResponse,
+)
 
 __all__ = [
     "CreateProjectRequest",
+    "ConversationResponse",
+    "ConversationDetailResponse",
     "DocumentResponse",
     "LoginUserRequest",
     "ProjectResponse",
+    "MessageResponse",
+    "SendMessageRequest",
+    "SendMessageResponse",
+    "UpdateConversationRequest",
+    "QueryProjectRequest",
+    "QueryProjectResponse",
     "RegisterUserRequest",
+    "RetrievedChunkResponse",
     "TokenResponse",
     "UpdateProjectRequest",
     "UserResponse",
