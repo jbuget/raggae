@@ -2,6 +2,7 @@ from raggae.domain.exceptions.document_exceptions import (
     DocumentExtractionError,
     DocumentNotFoundError,
     DocumentTooLargeError,
+    EmbeddingGenerationError,
     InvalidDocumentTypeError,
 )
 from raggae.domain.exceptions.project_exceptions import (
@@ -19,6 +20,7 @@ __all__ = [
     "DocumentNotFoundError",
     "DocumentTooLargeError",
     "DocumentExtractionError",
+    "EmbeddingGenerationError",
     "InvalidCredentialsError",
     "InvalidDocumentTypeError",
     "InvalidEmailError",

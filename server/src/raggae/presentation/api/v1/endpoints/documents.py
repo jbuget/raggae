@@ -10,6 +10,7 @@ from raggae.domain.exceptions.document_exceptions import (
     DocumentExtractionError,
     DocumentNotFoundError,
     DocumentTooLargeError,
+    EmbeddingGenerationError,
     InvalidDocumentTypeError,
 )
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
@@ -60,6 +61,11 @@ async def upload_document(
             detail="Document exceeds maximum allowed size",
         ) from None
     except DocumentExtractionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from None
+    except EmbeddingGenerationError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),

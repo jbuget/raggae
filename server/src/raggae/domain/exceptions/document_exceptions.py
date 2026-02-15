@@ -12,3 +12,7 @@ class DocumentNotFoundError(Exception):
 
 class DocumentExtractionError(Exception):
     """Raised when text extraction from document content fails."""
+
+
+class EmbeddingGenerationError(Exception):
+    """Raised when embeddings cannot be generated."""
