@@ -12,6 +12,7 @@ class InMemoryLLMService:
         query: str,
         context_chunks: list[str],
         project_system_prompt: str | None = None,
+        conversation_history: list[str] | None = None,
     ) -> str:
         started_at = perf_counter()
         logger.info(

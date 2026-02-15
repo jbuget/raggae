@@ -35,6 +35,7 @@ class SendMessage:
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
         max_chunk_limit: int = 40,
+        history_window_size: int = 8,
     ) -> None:
         self._query_relevant_chunks_use_case = query_relevant_chunks_use_case
         self._llm_service = llm_service
@@ -44,6 +45,7 @@ class SendMessage:
         self._message_repository = message_repository
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
+        self._history_window_size = max(1, history_window_size)
         if chat_security_policy is None:
             self._chat_security_policy: ChatSecurityPolicy = StaticChatSecurityPolicy()
         else:
@@ -165,11 +167,16 @@ class SendMessage:
             )
         project = await self._project_repository.find_by_id(project_id)
         project_system_prompt = project.system_prompt if project is not None else None
+        conversation_history = await self._build_conversation_history(
+            conversation_id=conversation.id,
+            current_user_message=message,
+        )
         try:
             answer = await self._llm_service.generate_answer(
                 query=message,
                 context_chunks=[chunk.content for chunk in relevant_chunks],
                 project_system_prompt=project_system_prompt,
+                conversation_history=conversation_history,
             )
             sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
             if sanitized_answer != answer:
@@ -330,5 +337,25 @@ class SendMessage:
         ):
             return latest, True
         return latest, False
+
+    async def _build_conversation_history(
+        self,
+        conversation_id: UUID,
+        current_user_message: str,
+    ) -> list[str]:
+        total_messages = await self._message_repository.count_by_conversation_id(conversation_id)
+        offset = max(0, total_messages - self._history_window_size)
+        messages = await self._message_repository.find_by_conversation_id(
+            conversation_id=conversation_id,
+            limit=self._history_window_size,
+            offset=offset,
+        )
+        history: list[str] = []
+        for message in messages:
+            if message.role == "user" and message.content == current_user_message:
+                continue
+            label = "User" if message.role == "user" else "Assistant"
+            history.append(f"{label}: {message.content}")
+        return history[-self._history_window_size :]
 
     _MAX_CONVERSATION_TITLE_LENGTH = 80

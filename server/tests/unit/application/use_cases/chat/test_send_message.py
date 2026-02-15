@@ -10,6 +10,7 @@ from raggae.application.dto.query_relevant_chunks_result_dto import (
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.domain.entities.conversation import Conversation
+from raggae.domain.entities.message import Message
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
@@ -60,6 +61,8 @@ class TestSendMessage:
             created_at=datetime.now(UTC),
         )
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         project_repository = AsyncMock()
         project_repository.find_by_id.return_value = Project(
             id=uuid4(),
@@ -113,6 +116,7 @@ class TestSendMessage:
             query="What is Raggae?",
             context_chunks=["chunk one", "chunk two"],
             project_system_prompt="project prompt",
+            conversation_history=[],
         )
         assert result.answer == "answer"
         assert len(result.chunks) == 2
@@ -366,6 +370,8 @@ class TestSendMessage:
             created_at=datetime.now(UTC),
         )
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         project_repository = AsyncMock()
         project_repository.find_by_id.return_value = Project(
             id=uuid4(),
@@ -417,6 +423,8 @@ class TestSendMessage:
             created_at=datetime.now(UTC),
         )
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         project_repository = AsyncMock()
         project_repository.find_by_id.return_value = Project(
             id=uuid4(),
@@ -483,6 +491,8 @@ class TestSendMessage:
         conversation_repository.find_by_project_and_user.return_value = [existing_conversation]
         conversation_repository.create.return_value = created_conversation
         message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
         project_repository = AsyncMock()
         project_repository.find_by_id.return_value = Project(
             id=uuid4(),
@@ -515,3 +525,84 @@ class TestSendMessage:
         # Then
         assert response.conversation_id == created_conversation.id
         conversation_repository.create.assert_awaited_once()
+
+    async def test_send_message_passes_conversation_history_to_llm(self) -> None:
+        # Given
+        conversation_id = uuid4()
+        mock_query_relevant_chunks = AsyncMock()
+        mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=uuid4(),
+                    content="chunk one",
+                    score=0.9,
+                )
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=2.0,
+        )
+        mock_llm_service = AsyncMock()
+        mock_llm_service.generate_answer.return_value = "answer"
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = [
+            Conversation(
+                id=conversation_id,
+                project_id=uuid4(),
+                user_id=uuid4(),
+                created_at=datetime.now(UTC),
+            )
+        ]
+        message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 2
+        message_repository.find_by_conversation_id.return_value = [
+            Message(
+                id=uuid4(),
+                conversation_id=conversation_id,
+                role="user",
+                content="Earlier question",
+                created_at=datetime.now(UTC),
+            ),
+            Message(
+                id=uuid4(),
+                conversation_id=conversation_id,
+                role="assistant",
+                content="Earlier answer",
+                created_at=datetime.now(UTC),
+            ),
+        ]
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=mock_query_relevant_chunks,
+            llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="Current question",
+        )
+
+        # Then
+        mock_llm_service.generate_answer.assert_awaited_with(
+            query="Current question",
+            context_chunks=["chunk one"],
+            project_system_prompt="project prompt",
+            conversation_history=["User: Earlier question", "Assistant: Earlier answer"],
+        )

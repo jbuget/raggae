@@ -22,6 +22,7 @@ class GeminiLLMService:
         query: str,
         context_chunks: list[str],
         project_system_prompt: str | None = None,
+        conversation_history: list[str] | None = None,
     ) -> str:
         started_at = perf_counter()
         logger.info(
@@ -37,6 +38,7 @@ class GeminiLLMService:
             query=query,
             context_chunks=context_chunks,
             project_system_prompt=project_system_prompt,
+            conversation_history=conversation_history,
         )
         try:
             response = await self._client.post(

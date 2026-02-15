@@ -356,6 +356,7 @@ def get_send_message_use_case() -> SendMessage:
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
+        history_window_size=settings.chat_history_window_size,
     )
 
 
