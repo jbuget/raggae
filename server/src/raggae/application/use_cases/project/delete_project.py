@@ -12,9 +12,9 @@ class DeleteProject:
     def __init__(self, project_repository: ProjectRepository) -> None:
         self._project_repository = project_repository
 
-    async def execute(self, project_id: UUID) -> None:
+    async def execute(self, project_id: UUID, user_id: UUID) -> None:
         project = await self._project_repository.find_by_id(project_id)
-        if project is None:
+        if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
 
         await self._project_repository.delete(project_id)

@@ -1,3 +1,9 @@
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
@@ -17,6 +23,7 @@ _user_repository = InMemoryUserRepository()
 _project_repository = InMemoryProjectRepository()
 _password_hasher = BcryptPasswordHasher()
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
+_bearer = HTTPBearer(auto_error=False)
 
 
 def get_register_user_use_case() -> RegisterUser:
@@ -48,3 +55,22 @@ def get_list_projects_use_case() -> ListProjects:
 
 def get_delete_project_use_case() -> DeleteProject:
     return DeleteProject(project_repository=_project_repository)
+
+
+def get_current_user_id(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> UUID:
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+        )
+
+    user_id = _token_service.verify_token(credentials.credentials)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access token",
+        )
+
+    return user_id

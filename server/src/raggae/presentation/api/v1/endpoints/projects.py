@@ -10,6 +10,7 @@ from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.presentation.api.dependencies import (
     get_create_project_use_case,
+    get_current_user_id,
     get_delete_project_use_case,
     get_get_project_use_case,
     get_list_projects_use_case,
@@ -19,12 +20,16 @@ from raggae.presentation.api.v1.schemas.project_schemas import (
     ProjectResponse,
 )
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(
+    prefix="/projects",
+    tags=["projects"],
+    dependencies=[Depends(get_current_user_id)],
+)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_project(
-    user_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
     data: CreateProjectRequest,
     use_case: Annotated[CreateProject, Depends(get_create_project_use_case)],
 ) -> ProjectResponse:
@@ -48,10 +53,11 @@ async def create_project(
 @router.get("/{project_id}")
 async def get_project(
     project_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[GetProject, Depends(get_get_project_use_case)],
 ) -> ProjectResponse:
     try:
-        project_dto = await use_case.execute(project_id=project_id)
+        project_dto = await use_case.execute(project_id=project_id, user_id=user_id)
     except ProjectNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -70,7 +76,7 @@ async def get_project(
 
 @router.get("")
 async def list_projects(
-    user_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[ListProjects, Depends(get_list_projects_use_case)],
 ) -> list[ProjectResponse]:
     project_dtos = await use_case.execute(user_id=user_id)
@@ -91,10 +97,11 @@ async def list_projects(
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     project_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[DeleteProject, Depends(get_delete_project_use_case)],
 ) -> None:
     try:
-        await use_case.execute(project_id=project_id)
+        await use_case.execute(project_id=project_id, user_id=user_id)
     except ProjectNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

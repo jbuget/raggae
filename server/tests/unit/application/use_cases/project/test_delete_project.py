@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
@@ -37,7 +36,7 @@ class TestDeleteProject:
         mock_project_repository.find_by_id.return_value = project
 
         # When
-        await use_case.execute(project_id=project_id)
+        await use_case.execute(project_id=project_id, user_id=project.user_id)
 
         # Then
         mock_project_repository.delete.assert_called_once_with(project_id)
@@ -52,4 +51,26 @@ class TestDeleteProject:
 
         # When / Then
         with pytest.raises(ProjectNotFoundError):
-            await use_case.execute(project_id=uuid4())
+            await use_case.execute(project_id=uuid4(), user_id=uuid4())
+
+    async def test_delete_project_other_user_raises_error(
+        self,
+        use_case: DeleteProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        owner_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=owner_id,
+            name="Owner project",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project.id, user_id=uuid4())
