@@ -42,6 +42,7 @@ class InMemoryChunkRetrievalService:
                         document_id=chunk.document_id,
                         content=chunk.content,
                         score=score,
+                        document_file_name=document.file_name,
                     )
                 )
 

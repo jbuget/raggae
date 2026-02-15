@@ -71,4 +71,14 @@ describe("MessageInput", () => {
 
     expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();
   });
+
+  it("should show a loader and be disabled while thinking", () => {
+    renderWithProviders(
+      <MessageInput onSend={vi.fn()} disabled isThinking />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /thinking/i }),
+    ).toBeDisabled();
+  });
 });

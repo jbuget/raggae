@@ -11,6 +11,7 @@ class QueryProjectRequest(BaseModel):
 class RetrievedChunkResponse(BaseModel):
     chunk_id: UUID
     document_id: UUID
+    document_file_name: str | None = None
     content: str
     score: float
 

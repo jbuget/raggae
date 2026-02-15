@@ -28,6 +28,7 @@ class SQLAlchemyChunkRetrievalService:
             SELECT
                 c.id AS chunk_id,
                 c.document_id AS document_id,
+                d.file_name AS document_file_name,
                 c.content AS content,
                 1 - (c.embedding <=> CAST(:query_embedding AS vector)) AS score
             FROM document_chunks c
@@ -57,6 +58,7 @@ class SQLAlchemyChunkRetrievalService:
                     document_id=row["document_id"],
                     content=row["content"],
                     score=float(row["score"]),
+                    document_file_name=row["document_file_name"],
                 )
                 for row in rows
             ]

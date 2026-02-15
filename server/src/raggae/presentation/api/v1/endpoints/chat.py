@@ -100,6 +100,7 @@ async def send_message(
             RetrievedChunkResponse(
                 chunk_id=chunk.chunk_id,
                 document_id=chunk.document_id,
+                document_file_name=chunk.document_file_name,
                 content=chunk.content,
                 score=chunk.score,
             )
@@ -145,6 +146,7 @@ async def stream_message(
             {
                 "chunk_id": str(chunk.chunk_id),
                 "document_id": str(chunk.document_id),
+                "document_file_name": chunk.document_file_name,
                 "content": chunk.content,
                 "score": chunk.score,
             }

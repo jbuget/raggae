@@ -87,6 +87,7 @@ export interface SendMessageRequest {
 export interface RetrievedChunkResponse {
   chunk_id: string;
   document_id: string;
+  document_file_name?: string | null;
   content: string;
   score: number;
 }

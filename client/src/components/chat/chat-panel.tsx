@@ -27,6 +27,18 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
     if (existingMessages) return [...existingMessages, ...optimisticMessages];
     return optimisticMessages;
   }, [existingMessages, optimisticMessages]);
+  const citedDocuments = useMemo(() => {
+    const unique = new Map<string, string>();
+    for (const chunk of chunks) {
+      if (!unique.has(chunk.document_id)) {
+        unique.set(
+          chunk.document_id,
+          chunk.document_file_name || chunk.document_id,
+        );
+      }
+    }
+    return Array.from(unique.values());
+  }, [chunks]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -77,7 +89,14 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
           {state === "sending" && <StreamingIndicator />}
 
           {state === "streaming" && streamedContent && (
-            <MessageBubble role="assistant" content={streamedContent} />
+            <div className="space-y-2">
+              <MessageBubble role="assistant" content={streamedContent} />
+              {citedDocuments.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Sources: {citedDocuments.join(", ")}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </ScrollArea>
@@ -89,17 +108,17 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
             size="sm"
             onClick={() => setShowChunks(!showChunks)}
           >
-            {showChunks ? "Hide" : "Show"} sources ({chunks.length})
+            {showChunks ? "Hide" : "Show"} sources ({citedDocuments.length})
           </Button>
           {showChunks && (
             <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
-              {chunks.map((chunk, i) => (
+              {citedDocuments.map((documentName, i) => (
                 <div
-                  key={chunk.chunk_id}
+                  key={documentName}
                   className="rounded-md bg-muted p-2 text-xs"
                 >
-                  <p className="font-medium">Source {i + 1} (score: {chunk.score.toFixed(2)})</p>
-                  <p className="mt-1 line-clamp-3">{chunk.content}</p>
+                  <p className="font-medium">Source {i + 1}</p>
+                  <p className="mt-1 line-clamp-1">{documentName}</p>
                 </div>
               ))}
             </div>
@@ -111,6 +130,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
         <MessageInput
           onSend={handleSend}
           disabled={state !== "idle"}
+          isThinking={state !== "idle"}
         />
       </div>
     </div>

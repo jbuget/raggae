@@ -175,6 +175,7 @@ class TestChatEndpoints:
         if done_events[0]["chunks"]:
             first_chunk = done_events[0]["chunks"][0]
             assert "content" in first_chunk
+            assert "document_file_name" in first_chunk
 
     async def test_stream_message_other_user_project_returns_404(
         self,

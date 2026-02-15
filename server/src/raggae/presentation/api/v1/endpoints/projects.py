@@ -177,6 +177,7 @@ async def query_project_chunks(
             RetrievedChunkResponse(
                 chunk_id=chunk.chunk_id,
                 document_id=chunk.document_id,
+                document_file_name=chunk.document_file_name,
                 content=chunk.content,
                 score=chunk.score,
             )

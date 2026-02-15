@@ -1,15 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 interface MessageInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
+  isThinking?: boolean;
 }
 
-export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
+export function MessageInput({
+  onSend,
+  disabled = false,
+  isThinking = false,
+}: MessageInputProps) {
   const [message, setMessage] = useState("");
 
   const isDisabled = !message.trim() || disabled;
@@ -39,7 +45,14 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
         aria-label="Message"
       />
       <Button onClick={handleSubmit} disabled={isDisabled}>
-        Send
+        {isThinking ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2Icon className="size-4 animate-spin" />
+            Thinking...
+          </span>
+        ) : (
+          "Send"
+        )}
       </Button>
     </div>
   );

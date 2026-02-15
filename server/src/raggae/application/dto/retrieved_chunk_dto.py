@@ -10,3 +10,4 @@ class RetrievedChunkDTO:
     document_id: UUID
     content: str
     score: float
+    document_file_name: str | None = None
