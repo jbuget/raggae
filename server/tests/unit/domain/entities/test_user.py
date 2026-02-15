@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 
 from raggae.domain.entities.user import User
+from raggae.domain.exceptions.user_exceptions import UserAlreadyInactiveError
 
 
 class TestUser:
@@ -46,3 +47,37 @@ class TestUser:
         # When / Then
         with pytest.raises(FrozenInstanceError):
             user.email = "other@example.com"  # type: ignore[misc]
+
+    def test_deactivate_active_user(self) -> None:
+        # Given
+        user = User(
+            id=uuid4(),
+            email="test@example.com",
+            hashed_password="hashed_pwd",
+            full_name="John Doe",
+            is_active=True,
+            created_at=datetime.now(UTC),
+        )
+
+        # When
+        deactivated = user.deactivate()
+
+        # Then
+        assert deactivated.is_active is False
+        assert deactivated.id == user.id
+        assert deactivated.email == user.email
+
+    def test_deactivate_inactive_user_raises_error(self) -> None:
+        # Given
+        user = User(
+            id=uuid4(),
+            email="test@example.com",
+            hashed_password="hashed_pwd",
+            full_name="John Doe",
+            is_active=False,
+            created_at=datetime.now(UTC),
+        )
+
+        # When / Then
+        with pytest.raises(UserAlreadyInactiveError):
+            user.deactivate()
