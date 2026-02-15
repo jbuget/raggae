@@ -414,6 +414,16 @@ dev = [
 3. `DocumentChunk` + stockage embeddings en `pgvector`
 4. Possibilité d'activer un mode asynchrone via variable d'environnement
 
+#### Sprint 4C : Stratégies de chunking adaptatives
+1. Ajouter un port `DocumentStructureAnalyzer` pour classifier la structure du texte extrait
+2. Définir un `ChunkingStrategySelector` (règles déterministes) basé sur le résultat d'analyse
+3. Introduire plusieurs stratégies de chunking derrière un port commun :
+   - `fixed_window` (fallback sûr)
+   - `paragraph` (documents narratifs)
+   - `heading_section` (documents structurés en sections/titres)
+4. Persister la stratégie choisie sur le document (ou dans metadata processing) pour audit/debug
+5. Ajouter tests unitaires du selector + tests d'intégration du pipeline selon type de document
+
 ### Sprint 5 : Chat
 1. Use Case SendMessage
 2. RAG Service (retrieval + generation)

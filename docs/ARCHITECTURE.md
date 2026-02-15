@@ -721,3 +721,19 @@ class UserRepository:
 
 - Traitement synchrone à l'upload pour `chunking + embeddings` au départ.
 - Préparer un toggle de configuration pour mode asynchrone plus tard (variable d'environnement).
+
+### Évolution prévue (Sprint 4C)
+
+- Objectif : sélectionner automatiquement la meilleure stratégie de chunking selon la structure du document extrait.
+- Design recommandé :
+  - `DocumentStructureAnalyzer` (port application) :
+    - détecte des signaux simples et déterministes (densité de sauts de ligne, présence de titres, listes, tables, longueur moyenne de paragraphes).
+  - `ChunkingStrategySelector` (application) :
+    - convertit l'analyse en stratégie (`fixed_window`, `paragraph`, `heading_section`).
+  - `TextChunkerService` devient une façade de stratégies :
+    - route vers l'implémentation appropriée.
+- Contrainte Clean Architecture :
+  - la logique de sélection reste en Application ;
+  - les implémentations concrètes des chunkers restent en Infrastructure.
+- Traçabilité :
+  - stocker la stratégie retenue par document pour faciliter debug/évaluation qualité retrieval.

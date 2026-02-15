@@ -28,6 +28,26 @@ Contraintes Sprint 4A :
 - binaire stocké en S3-compatible (MinIO)
 - aucun chunking/embedding/indexing dans cette phase
 
+## Découpage validé Sprint 4C (Chunking adaptatif)
+
+Avant de coder, appliquer ce découpage en tâches atomiques :
+
+- [ ] Application: ajouter le port `DocumentStructureAnalyzer`
+- [ ] Application: ajouter `ChunkingStrategySelector` (règles simples, déterministes)
+- [ ] Domain/Application: définir un enum/VO `ChunkingStrategy` (`fixed_window`, `paragraph`, `heading_section`)
+- [ ] Infrastructure: implémenter `HeuristicDocumentStructureAnalyzer`
+- [ ] Infrastructure: implémenter `ParagraphTextChunkerService`
+- [ ] Infrastructure: implémenter `HeadingSectionTextChunkerService`
+- [ ] Infrastructure: conserver `SimpleTextChunkerService` comme fallback `fixed_window`
+- [ ] Application: intégrer selector + routeur de stratégie dans le pipeline upload processing
+- [ ] Tests unitaires: selector + analyzer + chunkers par stratégie
+- [ ] Tests d'intégration: vérifier la stratégie choisie sur documents représentatifs
+
+Contraintes Sprint 4C :
+- priorité à la robustesse déterministe (pas de LLM dans la sélection de stratégie)
+- fallback systématique vers `fixed_window` en cas d'ambiguïté
+- aucun couplage direct de la couche Application à une lib de parsing spécifique
+
 ## Cycle de développement
 
 ### 1. Choisir une fonctionnalité
