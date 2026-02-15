@@ -1,11 +1,13 @@
-from raggae.application.services.chunking_strategy_selector import ChunkingStrategySelector
+from raggae.application.services.chunking_strategy_selector import (
+    DeterministicChunkingStrategySelector,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class TestChunkingStrategySelector:
     def test_select_returns_heading_section_when_headings_detected(self) -> None:
         # Given
-        selector = ChunkingStrategySelector()
+        selector = DeterministicChunkingStrategySelector()
 
         # When
         strategy = selector.select(
@@ -19,7 +21,7 @@ class TestChunkingStrategySelector:
 
     def test_select_returns_paragraph_for_narrative_document(self) -> None:
         # Given
-        selector = ChunkingStrategySelector()
+        selector = DeterministicChunkingStrategySelector()
 
         # When
         strategy = selector.select(
@@ -33,7 +35,7 @@ class TestChunkingStrategySelector:
 
     def test_select_returns_fixed_window_as_fallback(self) -> None:
         # Given
-        selector = ChunkingStrategySelector()
+        selector = DeterministicChunkingStrategySelector()
 
         # When
         strategy = selector.select(

@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -7,6 +8,9 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.services.chunking_strategy_selector import (
+    ChunkingStrategySelector,
+)
 from raggae.application.interfaces.services.document_structure_analyzer import (
     DocumentStructureAnalyzer,
 )
@@ -19,7 +23,9 @@ from raggae.application.interfaces.services.text_chunker_service import TextChun
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
 )
-from raggae.application.services.chunking_strategy_selector import ChunkingStrategySelector
+from raggae.application.services.chunking_strategy_selector import (
+    DeterministicChunkingStrategySelector,
+)
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.exceptions.document_exceptions import (
@@ -60,8 +66,9 @@ class UploadDocument:
         self._document_text_extractor = document_text_extractor
         self._text_sanitizer_service = text_sanitizer_service
         self._document_structure_analyzer = document_structure_analyzer
+        self._chunking_strategy_selector: ChunkingStrategySelector
         if chunking_strategy_selector is None:
-            self._chunking_strategy_selector = ChunkingStrategySelector()
+            self._chunking_strategy_selector = DeterministicChunkingStrategySelector()
         else:
             self._chunking_strategy_selector = chunking_strategy_selector
         self._text_chunker_service = text_chunker_service
@@ -123,6 +130,8 @@ class UploadDocument:
                 paragraph_count=analysis.paragraph_count,
                 average_paragraph_length=analysis.average_paragraph_length,
             )
+            document = replace(document, processing_strategy=strategy)
+            await self._document_repository.save(document)
             chunks = await self._text_chunker_service.chunk_text(sanitized_text, strategy=strategy)
             if chunks:
                 embeddings = await self._embedding_service.embed_texts(chunks)

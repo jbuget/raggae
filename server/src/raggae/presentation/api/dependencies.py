@@ -24,7 +24,9 @@ from raggae.application.interfaces.services.text_chunker_service import TextChun
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
 )
-from raggae.application.services.chunking_strategy_selector import ChunkingStrategySelector
+from raggae.application.services.chunking_strategy_selector import (
+    DeterministicChunkingStrategySelector,
+)
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
@@ -132,7 +134,7 @@ else:
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
-_chunking_strategy_selector = ChunkingStrategySelector()
+_chunking_strategy_selector = DeterministicChunkingStrategySelector()
 _fixed_window_chunker = SimpleTextChunkerService(
     chunk_size=settings.chunk_size,
     chunk_overlap=settings.chunk_overlap,

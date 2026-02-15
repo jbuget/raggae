@@ -1,7 +1,7 @@
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
-class ChunkingStrategySelector:
+class DeterministicChunkingStrategySelector:
     """Deterministic selector for chunking strategy."""
 
     def select(

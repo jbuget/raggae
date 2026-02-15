@@ -124,6 +124,9 @@ class TestUploadDocumentProcessing:
             ["hello world", "from raggae"]
         )
         mock_document_chunk_repository.save_many.assert_called_once()
+        assert mock_document_repository.save.call_count == 2
+        second_saved_document = mock_document_repository.save.call_args_list[1].args[0]
+        assert second_saved_document.processing_strategy == ChunkingStrategy.PARAGRAPH
 
     async def test_upload_document_processing_off_does_not_save_chunks(
         self,

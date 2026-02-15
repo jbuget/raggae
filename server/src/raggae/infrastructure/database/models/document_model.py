@@ -17,4 +17,5 @@ class DocumentModel(Base):
     content_type: Mapped[str] = mapped_column(String(128), nullable=False)
     file_size: Mapped[int] = mapped_column(Integer(), nullable=False)
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
+    processing_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -1,3 +1,6 @@
+from raggae.application.interfaces.services.chunking_strategy_selector import (
+    ChunkingStrategySelector,
+)
 from raggae.application.interfaces.services.document_structure_analyzer import (
     DocumentStructureAnalyzer,
 )
@@ -14,6 +17,7 @@ from raggae.application.interfaces.services.text_sanitizer_service import (
 from raggae.application.interfaces.services.token_service import TokenService
 
 __all__ = [
+    "ChunkingStrategySelector",
     "DocumentStructureAnalyzer",
     "DocumentTextExtractor",
     "EmbeddingService",

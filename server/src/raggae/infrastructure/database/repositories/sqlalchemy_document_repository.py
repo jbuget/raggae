@@ -4,6 +4,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.document import Document
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.database.models.document_model import DocumentModel
 
 
@@ -24,6 +25,11 @@ class SQLAlchemyDocumentRepository:
                     content_type=document.content_type,
                     file_size=document.file_size,
                     storage_key=document.storage_key,
+                    processing_strategy=(
+                        document.processing_strategy.value
+                        if document.processing_strategy is not None
+                        else None
+                    ),
                     created_at=document.created_at,
                 )
                 session.add(model)
@@ -33,6 +39,11 @@ class SQLAlchemyDocumentRepository:
                 model.content_type = document.content_type
                 model.file_size = document.file_size
                 model.storage_key = document.storage_key
+                model.processing_strategy = (
+                    document.processing_strategy.value
+                    if document.processing_strategy is not None
+                    else None
+                )
             await session.commit()
 
     async def find_by_id(self, document_id: UUID) -> Document | None:
@@ -48,6 +59,11 @@ class SQLAlchemyDocumentRepository:
                 file_size=model.file_size,
                 storage_key=model.storage_key,
                 created_at=model.created_at,
+                processing_strategy=(
+                    ChunkingStrategy(model.processing_strategy)
+                    if model.processing_strategy is not None
+                    else None
+                ),
             )
 
     async def find_by_project_id(self, project_id: UUID) -> list[Document]:
@@ -65,6 +81,11 @@ class SQLAlchemyDocumentRepository:
                     file_size=model.file_size,
                     storage_key=model.storage_key,
                     created_at=model.created_at,
+                    processing_strategy=(
+                        ChunkingStrategy(model.processing_strategy)
+                        if model.processing_strategy is not None
+                        else None
+                    ),
                 )
                 for model in models
             ]
