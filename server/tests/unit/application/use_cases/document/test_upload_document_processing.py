@@ -4,8 +4,10 @@ from uuid import uuid4
 
 import pytest
 
+from raggae.application.dto.document_structure_analysis_dto import DocumentStructureAnalysisDTO
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.domain.entities.project import Project
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class TestUploadDocumentProcessing:
@@ -38,6 +40,16 @@ class TestUploadDocumentProcessing:
         return chunker
 
     @pytest.fixture
+    def mock_document_structure_analyzer(self) -> AsyncMock:
+        analyzer = AsyncMock()
+        analyzer.analyze_text.return_value = DocumentStructureAnalysisDTO(
+            has_headings=False,
+            paragraph_count=3,
+            average_paragraph_length=120,
+        )
+        return analyzer
+
+    @pytest.fixture
     def mock_text_sanitizer_service(self) -> AsyncMock:
         sanitizer = AsyncMock()
         sanitizer.sanitize_text.return_value = "hello world\n\nfrom raggae"
@@ -57,6 +69,7 @@ class TestUploadDocumentProcessing:
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
         mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
     ) -> None:
@@ -81,6 +94,7 @@ class TestUploadDocumentProcessing:
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
             text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
             text_chunker_service=mock_text_chunker_service,
             embedding_service=mock_embedding_service,
         )
@@ -99,7 +113,13 @@ class TestUploadDocumentProcessing:
         mock_text_sanitizer_service.sanitize_text.assert_called_once_with(
             "hello\x00 world\r\n\r\nfrom raggae   "
         )
-        mock_text_chunker_service.chunk_text.assert_called_once_with("hello world\n\nfrom raggae")
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
+            "hello world\n\nfrom raggae"
+        )
+        mock_text_chunker_service.chunk_text.assert_called_once_with(
+            "hello world\n\nfrom raggae",
+            strategy=ChunkingStrategy.PARAGRAPH,
+        )
         mock_embedding_service.embed_texts.assert_called_once_with(
             ["hello world", "from raggae"]
         )
@@ -113,6 +133,7 @@ class TestUploadDocumentProcessing:
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
         mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
     ) -> None:
@@ -137,6 +158,7 @@ class TestUploadDocumentProcessing:
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
             text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
             text_chunker_service=mock_text_chunker_service,
             embedding_service=mock_embedding_service,
         )
@@ -154,6 +176,7 @@ class TestUploadDocumentProcessing:
         mock_document_chunk_repository.save_many.assert_not_called()
         mock_document_text_extractor.extract_text.assert_not_called()
         mock_text_sanitizer_service.sanitize_text.assert_not_called()
+        mock_document_structure_analyzer.analyze_text.assert_not_called()
         mock_text_chunker_service.chunk_text.assert_not_called()
         mock_embedding_service.embed_texts.assert_not_called()
 
@@ -165,6 +188,7 @@ class TestUploadDocumentProcessing:
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
         mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
     ) -> None:
@@ -189,6 +213,7 @@ class TestUploadDocumentProcessing:
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
             text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
             text_chunker_service=mock_text_chunker_service,
             embedding_service=mock_embedding_service,
         )
@@ -206,6 +231,7 @@ class TestUploadDocumentProcessing:
         mock_document_chunk_repository.save_many.assert_not_called()
         mock_document_text_extractor.extract_text.assert_not_called()
         mock_text_sanitizer_service.sanitize_text.assert_not_called()
+        mock_document_structure_analyzer.analyze_text.assert_not_called()
         mock_text_chunker_service.chunk_text.assert_not_called()
         mock_embedding_service.embed_texts.assert_not_called()
 
@@ -217,6 +243,7 @@ class TestUploadDocumentProcessing:
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
         mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
     ) -> None:
@@ -231,6 +258,7 @@ class TestUploadDocumentProcessing:
                 document_chunk_repository=mock_document_chunk_repository,
                 document_text_extractor=mock_document_text_extractor,
                 text_sanitizer_service=mock_text_sanitizer_service,
+                document_structure_analyzer=mock_document_structure_analyzer,
                 text_chunker_service=mock_text_chunker_service,
                 embedding_service=mock_embedding_service,
             )

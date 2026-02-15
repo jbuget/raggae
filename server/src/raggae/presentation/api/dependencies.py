@@ -12,6 +12,9 @@ from raggae.application.interfaces.repositories.document_repository import (
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.user_repository import UserRepository
+from raggae.application.interfaces.services.document_structure_analyzer import (
+    DocumentStructureAnalyzer,
+)
 from raggae.application.interfaces.services.document_text_extractor import (
     DocumentTextExtractor,
 )
@@ -21,6 +24,7 @@ from raggae.application.interfaces.services.text_chunker_service import TextChun
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
 )
+from raggae.application.services.chunking_strategy_selector import ChunkingStrategySelector
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
@@ -57,7 +61,16 @@ from raggae.infrastructure.database.repositories.sqlalchemy_user_repository impo
     SQLAlchemyUserRepository,
 )
 from raggae.infrastructure.database.session import SessionFactory
+from raggae.infrastructure.services.adaptive_text_chunker_service import (
+    AdaptiveTextChunkerService,
+)
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
+from raggae.infrastructure.services.heading_section_text_chunker_service import (
+    HeadingSectionTextChunkerService,
+)
+from raggae.infrastructure.services.heuristic_document_structure_analyzer import (
+    HeuristicDocumentStructureAnalyzer,
+)
 from raggae.infrastructure.services.in_memory_embedding_service import (
     InMemoryEmbeddingService,
 )
@@ -72,6 +85,9 @@ from raggae.infrastructure.services.multiformat_document_text_extractor import (
     MultiFormatDocumentTextExtractor,
 )
 from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbeddingService
+from raggae.infrastructure.services.paragraph_text_chunker_service import (
+    ParagraphTextChunkerService,
+)
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
 )
@@ -115,9 +131,20 @@ else:
     _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
-_text_chunker_service: TextChunkerService = SimpleTextChunkerService(
+_document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
+_chunking_strategy_selector = ChunkingStrategySelector()
+_fixed_window_chunker = SimpleTextChunkerService(
     chunk_size=settings.chunk_size,
     chunk_overlap=settings.chunk_overlap,
+)
+_paragraph_chunker = ParagraphTextChunkerService(chunk_size=settings.chunk_size)
+_heading_section_chunker = HeadingSectionTextChunkerService(
+    fallback_chunker=_fixed_window_chunker
+)
+_text_chunker_service: TextChunkerService = AdaptiveTextChunkerService(
+    fixed_window_chunker=_fixed_window_chunker,
+    paragraph_chunker=_paragraph_chunker,
+    heading_section_chunker=_heading_section_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
@@ -168,6 +195,8 @@ def get_upload_document_use_case() -> UploadDocument:
         document_chunk_repository=_document_chunk_repository,
         document_text_extractor=_document_text_extractor,
         text_sanitizer_service=_text_sanitizer_service,
+        document_structure_analyzer=_document_structure_analyzer,
+        chunking_strategy_selector=_chunking_strategy_selector,
         text_chunker_service=_text_chunker_service,
         embedding_service=_embedding_service,
     )

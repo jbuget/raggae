@@ -15,6 +15,9 @@ from raggae.infrastructure.database.repositories.in_memory_document_repository i
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
+from raggae.infrastructure.services.heuristic_document_structure_analyzer import (
+    HeuristicDocumentStructureAnalyzer,
+)
 from raggae.infrastructure.services.in_memory_embedding_service import (
     InMemoryEmbeddingService,
 )
@@ -64,6 +67,7 @@ class TestDocumentProcessingFlow:
             document_chunk_repository=document_chunk_repository,
             document_text_extractor=MultiFormatDocumentTextExtractor(),
             text_sanitizer_service=SimpleTextSanitizerService(),
+            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
             text_chunker_service=SimpleTextChunkerService(chunk_size=10, chunk_overlap=0),
             embedding_service=InMemoryEmbeddingService(dimension=16),
         )

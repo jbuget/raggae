@@ -7,6 +7,9 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.services.document_structure_analyzer import (
+    DocumentStructureAnalyzer,
+)
 from raggae.application.interfaces.services.document_text_extractor import (
     DocumentTextExtractor,
 )
@@ -16,6 +19,7 @@ from raggae.application.interfaces.services.text_chunker_service import TextChun
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
 )
+from raggae.application.services.chunking_strategy_selector import ChunkingStrategySelector
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.exceptions.document_exceptions import (
@@ -40,6 +44,8 @@ class UploadDocument:
         document_chunk_repository: DocumentChunkRepository | None = None,
         document_text_extractor: DocumentTextExtractor | None = None,
         text_sanitizer_service: TextSanitizerService | None = None,
+        document_structure_analyzer: DocumentStructureAnalyzer | None = None,
+        chunking_strategy_selector: ChunkingStrategySelector | None = None,
         text_chunker_service: TextChunkerService | None = None,
         embedding_service: EmbeddingService | None = None,
     ) -> None:
@@ -53,6 +59,11 @@ class UploadDocument:
         self._document_chunk_repository = document_chunk_repository
         self._document_text_extractor = document_text_extractor
         self._text_sanitizer_service = text_sanitizer_service
+        self._document_structure_analyzer = document_structure_analyzer
+        if chunking_strategy_selector is None:
+            self._chunking_strategy_selector = ChunkingStrategySelector()
+        else:
+            self._chunking_strategy_selector = chunking_strategy_selector
         self._text_chunker_service = text_chunker_service
         self._embedding_service = embedding_service
 
@@ -96,6 +107,7 @@ class UploadDocument:
             and self._document_chunk_repository is not None
             and self._document_text_extractor is not None
             and self._text_sanitizer_service is not None
+            and self._document_structure_analyzer is not None
             and self._text_chunker_service is not None
             and self._embedding_service is not None
         ):
@@ -105,7 +117,13 @@ class UploadDocument:
                 content_type=content_type,
             )
             sanitized_text = await self._text_sanitizer_service.sanitize_text(extracted_text)
-            chunks = await self._text_chunker_service.chunk_text(sanitized_text)
+            analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
+            strategy = self._chunking_strategy_selector.select(
+                has_headings=analysis.has_headings,
+                paragraph_count=analysis.paragraph_count,
+                average_paragraph_length=analysis.average_paragraph_length,
+            )
+            chunks = await self._text_chunker_service.chunk_text(sanitized_text, strategy=strategy)
             if chunks:
                 embeddings = await self._embedding_service.embed_texts(chunks)
                 document_chunks = [
