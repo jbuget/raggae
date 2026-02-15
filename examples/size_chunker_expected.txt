@@ -1,0 +1,5 @@
+Texte court de test sans section.
+Il contient peu de matière.
+
+Encore un petit bloc.
+Rien de structuré.
