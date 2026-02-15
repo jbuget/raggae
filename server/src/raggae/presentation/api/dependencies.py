@@ -19,6 +19,9 @@ from raggae.application.interfaces.repositories.user_repository import UserRepos
 from raggae.application.interfaces.services.chunk_retrieval_service import (
     ChunkRetrievalService,
 )
+from raggae.application.interfaces.services.conversation_title_generator import (
+    ConversationTitleGenerator,
+)
 from raggae.application.interfaces.services.document_structure_analyzer import (
     DocumentStructureAnalyzer,
 )
@@ -117,6 +120,9 @@ from raggae.infrastructure.services.in_memory_llm_service import InMemoryLLMServ
 from raggae.infrastructure.services.jwt_token_service import JwtTokenService
 from raggae.infrastructure.services.llamaindex_text_chunker_service import (
     LlamaIndexTextChunkerService,
+)
+from raggae.infrastructure.services.llm_conversation_title_generator import (
+    LLMConversationTitleGenerator,
 )
 from raggae.infrastructure.services.minio_file_storage_service import (
     MinioFileStorageService,
@@ -234,6 +240,9 @@ elif settings.llm_backend == "ollama":
     )
 else:
     _llm_service = InMemoryLLMService()
+_conversation_title_generator: ConversationTitleGenerator = LLMConversationTitleGenerator(
+    llm_service=_llm_service
+)
 
 
 def get_register_user_use_case() -> RegisterUser:
@@ -326,6 +335,7 @@ def get_send_message_use_case() -> SendMessage:
     return SendMessage(
         query_relevant_chunks_use_case=get_query_relevant_chunks_use_case(),
         llm_service=_llm_service,
+        conversation_title_generator=_conversation_title_generator,
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
     )

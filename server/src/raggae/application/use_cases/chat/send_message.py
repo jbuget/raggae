@@ -6,6 +6,9 @@ from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.services.conversation_title_generator import (
+    ConversationTitleGenerator,
+)
 from raggae.application.interfaces.services.llm_service import LLMService
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.message import Message
@@ -19,11 +22,13 @@ class SendMessage:
         self,
         query_relevant_chunks_use_case: QueryRelevantChunks,
         llm_service: LLMService,
+        conversation_title_generator: ConversationTitleGenerator,
         conversation_repository: ConversationRepository,
         message_repository: MessageRepository,
     ) -> None:
         self._query_relevant_chunks_use_case = query_relevant_chunks_use_case
         self._llm_service = llm_service
+        self._conversation_title_generator = conversation_title_generator
         self._conversation_repository = conversation_repository
         self._message_repository = message_repository
 
@@ -35,7 +40,8 @@ class SendMessage:
         limit: int = 5,
         conversation_id: UUID | None = None,
     ) -> ChatMessageResponseDTO:
-        if conversation_id is None:
+        is_new_conversation = conversation_id is None
+        if is_new_conversation:
             conversation = await self._conversation_repository.get_or_create(
                 project_id=project_id,
                 user_id=user_id,
@@ -74,6 +80,12 @@ class SendMessage:
                     created_at=datetime.now(UTC),
                 )
             )
+            if is_new_conversation:
+                title = await self._conversation_title_generator.generate_title(
+                    user_message=message,
+                    assistant_answer=fallback_answer,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
             return ChatMessageResponseDTO(
                 project_id=project_id,
                 conversation_id=conversation.id,
@@ -94,6 +106,12 @@ class SendMessage:
                 created_at=datetime.now(UTC),
             )
         )
+        if is_new_conversation:
+            title = await self._conversation_title_generator.generate_title(
+                user_message=message,
+                assistant_answer=answer,
+            )
+            await self._conversation_repository.update_title(conversation.id, title)
         return ChatMessageResponseDTO(
             project_id=project_id,
             conversation_id=conversation.id,

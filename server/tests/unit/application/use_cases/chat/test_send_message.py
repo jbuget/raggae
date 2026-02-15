@@ -50,9 +50,12 @@ class TestSendMessage:
             created_at=datetime.now(UTC),
         )
         message_repository = AsyncMock()
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
         return SendMessage(
             query_relevant_chunks_use_case=mock_query_relevant_chunks,
             llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
