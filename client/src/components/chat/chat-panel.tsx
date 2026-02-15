@@ -42,8 +42,11 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   }, [chunks]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const viewport = scrollRef.current?.querySelector<HTMLElement>(
+      "[data-slot='scroll-area-viewport']",
+    );
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
     }
   }, [messages, streamedContent]);
 
@@ -91,8 +94,8 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+    <div className="flex h-full min-h-0 flex-col">
+      <ScrollArea className="min-h-0 flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((msg) => {
             const messageSourceDocuments = getMessageSourceDocuments(msg);
@@ -161,7 +164,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
         </div>
       )}
 
-      <div className="border-t p-4">
+      <div className="sticky bottom-0 border-t bg-background p-4">
         <MessageInput
           onSend={handleSend}
           disabled={state !== "idle"}
