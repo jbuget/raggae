@@ -20,6 +20,7 @@ class SendMessageRequest(BaseModel):
     limit: int | None = Field(default=None, ge=1, le=40)
     offset: int = Field(default=0, ge=0)
     conversation_id: UUID | None = None
+    start_new_conversation: bool = False
     retrieval_strategy: Literal["vector", "fulltext", "hybrid", "auto"] = "hybrid"
     retrieval_filters: RetrievalFiltersRequest | None = None
 

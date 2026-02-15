@@ -457,3 +457,61 @@ class TestSendMessage:
             strategy="hybrid",
             metadata_filters=None,
         )
+
+    async def test_send_message_can_force_new_conversation(self) -> None:
+        # Given
+        existing_conversation = Conversation(
+            id=uuid4(),
+            project_id=uuid4(),
+            user_id=uuid4(),
+            created_at=datetime.now(UTC),
+        )
+        created_conversation = Conversation(
+            id=uuid4(),
+            project_id=uuid4(),
+            user_id=uuid4(),
+            created_at=datetime.now(UTC),
+        )
+        mock_query_relevant_chunks = AsyncMock()
+        mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[],
+            strategy_used="hybrid",
+            execution_time_ms=2.0,
+        )
+        mock_llm_service = AsyncMock()
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = [existing_conversation]
+        conversation_repository.create.return_value = created_conversation
+        message_repository = AsyncMock()
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=mock_query_relevant_chunks,
+            llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        response = await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="new thread please",
+            start_new_conversation=True,
+        )
+
+        # Then
+        assert response.conversation_id == created_conversation.id
+        conversation_repository.create.assert_awaited_once()

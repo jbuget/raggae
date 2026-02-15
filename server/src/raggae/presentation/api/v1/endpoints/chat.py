@@ -63,6 +63,7 @@ async def send_message(
             limit=data.limit,
             offset=data.offset,
             conversation_id=data.conversation_id,
+            start_new_conversation=data.start_new_conversation,
             retrieval_strategy=data.retrieval_strategy,
             retrieval_filters=(
                 data.retrieval_filters.model_dump(exclude_none=True)
@@ -136,6 +137,7 @@ async def stream_message(
             limit=data.limit,
             offset=data.offset,
             conversation_id=data.conversation_id,
+            start_new_conversation=data.start_new_conversation,
             retrieval_strategy=data.retrieval_strategy,
             retrieval_filters=(
                 data.retrieval_filters.model_dump(exclude_none=True)

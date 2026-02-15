@@ -57,6 +57,7 @@ class SendMessage:
         limit: int | None = None,
         offset: int = 0,
         conversation_id: UUID | None = None,
+        start_new_conversation: bool = False,
         retrieval_strategy: str = "hybrid",
         retrieval_filters: dict[str, object] | None = None,
     ) -> ChatMessageResponseDTO:
@@ -72,6 +73,7 @@ class SendMessage:
                 project_id=project_id,
                 user_id=user_id,
                 message=message,
+                start_new_conversation=start_new_conversation,
             )
         else:
             conversation = await self._conversation_repository.find_by_id(conversation_id)
@@ -298,7 +300,14 @@ class SendMessage:
         project_id: UUID,
         user_id: UUID,
         message: str,
+        start_new_conversation: bool,
     ) -> tuple[Conversation, bool]:
+        if start_new_conversation:
+            created = await self._conversation_repository.create(
+                project_id=project_id,
+                user_id=user_id,
+            )
+            return created, False
         latest_candidates = await self._conversation_repository.find_by_project_and_user(
             project_id=project_id,
             user_id=user_id,
@@ -320,11 +329,6 @@ class SendMessage:
             and latest_message.content == message
         ):
             return latest, True
-
-        created = await self._conversation_repository.create(
-            project_id=project_id,
-            user_id=user_id,
-        )
-        return created, False
+        return latest, False
 
     _MAX_CONVERSATION_TITLE_LENGTH = 80
