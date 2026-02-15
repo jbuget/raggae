@@ -6,6 +6,7 @@ import pytest
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.domain.entities.conversation import Conversation
+from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 
 
@@ -49,12 +50,23 @@ class TestSendMessage:
             created_at=datetime.now(UTC),
         )
         message_repository = AsyncMock()
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
         return SendMessage(
             query_relevant_chunks_use_case=mock_query_relevant_chunks,
             llm_service=mock_llm_service,
             conversation_title_generator=title_generator,
+            project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
@@ -87,6 +99,7 @@ class TestSendMessage:
         mock_llm_service.generate_answer.assert_awaited_once_with(
             query="What is Raggae?",
             context_chunks=["chunk one", "chunk two"],
+            project_system_prompt="project prompt",
         )
         assert result.answer == "answer"
         assert len(result.chunks) == 2

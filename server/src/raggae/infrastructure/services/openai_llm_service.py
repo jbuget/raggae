@@ -11,8 +11,17 @@ class OpenAILLMService:
         self._client = AsyncOpenAI(api_key=api_key)
         self._model = model
 
-    async def generate_answer(self, query: str, context_chunks: list[str]) -> str:
-        prompt = build_rag_prompt(query=query, context_chunks=context_chunks)
+    async def generate_answer(
+        self,
+        query: str,
+        context_chunks: list[str],
+        project_system_prompt: str | None = None,
+    ) -> str:
+        prompt = build_rag_prompt(
+            query=query,
+            context_chunks=context_chunks,
+            project_system_prompt=project_system_prompt,
+        )
         try:
             response = await self._client.chat.completions.create(
                 model=self._model,

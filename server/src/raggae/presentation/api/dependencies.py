@@ -336,6 +336,7 @@ def get_send_message_use_case() -> SendMessage:
         query_relevant_chunks_use_case=get_query_relevant_chunks_use_case(),
         llm_service=_llm_service,
         conversation_title_generator=_conversation_title_generator,
+        project_repository=_project_repository,
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
     )

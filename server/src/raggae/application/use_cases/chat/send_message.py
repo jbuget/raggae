@@ -7,6 +7,7 @@ from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.conversation_title_generator import (
     ConversationTitleGenerator,
 )
@@ -24,12 +25,14 @@ class SendMessage:
         query_relevant_chunks_use_case: QueryRelevantChunks,
         llm_service: LLMService,
         conversation_title_generator: ConversationTitleGenerator,
+        project_repository: ProjectRepository,
         conversation_repository: ConversationRepository,
         message_repository: MessageRepository,
     ) -> None:
         self._query_relevant_chunks_use_case = query_relevant_chunks_use_case
         self._llm_service = llm_service
         self._conversation_title_generator = conversation_title_generator
+        self._project_repository = project_repository
         self._conversation_repository = conversation_repository
         self._message_repository = message_repository
 
@@ -97,9 +100,12 @@ class SendMessage:
                 answer=fallback_answer,
                 chunks=[],
             )
+        project = await self._project_repository.find_by_id(project_id)
+        project_system_prompt = project.system_prompt if project is not None else None
         answer = await self._llm_service.generate_answer(
             query=message,
             context_chunks=[chunk.content for chunk in relevant_chunks],
+            project_system_prompt=project_system_prompt,
         )
         await self._message_repository.save(
             Message(

@@ -6,6 +6,7 @@ import pytest
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.domain.entities.conversation import Conversation
+from raggae.domain.entities.project import Project
 
 
 class TestSendMessagePersistence:
@@ -32,6 +33,16 @@ class TestSendMessagePersistence:
         llm_service.generate_answer.return_value = "assistant answer"
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
         conversation_repository = AsyncMock()
         conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
@@ -40,6 +51,7 @@ class TestSendMessagePersistence:
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
             conversation_title_generator=title_generator,
+            project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
@@ -90,6 +102,16 @@ class TestSendMessagePersistence:
         query_use_case.execute.return_value = []
         llm_service = AsyncMock()
         title_generator = AsyncMock()
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
         conversation_repository = AsyncMock()
         conversation_repository.find_by_id.return_value = conversation
         message_repository = AsyncMock()
@@ -97,6 +119,7 @@ class TestSendMessagePersistence:
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
             conversation_title_generator=title_generator,
+            project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
@@ -147,6 +170,16 @@ class TestSendMessagePersistence:
         llm_service = AsyncMock()
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = generated_title
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
         conversation_repository = AsyncMock()
         conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
@@ -154,6 +187,7 @@ class TestSendMessagePersistence:
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
             conversation_title_generator=title_generator,
+            project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
@@ -189,6 +223,16 @@ class TestSendMessagePersistence:
         llm_service = AsyncMock()
         title_generator = AsyncMock()
         title_generator.generate_title.side_effect = RuntimeError("LLM down")
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
         conversation_repository = AsyncMock()
         conversation_repository.create.return_value = conversation
         message_repository = AsyncMock()
@@ -196,6 +240,7 @@ class TestSendMessagePersistence:
             query_relevant_chunks_use_case=query_use_case,
             llm_service=llm_service,
             conversation_title_generator=title_generator,
+            project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
         )
