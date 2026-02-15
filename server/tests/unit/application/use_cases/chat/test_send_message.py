@@ -3,6 +3,7 @@ from unittest.mock import ANY, AsyncMock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.dto.query_relevant_chunks_result_dto import (
     QueryRelevantChunksResultDTO,
 )
@@ -299,4 +300,160 @@ class TestSendMessage:
             offset=0,
             strategy="fulltext",
             metadata_filters={"source_type": "paragraph"},
+        )
+
+    async def test_send_message_uses_adaptive_limit_when_missing(
+        self,
+        use_case: SendMessage,
+        mock_query_relevant_chunks: AsyncMock,
+    ) -> None:
+        # When
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="How do we design a scalable retrieval architecture?",
+            limit=None,
+        )
+
+        # Then
+        mock_query_relevant_chunks.execute.assert_awaited_with(
+            project_id=ANY,
+            user_id=ANY,
+            query="How do we design a scalable retrieval architecture?",
+            limit=8,
+            offset=0,
+            strategy="hybrid",
+            metadata_filters=None,
+        )
+
+    async def test_send_message_diversifies_chunks_by_document(self) -> None:
+        # Given
+        first_document = uuid4()
+        second_document = uuid4()
+        mock_query_relevant_chunks = AsyncMock()
+        mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=first_document,
+                    content="doc1 chunk a",
+                    score=0.95,
+                ),
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=first_document,
+                    content="doc1 chunk b",
+                    score=0.90,
+                ),
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=second_document,
+                    content="doc2 chunk a",
+                    score=0.89,
+                ),
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=4.0,
+        )
+        mock_llm_service = AsyncMock()
+        mock_llm_service.generate_answer.return_value = "answer"
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = []
+        conversation_repository.create.return_value = Conversation(
+            id=uuid4(),
+            project_id=uuid4(),
+            user_id=uuid4(),
+            created_at=datetime.now(UTC),
+        )
+        message_repository = AsyncMock()
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=mock_query_relevant_chunks,
+            llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="question",
+            limit=2,
+        )
+
+        # Then
+        assert len(result.chunks) == 2
+        assert result.chunks[0].document_id != result.chunks[1].document_id
+
+    async def test_send_message_uses_configured_default_chunk_limit(self) -> None:
+        # Given
+        mock_query_relevant_chunks = AsyncMock()
+        mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[],
+            strategy_used="hybrid",
+            execution_time_ms=2.0,
+        )
+        mock_llm_service = AsyncMock()
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = []
+        conversation_repository.create.return_value = Conversation(
+            id=uuid4(),
+            project_id=uuid4(),
+            user_id=uuid4(),
+            created_at=datetime.now(UTC),
+        )
+        message_repository = AsyncMock()
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=mock_query_relevant_chunks,
+            llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+            default_chunk_limit=14,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="short question",
+            limit=None,
+        )
+
+        # Then
+        mock_query_relevant_chunks.execute.assert_awaited_with(
+            project_id=ANY,
+            user_id=ANY,
+            query="short question",
+            limit=14,
+            offset=0,
+            strategy="hybrid",
+            metadata_filters=None,
         )

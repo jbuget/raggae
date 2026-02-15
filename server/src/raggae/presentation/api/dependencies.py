@@ -355,6 +355,7 @@ def get_send_message_use_case() -> SendMessage:
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
+        default_chunk_limit=settings.retrieval_default_chunk_limit,
     )
 
 

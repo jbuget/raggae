@@ -33,6 +33,8 @@ class SendMessage:
         conversation_repository: ConversationRepository,
         message_repository: MessageRepository,
         chat_security_policy: ChatSecurityPolicy | None = None,
+        default_chunk_limit: int = 8,
+        max_chunk_limit: int = 40,
     ) -> None:
         self._query_relevant_chunks_use_case = query_relevant_chunks_use_case
         self._llm_service = llm_service
@@ -40,6 +42,8 @@ class SendMessage:
         self._project_repository = project_repository
         self._conversation_repository = conversation_repository
         self._message_repository = message_repository
+        self._default_chunk_limit = max(1, default_chunk_limit)
+        self._max_chunk_limit = max(1, max_chunk_limit)
         if chat_security_policy is None:
             self._chat_security_policy: ChatSecurityPolicy = StaticChatSecurityPolicy()
         else:
@@ -50,12 +54,17 @@ class SendMessage:
         project_id: UUID,
         user_id: UUID,
         message: str,
-        limit: int = 5,
+        limit: int | None = None,
         offset: int = 0,
         conversation_id: UUID | None = None,
         retrieval_strategy: str = "hybrid",
         retrieval_filters: dict[str, object] | None = None,
     ) -> ChatMessageResponseDTO:
+        effective_limit = self._resolve_effective_chunk_limit(
+            message=message,
+            requested_limit=limit,
+            retrieval_strategy=retrieval_strategy,
+        )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
         if is_new_conversation:
@@ -115,12 +124,15 @@ class SendMessage:
             project_id=project_id,
             user_id=user_id,
             query=message,
-            limit=limit,
+            limit=effective_limit,
             offset=offset,
             strategy=retrieval_strategy,
             metadata_filters=retrieval_filters,
         )
-        relevant_chunks = self._filter_relevant_chunks(retrieval_result.chunks)
+        relevant_chunks = self._select_useful_chunks(
+            self._filter_relevant_chunks(retrieval_result.chunks),
+            effective_limit,
+        )
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
             await self._message_repository.save(
@@ -237,6 +249,49 @@ class SendMessage:
 
     def _filter_relevant_chunks(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
         return [chunk for chunk in chunks if chunk.score > 0.0 and chunk.content.strip()]
+
+    def _resolve_effective_chunk_limit(
+        self,
+        message: str,
+        requested_limit: int | None,
+        retrieval_strategy: str,
+    ) -> int:
+        if requested_limit is not None:
+            return max(1, min(requested_limit, self._max_chunk_limit))
+        words = len(message.split())
+        if retrieval_strategy == "fulltext":
+            base = 6
+        elif words > 20:
+            base = 12
+        elif words > 8:
+            base = 10
+        else:
+            base = self._default_chunk_limit
+        return max(1, min(base, self._max_chunk_limit))
+
+    def _select_useful_chunks(
+        self,
+        chunks: list[RetrievedChunkDTO],
+        limit: int,
+    ) -> list[RetrievedChunkDTO]:
+        if len(chunks) <= limit:
+            return chunks
+        selected: list[RetrievedChunkDTO] = []
+        seen_documents: set[UUID] = set()
+        for chunk in chunks:
+            if chunk.document_id in seen_documents:
+                continue
+            selected.append(chunk)
+            seen_documents.add(chunk.document_id)
+            if len(selected) == limit:
+                return selected
+        for chunk in chunks:
+            if chunk in selected:
+                continue
+            selected.append(chunk)
+            if len(selected) == limit:
+                break
+        return selected
 
     async def _get_or_create_pending_conversation(
         self,

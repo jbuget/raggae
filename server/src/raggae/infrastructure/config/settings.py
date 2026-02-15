@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 100
     retrieval_min_score: float = 0.0
+    retrieval_default_chunk_limit: int = 8
     retrieval_vector_weight: float = 0.6
     retrieval_fulltext_weight: float = 0.4
     retrieval_candidate_multiplier: int = 5

@@ -17,7 +17,7 @@ class RetrievalFiltersRequest(BaseModel):
 
 class SendMessageRequest(BaseModel):
     message: str = Field(..., min_length=1)
-    limit: int = Field(default=5, ge=1, le=20)
+    limit: int | None = Field(default=None, ge=1, le=40)
     offset: int = Field(default=0, ge=0)
     conversation_id: UUID | None = None
     retrieval_strategy: Literal["vector", "fulltext", "hybrid", "auto"] = "hybrid"
