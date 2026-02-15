@@ -48,6 +48,8 @@ class UploadDocument:
         self._file_storage_service = file_storage_service
         self._max_file_size = max_file_size
         self._processing_mode = processing_mode
+        if self._processing_mode not in {"off", "sync", "async"}:
+            raise ValueError(f"Unsupported processing mode: {self._processing_mode}")
         self._document_chunk_repository = document_chunk_repository
         self._document_text_extractor = document_text_extractor
         self._text_sanitizer_service = text_sanitizer_service
