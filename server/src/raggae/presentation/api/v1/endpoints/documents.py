@@ -1,3 +1,4 @@
+import urllib.parse
 from typing import Annotated
 from uuid import UUID
 
@@ -221,10 +222,14 @@ async def get_document_file(
             detail="Document not found",
         ) from None
 
+    ascii_name = document_file.file_name.encode("ascii", errors="replace").decode("ascii")
+    utf8_name = urllib.parse.quote(document_file.file_name)
     return Response(
         content=document_file.content,
         media_type=document_file.content_type,
         headers={
-            "Content-Disposition": f'inline; filename="{document_file.file_name}"',
+            "Content-Disposition": (
+                f'inline; filename="{ascii_name}"; filename*=UTF-8\'\'{utf8_name}'
+            ),
         },
     )
