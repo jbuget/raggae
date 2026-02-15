@@ -51,6 +51,7 @@ Documentation essentielle pour Claude Code :
 - **[SKILLS.md](./SKILLS.md)** : Compétences techniques requises (Python, FastAPI, SQLAlchemy)
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** : Décisions architecturales et patterns
 - **[DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md)** : Workflow quotidien (Red-Green-Refactor)
+- **[CHAT_CONVERSATION_CONTINUITY_PLAN.md](./CHAT_CONVERSATION_CONTINUITY_PLAN.md)** : Plan d'implémentation pour garantir des conversations LLM réellement contextuelles
 
 ### Lecture obligatoire avant de coder
 
