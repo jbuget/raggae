@@ -8,3 +8,7 @@ class UserAlreadyExistsError(Exception):
 
 class UserNotFoundError(Exception):
     """Raised when a user cannot be found."""
+
+
+class InvalidCredentialsError(Exception):
+    """Raised when login credentials are invalid."""
