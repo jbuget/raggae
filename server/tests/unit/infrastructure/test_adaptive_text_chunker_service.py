@@ -26,6 +26,25 @@ class TestAdaptiveTextChunkerService:
         heading_section_chunker.chunk_text.assert_not_called()
         fixed_window_chunker.chunk_text.assert_not_called()
 
+    async def test_chunk_text_paragraph_applies_context_window(self) -> None:
+        # Given
+        fixed_window_chunker = AsyncMock()
+        paragraph_chunker = AsyncMock()
+        heading_section_chunker = AsyncMock()
+        paragraph_chunker.chunk_text.return_value = ["alpha beta", "gamma delta"]
+        chunker = AdaptiveTextChunkerService(
+            fixed_window_chunker=fixed_window_chunker,
+            paragraph_chunker=paragraph_chunker,
+            heading_section_chunker=heading_section_chunker,
+            context_window_size=4,
+        )
+
+        # When
+        result = await chunker.chunk_text("text", ChunkingStrategy.PARAGRAPH)
+
+        # Then
+        assert result == ["alpha beta", "beta\n\ngamma delta"]
+
     async def test_chunk_text_routes_to_heading_section_chunker(self) -> None:
         # Given
         fixed_window_chunker = AsyncMock()
@@ -49,6 +68,25 @@ class TestAdaptiveTextChunkerService:
         )
         paragraph_chunker.chunk_text.assert_not_called()
         fixed_window_chunker.chunk_text.assert_not_called()
+
+    async def test_chunk_text_heading_section_applies_context_window(self) -> None:
+        # Given
+        fixed_window_chunker = AsyncMock()
+        paragraph_chunker = AsyncMock()
+        heading_section_chunker = AsyncMock()
+        heading_section_chunker.chunk_text.return_value = ["section one", "section two"]
+        chunker = AdaptiveTextChunkerService(
+            fixed_window_chunker=fixed_window_chunker,
+            paragraph_chunker=paragraph_chunker,
+            heading_section_chunker=heading_section_chunker,
+            context_window_size=3,
+        )
+
+        # When
+        result = await chunker.chunk_text("text", ChunkingStrategy.HEADING_SECTION)
+
+        # Then
+        assert result == ["section one", "one\n\nsection two"]
 
     async def test_chunk_text_routes_to_fixed_window_by_default(self) -> None:
         # Given
