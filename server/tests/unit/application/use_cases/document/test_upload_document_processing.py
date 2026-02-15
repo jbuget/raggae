@@ -180,6 +180,64 @@ class TestUploadDocumentProcessing:
         mock_text_chunker_service.chunk_text.assert_not_called()
         mock_embedding_service.embed_texts.assert_not_called()
 
+    async def test_upload_document_sync_processing_selects_heading_strategy(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_document_structure_analyzer.analyze_text.return_value = DocumentStructureAnalysisDTO(
+            has_headings=True,
+            paragraph_count=1,
+            average_paragraph_length=20,
+        )
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+            processing_mode="sync",
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name="doc.md",
+            file_content=b"# Title\n\nBody",
+            content_type="text/markdown",
+        )
+
+        # Then
+        mock_text_chunker_service.chunk_text.assert_called_once_with(
+            "hello world\n\nfrom raggae",
+            strategy=ChunkingStrategy.HEADING_SECTION,
+        )
+
     async def test_upload_document_processing_async_does_not_save_chunks(
         self,
         mock_document_repository: AsyncMock,
