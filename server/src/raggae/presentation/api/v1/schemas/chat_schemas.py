@@ -33,6 +33,8 @@ class SendMessageResponse(BaseModel):
     chunks: list[RetrievedChunkResponse]
     retrieval_strategy_used: Literal["vector", "fulltext", "hybrid"]
     retrieval_execution_time_ms: float
+    history_messages_used: int
+    chunks_used: int
 
 
 class MessageResponse(BaseModel):

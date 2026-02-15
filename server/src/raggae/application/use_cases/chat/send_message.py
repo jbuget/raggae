@@ -123,6 +123,8 @@ class SendMessage:
                 message=message,
                 answer=refusal_answer,
                 chunks=[],
+                history_messages_used=0,
+                chunks_used=0,
             )
         retrieval_result = await self._query_relevant_chunks_use_case.execute(
             project_id=project_id,
@@ -164,6 +166,8 @@ class SendMessage:
                 chunks=[],
                 retrieval_strategy_used=retrieval_result.strategy_used,
                 retrieval_execution_time_ms=retrieval_result.execution_time_ms,
+                history_messages_used=0,
+                chunks_used=0,
             )
         project = await self._project_repository.find_by_id(project_id)
         project_system_prompt = project.system_prompt if project is not None else None
@@ -218,6 +222,8 @@ class SendMessage:
             chunks=relevant_chunks,
             retrieval_strategy_used=retrieval_result.strategy_used,
             retrieval_execution_time_ms=retrieval_result.execution_time_ms,
+            history_messages_used=len(conversation_history),
+            chunks_used=len(relevant_chunks),
         )
 
     async def _build_conversation_title(self, user_message: str, assistant_answer: str) -> str:

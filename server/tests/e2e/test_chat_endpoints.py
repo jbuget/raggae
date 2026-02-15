@@ -58,6 +58,8 @@ class TestChatEndpoints:
         assert data["message"] == "hello"
         assert isinstance(data["answer"], str)
         assert isinstance(data["chunks"], list)
+        assert "history_messages_used" in data
+        assert "chunks_used" in data
 
     async def test_send_message_accepts_retrieval_strategy_and_filters(
         self,

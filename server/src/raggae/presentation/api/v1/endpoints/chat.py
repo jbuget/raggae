@@ -106,6 +106,8 @@ async def send_message(
         answer=response.answer,
         retrieval_strategy_used=response.retrieval_strategy_used,
         retrieval_execution_time_ms=response.retrieval_execution_time_ms,
+        history_messages_used=response.history_messages_used,
+        chunks_used=response.chunks_used,
         chunks=[
             RetrievedChunkResponse(
                 chunk_id=chunk.chunk_id,
@@ -186,6 +188,8 @@ async def stream_message(
                     "conversation_id": str(response.conversation_id),
                     "retrieval_strategy_used": response.retrieval_strategy_used,
                     "retrieval_execution_time_ms": response.retrieval_execution_time_ms,
+                    "history_messages_used": response.history_messages_used,
+                    "chunks_used": response.chunks_used,
                     "chunks": chunks_payload,
                 }
             )

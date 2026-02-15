@@ -122,6 +122,8 @@ class TestSendMessage:
         assert len(result.chunks) == 2
         assert result.retrieval_strategy_used == "hybrid"
         assert result.retrieval_execution_time_ms == 12.3
+        assert result.history_messages_used == 0
+        assert result.chunks_used == 2
 
     async def test_send_message_project_not_found_bubbles_error(
         self,
