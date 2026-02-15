@@ -4,6 +4,9 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from raggae.application.use_cases.document.delete_document import DeleteDocument
+from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
+from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
@@ -11,6 +14,10 @@ from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
+from raggae.infrastructure.config.settings import settings
+from raggae.infrastructure.database.repositories.in_memory_document_repository import (
+    InMemoryDocumentRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
@@ -18,11 +25,16 @@ from raggae.infrastructure.database.repositories.in_memory_user_repository impor
     InMemoryUserRepository,
 )
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
+from raggae.infrastructure.services.in_memory_file_storage_service import (
+    InMemoryFileStorageService,
+)
 from raggae.infrastructure.services.jwt_token_service import JwtTokenService
 
 _user_repository = InMemoryUserRepository()
 _project_repository = InMemoryProjectRepository()
+_document_repository = InMemoryDocumentRepository()
 _password_hasher = BcryptPasswordHasher()
+_file_storage_service = InMemoryFileStorageService()
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
 
@@ -60,6 +72,30 @@ def get_delete_project_use_case() -> DeleteProject:
 
 def get_update_project_use_case() -> UpdateProject:
     return UpdateProject(project_repository=_project_repository)
+
+
+def get_upload_document_use_case() -> UploadDocument:
+    return UploadDocument(
+        document_repository=_document_repository,
+        project_repository=_project_repository,
+        file_storage_service=_file_storage_service,
+        max_file_size=settings.max_upload_size,
+    )
+
+
+def get_list_project_documents_use_case() -> ListProjectDocuments:
+    return ListProjectDocuments(
+        document_repository=_document_repository,
+        project_repository=_project_repository,
+    )
+
+
+def get_delete_document_use_case() -> DeleteDocument:
+    return DeleteDocument(
+        document_repository=_document_repository,
+        project_repository=_project_repository,
+        file_storage_service=_file_storage_service,
+    )
 
 
 def get_current_user_id(
