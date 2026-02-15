@@ -26,6 +26,7 @@ interface ChatPanelProps {
 interface MessageSourceDocument {
   documentId: string;
   documentName: string;
+  chunkIds: string[];
 }
 
 export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
@@ -51,10 +52,14 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   const citedDocuments = useMemo<MessageSourceDocument[]>(() => {
     const unique = new Map<string, MessageSourceDocument>();
     for (const chunk of chunks) {
-      if (!unique.has(chunk.document_id)) {
+      const existing = unique.get(chunk.document_id);
+      if (existing) {
+        existing.chunkIds.push(chunk.chunk_id);
+      } else {
         unique.set(chunk.document_id, {
           documentId: chunk.document_id,
           documentName: chunk.document_file_name || chunk.document_id,
+          chunkIds: [chunk.chunk_id],
         });
       }
     }
@@ -120,6 +125,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
         unique.set(document.document_id, {
           documentId: document.document_id,
           documentName: document.document_file_name || document.document_id,
+          chunkIds: document.chunk_ids ?? [],
         });
       }
     }
@@ -238,6 +244,29 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
             <DialogTitle>
               {selectedSourceDocument?.documentName || "Document preview"}
             </DialogTitle>
+            {selectedSourceDocument?.chunkIds &&
+              selectedSourceDocument.chunkIds.length > 0 && (
+                <div className="mt-1 space-y-1">
+                  {selectedSourceDocument.chunkIds.map((chunkId) => (
+                    <div
+                      key={chunkId}
+                      className="flex items-center gap-2 text-xs text-muted-foreground"
+                    >
+                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono">
+                        {chunkId}
+                      </code>
+                      <button
+                        type="button"
+                        className="rounded px-1.5 py-0.5 text-xs hover:bg-muted"
+                        onClick={() => navigator.clipboard.writeText(chunkId)}
+                        title="Copy chunk ID"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
           </DialogHeader>
           <div className="h-full min-h-0 overflow-y-auto rounded-md border bg-muted/20 p-3">
             {isSelectedDocumentLoading && (

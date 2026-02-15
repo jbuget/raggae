@@ -6,6 +6,7 @@ import { renderMarkdown } from "@/lib/markdown/render-markdown";
 interface MessageSourceDocument {
   documentId: string;
   documentName: string;
+  chunkIds: string[];
 }
 
 interface MessageBubbleProps {

@@ -247,16 +247,20 @@ class SendMessage:
     def _normalize_title(self, value: str) -> str:
         return value.strip()[: self._MAX_CONVERSATION_TITLE_LENGTH].strip()
 
-    def _extract_source_documents(self, chunks: list[RetrievedChunkDTO]) -> list[dict[str, str]]:
-        unique: dict[str, dict[str, str]] = {}
+    def _extract_source_documents(
+        self, chunks: list[RetrievedChunkDTO]
+    ) -> list[dict[str, object]]:
+        unique: dict[str, dict[str, object]] = {}
         for chunk in chunks:
             key = str(chunk.document_id)
-            if key in unique:
-                continue
-            payload = {"document_id": key}
-            if chunk.document_file_name is not None:
-                payload["document_file_name"] = chunk.document_file_name
-            unique[key] = payload
+            if key not in unique:
+                payload: dict[str, object] = {"document_id": key, "chunk_ids": []}
+                if chunk.document_file_name is not None:
+                    payload["document_file_name"] = chunk.document_file_name
+                unique[key] = payload
+            chunk_ids = unique[key]["chunk_ids"]
+            if isinstance(chunk_ids, list):
+                chunk_ids.append(str(chunk.chunk_id))
         return list(unique.values())
 
     def _compute_reliability_percent(self, chunks: list[RetrievedChunkDTO]) -> int:

@@ -42,7 +42,7 @@ class MessageResponse(BaseModel):
     conversation_id: UUID
     role: str
     content: str
-    source_documents: list[dict[str, str]] | None = None
+    source_documents: list[dict[str, object]] | None = None
     reliability_percent: int | None = None
     created_at: datetime
 

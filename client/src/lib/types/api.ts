@@ -124,6 +124,7 @@ export interface MessageResponse {
   source_documents?: Array<{
     document_id: string;
     document_file_name?: string;
+    chunk_ids?: string[];
   }> | null;
   reliability_percent?: number | null;
   created_at: string;

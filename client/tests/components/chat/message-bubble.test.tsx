@@ -11,8 +11,8 @@ describe("MessageBubble", () => {
         role="assistant"
         content={"## Title\nThis is **bold** and `code`\n- first\n- second"}
         sourceDocuments={[
-          { documentId: "doc-a", documentName: "doc-a.md" },
-          { documentId: "doc-b", documentName: "doc-b.pdf" },
+          { documentId: "doc-a", documentName: "doc-a.md", chunkIds: ["c1"] },
+          { documentId: "doc-b", documentName: "doc-b.pdf", chunkIds: ["c2"] },
         ]}
       />,
     );
