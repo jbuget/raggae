@@ -1,5 +1,6 @@
 services:
   postgres:
+    container_name: raggae-postgres
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: user
@@ -11,6 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   postgres-test:
+    container_name: raggae-postgres-test
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: test
