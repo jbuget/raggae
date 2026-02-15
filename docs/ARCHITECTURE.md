@@ -737,3 +737,19 @@ class UserRepository:
   - les implémentations concrètes des chunkers restent en Infrastructure.
 - Traçabilité :
   - stocker la stratégie retenue par document pour faciliter debug/évaluation qualité retrieval.
+
+### Évolution prévue (Sprint 4D)
+
+- Objectif : rendre les chunks exploitables pour des domaines variés (transcripts, procédures, specs, etc.)
+  sans figer un schéma métier unique.
+- Design recommandé :
+  - `DocumentChunk` ajoute `metadata_json: dict[str, Any] | None`.
+  - persistance PostgreSQL en `JSONB` sur `document_chunks.metadata_json`.
+  - API `GET /projects/{project_id}/documents/{document_id}/chunks` expose aussi `metadata_json`.
+- Contrat minimal de metadata (noyau commun) :
+  - `metadata_version` (ex: `1`)
+  - `processing_strategy` (copie de la stratégie retenue)
+  - `source_type` (type de segment textuel)
+- Contrainte d'extensibilité :
+  - chaque domaine peut enrichir `metadata_json` avec ses clés spécifiques sans migration systématique.
+  - les consumers doivent tolérer des clés absentes/inconnues (forward compatibility).

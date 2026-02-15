@@ -48,6 +48,25 @@ Contraintes Sprint 4C :
 - fallback systématique vers `fixed_window` en cas d'ambiguïté
 - aucun couplage direct de la couche Application à une lib de parsing spécifique
 
+## Découpage validé Sprint 4D (Metadata JSON sur chunks)
+
+Avant de coder, appliquer ce découpage en tâches atomiques :
+
+- [ ] Domain: ajouter `metadata_json` sur `DocumentChunk`
+- [ ] Infrastructure DB: ajouter colonne `metadata_json` (`JSONB`) sur `document_chunks`
+- [ ] Alembic: migration dédiée non destructive (`nullable=True`)
+- [ ] Repositories: mapper `metadata_json` (save/find)
+- [ ] Application: enrichir `UploadDocument` pour renseigner le noyau metadata minimal
+- [ ] DTO/API: exposer `metadata_json` dans le listing des chunks
+- [ ] Tests unitaires: use case + mapping DTO/schema
+- [ ] Tests d'intégration: repository SQLAlchemy (persist/load JSON)
+- [ ] Tests E2E: endpoint chunks retourne `metadata_json`
+
+Contraintes Sprint 4D :
+- metadata flexible mais avec noyau commun obligatoire (`metadata_version`, `processing_strategy`, `source_type`)
+- backward compatible (chunks historiques sans metadata acceptés)
+- pas de logique métier domaine spécifique codée en dur dans la couche Domain
+
 ## Cycle de développement
 
 ### 1. Choisir une fonctionnalité

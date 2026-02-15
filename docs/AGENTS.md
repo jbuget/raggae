@@ -424,6 +424,19 @@ dev = [
 4. Persister la stratégie choisie sur le document (ou dans metadata processing) pour audit/debug
 5. Ajouter tests unitaires du selector + tests d'intégration du pipeline selon type de document
 
+#### Sprint 4D : Métadonnées de chunks (multi-domaines)
+1. Ajouter `metadata_json` sur `DocumentChunk` pour supporter des projets hétérogènes
+2. Définir un noyau minimal commun dans `metadata_json` :
+   - `metadata_version`
+   - `processing_strategy`
+   - `source_type` (`paragraph`, `heading_section`, `fixed_window`, `table_row`, etc.)
+3. Alimenter automatiquement ce noyau au moment du processing sync
+4. Exposer `metadata_json` dans l'API de listing des chunks
+5. Ajouter une migration Alembic + tests unitaires/intégration/e2e
+6. Garder la compatibilité ascendante :
+   - `metadata_json` nullable
+   - valeurs par défaut sûres quand la metadata est absente
+
 ### Sprint 5 : Chat
 1. Use Case SendMessage
 2. RAG Service (retrieval + generation)
