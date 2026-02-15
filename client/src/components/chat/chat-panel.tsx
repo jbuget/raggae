@@ -232,13 +232,13 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
           }
         }}
       >
-        <DialogContent className="max-h-[80vh] max-w-3xl overflow-hidden">
+        <DialogContent className="h-[94vh] max-h-[94vh] w-[98vw] max-w-[98vw] sm:max-w-none overflow-hidden p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
               {selectedSourceDocument?.documentName || "Document preview"}
             </DialogTitle>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto rounded-md border bg-muted/20 p-3">
+          <div className="h-full min-h-0 overflow-y-auto rounded-md border bg-muted/20 p-3">
             {isSelectedDocumentLoading && (
               <p className="text-sm text-muted-foreground">Loading document...</p>
             )}
@@ -252,7 +252,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
                 <img
                   src={selectedDocumentUrl}
                   alt={selectedSourceDocument?.documentName || "Document"}
-                  className="mx-auto max-h-[56vh] object-contain"
+                  className="mx-auto max-h-[84vh] object-contain"
                 />
               )}
             {!isSelectedDocumentLoading &&
@@ -262,7 +262,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
                 <iframe
                   src={selectedDocumentUrl}
                   title={selectedSourceDocument?.documentName || "Document"}
-                  className="h-[56vh] w-full rounded-md border"
+                  className="h-[84vh] w-full rounded-md border"
                 />
               )}
             {!isSelectedDocumentLoading &&
@@ -272,7 +272,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
                 <iframe
                   src={selectedDocumentUrl}
                   title={selectedSourceDocument?.documentName || "Document"}
-                  className="h-[56vh] w-full rounded-md border bg-background"
+                  className="h-[84vh] w-full rounded-md border bg-background"
                 />
               )}
             {!isSelectedDocumentLoading &&
