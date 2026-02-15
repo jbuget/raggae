@@ -160,10 +160,14 @@ class TestDocumentProcessingFlow:
             content_type="text/markdown",
         )
         stored_document = await document_repository.find_by_id(uploaded.id)
+        chunks = await document_chunk_repository.find_by_document_id(uploaded.id)
 
         # Then
         assert stored_document is not None
         assert stored_document.processing_strategy == ChunkingStrategy.HEADING_SECTION
+        assert chunks
+        assert chunks[0].metadata_json is not None
+        assert chunks[0].metadata_json["chunker_backend"] == "native"
 
     @pytest.mark.integration
     async def test_integration_sync_processing_adds_context_window_for_paragraph_chunks(

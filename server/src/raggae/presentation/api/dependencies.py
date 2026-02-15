@@ -214,6 +214,7 @@ def get_upload_document_use_case() -> UploadDocument:
         chunking_strategy_selector=_chunking_strategy_selector,
         text_chunker_service=_text_chunker_service,
         embedding_service=_embedding_service,
+        chunker_backend=settings.text_chunker_backend,
     )
 
 

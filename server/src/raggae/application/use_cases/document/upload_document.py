@@ -54,6 +54,7 @@ class UploadDocument:
         chunking_strategy_selector: ChunkingStrategySelector | None = None,
         text_chunker_service: TextChunkerService | None = None,
         embedding_service: EmbeddingService | None = None,
+        chunker_backend: str = "native",
     ) -> None:
         self._document_repository = document_repository
         self._project_repository = project_repository
@@ -73,6 +74,7 @@ class UploadDocument:
             self._chunking_strategy_selector = chunking_strategy_selector
         self._text_chunker_service = text_chunker_service
         self._embedding_service = embedding_service
+        self._chunker_backend = chunker_backend
 
     async def execute(
         self,
@@ -147,6 +149,7 @@ class UploadDocument:
                             "metadata_version": 1,
                             "processing_strategy": strategy.value,
                             "source_type": strategy.value,
+                            "chunker_backend": self._chunker_backend,
                         },
                     )
                     for index, chunk_text in enumerate(chunks)

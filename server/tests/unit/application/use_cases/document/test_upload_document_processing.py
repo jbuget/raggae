@@ -129,6 +129,7 @@ class TestUploadDocumentProcessing:
         assert saved_chunks[0].metadata_json["metadata_version"] == 1
         assert saved_chunks[0].metadata_json["processing_strategy"] == "paragraph"
         assert saved_chunks[0].metadata_json["source_type"] == "paragraph"
+        assert saved_chunks[0].metadata_json["chunker_backend"] == "native"
         assert mock_document_repository.save.call_count == 2
         second_saved_document = mock_document_repository.save.call_args_list[1].args[0]
         assert second_saved_document.processing_strategy == ChunkingStrategy.PARAGRAPH
