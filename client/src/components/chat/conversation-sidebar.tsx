@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import {
 import type { ConversationResponse } from "@/lib/types/api";
 
 export function ConversationSidebar() {
+  const router = useRouter();
   const params = useParams<{ projectId: string; conversationId?: string }>();
   const pathname = usePathname();
   const { data: conversations, isLoading } = useConversations(params.projectId);
@@ -65,7 +66,15 @@ export function ConversationSidebar() {
                 conversation={conv}
                 projectId={params.projectId}
                 isActive={pathname.includes(conv.id)}
-                onDelete={(id) => deleteConversation.mutate(id)}
+                onDelete={(id) =>
+                  deleteConversation.mutate(id, {
+                    onSuccess: () => {
+                      if (pathname.includes(id)) {
+                        router.push(`/projects/${params.projectId}/chat`);
+                      }
+                    },
+                  })
+                }
               />
             ))}
           </div>
