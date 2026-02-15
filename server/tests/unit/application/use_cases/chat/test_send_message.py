@@ -7,6 +7,7 @@ from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.project import Project
+from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 
 
@@ -186,3 +187,25 @@ class TestSendMessage:
         mock_llm_service.generate_answer.assert_not_called()
         assert result.answer == "I could not find relevant context to answer your message."
         assert result.chunks == []
+
+    async def test_send_message_llm_failure_returns_graceful_fallback(
+        self,
+        use_case: SendMessage,
+        mock_llm_service: AsyncMock,
+    ) -> None:
+        # Given
+        mock_llm_service.generate_answer.side_effect = LLMGenerationError("provider down")
+
+        # When
+        result = await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="hello",
+            limit=2,
+        )
+
+        # Then
+        assert result.answer == (
+            "I found relevant context but could not generate an answer right now. "
+            "Please try again in a few seconds."
+        )

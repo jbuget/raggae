@@ -16,6 +16,7 @@ from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevan
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
+from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 
 
 class SendMessage:
@@ -108,19 +109,29 @@ class SendMessage:
             )
         project = await self._project_repository.find_by_id(project_id)
         project_system_prompt = project.system_prompt if project is not None else None
-        answer = await self._llm_service.generate_answer(
-            query=message,
-            context_chunks=[chunk.content for chunk in relevant_chunks],
-            project_system_prompt=project_system_prompt,
-        )
+        try:
+            answer = await self._llm_service.generate_answer(
+                query=message,
+                context_chunks=[chunk.content for chunk in relevant_chunks],
+                project_system_prompt=project_system_prompt,
+            )
+            source_documents = self._extract_source_documents(relevant_chunks)
+            reliability_percent = self._compute_reliability_percent(relevant_chunks)
+        except LLMGenerationError:
+            answer = (
+                "I found relevant context but could not generate an answer right now. "
+                "Please try again in a few seconds."
+            )
+            source_documents = []
+            reliability_percent = 0
         await self._message_repository.save(
             Message(
                 id=uuid4(),
                 conversation_id=conversation.id,
                 role="assistant",
                 content=answer,
-                source_documents=self._extract_source_documents(relevant_chunks),
-                reliability_percent=self._compute_reliability_percent(relevant_chunks),
+                source_documents=source_documents,
+                reliability_percent=reliability_percent,
                 created_at=datetime.now(UTC),
             )
         )
