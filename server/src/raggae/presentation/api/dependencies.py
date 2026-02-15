@@ -4,12 +4,20 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from raggae.application.interfaces.repositories.document_chunk_repository import (
+    DocumentChunkRepository,
+)
 from raggae.application.interfaces.repositories.document_repository import (
     DocumentRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.user_repository import UserRepository
+from raggae.application.interfaces.services.document_text_extractor import (
+    DocumentTextExtractor,
+)
+from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
+from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
@@ -21,6 +29,9 @@ from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.infrastructure.config.settings import settings
+from raggae.infrastructure.database.repositories.in_memory_document_chunk_repository import (
+    InMemoryDocumentChunkRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_document_repository import (
     InMemoryDocumentRepository,
 )
@@ -29,6 +40,9 @@ from raggae.infrastructure.database.repositories.in_memory_project_repository im
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_document_chunk_repository import (
+    SQLAlchemyDocumentChunkRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_document_repository import (
     SQLAlchemyDocumentRepository,
@@ -41,12 +55,22 @@ from raggae.infrastructure.database.repositories.sqlalchemy_user_repository impo
 )
 from raggae.infrastructure.database.session import SessionFactory
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
+from raggae.infrastructure.services.in_memory_embedding_service import (
+    InMemoryEmbeddingService,
+)
 from raggae.infrastructure.services.in_memory_file_storage_service import (
     InMemoryFileStorageService,
 )
 from raggae.infrastructure.services.jwt_token_service import JwtTokenService
 from raggae.infrastructure.services.minio_file_storage_service import (
     MinioFileStorageService,
+)
+from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbeddingService
+from raggae.infrastructure.services.simple_document_text_extractor import (
+    SimpleDocumentTextExtractor,
+)
+from raggae.infrastructure.services.simple_text_chunker_service import (
+    SimpleTextChunkerService,
 )
 
 if settings.persistence_backend == "postgres":
@@ -57,10 +81,14 @@ if settings.persistence_backend == "postgres":
     _document_repository: DocumentRepository = SQLAlchemyDocumentRepository(
         session_factory=SessionFactory
     )
+    _document_chunk_repository: DocumentChunkRepository = SQLAlchemyDocumentChunkRepository(
+        session_factory=SessionFactory
+    )
 else:
     _user_repository = InMemoryUserRepository()
     _project_repository = InMemoryProjectRepository()
     _document_repository = InMemoryDocumentRepository()
+    _document_chunk_repository = InMemoryDocumentChunkRepository()
 _password_hasher = BcryptPasswordHasher()
 if settings.storage_backend == "minio":
     _file_storage_service: FileStorageService = MinioFileStorageService(
@@ -72,6 +100,18 @@ if settings.storage_backend == "minio":
     )
 else:
     _file_storage_service = InMemoryFileStorageService()
+if settings.embedding_backend == "openai":
+    _embedding_service: EmbeddingService = OpenAIEmbeddingService(
+        api_key=settings.openai_api_key,
+        model=settings.embedding_model,
+    )
+else:
+    _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
+_document_text_extractor: DocumentTextExtractor = SimpleDocumentTextExtractor()
+_text_chunker_service: TextChunkerService = SimpleTextChunkerService(
+    chunk_size=settings.chunk_size,
+    chunk_overlap=settings.chunk_overlap,
+)
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
 
@@ -117,6 +157,11 @@ def get_upload_document_use_case() -> UploadDocument:
         project_repository=_project_repository,
         file_storage_service=_file_storage_service,
         max_file_size=settings.max_upload_size,
+        processing_mode=settings.processing_mode,
+        document_chunk_repository=_document_chunk_repository,
+        document_text_extractor=_document_text_extractor,
+        text_chunker_service=_text_chunker_service,
+        embedding_service=_embedding_service,
     )
 
 
@@ -130,6 +175,7 @@ def get_list_project_documents_use_case() -> ListProjectDocuments:
 def get_delete_document_use_case() -> DeleteDocument:
     return DeleteDocument(
         document_repository=_document_repository,
+        document_chunk_repository=_document_chunk_repository,
         project_repository=_project_repository,
         file_storage_service=_file_storage_service,
     )

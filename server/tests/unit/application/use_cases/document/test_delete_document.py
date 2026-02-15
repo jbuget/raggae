@@ -25,14 +25,20 @@ class TestDeleteDocument:
         return AsyncMock()
 
     @pytest.fixture
+    def mock_document_chunk_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
     def use_case(
         self,
         mock_document_repository: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
         mock_project_repository: AsyncMock,
         mock_file_storage_service: AsyncMock,
     ) -> DeleteDocument:
         return DeleteDocument(
             document_repository=mock_document_repository,
+            document_chunk_repository=mock_document_chunk_repository,
             project_repository=mock_project_repository,
             file_storage_service=mock_file_storage_service,
         )
@@ -41,6 +47,7 @@ class TestDeleteDocument:
         self,
         use_case: DeleteDocument,
         mock_document_repository: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
         mock_project_repository: AsyncMock,
         mock_file_storage_service: AsyncMock,
     ) -> None:
@@ -72,6 +79,7 @@ class TestDeleteDocument:
 
         # Then
         mock_file_storage_service.delete_file.assert_called_once_with("key-1")
+        mock_document_chunk_repository.delete_by_document_id.assert_called_once_with(document_id)
         mock_document_repository.delete.assert_called_once_with(document_id)
 
     async def test_delete_document_missing_project_raises_error(

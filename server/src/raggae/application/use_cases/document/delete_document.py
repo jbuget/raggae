@@ -1,5 +1,8 @@
 from uuid import UUID
 
+from raggae.application.interfaces.repositories.document_chunk_repository import (
+    DocumentChunkRepository,
+)
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
@@ -13,10 +16,12 @@ class DeleteDocument:
     def __init__(
         self,
         document_repository: DocumentRepository,
+        document_chunk_repository: DocumentChunkRepository,
         project_repository: ProjectRepository,
         file_storage_service: FileStorageService,
     ) -> None:
         self._document_repository = document_repository
+        self._document_chunk_repository = document_chunk_repository
         self._project_repository = project_repository
         self._file_storage_service = file_storage_service
 
@@ -30,4 +35,5 @@ class DeleteDocument:
             raise DocumentNotFoundError(f"Document {document_id} not found")
 
         await self._file_storage_service.delete_file(document.storage_key)
+        await self._document_chunk_repository.delete_by_document_id(document.id)
         await self._document_repository.delete(document_id)

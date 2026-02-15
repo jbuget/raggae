@@ -1,0 +1,144 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
+from uuid import uuid4
+
+import pytest
+
+from raggae.application.use_cases.document.upload_document import UploadDocument
+from raggae.domain.entities.project import Project
+
+
+class TestUploadDocumentProcessing:
+    @pytest.fixture
+    def mock_document_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_project_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_file_storage_service(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_document_chunk_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_document_text_extractor(self) -> AsyncMock:
+        extractor = AsyncMock()
+        extractor.extract_text.return_value = "hello world from raggae"
+        return extractor
+
+    @pytest.fixture
+    def mock_text_chunker_service(self) -> AsyncMock:
+        chunker = AsyncMock()
+        chunker.chunk_text.return_value = ["hello world", "from raggae"]
+        return chunker
+
+    @pytest.fixture
+    def mock_embedding_service(self) -> AsyncMock:
+        embedding = AsyncMock()
+        embedding.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
+        return embedding
+
+    async def test_upload_document_sync_processing_saves_chunks(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+            processing_mode="sync",
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name="doc.txt",
+            file_content=b"hello world from raggae",
+            content_type="text/plain",
+        )
+
+        # Then
+        mock_document_text_extractor.extract_text.assert_called_once()
+        mock_text_chunker_service.chunk_text.assert_called_once_with("hello world from raggae")
+        mock_embedding_service.embed_texts.assert_called_once_with(
+            ["hello world", "from raggae"]
+        )
+        mock_document_chunk_repository.save_many.assert_called_once()
+
+    async def test_upload_document_processing_off_does_not_save_chunks(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+            processing_mode="off",
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name="doc.txt",
+            file_content=b"hello world from raggae",
+            content_type="text/plain",
+        )
+
+        # Then
+        mock_document_chunk_repository.save_many.assert_not_called()
+        mock_document_text_extractor.extract_text.assert_not_called()
+        mock_text_chunker_service.chunk_text.assert_not_called()
+        mock_embedding_service.embed_texts.assert_not_called()

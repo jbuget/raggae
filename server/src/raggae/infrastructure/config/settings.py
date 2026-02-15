@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     max_upload_size: int = 104857600
     storage_backend: str = "inmemory"
     persistence_backend: str = "inmemory"
+    processing_mode: str = "off"
+    embedding_backend: str = "inmemory"
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimension: int = 1536
+    chunk_size: int = 1000
+    chunk_overlap: int = 100
     s3_endpoint_url: str = "http://localhost:9000"
     s3_access_key: str = "minioadmin"
     s3_secret_key: str = "minioadmin"
