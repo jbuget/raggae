@@ -80,6 +80,28 @@ class TestDocumentEndpoints:
         assert data[0]["file_name"] == "guide.md"
         assert "processing_strategy" in data[0]
 
+    async def test_list_project_documents_of_another_user_returns_404(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        owner_headers, project_id = await self._create_project(client)
+        await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files=[("files", ("guide.md", b"# Guide", "text/markdown"))],
+            headers=owner_headers,
+        )
+        other_user_headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get(
+            f"/api/v1/projects/{project_id}/documents",
+            headers=other_user_headers,
+        )
+
+        # Then
+        assert response.status_code == 404
+
     async def test_delete_document_returns_204(self, client: AsyncClient) -> None:
         # Given
         headers, project_id = await self._create_project(client)
@@ -98,6 +120,29 @@ class TestDocumentEndpoints:
 
         # Then
         assert response.status_code == 204
+
+    async def test_delete_document_of_another_user_project_returns_404(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        owner_headers, project_id = await self._create_project(client)
+        upload_response = await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files=[("files", ("to-delete.pdf", b"pdf-content", "application/pdf"))],
+            headers=owner_headers,
+        )
+        document_id = upload_response.json()["created"][0]["document_id"]
+        other_user_headers = await self._auth_headers(client)
+
+        # When
+        response = await client.delete(
+            f"/api/v1/projects/{project_id}/documents/{document_id}",
+            headers=other_user_headers,
+        )
+
+        # Then
+        assert response.status_code == 404
 
     async def test_list_document_chunks_returns_200(self, client: AsyncClient) -> None:
         # Given
