@@ -6,6 +6,7 @@ import {
   deleteConversation,
   listConversations,
   listMessages,
+  sendMessage,
   streamMessage,
 } from "@/lib/api/chat";
 import type {
@@ -75,29 +76,46 @@ export function useSendMessage(projectId: string) {
         setState("streaming");
         let accumulated = "";
 
-        for await (const event of streamMessage(token, projectId, data)) {
-          if ("token" in event) {
-            accumulated += (event as StreamTokenEvent).token;
-            setStreamedContent(accumulated);
-          } else if ("done" in event) {
-            const doneEvent = event as StreamDoneEvent;
-            setChunks(doneEvent.chunks);
-            const effectiveConversationId =
-              doneEvent.conversation_id || data.conversation_id;
-            if (effectiveConversationId) {
-              onConversationId?.(effectiveConversationId);
-              queryClient.invalidateQueries({
-                queryKey: ["conversations", projectId],
-              });
-              queryClient.invalidateQueries({
-                queryKey: [
-                  "messages",
-                  projectId,
-                  effectiveConversationId,
-                ],
-              });
+        try {
+          for await (const event of streamMessage(token, projectId, data)) {
+            if ("token" in event) {
+              accumulated += (event as StreamTokenEvent).token;
+              setStreamedContent(accumulated);
+            } else if ("done" in event) {
+              const doneEvent = event as StreamDoneEvent;
+              setChunks(doneEvent.chunks);
+              const effectiveConversationId =
+                doneEvent.conversation_id || data.conversation_id;
+              if (effectiveConversationId) {
+                onConversationId?.(effectiveConversationId);
+                queryClient.invalidateQueries({
+                  queryKey: ["conversations", projectId],
+                });
+                queryClient.invalidateQueries({
+                  queryKey: [
+                    "messages",
+                    projectId,
+                    effectiveConversationId,
+                  ],
+                });
+              }
             }
           }
+        } catch {
+          const response = await sendMessage(token, projectId, data);
+          setStreamedContent(response.answer);
+          setChunks(response.chunks);
+          onConversationId?.(response.conversation_id);
+          queryClient.invalidateQueries({
+            queryKey: ["conversations", projectId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: [
+              "messages",
+              projectId,
+              response.conversation_id,
+            ],
+          });
         }
       } finally {
         setState("idle");

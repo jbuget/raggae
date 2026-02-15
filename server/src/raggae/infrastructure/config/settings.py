@@ -1,4 +1,9 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
+
+
+_SERVER_ROOT = Path(__file__).resolve().parents[4]
 
 
 class Settings(BaseSettings):
@@ -34,7 +39,10 @@ class Settings(BaseSettings):
     s3_region: str = "us-east-1"
     s3_secure: bool = False
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": (_SERVER_ROOT / ".env", ".env"),
+        "env_file_encoding": "utf-8",
+    }
 
 
 settings = Settings()

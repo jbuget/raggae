@@ -70,7 +70,8 @@ class SendMessage:
             query=message,
             limit=limit,
         )
-        if not chunks:
+        relevant_chunks = self._filter_relevant_chunks(chunks)
+        if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
             await self._message_repository.save(
                 Message(
@@ -98,7 +99,7 @@ class SendMessage:
             )
         answer = await self._llm_service.generate_answer(
             query=message,
-            context_chunks=[chunk.content for chunk in chunks],
+            context_chunks=[chunk.content for chunk in relevant_chunks],
         )
         await self._message_repository.save(
             Message(
@@ -106,8 +107,8 @@ class SendMessage:
                 conversation_id=conversation.id,
                 role="assistant",
                 content=answer,
-                source_documents=self._extract_source_documents(chunks),
-                reliability_percent=self._compute_reliability_percent(chunks),
+                source_documents=self._extract_source_documents(relevant_chunks),
+                reliability_percent=self._compute_reliability_percent(relevant_chunks),
                 created_at=datetime.now(UTC),
             )
         )
@@ -122,7 +123,7 @@ class SendMessage:
             conversation_id=conversation.id,
             message=message,
             answer=answer,
-            chunks=chunks,
+            chunks=relevant_chunks,
         )
 
     async def _build_conversation_title(self, user_message: str, assistant_answer: str) -> str:
@@ -160,4 +161,12 @@ class SendMessage:
         average_score = sum(chunk.score for chunk in chunks) / len(chunks)
         bounded = min(max(average_score, 0.0), 1.0)
         return int(round(bounded * 100))
+
+    def _filter_relevant_chunks(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
+        return [
+            chunk
+            for chunk in chunks
+            if chunk.score > 0.0 and chunk.content.strip()
+        ]
+
     _MAX_CONVERSATION_TITLE_LENGTH = 80

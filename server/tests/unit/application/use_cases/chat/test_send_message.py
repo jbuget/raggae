@@ -131,3 +131,44 @@ class TestSendMessage:
         mock_llm_service.generate_answer.assert_not_called()
         assert result.answer == "I could not find relevant context to answer your message."
         assert result.chunks == []
+
+    async def test_send_message_non_relevant_chunks_returns_fallback_without_sources(
+        self,
+        use_case: SendMessage,
+        mock_query_relevant_chunks: AsyncMock,
+        mock_llm_service: AsyncMock,
+    ) -> None:
+        # Given
+        mock_query_relevant_chunks.execute.return_value = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=uuid4(),
+                content="",
+                score=0.9,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=uuid4(),
+                content="not relevant",
+                score=0.0,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=uuid4(),
+                content="also not relevant",
+                score=-0.2,
+            ),
+        ]
+
+        # When
+        result = await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="hello",
+            limit=3,
+        )
+
+        # Then
+        mock_llm_service.generate_answer.assert_not_called()
+        assert result.answer == "I could not find relevant context to answer your message."
+        assert result.chunks == []
