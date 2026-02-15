@@ -192,3 +192,72 @@ class TestProjectEndpoints:
 
         # Then
         assert response.status_code == 404
+
+    async def test_update_project_returns_200(self, client: AsyncClient) -> None:
+        # Given
+        headers, project_id = await self._create_project_as_authenticated_user(
+            client=client,
+            name="Project to update",
+        )
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}",
+            json={
+                "name": "Updated project",
+                "description": "Updated description",
+                "system_prompt": "Updated prompt",
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == project_id
+        assert data["name"] == "Updated project"
+        assert data["description"] == "Updated description"
+        assert data["system_prompt"] == "Updated prompt"
+
+    async def test_update_project_not_found_returns_404(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{uuid4()}",
+            json={
+                "name": "Updated project",
+                "description": "Updated description",
+                "system_prompt": "Updated prompt",
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 404
+
+    async def test_update_project_of_another_user_returns_404(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        _, project_id = await self._create_project_as_authenticated_user(
+            client=client,
+            name="Owner Project",
+        )
+        other_user_headers = await self._auth_headers(client)
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}",
+            json={
+                "name": "Updated project",
+                "description": "Updated description",
+                "system_prompt": "Updated prompt",
+            },
+            headers=other_user_headers,
+        )
+
+        # Then
+        assert response.status_code == 404

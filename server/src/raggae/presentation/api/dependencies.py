@@ -8,6 +8,7 @@ from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
+from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
@@ -55,6 +56,10 @@ def get_list_projects_use_case() -> ListProjects:
 
 def get_delete_project_use_case() -> DeleteProject:
     return DeleteProject(project_repository=_project_repository)
+
+
+def get_update_project_use_case() -> UpdateProject:
+    return UpdateProject(project_repository=_project_repository)
 
 
 def get_current_user_id(

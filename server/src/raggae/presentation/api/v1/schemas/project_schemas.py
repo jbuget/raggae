@@ -10,6 +10,12 @@ class CreateProjectRequest(BaseModel):
     system_prompt: str = ""
 
 
+class UpdateProjectRequest(BaseModel):
+    name: str = Field(..., min_length=1)
+    description: str = ""
+    system_prompt: str = ""
+
+
 class ProjectResponse(BaseModel):
     id: UUID
     user_id: UUID
