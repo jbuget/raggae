@@ -81,6 +81,9 @@ from raggae.infrastructure.services.in_memory_file_storage_service import (
     InMemoryFileStorageService,
 )
 from raggae.infrastructure.services.jwt_token_service import JwtTokenService
+from raggae.infrastructure.services.llamaindex_text_chunker_service import (
+    LlamaIndexTextChunkerService,
+)
 from raggae.infrastructure.services.minio_file_storage_service import (
     MinioFileStorageService,
 )
@@ -136,10 +139,18 @@ _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtract
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
 _chunking_strategy_selector = DeterministicChunkingStrategySelector()
-_fixed_window_chunker = SimpleTextChunkerService(
-    chunk_size=settings.chunk_size,
-    chunk_overlap=settings.chunk_overlap,
-)
+if settings.text_chunker_backend == "llamaindex":
+    _fixed_window_chunker: TextChunkerService = LlamaIndexTextChunkerService(
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+    )
+elif settings.text_chunker_backend == "native":
+    _fixed_window_chunker = SimpleTextChunkerService(
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+    )
+else:
+    raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
 _paragraph_chunker = ParagraphTextChunkerService(chunk_size=settings.chunk_size)
 _heading_section_chunker = HeadingSectionTextChunkerService(
     fallback_chunker=_fixed_window_chunker

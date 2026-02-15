@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     persistence_backend: str = "inmemory"
     processing_mode: str = "off"
     embedding_backend: str = "inmemory"
+    text_chunker_backend: str = "native"
     embedding_model: str = "text-embedding-3-small"
     embedding_dimension: int = 1536
     chunk_size: int = 1000

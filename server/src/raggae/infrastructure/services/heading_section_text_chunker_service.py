@@ -1,7 +1,7 @@
 import re
 
+from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
-from raggae.infrastructure.services.simple_text_chunker_service import SimpleTextChunkerService
 
 _HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+\S|^\s*\d+(?:\.\d+)*[.)]?\s+\S")
 
@@ -9,7 +9,7 @@ _HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+\S|^\s*\d+(?:\.\d+)*[.)]?\s+\S")
 class HeadingSectionTextChunkerService:
     """Splits text by heading sections, then falls back to fixed windows when needed."""
 
-    def __init__(self, fallback_chunker: SimpleTextChunkerService) -> None:
+    def __init__(self, fallback_chunker: TextChunkerService) -> None:
         self._fallback_chunker = fallback_chunker
 
     async def chunk_text(
