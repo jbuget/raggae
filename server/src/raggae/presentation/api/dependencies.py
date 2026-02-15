@@ -148,6 +148,7 @@ _text_chunker_service: TextChunkerService = AdaptiveTextChunkerService(
     fixed_window_chunker=_fixed_window_chunker,
     paragraph_chunker=_paragraph_chunker,
     heading_section_chunker=_heading_section_chunker,
+    context_window_size=settings.chunk_overlap,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)

@@ -164,3 +164,73 @@ class TestDocumentProcessingFlow:
         # Then
         assert stored_document is not None
         assert stored_document.processing_strategy == ChunkingStrategy.HEADING_SECTION
+
+    @pytest.mark.integration
+    async def test_integration_sync_processing_adds_context_window_for_paragraph_chunks(
+        self,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        project_repository = InMemoryProjectRepository()
+        await project_repository.save(
+            Project(
+                id=project_id,
+                user_id=user_id,
+                name="Integration Project",
+                description="",
+                system_prompt="",
+                is_published=False,
+                created_at=datetime.now(UTC),
+            )
+        )
+        document_repository = InMemoryDocumentRepository()
+        document_chunk_repository = InMemoryDocumentChunkRepository()
+        file_storage_service = InMemoryFileStorageService()
+        fixed_window_chunker = SimpleTextChunkerService(chunk_size=400, chunk_overlap=0)
+        text_chunker_service = AdaptiveTextChunkerService(
+            fixed_window_chunker=fixed_window_chunker,
+            paragraph_chunker=ParagraphTextChunkerService(chunk_size=120),
+            heading_section_chunker=HeadingSectionTextChunkerService(
+                fallback_chunker=fixed_window_chunker
+            ),
+            context_window_size=6,
+        )
+        upload_use_case = UploadDocument(
+            document_repository=document_repository,
+            project_repository=project_repository,
+            file_storage_service=file_storage_service,
+            max_file_size=104857600,
+            processing_mode="sync",
+            document_chunk_repository=document_chunk_repository,
+            document_text_extractor=MultiFormatDocumentTextExtractor(),
+            text_sanitizer_service=SimpleTextSanitizerService(),
+            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
+            text_chunker_service=text_chunker_service,
+            embedding_service=InMemoryEmbeddingService(dimension=16),
+        )
+        content = (
+            b"This is paragraph one with enough text to keep narrative style and avoid "
+            b"heading detection."
+            b"\n\n"
+            b"This is paragraph two with enough text to create a second paragraph chunk "
+            b"candidate."
+            b"\n\n"
+            b"This is paragraph three with enough text to ensure multiple chunks exist."
+        )
+
+        # When
+        uploaded = await upload_use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name="narrative.txt",
+            file_content=content,
+            content_type="text/plain",
+        )
+        chunks = await document_chunk_repository.find_by_document_id(uploaded.id)
+
+        # Then
+        assert len(chunks) >= 2
+        previous_tail = chunks[0].content[-6:].strip()
+        assert previous_tail
+        assert chunks[1].content.startswith(f"{previous_tail}\n\n")
