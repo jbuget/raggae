@@ -247,9 +247,7 @@ class SendMessage:
     def _normalize_title(self, value: str) -> str:
         return value.strip()[: self._MAX_CONVERSATION_TITLE_LENGTH].strip()
 
-    def _extract_source_documents(
-        self, chunks: list[RetrievedChunkDTO]
-    ) -> list[dict[str, object]]:
+    def _extract_source_documents(self, chunks: list[RetrievedChunkDTO]) -> list[dict[str, object]]:
         unique: dict[str, dict[str, object]] = {}
         for chunk in chunks:
             key = str(chunk.document_id)

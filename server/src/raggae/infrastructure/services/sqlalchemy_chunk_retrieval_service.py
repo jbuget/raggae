@@ -237,9 +237,7 @@ def _build_metadata_filters(
         clauses.append("(c.metadata_json->>'source_type') = :source_type")
         params["source_type"] = filters["source_type"]
     if isinstance(filters.get("processing_strategy"), str):
-        clauses.append(
-            "(c.metadata_json->>'processing_strategy') = :processing_strategy"
-        )
+        clauses.append("(c.metadata_json->>'processing_strategy') = :processing_strategy")
         params["processing_strategy"] = filters["processing_strategy"]
     if isinstance(filters.get("tags"), list):
         clauses.append("(c.metadata_json->'tags') ?| :tags")
