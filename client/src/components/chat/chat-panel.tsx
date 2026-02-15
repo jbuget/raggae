@@ -93,6 +93,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
       {
         message: content,
         conversation_id: conversationId,
+        start_new_conversation: !conversationId,
       },
       (newConversationId) => {
         setOptimisticMessages([]);

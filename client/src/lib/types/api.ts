@@ -97,6 +97,7 @@ export interface SendMessageRequest {
   message: string;
   limit?: number;
   conversation_id?: string | null;
+  start_new_conversation?: boolean;
 }
 
 export interface RetrievedChunkResponse {
