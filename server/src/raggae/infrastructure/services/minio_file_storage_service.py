@@ -41,6 +41,19 @@ class MinioFileStorageService:
             content_type=content_type,
         )
 
+    async def download_file(self, storage_key: str) -> tuple[bytes, str]:
+        response = self._client.get_object(
+            bucket_name=self._bucket_name,
+            object_name=storage_key,
+        )
+        try:
+            data = response.read()
+            content_type = response.headers.get("Content-Type", "application/octet-stream")
+            return data, content_type
+        finally:
+            response.close()
+            response.release_conn()
+
     async def delete_file(self, storage_key: str) -> None:
         self._client.remove_object(
             bucket_name=self._bucket_name,

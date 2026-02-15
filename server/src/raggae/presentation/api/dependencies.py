@@ -48,6 +48,7 @@ from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevan
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.application.use_cases.chat.update_conversation import UpdateConversation
 from raggae.application.use_cases.document.delete_document import DeleteDocument
+from raggae.application.use_cases.document.get_document_file import GetDocumentFile
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import UploadDocument
@@ -319,6 +320,14 @@ def get_delete_document_use_case() -> DeleteDocument:
     return DeleteDocument(
         document_repository=_document_repository,
         document_chunk_repository=_document_chunk_repository,
+        project_repository=_project_repository,
+        file_storage_service=_file_storage_service,
+    )
+
+
+def get_get_document_file_use_case() -> GetDocumentFile:
+    return GetDocumentFile(
+        document_repository=_document_repository,
         project_repository=_project_repository,
         file_storage_service=_file_storage_service,
     )

@@ -2,8 +2,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 
 from raggae.application.use_cases.document.delete_document import DeleteDocument
+from raggae.application.use_cases.document.get_document_file import GetDocumentFile
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.upload_document import (
@@ -17,6 +19,7 @@ from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_delete_document_use_case,
+    get_get_document_file_use_case,
     get_list_document_chunks_use_case,
     get_list_project_documents_use_case,
     get_upload_document_use_case,
@@ -191,4 +194,37 @@ async def list_document_chunks(
             )
             for chunk in chunks_dto.chunks
         ],
+    )
+
+
+@router.get("/{document_id}/file")
+async def get_document_file(
+    project_id: UUID,
+    document_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[GetDocumentFile, Depends(get_get_document_file_use_case)],
+) -> Response:
+    try:
+        document_file = await use_case.execute(
+            project_id=project_id,
+            document_id=document_id,
+            user_id=user_id,
+        )
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+    except DocumentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        ) from None
+
+    return Response(
+        content=document_file.content,
+        media_type=document_file.content_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{document_file.file_name}"',
+        },
     )

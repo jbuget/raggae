@@ -56,3 +56,25 @@ export function getDocumentChunks(
     { token },
   );
 }
+
+export async function getDocumentFileBlob(
+  token: string,
+  projectId: string,
+  documentId: string,
+): Promise<Blob> {
+  const response = await fetch(
+    `/api/v1/projects/${projectId}/documents/${documentId}/file`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Unable to fetch document file (${response.status})`);
+  }
+
+  return response.blob();
+}

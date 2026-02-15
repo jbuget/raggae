@@ -7,7 +7,7 @@ import { MessageBubble } from "./message-bubble";
 import { MessageInput } from "./message-input";
 import { StreamingIndicator } from "./streaming-indicator";
 import { useMessages, useSendMessage } from "@/lib/hooks/use-chat";
-import { useDocumentChunks } from "@/lib/hooks/use-documents";
+import { useAuth } from "@/lib/hooks/use-auth";
 import type { MessageResponse } from "@/lib/types/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getDocumentFileBlob } from "@/lib/api/documents";
 
 interface ChatPanelProps {
   projectId: string;
@@ -29,15 +30,18 @@ interface MessageSourceDocument {
 
 export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   const router = useRouter();
+  const { token } = useAuth();
   const { data: existingMessages } = useMessages(projectId, conversationId);
   const { send, state, streamedContent, chunks } = useSendMessage(projectId);
   const [optimisticMessages, setOptimisticMessages] = useState<MessageResponse[]>([]);
   const [showChunks, setShowChunks] = useState(false);
   const [selectedSourceDocument, setSelectedSourceDocument] =
     useState<MessageSourceDocument | null>(null);
+  const [selectedDocumentUrl, setSelectedDocumentUrl] = useState<string | null>(null);
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string | null>(null);
+  const [isSelectedDocumentLoading, setIsSelectedDocumentLoading] = useState(false);
+  const [selectedDocumentError, setSelectedDocumentError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { data: selectedDocumentChunks, isLoading: isSelectedDocumentLoading } =
-    useDocumentChunks(projectId, selectedSourceDocument?.documentId ?? null);
 
   const messages = useMemo(() => {
     if (existingMessages) return [...existingMessages, ...optimisticMessages];
@@ -65,6 +69,14 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
       viewport.scrollTop = viewport.scrollHeight;
     }
   }, [messages, streamedContent]);
+
+  useEffect(() => {
+    return () => {
+      if (selectedDocumentUrl) {
+        URL.revokeObjectURL(selectedDocumentUrl);
+      }
+    };
+  }, [selectedDocumentUrl]);
 
   async function handleSend(content: string) {
     const userMessage: MessageResponse = {
@@ -113,6 +125,29 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
     return [...unique.values()];
   }
 
+  async function handleSourceClick(source: MessageSourceDocument) {
+    if (!token) return;
+
+    if (selectedDocumentUrl) {
+      URL.revokeObjectURL(selectedDocumentUrl);
+    }
+    setSelectedSourceDocument(source);
+    setSelectedDocumentUrl(null);
+    setSelectedDocumentType(null);
+    setSelectedDocumentError(null);
+    setIsSelectedDocumentLoading(true);
+    try {
+      const blob = await getDocumentFileBlob(token, projectId, source.documentId);
+      const objectUrl = URL.createObjectURL(blob);
+      setSelectedDocumentUrl(objectUrl);
+      setSelectedDocumentType(blob.type || "application/octet-stream");
+    } catch {
+      setSelectedDocumentError("Unable to load this document.");
+    } finally {
+      setIsSelectedDocumentLoading(false);
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ScrollArea className="min-h-0 flex-1 p-4" ref={scrollRef}>
@@ -127,7 +162,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
                   sourceDocuments={
                     msg.role === "assistant" ? messageSourceDocuments : []
                   }
-                  onSourceClick={setSelectedSourceDocument}
+                  onSourceClick={handleSourceClick}
                   reliabilityPercent={msg.reliability_percent}
                   timestamp={msg.created_at}
                 />
@@ -143,7 +178,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
                 role="assistant"
                 content={streamedContent}
                 sourceDocuments={citedDocuments}
-                onSourceClick={setSelectedSourceDocument}
+                onSourceClick={handleSourceClick}
               />
             </div>
           )}
@@ -188,6 +223,12 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedSourceDocument(null);
+            setSelectedDocumentType(null);
+            setSelectedDocumentError(null);
+            if (selectedDocumentUrl) {
+              URL.revokeObjectURL(selectedDocumentUrl);
+            }
+            setSelectedDocumentUrl(null);
           }
         }}
       >
@@ -199,28 +240,60 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto rounded-md border bg-muted/20 p-3">
             {isSelectedDocumentLoading && (
-              <p className="text-sm text-muted-foreground">Loading document content...</p>
+              <p className="text-sm text-muted-foreground">Loading document...</p>
+            )}
+            {!isSelectedDocumentLoading && selectedDocumentError && (
+              <p className="text-sm text-destructive">{selectedDocumentError}</p>
             )}
             {!isSelectedDocumentLoading &&
-              (!selectedDocumentChunks || selectedDocumentChunks.chunks.length === 0) && (
-                <p className="text-sm text-muted-foreground">
-                  No indexed content found for this document.
-                </p>
+              !selectedDocumentError &&
+              selectedDocumentUrl &&
+              selectedDocumentType?.startsWith("image/") && (
+                <img
+                  src={selectedDocumentUrl}
+                  alt={selectedSourceDocument?.documentName || "Document"}
+                  className="mx-auto max-h-[56vh] object-contain"
+                />
               )}
-            {!isSelectedDocumentLoading && selectedDocumentChunks && (
-              <div className="space-y-3">
-                {selectedDocumentChunks.chunks
-                  .sort((a, b) => a.chunk_index - b.chunk_index)
-                  .map((chunk) => (
-                    <div key={chunk.id} className="space-y-1 rounded-md border bg-background p-2">
-                      <p className="text-xs text-muted-foreground">
-                        Chunk #{chunk.chunk_index}
-                      </p>
-                      <p className="whitespace-pre-wrap text-sm">{chunk.content}</p>
-                    </div>
-                  ))}
-              </div>
-            )}
+            {!isSelectedDocumentLoading &&
+              !selectedDocumentError &&
+              selectedDocumentUrl &&
+              selectedDocumentType === "application/pdf" && (
+                <iframe
+                  src={selectedDocumentUrl}
+                  title={selectedSourceDocument?.documentName || "Document"}
+                  className="h-[56vh] w-full rounded-md border"
+                />
+              )}
+            {!isSelectedDocumentLoading &&
+              !selectedDocumentError &&
+              selectedDocumentUrl &&
+              selectedDocumentType?.startsWith("text/") && (
+                <iframe
+                  src={selectedDocumentUrl}
+                  title={selectedSourceDocument?.documentName || "Document"}
+                  className="h-[56vh] w-full rounded-md border bg-background"
+                />
+              )}
+            {!isSelectedDocumentLoading &&
+              !selectedDocumentError &&
+              selectedDocumentUrl &&
+              !selectedDocumentType?.startsWith("image/") &&
+              selectedDocumentType !== "application/pdf" &&
+              !selectedDocumentType?.startsWith("text/") && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Preview is not available for this file type.
+                  </p>
+                  <a
+                    href={selectedDocumentUrl}
+                    download={selectedSourceDocument?.documentName}
+                    className="inline-flex rounded-md border bg-background px-3 py-2 text-sm"
+                  >
+                    Download document
+                  </a>
+                </div>
+              )}
           </div>
         </DialogContent>
       </Dialog>

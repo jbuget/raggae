@@ -169,6 +169,51 @@ class TestDocumentEndpoints:
         if data["chunks"]:
             assert "metadata_json" in data["chunks"][0]
 
+    async def test_get_document_file_returns_200(self, client: AsyncClient) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        payload = b"hello world"
+        upload_response = await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files=[("files", ("notes.txt", payload, "text/plain"))],
+            headers=headers,
+        )
+        document_id = upload_response.json()["created"][0]["document_id"]
+
+        # When
+        response = await client.get(
+            f"/api/v1/projects/{project_id}/documents/{document_id}/file",
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/plain")
+        assert response.content == payload
+
+    async def test_get_document_file_of_another_user_project_returns_404(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        owner_headers, project_id = await self._create_project(client)
+        upload_response = await client.post(
+            f"/api/v1/projects/{project_id}/documents",
+            files=[("files", ("private.txt", b"secret", "text/plain"))],
+            headers=owner_headers,
+        )
+        document_id = upload_response.json()["created"][0]["document_id"]
+        other_user_headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get(
+            f"/api/v1/projects/{project_id}/documents/{document_id}/file",
+            headers=other_user_headers,
+        )
+
+        # Then
+        assert response.status_code == 404
+
     async def test_list_document_chunks_of_another_user_project_returns_404(
         self,
         client: AsyncClient,
