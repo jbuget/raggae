@@ -1,0 +1,12 @@
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from raggae.presentation.main import app
+
+
+@pytest.fixture
+async def client() -> AsyncClient:
+    """Async HTTP client for testing the FastAPI app."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
