@@ -288,6 +288,8 @@ class TestChatEndpoints:
         assert len(payload) >= 1
         assert payload[0]["project_id"] == project_id
         assert "title" in payload[0]
+        assert payload[0]["title"] is not None
+        assert payload[0]["title"].strip() != ""
 
     async def test_list_conversations_supports_pagination(
         self,
