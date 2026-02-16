@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     allowed_origins: str = "http://localhost:3000,http://localhost:8000"
     max_upload_size: int = 104857600
+    max_upload_files_per_request: int = 20
     storage_backend: str = "inmemory"
     persistence_backend: str = "inmemory"
     processing_mode: str = "off"
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     gemini_llm_model: str = "gemini-1.5-flash"
     ollama_base_url: str = "http://localhost:11434"
     ollama_llm_model: str = "llama3.1"
+    ollama_embedding_model: str = "nomic-embed-text"
     ollama_keep_alive: str = "10m"
     llm_request_timeout_seconds: float = 120.0
     embedding_dimension: int = 1536
