@@ -8,6 +8,7 @@ import { DocumentUpload } from "@/components/documents/document-upload";
 import {
   useDeleteDocument,
   useDocuments,
+  useReindexDocument,
   useUploadDocument,
 } from "@/lib/hooks/use-documents";
 
@@ -15,6 +16,7 @@ export default function DocumentsPage() {
   const params = useParams<{ projectId: string }>();
   const { data: documents, isLoading } = useDocuments(params.projectId);
   const uploadDocument = useUploadDocument(params.projectId);
+  const reindexDocument = useReindexDocument(params.projectId);
   const deleteDocument = useDeleteDocument(params.projectId);
 
   return (
@@ -50,6 +52,13 @@ export default function DocumentsPage() {
             <DocumentRow
               key={doc.id}
               document={doc}
+              onReindex={(id) => {
+                reindexDocument.mutate(id, {
+                  onSuccess: () => toast.success("Document reindexed"),
+                  onError: () => toast.error("Failed to reindex document"),
+                });
+              }}
+              isReindexing={reindexDocument.isPending}
               onDelete={(id) => {
                 deleteDocument.mutate(id, {
                   onSuccess: () => toast.success("Document deleted"),

@@ -18,9 +18,11 @@ interface DocumentRowProps {
   document: DocumentResponse;
   onDelete: (id: string) => void;
   isDeleting: boolean;
+  onReindex: (id: string) => void;
+  isReindexing: boolean;
 }
 
-export function DocumentRow({ document, onDelete, isDeleting }: DocumentRowProps) {
+export function DocumentRow({ document, onDelete, isDeleting, onReindex, isReindexing }: DocumentRowProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
@@ -33,6 +35,16 @@ export function DocumentRow({ document, onDelete, isDeleting }: DocumentRowProps
           <span>{formatDate(document.created_at)}</span>
         </div>
       </div>
+
+      <div className="flex gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isReindexing}
+          onClick={() => onReindex(document.id)}
+        >
+          {isReindexing ? "Reindexing..." : "Reindex"}
+        </Button>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogTrigger asChild>
@@ -64,6 +76,7 @@ export function DocumentRow({ document, onDelete, isDeleting }: DocumentRowProps
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

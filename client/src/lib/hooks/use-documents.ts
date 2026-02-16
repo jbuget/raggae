@@ -5,6 +5,7 @@ import {
   deleteDocument,
   getDocumentChunks,
   listDocuments,
+  reindexDocument,
   uploadDocuments,
 } from "@/lib/api/documents";
 import { useAuth } from "./use-auth";
@@ -25,6 +26,19 @@ export function useUploadDocument(projectId: string) {
 
   return useMutation({
     mutationFn: (files: File[]) => uploadDocuments(token!, projectId, files),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
+    },
+  });
+}
+
+export function useReindexDocument(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: string) =>
+      reindexDocument(token!, projectId, documentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
     },

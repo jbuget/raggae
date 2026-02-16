@@ -46,6 +46,17 @@ export function deleteDocument(
   );
 }
 
+export function reindexDocument(
+  token: string,
+  projectId: string,
+  documentId: string,
+): Promise<DocumentResponse> {
+  return apiFetch<DocumentResponse>(
+    `/projects/${projectId}/documents/${documentId}/reindex`,
+    { method: "POST", token },
+  );
+}
+
 export function getDocumentChunks(
   token: string,
   projectId: string,
