@@ -651,3 +651,61 @@ class TestQueryRelevantChunks:
         assert scores_by_index[2] == pytest.approx(0.95)
         assert scores_by_index[1] == pytest.approx(0.0)
         assert scores_by_index[3] == pytest.approx(0.0)
+
+    async def test_query_expansion_propagates_document_file_name_to_neighbors(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="chunk 2",
+                score=0.9,
+                chunk_index=2,
+                document_file_name="report.pdf",
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        neighbor_chunks = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=doc_id,
+                chunk_index=i,
+                content=f"chunk {i}",
+                embedding=[],
+                created_at=datetime.now(UTC),
+            )
+            for i in [1, 3]
+        ]
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_document_id_and_indices.return_value = neighbor_chunks
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=1,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then — all chunks (original + neighbors) have the document_file_name
+        for chunk in result.chunks:
+            assert chunk.document_file_name == "report.pdf"

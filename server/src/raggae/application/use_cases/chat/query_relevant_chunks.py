@@ -102,6 +102,12 @@ class QueryRelevantChunks:
         if not doc_indices:
             return chunks
 
+        # Collect document_file_name from original chunks
+        doc_file_names: dict[UUID, str | None] = {}
+        for chunk in chunks:
+            if chunk.document_id not in doc_file_names and chunk.document_file_name is not None:
+                doc_file_names[chunk.document_id] = chunk.document_file_name
+
         # Compute needed neighbor indices per document
         doc_needed: dict[UUID, set[int]] = {}
         for doc_id, original_indices in doc_indices.items():
@@ -129,6 +135,7 @@ class QueryRelevantChunks:
                         content=nc.content,
                         score=0.0,
                         chunk_index=nc.chunk_index,
+                        document_file_name=doc_file_names.get(nc.document_id),
                     )
                 )
 
