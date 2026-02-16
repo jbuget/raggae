@@ -78,6 +78,29 @@ class TestOllamaEmbeddingService:
             assert len(result) == 3
             assert mock_post.call_count == 3
 
+    async def test_embed_texts_truncates_long_input(self) -> None:
+        # Given
+        max_chars = 500
+        service = OllamaEmbeddingService(
+            base_url="http://localhost:11434",
+            model="nomic-embed-text",
+            max_chars_per_text=max_chars,
+        )
+        long_text = "a" * 1000
+
+        mock_response = AsyncMock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.raise_for_status = lambda: None
+        mock_response.json.return_value = {"embeddings": [[0.1]]}
+
+        with patch.object(service._client, "post", return_value=mock_response) as mock_post:
+            # When
+            await service.embed_texts([long_text])
+
+            # Then
+            sent_input = mock_post.call_args.kwargs["json"]["input"]
+            assert len(sent_input) == max_chars
+
     async def test_embed_texts_strips_trailing_slash_from_base_url(self) -> None:
         # Given
         service = OllamaEmbeddingService(
