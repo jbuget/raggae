@@ -58,7 +58,7 @@ export default function DocumentsPage() {
                   onError: () => toast.error("Failed to reindex document"),
                 });
               }}
-              isReindexing={reindexDocument.isPending}
+              reindexingId={reindexDocument.isPending ? (reindexDocument.variables ?? null) : null}
               onDelete={(id) => {
                 deleteDocument.mutate(id, {
                   onSuccess: () => toast.success("Document deleted"),

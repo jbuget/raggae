@@ -19,10 +19,11 @@ interface DocumentRowProps {
   onDelete: (id: string) => void;
   isDeleting: boolean;
   onReindex: (id: string) => void;
-  isReindexing: boolean;
+  reindexingId: string | null;
 }
 
-export function DocumentRow({ document, onDelete, isDeleting, onReindex, isReindexing }: DocumentRowProps) {
+export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindexingId }: DocumentRowProps) {
+  const isReindexing = reindexingId === document.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
