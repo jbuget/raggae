@@ -39,6 +39,7 @@ from raggae.application.interfaces.services.text_sanitizer_service import (
 from raggae.application.services.chunking_strategy_selector import (
     DeterministicChunkingStrategySelector,
 )
+from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.application.use_cases.chat.delete_conversation import DeleteConversation
 from raggae.application.use_cases.chat.get_conversation import GetConversation
 from raggae.application.use_cases.chat.list_conversation_messages import (
@@ -52,6 +53,7 @@ from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.get_document_file import GetDocumentFile
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
+from raggae.application.use_cases.document.reindex_document import ReindexDocument
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
@@ -201,6 +203,15 @@ if settings.embedding_backend == "openai":
         api_key=settings.openai_api_key,
         model=settings.embedding_model,
     )
+elif settings.embedding_backend == "ollama":
+    from raggae.infrastructure.services.ollama_embedding_service import (
+        OllamaEmbeddingService,
+    )
+
+    _embedding_service = OllamaEmbeddingService(
+        base_url=settings.ollama_base_url,
+        model=settings.ollama_embedding_model,
+    )
 else:
     _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
@@ -229,6 +240,16 @@ elif settings.text_chunker_backend == "native":
     )
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
+_document_indexing_service = DocumentIndexingService(
+    document_chunk_repository=_document_chunk_repository,
+    document_text_extractor=_document_text_extractor,
+    text_sanitizer_service=_text_sanitizer_service,
+    document_structure_analyzer=_document_structure_analyzer,
+    text_chunker_service=_text_chunker_service,
+    embedding_service=_embedding_service,
+    chunking_strategy_selector=_chunking_strategy_selector,
+    chunker_backend=settings.text_chunker_backend,
+)
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
 if settings.llm_backend == "openai":
@@ -308,13 +329,16 @@ def get_upload_document_use_case() -> UploadDocument:
         max_file_size=settings.max_upload_size,
         processing_mode=settings.processing_mode,
         document_chunk_repository=_document_chunk_repository,
-        document_text_extractor=_document_text_extractor,
-        text_sanitizer_service=_text_sanitizer_service,
-        document_structure_analyzer=_document_structure_analyzer,
-        chunking_strategy_selector=_chunking_strategy_selector,
-        text_chunker_service=_text_chunker_service,
-        embedding_service=_embedding_service,
-        chunker_backend=settings.text_chunker_backend,
+        document_indexing_service=_document_indexing_service,
+    )
+
+
+def get_reindex_document_use_case() -> ReindexDocument:
+    return ReindexDocument(
+        document_repository=_document_repository,
+        project_repository=_project_repository,
+        file_storage_service=_file_storage_service,
+        document_indexing_service=_document_indexing_service,
     )
 
 

@@ -9,6 +9,7 @@ from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.get_document_file import GetDocumentFile
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
+from raggae.application.use_cases.document.reindex_document import ReindexDocument
 from raggae.application.use_cases.document.upload_document import (
     UploadDocument,
     UploadDocumentItem,
@@ -17,12 +18,14 @@ from raggae.domain.exceptions.document_exceptions import (
     DocumentNotFoundError,
 )
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.infrastructure.config.settings import settings
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_delete_document_use_case,
     get_get_document_file_use_case,
     get_list_document_chunks_use_case,
     get_list_project_documents_use_case,
+    get_reindex_document_use_case,
     get_upload_document_use_case,
 )
 from raggae.presentation.api.v1.schemas.document_schemas import (
@@ -39,9 +42,6 @@ router = APIRouter(
 )
 
 
-MAX_UPLOAD_FILES_PER_REQUEST = 10
-
-
 @router.post("", status_code=status.HTTP_200_OK)
 async def upload_document(
     project_id: UUID,
@@ -54,10 +54,10 @@ async def upload_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one file is required",
         )
-    if len(files) > MAX_UPLOAD_FILES_PER_REQUEST:
+    if len(files) > settings.max_upload_files_per_request:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Maximum {MAX_UPLOAD_FILES_PER_REQUEST} files are allowed per request",
+            detail=f"Maximum {settings.max_upload_files_per_request} files are allowed per request",
         )
 
     try:
@@ -155,6 +155,41 @@ async def delete_document(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found",
         ) from None
+
+
+@router.post("/{document_id}/reindex", status_code=status.HTTP_200_OK)
+async def reindex_document(
+    project_id: UUID,
+    document_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[ReindexDocument, Depends(get_reindex_document_use_case)],
+) -> DocumentResponse:
+    try:
+        document_dto = await use_case.execute(
+            project_id=project_id,
+            document_id=document_id,
+            user_id=user_id,
+        )
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+    except DocumentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        ) from None
+
+    return DocumentResponse(
+        id=document_dto.id,
+        project_id=document_dto.project_id,
+        file_name=document_dto.file_name,
+        content_type=document_dto.content_type,
+        file_size=document_dto.file_size,
+        created_at=document_dto.created_at,
+        processing_strategy=document_dto.processing_strategy,
+    )
 
 
 @router.get("/{document_id}/chunks")
