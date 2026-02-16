@@ -14,13 +14,25 @@ class OllamaEmbeddingService:
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
+        results: list[list[float]] = []
+        for text in texts:
+            embedding = await self._embed_single(text)
+            results.append(embedding)
+        return results
+
+    async def _embed_single(self, text: str) -> list[float]:
         try:
             response = await self._client.post(
                 f"{self._base_url}/api/embed",
-                json={"model": self._model, "input": texts},
+                json={"model": self._model, "input": text},
             )
             response.raise_for_status()
             payload = response.json()
-            return [list(e) for e in payload["embeddings"]]
+            return list(payload["embeddings"][0])
+        except httpx.HTTPStatusError as exc:
+            body = exc.response.text if exc.response is not None else ""
+            raise EmbeddingGenerationError(
+                f"Ollama embed returned {exc.response.status_code}: {body}"
+            ) from exc
         except Exception as exc:
             raise EmbeddingGenerationError(f"Failed to generate embeddings: {exc}") from exc

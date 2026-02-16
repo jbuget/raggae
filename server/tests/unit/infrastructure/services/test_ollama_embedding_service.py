@@ -20,9 +20,10 @@ class TestOllamaEmbeddingService:
         mock_response = AsyncMock(spec=httpx.Response)
         mock_response.status_code = 200
         mock_response.raise_for_status = lambda: None
-        mock_response.json.return_value = {
-            "embeddings": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
-        }
+        mock_response.json.side_effect = [
+            {"embeddings": [[0.1, 0.2, 0.3]]},
+            {"embeddings": [[0.4, 0.5, 0.6]]},
+        ]
 
         with patch.object(service._client, "post", return_value=mock_response) as mock_post:
             # When
@@ -30,10 +31,7 @@ class TestOllamaEmbeddingService:
 
             # Then
             assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
-            mock_post.assert_called_once_with(
-                "http://localhost:11434/api/embed",
-                json={"model": "nomic-embed-text", "input": ["hello", "world"]},
-            )
+            assert mock_post.call_count == 2
 
     async def test_embed_texts_empty_list_returns_empty(
         self, service: OllamaEmbeddingService
@@ -59,6 +57,27 @@ class TestOllamaEmbeddingService:
             with pytest.raises(EmbeddingGenerationError):
                 await service.embed_texts(["hello"])
 
+    async def test_embed_texts_sends_one_request_per_text(
+        self, service: OllamaEmbeddingService
+    ) -> None:
+        # Given
+        mock_response = AsyncMock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.raise_for_status = lambda: None
+        mock_response.json.side_effect = [
+            {"embeddings": [[0.1, 0.2]]},
+            {"embeddings": [[0.3, 0.4]]},
+            {"embeddings": [[0.5, 0.6]]},
+        ]
+
+        with patch.object(service._client, "post", return_value=mock_response) as mock_post:
+            # When
+            result = await service.embed_texts(["a", "b", "c"])
+
+            # Then
+            assert len(result) == 3
+            assert mock_post.call_count == 3
+
     async def test_embed_texts_strips_trailing_slash_from_base_url(self) -> None:
         # Given
         service = OllamaEmbeddingService(
@@ -77,5 +96,5 @@ class TestOllamaEmbeddingService:
             # Then
             mock_post.assert_called_once_with(
                 "http://localhost:11434/api/embed",
-                json={"model": "nomic-embed-text", "input": ["test"]},
+                json={"model": "nomic-embed-text", "input": "test"},
             )
