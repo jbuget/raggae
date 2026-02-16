@@ -31,6 +31,13 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
       <div className="space-y-1">
         <p className="text-sm font-medium">{document.file_name}</p>
         <div className="flex gap-3 text-xs text-muted-foreground">
+          <span
+            className="font-mono cursor-pointer hover:text-foreground"
+            onClick={() => navigator.clipboard.writeText(document.id)}
+            title="Copy ID"
+          >
+            {document.id}
+          </span>
           <span>{document.content_type}</span>
           <span>{formatFileSize(document.file_size)}</span>
           <span>{formatDate(document.created_at)}</span>
