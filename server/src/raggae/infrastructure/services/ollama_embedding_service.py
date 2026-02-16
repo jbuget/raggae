@@ -3,8 +3,8 @@ import httpx
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
 
 # Conservative default: nomic-embed-text has 8192 token context.
-# French text averages ~1.5-2 tokens/char, so 7000 chars is safe.
-_DEFAULT_MAX_CHARS = 7000
+# Dense French text can use ~2.5 tokens/char, so 2500 chars is safe.
+_DEFAULT_MAX_CHARS = 2500
 
 
 class OllamaEmbeddingService:
