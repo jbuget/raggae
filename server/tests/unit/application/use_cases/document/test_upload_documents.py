@@ -206,6 +206,10 @@ class TestUploadDocuments:
             created_at=datetime.now(UTC),
         )
         mock_document_repository.find_by_project_id.return_value = []
+        from raggae.application.services.document_indexing_service import (
+            DocumentIndexingService,
+        )
+
         extractor = AsyncMock()
         extractor.extract_text.return_value = "hello"
         sanitizer = AsyncMock()
@@ -220,18 +224,23 @@ class TestUploadDocuments:
         chunker.chunk_text.return_value = ["hello"]
         embedding = AsyncMock()
         embedding.embed_texts.side_effect = EmbeddingGenerationError("boom")
+        chunk_repo = AsyncMock()
+        indexing_service = DocumentIndexingService(
+            document_chunk_repository=chunk_repo,
+            document_text_extractor=extractor,
+            text_sanitizer_service=sanitizer,
+            document_structure_analyzer=analyzer,
+            text_chunker_service=chunker,
+            embedding_service=embedding,
+        )
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
             file_storage_service=mock_file_storage_service,
             max_file_size=104857600,
             processing_mode="sync",
-            document_chunk_repository=AsyncMock(),
-            document_text_extractor=extractor,
-            text_sanitizer_service=sanitizer,
-            document_structure_analyzer=analyzer,
-            text_chunker_service=chunker,
-            embedding_service=embedding,
+            document_chunk_repository=chunk_repo,
+            document_indexing_service=indexing_service,
         )
 
         # When

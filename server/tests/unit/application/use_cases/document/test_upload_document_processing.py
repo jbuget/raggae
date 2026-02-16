@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 
 from raggae.application.dto.document_structure_analysis_dto import DocumentStructureAnalysisDTO
+from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
@@ -61,6 +62,45 @@ class TestUploadDocumentProcessing:
         embedding.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
         return embedding
 
+    @pytest.fixture
+    def document_indexing_service(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> DocumentIndexingService:
+        return DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+        )
+
+    @pytest.fixture
+    def llamaindex_indexing_service(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> DocumentIndexingService:
+        return DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+            chunker_backend="llamaindex",
+        )
+
     async def test_upload_document_sync_processing_saves_chunks(
         self,
         mock_document_repository: AsyncMock,
@@ -72,6 +112,7 @@ class TestUploadDocumentProcessing:
         mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
+        document_indexing_service: DocumentIndexingService,
     ) -> None:
         # Given
         user_id = uuid4()
@@ -93,11 +134,7 @@ class TestUploadDocumentProcessing:
             max_file_size=104857600,
             processing_mode="sync",
             document_chunk_repository=mock_document_chunk_repository,
-            document_text_extractor=mock_document_text_extractor,
-            text_sanitizer_service=mock_text_sanitizer_service,
-            document_structure_analyzer=mock_document_structure_analyzer,
-            text_chunker_service=mock_text_chunker_service,
-            embedding_service=mock_embedding_service,
+            document_indexing_service=document_indexing_service,
         )
 
         # When
@@ -144,6 +181,7 @@ class TestUploadDocumentProcessing:
         mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
+        document_indexing_service: DocumentIndexingService,
     ) -> None:
         # Given
         user_id = uuid4()
@@ -157,7 +195,6 @@ class TestUploadDocumentProcessing:
             is_published=False,
             created_at=datetime.now(UTC),
         )
-        mock_text_chunker_service.last_splitter_name = "sentence"
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -165,11 +202,7 @@ class TestUploadDocumentProcessing:
             max_file_size=104857600,
             processing_mode="off",
             document_chunk_repository=mock_document_chunk_repository,
-            document_text_extractor=mock_document_text_extractor,
-            text_sanitizer_service=mock_text_sanitizer_service,
-            document_structure_analyzer=mock_document_structure_analyzer,
-            text_chunker_service=mock_text_chunker_service,
-            embedding_service=mock_embedding_service,
+            document_indexing_service=document_indexing_service,
         )
 
         # When
@@ -200,6 +233,7 @@ class TestUploadDocumentProcessing:
         mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
+        document_indexing_service: DocumentIndexingService,
     ) -> None:
         # Given
         user_id = uuid4()
@@ -225,11 +259,7 @@ class TestUploadDocumentProcessing:
             max_file_size=104857600,
             processing_mode="sync",
             document_chunk_repository=mock_document_chunk_repository,
-            document_text_extractor=mock_document_text_extractor,
-            text_sanitizer_service=mock_text_sanitizer_service,
-            document_structure_analyzer=mock_document_structure_analyzer,
-            text_chunker_service=mock_text_chunker_service,
-            embedding_service=mock_embedding_service,
+            document_indexing_service=document_indexing_service,
         )
 
         # When
@@ -258,6 +288,7 @@ class TestUploadDocumentProcessing:
         mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
+        document_indexing_service: DocumentIndexingService,
     ) -> None:
         # Given
         user_id = uuid4()
@@ -271,7 +302,6 @@ class TestUploadDocumentProcessing:
             is_published=False,
             created_at=datetime.now(UTC),
         )
-        mock_text_chunker_service.last_splitter_name = "sentence"
         use_case = UploadDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -279,11 +309,7 @@ class TestUploadDocumentProcessing:
             max_file_size=104857600,
             processing_mode="async",
             document_chunk_repository=mock_document_chunk_repository,
-            document_text_extractor=mock_document_text_extractor,
-            text_sanitizer_service=mock_text_sanitizer_service,
-            document_structure_analyzer=mock_document_structure_analyzer,
-            text_chunker_service=mock_text_chunker_service,
-            embedding_service=mock_embedding_service,
+            document_indexing_service=document_indexing_service,
         )
 
         # When
@@ -314,6 +340,7 @@ class TestUploadDocumentProcessing:
         mock_document_structure_analyzer: AsyncMock,
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
+        llamaindex_indexing_service: DocumentIndexingService,
     ) -> None:
         # Given
         user_id = uuid4()
@@ -335,12 +362,7 @@ class TestUploadDocumentProcessing:
             max_file_size=104857600,
             processing_mode="sync",
             document_chunk_repository=mock_document_chunk_repository,
-            document_text_extractor=mock_document_text_extractor,
-            text_sanitizer_service=mock_text_sanitizer_service,
-            document_structure_analyzer=mock_document_structure_analyzer,
-            text_chunker_service=mock_text_chunker_service,
-            embedding_service=mock_embedding_service,
-            chunker_backend="llamaindex",
+            document_indexing_service=llamaindex_indexing_service,
         )
 
         # When
@@ -370,12 +392,6 @@ class TestUploadDocumentProcessing:
         mock_document_repository: AsyncMock,
         mock_project_repository: AsyncMock,
         mock_file_storage_service: AsyncMock,
-        mock_document_chunk_repository: AsyncMock,
-        mock_document_text_extractor: AsyncMock,
-        mock_text_sanitizer_service: AsyncMock,
-        mock_document_structure_analyzer: AsyncMock,
-        mock_text_chunker_service: AsyncMock,
-        mock_embedding_service: AsyncMock,
     ) -> None:
         # When / Then
         with pytest.raises(ValueError):
@@ -385,10 +401,4 @@ class TestUploadDocumentProcessing:
                 file_storage_service=mock_file_storage_service,
                 max_file_size=104857600,
                 processing_mode="invalid",
-                document_chunk_repository=mock_document_chunk_repository,
-                document_text_extractor=mock_document_text_extractor,
-                text_sanitizer_service=mock_text_sanitizer_service,
-                document_structure_analyzer=mock_document_structure_analyzer,
-                text_chunker_service=mock_text_chunker_service,
-                embedding_service=mock_embedding_service,
             )

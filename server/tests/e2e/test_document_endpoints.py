@@ -255,10 +255,12 @@ class TestDocumentEndpoints:
         # Then
         assert response.status_code == 404
 
-    async def test_upload_documents_rejects_more_than_ten_files(self, client: AsyncClient) -> None:
+    async def test_upload_documents_rejects_more_than_twenty_files(
+        self, client: AsyncClient
+    ) -> None:
         # Given
         headers, project_id = await self._create_project(client)
-        files = [("files", (f"doc-{idx}.txt", b"hello", "text/plain")) for idx in range(11)]
+        files = [("files", (f"doc-{idx}.txt", b"hello", "text/plain")) for idx in range(21)]
 
         # When
         response = await client.post(
