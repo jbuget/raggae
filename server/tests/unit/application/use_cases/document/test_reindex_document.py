@@ -11,6 +11,7 @@ from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import DocumentNotFoundError
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.document_status import DocumentStatus
 
 
 class TestReindexDocument:
@@ -48,6 +49,7 @@ class TestReindexDocument:
             file_size=23,
             storage_key=f"projects/{project_id}/documents/{document_id}-doc.txt",
             created_at=datetime.now(UTC),
+            status=DocumentStatus.INDEXED,
         )
 
     @pytest.fixture
@@ -84,8 +86,12 @@ class TestReindexDocument:
         # Given
         mock_project_repository.find_by_id.return_value = project
         mock_document_repository.find_by_id.return_value = document
-        reindexed_document = replace(document, processing_strategy=ChunkingStrategy.PARAGRAPH)
-        mock_document_indexing_service.run_pipeline.return_value = reindexed_document
+        processing_document = replace(
+            document,
+            status=DocumentStatus.PROCESSING,
+            processing_strategy=ChunkingStrategy.PARAGRAPH,
+        )
+        mock_document_indexing_service.run_pipeline.return_value = processing_document
         use_case = ReindexDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -102,12 +108,17 @@ class TestReindexDocument:
 
         # Then
         mock_file_storage_service.download_file.assert_called_once_with(document.storage_key)
-        mock_document_indexing_service.run_pipeline.assert_called_once_with(
-            document, b"hello world from raggae"
-        )
-        mock_document_repository.save.assert_called_once_with(reindexed_document)
+        assert mock_document_repository.save.call_count == 2
+        # First save: transition to PROCESSING
+        first_saved = mock_document_repository.save.call_args_list[0].args[0]
+        assert first_saved.status == DocumentStatus.PROCESSING
+        # Second save: transition to INDEXED
+        second_saved = mock_document_repository.save.call_args_list[1].args[0]
+        assert second_saved.status == DocumentStatus.INDEXED
+        assert second_saved.processing_strategy == ChunkingStrategy.PARAGRAPH
         assert result.id == document_id
         assert result.processing_strategy == ChunkingStrategy.PARAGRAPH
+        assert result.status == DocumentStatus.INDEXED
 
     async def test_reindex_document_project_not_found_raises_error(
         self,

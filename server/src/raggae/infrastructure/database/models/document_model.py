@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,3 +25,10 @@ class DocumentModel(Base):
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     processing_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="indexed")
+    error_message: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    keywords: Mapped[list[str] | None] = mapped_column(JSONB(), nullable=True)
+    authors: Mapped[list[str] | None] = mapped_column(JSONB(), nullable=True)
+    document_date: Mapped[date | None] = mapped_column(Date(), nullable=True)
+    title: Mapped[str | None] = mapped_column(String(512), nullable=True)

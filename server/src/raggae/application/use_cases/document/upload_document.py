@@ -16,10 +16,12 @@ from raggae.domain.exceptions.document_exceptions import (
     DocumentTooLargeError,
     EmbeddingGenerationError,
     InvalidDocumentTypeError,
+    ProjectDocumentLimitReachedError,
 )
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.document_status import DocumentStatus
 
-ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "doc", "docx"}
+ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx"}
 
 
 @dataclass(frozen=True)
@@ -64,6 +66,7 @@ class UploadDocument:
         processing_mode: str = "off",
         document_chunk_repository: DocumentChunkRepository | None = None,
         document_indexing_service: DocumentIndexingService | None = None,
+        max_documents_per_project: int | None = None,
     ) -> None:
         self._document_repository = document_repository
         self._project_repository = project_repository
@@ -74,6 +77,7 @@ class UploadDocument:
             raise ValueError(f"Unsupported processing mode: {self._processing_mode}")
         self._document_chunk_repository = document_chunk_repository
         self._document_indexing_service = document_indexing_service
+        self._max_documents_per_project = max_documents_per_project
 
     async def execute(
         self,
@@ -84,6 +88,7 @@ class UploadDocument:
         content_type: str,
     ) -> DocumentDTO:
         await self._assert_project_owner(project_id=project_id, user_id=user_id)
+        await self._assert_document_quota(project_id=project_id)
         return await self._execute_single(
             project_id=project_id,
             file_name=file_name,
@@ -188,6 +193,16 @@ class UploadDocument:
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
 
+    async def _assert_document_quota(self, project_id: UUID) -> None:
+        if self._max_documents_per_project is None:
+            return
+        existing = await self._document_repository.find_by_project_id(project_id)
+        if len(existing) >= self._max_documents_per_project:
+            raise ProjectDocumentLimitReachedError(
+                f"Project {project_id} has reached the maximum of "
+                f"{self._max_documents_per_project} documents"
+            )
+
     async def _execute_single(
         self,
         project_id: UUID,
@@ -215,15 +230,21 @@ class UploadDocument:
             file_size=file_size,
             storage_key=storage_key,
             created_at=datetime.now(UTC),
+            status=DocumentStatus.UPLOADED,
         )
         await self._document_repository.save(document)
         try:
             if self._processing_mode == "sync" and self._document_indexing_service is not None:
+                document = document.transition_to(DocumentStatus.PROCESSING)
+                await self._document_repository.save(document)
                 document = await self._document_indexing_service.run_pipeline(
                     document, file_content
                 )
+                document = document.transition_to(DocumentStatus.INDEXED)
                 await self._document_repository.save(document)
-        except (DocumentExtractionError, EmbeddingGenerationError):
+        except (DocumentExtractionError, EmbeddingGenerationError) as exc:
+            document = document.transition_to(DocumentStatus.ERROR, error_message=str(exc))
+            await self._document_repository.save(document)
             await self._cleanup_failed_document(
                 document_id=document.id, storage_key=document.storage_key
             )

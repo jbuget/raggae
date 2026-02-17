@@ -5,8 +5,13 @@ from raggae.application.interfaces.repositories.document_repository import Docum
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.services.document_indexing_service import DocumentIndexingService
-from raggae.domain.exceptions.document_exceptions import DocumentNotFoundError
+from raggae.domain.exceptions.document_exceptions import (
+    DocumentExtractionError,
+    DocumentNotFoundError,
+    EmbeddingGenerationError,
+)
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.document_status import DocumentStatus
 
 
 class ReindexDocument:
@@ -40,7 +45,14 @@ class ReindexDocument:
 
         file_content, _ = await self._file_storage_service.download_file(document.storage_key)
 
-        document = await self._document_indexing_service.run_pipeline(document, file_content)
+        document = document.transition_to(DocumentStatus.PROCESSING)
         await self._document_repository.save(document)
 
+        try:
+            document = await self._document_indexing_service.run_pipeline(document, file_content)
+            document = document.transition_to(DocumentStatus.INDEXED)
+        except (DocumentExtractionError, EmbeddingGenerationError) as exc:
+            document = document.transition_to(DocumentStatus.ERROR, error_message=str(exc))
+
+        await self._document_repository.save(document)
         return DocumentDTO.from_entity(document)

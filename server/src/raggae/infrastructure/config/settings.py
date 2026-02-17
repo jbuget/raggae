@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     gemini_api_key: str = ""
     allowed_origins: str = "http://localhost:3000,http://localhost:8000"
-    max_upload_size: int = 104857600
+    max_upload_size: int = 10485760
+    max_documents_per_project: int = 100
     max_upload_files_per_request: int = 20
     storage_backend: str = "inmemory"
     persistence_backend: str = "inmemory"

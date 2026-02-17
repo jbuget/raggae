@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.document_status import DocumentStatus
 
 
 class DocumentResponse(BaseModel):
@@ -15,6 +16,13 @@ class DocumentResponse(BaseModel):
     file_size: int
     created_at: datetime
     processing_strategy: ChunkingStrategy | None
+    status: DocumentStatus
+    error_message: str | None = None
+    language: str | None = None
+    keywords: list[str] | None = None
+    authors: list[str] | None = None
+    document_date: date | None = None
+    title: str | None = None
 
 
 class UploadDocumentsCreatedResponse(BaseModel):

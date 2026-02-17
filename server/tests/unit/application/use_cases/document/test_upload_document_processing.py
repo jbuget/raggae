@@ -166,9 +166,11 @@ class TestUploadDocumentProcessing:
         assert saved_chunks[0].metadata_json["processing_strategy"] == "paragraph"
         assert saved_chunks[0].metadata_json["source_type"] == "paragraph"
         assert saved_chunks[0].metadata_json["chunker_backend"] == "native"
-        assert mock_document_repository.save.call_count == 2
-        second_saved_document = mock_document_repository.save.call_args_list[1].args[0]
-        assert second_saved_document.processing_strategy == ChunkingStrategy.PARAGRAPH
+        assert mock_document_repository.save.call_count == 3
+        # First save: UPLOADED, second: PROCESSING, third: INDEXED
+        third_saved_document = mock_document_repository.save.call_args_list[2].args[0]
+        assert third_saved_document.processing_strategy == ChunkingStrategy.PARAGRAPH
+        assert third_saved_document.status.value == "indexed"
 
     async def test_upload_document_processing_off_does_not_save_chunks(
         self,

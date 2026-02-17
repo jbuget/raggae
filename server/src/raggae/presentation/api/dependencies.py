@@ -330,6 +330,7 @@ def get_upload_document_use_case() -> UploadDocument:
         processing_mode=settings.processing_mode,
         document_chunk_repository=_document_chunk_repository,
         document_indexing_service=_document_indexing_service,
+        max_documents_per_project=settings.max_documents_per_project,
     )
 
 

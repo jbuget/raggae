@@ -20,3 +20,11 @@ class EmbeddingGenerationError(Exception):
 
 class LLMGenerationError(Exception):
     """Raised when an LLM provider cannot generate an answer."""
+
+
+class ProjectDocumentLimitReachedError(Exception):
+    """Raised when a project has reached its maximum number of documents."""
+
+
+class InvalidDocumentStatusTransitionError(Exception):
+    """Raised when an invalid document status transition is attempted."""

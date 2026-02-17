@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import Response
 
+from raggae.application.dto.document_dto import DocumentDTO
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.get_document_file import GetDocumentFile
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
@@ -34,6 +35,26 @@ from raggae.presentation.api.v1.schemas.document_schemas import (
     DocumentResponse,
     UploadDocumentsResponse,
 )
+
+
+def _dto_to_response(doc: DocumentDTO) -> DocumentResponse:
+    return DocumentResponse(
+        id=doc.id,
+        project_id=doc.project_id,
+        file_name=doc.file_name,
+        content_type=doc.content_type,
+        file_size=doc.file_size,
+        created_at=doc.created_at,
+        processing_strategy=doc.processing_strategy,
+        status=doc.status,
+        error_message=doc.error_message,
+        language=doc.language,
+        keywords=doc.keywords,
+        authors=doc.authors,
+        document_date=doc.document_date,
+        title=doc.title,
+    )
+
 
 router = APIRouter(
     prefix="/projects/{project_id}/documents",
@@ -118,18 +139,7 @@ async def list_project_documents(
             detail="Project not found",
         ) from None
 
-    return [
-        DocumentResponse(
-            id=doc.id,
-            project_id=doc.project_id,
-            file_name=doc.file_name,
-            content_type=doc.content_type,
-            file_size=doc.file_size,
-            created_at=doc.created_at,
-            processing_strategy=doc.processing_strategy,
-        )
-        for doc in document_dtos
-    ]
+    return [_dto_to_response(doc) for doc in document_dtos]
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -181,15 +191,7 @@ async def reindex_document(
             detail="Document not found",
         ) from None
 
-    return DocumentResponse(
-        id=document_dto.id,
-        project_id=document_dto.project_id,
-        file_name=document_dto.file_name,
-        content_type=document_dto.content_type,
-        file_size=document_dto.file_size,
-        created_at=document_dto.created_at,
-        processing_strategy=document_dto.processing_strategy,
-    )
+    return _dto_to_response(document_dto)
 
 
 @router.get("/{document_id}/chunks")

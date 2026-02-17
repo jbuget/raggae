@@ -5,7 +5,32 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.document import Document
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.infrastructure.database.models.document_model import DocumentModel
+
+
+def _to_entity(model: DocumentModel) -> Document:
+    return Document(
+        id=model.id,
+        project_id=model.project_id,
+        file_name=model.file_name,
+        content_type=model.content_type,
+        file_size=model.file_size,
+        storage_key=model.storage_key,
+        created_at=model.created_at,
+        processing_strategy=(
+            ChunkingStrategy(model.processing_strategy)
+            if model.processing_strategy is not None
+            else None
+        ),
+        status=DocumentStatus(model.status),
+        error_message=model.error_message,
+        language=model.language,
+        keywords=model.keywords,
+        authors=model.authors,
+        document_date=model.document_date,
+        title=model.title,
+    )
 
 
 class SQLAlchemyDocumentRepository:
@@ -31,6 +56,13 @@ class SQLAlchemyDocumentRepository:
                         else None
                     ),
                     created_at=document.created_at,
+                    status=document.status.value,
+                    error_message=document.error_message,
+                    language=document.language,
+                    keywords=document.keywords,
+                    authors=document.authors,
+                    document_date=document.document_date,
+                    title=document.title,
                 )
                 session.add(model)
             else:
@@ -44,6 +76,13 @@ class SQLAlchemyDocumentRepository:
                     if document.processing_strategy is not None
                     else None
                 )
+                model.status = document.status.value
+                model.error_message = document.error_message
+                model.language = document.language
+                model.keywords = document.keywords
+                model.authors = document.authors
+                model.document_date = document.document_date
+                model.title = document.title
             await session.commit()
 
     async def find_by_id(self, document_id: UUID) -> Document | None:
@@ -51,20 +90,7 @@ class SQLAlchemyDocumentRepository:
             model = await session.get(DocumentModel, document_id)
             if model is None:
                 return None
-            return Document(
-                id=model.id,
-                project_id=model.project_id,
-                file_name=model.file_name,
-                content_type=model.content_type,
-                file_size=model.file_size,
-                storage_key=model.storage_key,
-                created_at=model.created_at,
-                processing_strategy=(
-                    ChunkingStrategy(model.processing_strategy)
-                    if model.processing_strategy is not None
-                    else None
-                ),
-            )
+            return _to_entity(model)
 
     async def find_by_project_id(self, project_id: UUID) -> list[Document]:
         async with self._session_factory() as session:
@@ -72,23 +98,7 @@ class SQLAlchemyDocumentRepository:
                 select(DocumentModel).where(DocumentModel.project_id == project_id)
             )
             models = result.scalars().all()
-            return [
-                Document(
-                    id=model.id,
-                    project_id=model.project_id,
-                    file_name=model.file_name,
-                    content_type=model.content_type,
-                    file_size=model.file_size,
-                    storage_key=model.storage_key,
-                    created_at=model.created_at,
-                    processing_strategy=(
-                        ChunkingStrategy(model.processing_strategy)
-                        if model.processing_strategy is not None
-                        else None
-                    ),
-                )
-                for model in models
-            ]
+            return [_to_entity(model) for model in models]
 
     async def delete(self, document_id: UUID) -> None:
         async with self._session_factory() as session:
