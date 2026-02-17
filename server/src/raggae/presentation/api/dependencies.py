@@ -45,6 +45,9 @@ from raggae.application.services.chunking_strategy_selector import (
     DeterministicChunkingStrategySelector,
 )
 from raggae.application.services.document_indexing_service import DocumentIndexingService
+from raggae.application.services.parent_child_chunking_service import (
+    ParentChildChunkingService,
+)
 from raggae.application.use_cases.chat.delete_conversation import DeleteConversation
 from raggae.application.use_cases.chat.get_conversation import GetConversation
 from raggae.application.use_cases.chat.list_conversation_messages import (
@@ -292,6 +295,7 @@ elif settings.text_chunker_backend == "native":
     )
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
+_parent_child_chunking_service = ParentChildChunkingService()
 _document_indexing_service = DocumentIndexingService(
     document_chunk_repository=_document_chunk_repository,
     document_text_extractor=_document_text_extractor,
@@ -304,6 +308,7 @@ _document_indexing_service = DocumentIndexingService(
     file_metadata_extractor=_file_metadata_extractor,
     chunking_strategy_selector=_chunking_strategy_selector,
     chunker_backend=settings.text_chunker_backend,
+    parent_child_chunking_service=_parent_child_chunking_service,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)

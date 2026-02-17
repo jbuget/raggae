@@ -7,8 +7,12 @@ import pytest
 from raggae.application.dto.document_structure_analysis_dto import DocumentStructureAnalysisDTO
 from raggae.application.interfaces.services.file_metadata_extractor import FileMetadata
 from raggae.application.services.document_indexing_service import DocumentIndexingService
+from raggae.application.services.parent_child_chunking_service import (
+    ParentChildChunkingService,
+)
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project
+from raggae.domain.value_objects.chunk_level import ChunkLevel
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -428,3 +432,80 @@ class TestDocumentIndexingService:
             strategy=ChunkingStrategy.SEMANTIC,
         )
         assert result.processing_strategy == ChunkingStrategy.SEMANTIC
+
+    async def test_run_pipeline_with_parent_child_chunking(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        document: Document,
+        project: Project,
+    ) -> None:
+        # Given — project with parent_child_chunking enabled
+        project_pc = Project(
+            id=project.id,
+            user_id=project.user_id,
+            name=project.name,
+            description=project.description,
+            system_prompt=project.system_prompt,
+            is_published=project.is_published,
+            created_at=project.created_at,
+            parent_child_chunking=True,
+        )
+        mock_embedding_service.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
+        service = DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+            parent_child_chunking_service=ParentChildChunkingService(),
+        )
+
+        # When
+        await service.run_pipeline(document, project_pc, b"hello world from raggae")
+
+        # Then
+        mock_document_chunk_repository.save_many.assert_called_once()
+        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+
+        parent_chunks = [c for c in saved_chunks if c.chunk_level == ChunkLevel.PARENT]
+        child_chunks = [c for c in saved_chunks if c.chunk_level == ChunkLevel.CHILD]
+        assert len(parent_chunks) >= 1
+        assert len(child_chunks) >= 1
+        assert parent_chunks[0].embedding == []
+        assert child_chunks[0].parent_chunk_id == parent_chunks[0].id
+        assert child_chunks[0].embedding != []
+
+    async def test_run_pipeline_without_parent_child_uses_standard(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        document: Document,
+        project: Project,
+    ) -> None:
+        # Given — service has parent_child service but project doesn't enable it
+        service = DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+            parent_child_chunking_service=ParentChildChunkingService(),
+        )
+
+        # When
+        await service.run_pipeline(document, project, b"hello world from raggae")
+
+        # Then — all chunks are STANDARD
+        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        assert all(c.chunk_level == ChunkLevel.STANDARD for c in saved_chunks)
