@@ -42,7 +42,10 @@ class MultiFormatDocumentTextExtractor:
 
         try:
             reader = PdfReader(BytesIO(content))
-            parts = [page.extract_text() or "" for page in reader.pages]
+            parts = [
+                f"[[PAGE:{index + 1}]]\n{page.extract_text() or ''}"
+                for index, page in enumerate(reader.pages)
+            ]
             return "\n".join(parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract PDF text: {exc}") from exc

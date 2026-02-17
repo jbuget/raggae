@@ -202,3 +202,59 @@ class TestDocumentIndexingService:
         assert metadata["source_type"] == "paragraph"
         assert metadata["chunker_backend"] == "native"
         assert metadata["llamaindex_splitter"] is None
+
+    async def test_run_pipeline_adds_pdf_page_metadata_to_chunks(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        document: Document,
+    ) -> None:
+        # Given
+        pdf_document = Document(
+            id=document.id,
+            project_id=document.project_id,
+            file_name="report.pdf",
+            content_type="application/pdf",
+            file_size=document.file_size,
+            storage_key=document.storage_key,
+            created_at=document.created_at,
+        )
+        mock_document_text_extractor.extract_text.return_value = (
+            "[[PAGE:1]]\nDécision A\n\n[[PAGE:2]]\nDécision B"
+        )
+        mock_text_sanitizer_service.sanitize_text.return_value = (
+            "[[PAGE:1]]\nDécision A\n\n[[PAGE:2]]\nDécision B"
+        )
+        mock_text_chunker_service.chunk_text.return_value = [
+            "[[PAGE:1]]\nDécision A",
+            "[[PAGE:1]]\nSuite [[PAGE:2]]\nDécision B",
+        ]
+
+        service = DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+        )
+
+        # When
+        await service.run_pipeline(pdf_document, b"%PDF-1.7")
+
+        # Then
+        mock_embedding_service.embed_texts.assert_called_once_with(
+            ["Décision A", "Suite \nDécision B"]
+        )
+        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        assert saved_chunks[0].content == "Décision A"
+        assert saved_chunks[0].metadata_json["pages"] == [1]
+        assert saved_chunks[0].metadata_json["page_start"] == 1
+        assert saved_chunks[0].metadata_json["page_end"] == 1
+        assert saved_chunks[1].metadata_json["pages"] == [1, 2]
+        assert saved_chunks[1].metadata_json["page_start"] == 1
+        assert saved_chunks[1].metadata_json["page_end"] == 2

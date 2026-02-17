@@ -1,4 +1,6 @@
 from io import BytesIO
+import sys
+import types
 
 import pytest
 from docx import Document as DocxDocument
@@ -65,6 +67,32 @@ class TestMultiFormatDocumentTextExtractor:
 
         # Then
         assert result == "pdf text"
+
+    async def test_extract_pdf_includes_page_markers(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given
+        class _FakePage:
+            def __init__(self, value: str) -> None:
+                self._value = value
+
+            def extract_text(self) -> str:
+                return self._value
+
+        class _FakeReader:
+            def __init__(self, _buffer: BytesIO) -> None:
+                self.pages = [_FakePage("page one"), _FakePage("page two")]
+
+        fake_module = types.SimpleNamespace(PdfReader=_FakeReader)
+        monkeypatch.setitem(sys.modules, "pypdf", fake_module)
+
+        # When
+        result = extractor._extract_pdf(b"%PDF-1.7")
+
+        # Then
+        assert result == "[[PAGE:1]]\npage one\n[[PAGE:2]]\npage two"
 
     async def test_extract_text_docx_uses_docx_extractor(
         self,

@@ -1,5 +1,6 @@
 from dataclasses import replace
 from datetime import UTC, datetime
+import re
 from uuid import uuid4
 
 from raggae.application.interfaces.repositories.document_chunk_repository import (
@@ -25,6 +26,8 @@ from raggae.application.services.chunking_strategy_selector import (
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+
+_PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
 
 
 class DocumentIndexingService:
@@ -85,13 +88,21 @@ class DocumentIndexingService:
         await self._document_chunk_repository.delete_by_document_id(document.id)
 
         if chunks:
-            embeddings = await self._embedding_service.embed_texts(chunks)
+            chunk_payloads = [self._build_chunk_payload(chunk_text) for chunk_text in chunks]
+            indexed_payloads = [
+                payload for payload in chunk_payloads if payload["content"].strip()
+            ]
+            if not indexed_payloads:
+                return document
+
+            chunk_contents = [str(payload["content"]) for payload in indexed_payloads]
+            embeddings = await self._embedding_service.embed_texts(chunk_contents)
             document_chunks = [
                 DocumentChunk(
                     id=uuid4(),
                     document_id=document.id,
                     chunk_index=index,
-                    content=chunk_text,
+                    content=str(payload["content"]),
                     embedding=embeddings[index],
                     created_at=datetime.now(UTC),
                     metadata_json={
@@ -100,10 +111,35 @@ class DocumentIndexingService:
                         "source_type": strategy.value,
                         "chunker_backend": self._chunker_backend,
                         "llamaindex_splitter": llamaindex_splitter,
+                        **(
+                            {"pages": payload["pages"]}
+                            if payload.get("pages") is not None
+                            else {}
+                        ),
+                        **(
+                            {"page_start": payload["page_start"]}
+                            if payload.get("page_start") is not None
+                            else {}
+                        ),
+                        **(
+                            {"page_end": payload["page_end"]}
+                            if payload.get("page_end") is not None
+                            else {}
+                        ),
                     },
                 )
-                for index, chunk_text in enumerate(chunks)
+                for index, payload in enumerate(indexed_payloads)
             ]
             await self._document_chunk_repository.save_many(document_chunks)
 
         return document
+
+    def _build_chunk_payload(self, chunk_text: str) -> dict[str, object]:
+        pages = sorted({int(match) for match in _PAGE_MARKER_RE.findall(chunk_text)})
+        content = _PAGE_MARKER_RE.sub("", chunk_text).strip()
+        payload: dict[str, object] = {"content": content}
+        if pages:
+            payload["pages"] = pages
+            payload["page_start"] = pages[0]
+            payload["page_end"] = pages[-1]
+        return payload
