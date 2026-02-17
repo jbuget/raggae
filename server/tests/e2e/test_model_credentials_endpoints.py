@@ -112,3 +112,22 @@ class TestModelCredentialsEndpoints:
 
         # Then
         assert response.status_code == 401
+
+    async def test_create_model_credential_with_invalid_key_returns_422_without_echo(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.post(
+            "/api/v1/model-credentials",
+            json={"provider": "openai", "api_key": "bad-prefix-1234"},
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Invalid API key format"
+        assert "bad-prefix-1234" not in response.text

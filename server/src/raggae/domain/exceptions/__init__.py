@@ -23,6 +23,7 @@ from raggae.domain.exceptions.user_exceptions import (
 from raggae.domain.exceptions.validation_errors import (
     InvalidEmailError,
     InvalidModelProviderError,
+    InvalidProviderApiKeyError,
     WeakPasswordError,
 )
 
@@ -39,6 +40,7 @@ __all__ = [
     "InvalidDocumentTypeError",
     "InvalidEmailError",
     "InvalidModelProviderError",
+    "InvalidProviderApiKeyError",
     "ProjectAlreadyPublishedError",
     "ProjectNotFoundError",
     "UserAlreadyExistsError",

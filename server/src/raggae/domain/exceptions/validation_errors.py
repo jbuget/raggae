@@ -8,3 +8,7 @@ class WeakPasswordError(ValueError):
 
 class InvalidModelProviderError(ValueError):
     """Raised when a model provider is not supported."""
+
+
+class InvalidProviderApiKeyError(ValueError):
+    """Raised when an API key is invalid for a provider."""

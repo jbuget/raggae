@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from uuid import UUID
 
@@ -18,7 +19,11 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
 from raggae.domain.exceptions.provider_credential_exceptions import (
     ProviderCredentialNotFoundError,
 )
-from raggae.domain.exceptions.validation_errors import InvalidModelProviderError
+from raggae.domain.exceptions.validation_errors import (
+    InvalidModelProviderError,
+    InvalidProviderApiKeyError,
+)
+from raggae.infrastructure.config.settings import settings
 from raggae.presentation.api.dependencies import (
     get_activate_provider_api_key_use_case,
     get_current_user_id,
@@ -36,6 +41,15 @@ router = APIRouter(
     tags=["model-credentials"],
     dependencies=[Depends(get_current_user_id)],
 )
+logger = logging.getLogger(__name__)
+
+
+def _raise_if_user_provider_keys_disabled() -> None:
+    if not settings.user_provider_keys_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -44,6 +58,7 @@ async def save_model_credential(
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[SaveProviderApiKey, Depends(get_save_provider_api_key_use_case)],
 ) -> ModelCredentialResponse:
+    _raise_if_user_provider_keys_disabled()
     try:
         credential = await use_case.execute(
             user_id=user_id,
@@ -55,6 +70,20 @@ async def save_model_credential(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from None
+    except InvalidProviderApiKeyError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Invalid API key format",
+        ) from None
+
+    logger.info(
+        "provider_credential_saved",
+        extra={
+            "user_id": str(user_id),
+            "provider": credential.provider,
+            "credential_id": str(credential.id),
+        },
+    )
 
     return ModelCredentialResponse(
         id=credential.id,
@@ -71,7 +100,15 @@ async def list_model_credentials(
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[ListProviderApiKeys, Depends(get_list_provider_api_keys_use_case)],
 ) -> list[ModelCredentialResponse]:
+    _raise_if_user_provider_keys_disabled()
     credentials = await use_case.execute(user_id=user_id)
+    logger.info(
+        "provider_credential_listed",
+        extra={
+            "user_id": str(user_id),
+            "count": len(credentials),
+        },
+    )
     return [
         ModelCredentialResponse(
             id=item.id,
@@ -91,6 +128,7 @@ async def activate_model_credential(
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[ActivateProviderApiKey, Depends(get_activate_provider_api_key_use_case)],
 ) -> None:
+    _raise_if_user_provider_keys_disabled()
     try:
         await use_case.execute(credential_id=credential_id, user_id=user_id)
     except ProviderCredentialNotFoundError:
@@ -98,6 +136,13 @@ async def activate_model_credential(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Provider credential not found",
         ) from None
+    logger.info(
+        "provider_credential_activated",
+        extra={
+            "user_id": str(user_id),
+            "credential_id": str(credential_id),
+        },
+    )
 
 
 @router.delete("/{credential_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -106,4 +151,12 @@ async def delete_model_credential(
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[DeleteProviderApiKey, Depends(get_delete_provider_api_key_use_case)],
 ) -> None:
+    _raise_if_user_provider_keys_disabled()
     await use_case.execute(credential_id=credential_id, user_id=user_id)
+    logger.info(
+        "provider_credential_deleted",
+        extra={
+            "user_id": str(user_id),
+            "credential_id": str(credential_id),
+        },
+    )
