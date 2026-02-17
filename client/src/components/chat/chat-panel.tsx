@@ -32,7 +32,10 @@ interface MessageSourceDocument {
 export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   const router = useRouter();
   const { token } = useAuth();
-  const { data: existingMessages } = useMessages(projectId, conversationId);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(
+    conversationId,
+  );
+  const { data: existingMessages } = useMessages(projectId, currentConversationId);
   const { send, state, streamedContent, chunks } = useSendMessage(projectId);
   const [optimisticMessages, setOptimisticMessages] = useState<MessageResponse[]>([]);
   const [showChunks, setShowChunks] = useState(false);
@@ -43,6 +46,10 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   const [isSelectedDocumentLoading, setIsSelectedDocumentLoading] = useState(false);
   const [selectedDocumentError, setSelectedDocumentError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCurrentConversationId(conversationId);
+  }, [conversationId]);
 
   const messages = useMemo(() => {
     if (existingMessages) return [...existingMessages, ...optimisticMessages];
@@ -84,9 +91,10 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   }, [selectedDocumentUrl]);
 
   async function handleSend(content: string) {
+    const effectiveConversationId = currentConversationId ?? conversationId;
     const userMessage: MessageResponse = {
       id: `temp-${Date.now()}`,
-      conversation_id: conversationId ?? "",
+      conversation_id: effectiveConversationId ?? "",
       role: "user",
       content,
       created_at: new Date().toISOString(),
@@ -97,12 +105,13 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
     await send(
       {
         message: content,
-        conversation_id: conversationId,
-        start_new_conversation: !conversationId,
+        conversation_id: effectiveConversationId,
+        start_new_conversation: !effectiveConversationId,
       },
       (newConversationId) => {
         setOptimisticMessages([]);
-        if (!conversationId) {
+        setCurrentConversationId(newConversationId);
+        if (!effectiveConversationId) {
           router.push(
             `/projects/${projectId}/chat/${newConversationId}`,
           );
