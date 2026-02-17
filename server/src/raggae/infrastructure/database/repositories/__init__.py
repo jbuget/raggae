@@ -13,6 +13,9 @@ from raggae.infrastructure.database.repositories.in_memory_message_repository im
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_provider_credential_repository import (
+    InMemoryProviderCredentialRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
 )
@@ -44,6 +47,7 @@ __all__ = [
     "InMemoryDocumentRepository",
     "InMemoryMessageRepository",
     "InMemoryProjectRepository",
+    "InMemoryProviderCredentialRepository",
     "InMemoryUserRepository",
     "SQLAlchemyConversationRepository",
     "SQLAlchemyDocumentChunkRepository",

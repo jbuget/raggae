@@ -15,6 +15,9 @@ from raggae.application.interfaces.repositories.document_repository import (
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.provider_credential_repository import (
+    ProviderCredentialRepository,
+)
 from raggae.application.interfaces.repositories.user_repository import UserRepository
 from raggae.application.interfaces.services.chunk_retrieval_service import (
     ChunkRetrievalService,
@@ -36,6 +39,12 @@ from raggae.application.interfaces.services.file_storage_service import FileStor
 from raggae.application.interfaces.services.keyword_extractor import KeywordExtractor
 from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.interfaces.services.provider_api_key_crypto_service import (
+    ProviderApiKeyCryptoService,
+)
+from raggae.application.interfaces.services.provider_api_key_validator import (
+    ProviderApiKeyValidator,
+)
 from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.application.interfaces.services.text_sanitizer_service import (
@@ -69,6 +78,18 @@ from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.application.use_cases.provider_credentials.activate_provider_api_key import (
+    ActivateProviderApiKey,
+)
+from raggae.application.use_cases.provider_credentials.delete_provider_api_key import (
+    DeleteProviderApiKey,
+)
+from raggae.application.use_cases.provider_credentials.list_provider_api_keys import (
+    ListProviderApiKeys,
+)
+from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
+    SaveProviderApiKey,
+)
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.infrastructure.config.settings import settings
@@ -86,6 +107,9 @@ from raggae.infrastructure.database.repositories.in_memory_message_repository im
 )
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
+)
+from raggae.infrastructure.database.repositories.in_memory_provider_credential_repository import (
+    InMemoryProviderCredentialRepository,
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
@@ -105,6 +129,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_message_repository i
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
 )
+from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_repository import (
+    SQLAlchemyProviderCredentialRepository,
+)
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
 )
@@ -113,6 +140,9 @@ from raggae.infrastructure.services.adaptive_text_chunker_service import (
     AdaptiveTextChunkerService,
 )
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
+from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
+    FernetProviderApiKeyCryptoService,
+)
 from raggae.infrastructure.services.gemini_embedding_service import GeminiEmbeddingService
 from raggae.infrastructure.services.gemini_llm_service import GeminiLLMService
 from raggae.infrastructure.services.heading_section_text_chunker_service import (
@@ -171,6 +201,9 @@ from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
 from raggae.infrastructure.services.semantic_text_chunker_service import (
     SemanticTextChunkerService,
 )
+from raggae.infrastructure.services.simple_provider_api_key_validator import (
+    SimpleProviderApiKeyValidator,
+)
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
 )
@@ -225,6 +258,9 @@ if settings.persistence_backend == "postgres":
     _message_repository: MessageRepository = SQLAlchemyMessageRepository(
         session_factory=SessionFactory
     )
+    _provider_credential_repository: ProviderCredentialRepository = (
+        SQLAlchemyProviderCredentialRepository(session_factory=SessionFactory)
+    )
     _chunk_retrieval_service: ChunkRetrievalService = SQLAlchemyChunkRetrievalService(
         session_factory=SessionFactory,
         vector_weight=settings.retrieval_vector_weight,
@@ -239,6 +275,7 @@ else:
     _document_chunk_repository = InMemoryDocumentChunkRepository()
     _conversation_repository = InMemoryConversationRepository()
     _message_repository = InMemoryMessageRepository()
+    _provider_credential_repository = InMemoryProviderCredentialRepository()
     _chunk_retrieval_service = InMemoryChunkRetrievalService(
         document_repository=_document_repository,
         document_chunk_repository=_document_chunk_repository,
@@ -246,6 +283,10 @@ else:
         fulltext_weight=settings.retrieval_fulltext_weight,
     )
 _password_hasher = BcryptPasswordHasher()
+_provider_api_key_crypto_service: ProviderApiKeyCryptoService = (
+    FernetProviderApiKeyCryptoService(encryption_key=settings.credentials_encryption_key)
+)
+_provider_api_key_validator: ProviderApiKeyValidator = SimpleProviderApiKeyValidator()
 if settings.storage_backend == "minio":
     _file_storage_service: FileStorageService = MinioFileStorageService(
         endpoint=settings.s3_endpoint_url,
@@ -471,6 +512,26 @@ def get_send_message_use_case() -> SendMessage:
         history_window_size=settings.chat_history_window_size,
         history_max_chars=settings.chat_history_max_chars,
     )
+
+
+def get_save_provider_api_key_use_case() -> SaveProviderApiKey:
+    return SaveProviderApiKey(
+        provider_credential_repository=_provider_credential_repository,
+        provider_api_key_validator=_provider_api_key_validator,
+        provider_api_key_crypto_service=_provider_api_key_crypto_service,
+    )
+
+
+def get_list_provider_api_keys_use_case() -> ListProviderApiKeys:
+    return ListProviderApiKeys(provider_credential_repository=_provider_credential_repository)
+
+
+def get_delete_provider_api_key_use_case() -> DeleteProviderApiKey:
+    return DeleteProviderApiKey(provider_credential_repository=_provider_credential_repository)
+
+
+def get_activate_provider_api_key_use_case() -> ActivateProviderApiKey:
+    return ActivateProviderApiKey(provider_credential_repository=_provider_credential_repository)
 
 
 def get_list_conversation_messages_use_case() -> ListConversationMessages:

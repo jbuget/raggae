@@ -16,6 +16,10 @@ from raggae.presentation.api.v1.schemas.document_schemas import (
     DocumentResponse,
     UploadDocumentsResponse,
 )
+from raggae.presentation.api.v1.schemas.model_credential_schemas import (
+    ModelCredentialResponse,
+    SaveModelCredentialRequest,
+)
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
     ProjectResponse,
@@ -36,8 +40,10 @@ __all__ = [
     "LoginUserRequest",
     "ProjectResponse",
     "MessageResponse",
+    "ModelCredentialResponse",
     "SendMessageRequest",
     "SendMessageResponse",
+    "SaveModelCredentialRequest",
     "UpdateConversationRequest",
     "QueryProjectRequest",
     "QueryProjectResponse",
