@@ -4,6 +4,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.project import Project
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.database.models.project_model import ProjectModel
 
 
@@ -24,6 +25,11 @@ class SQLAlchemyProjectRepository:
                     description=project.description,
                     system_prompt=project.system_prompt,
                     is_published=project.is_published,
+                    chunking_strategy=project.chunking_strategy.value,
+                    parent_child_chunking=project.parent_child_chunking,
+                    reindex_status=project.reindex_status,
+                    reindex_progress=project.reindex_progress,
+                    reindex_total=project.reindex_total,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -33,6 +39,11 @@ class SQLAlchemyProjectRepository:
                 model.description = project.description
                 model.system_prompt = project.system_prompt
                 model.is_published = project.is_published
+                model.chunking_strategy = project.chunking_strategy.value
+                model.parent_child_chunking = project.parent_child_chunking
+                model.reindex_status = project.reindex_status
+                model.reindex_progress = project.reindex_progress
+                model.reindex_total = project.reindex_total
             await session.commit()
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
@@ -47,6 +58,11 @@ class SQLAlchemyProjectRepository:
                 description=model.description,
                 system_prompt=model.system_prompt,
                 is_published=model.is_published,
+                chunking_strategy=ChunkingStrategy(model.chunking_strategy),
+                parent_child_chunking=model.parent_child_chunking,
+                reindex_status=model.reindex_status,
+                reindex_progress=model.reindex_progress,
+                reindex_total=model.reindex_total,
                 created_at=model.created_at,
             )
 
@@ -64,6 +80,11 @@ class SQLAlchemyProjectRepository:
                     description=model.description,
                     system_prompt=model.system_prompt,
                     is_published=model.is_published,
+                    chunking_strategy=ChunkingStrategy(model.chunking_strategy),
+                    parent_child_chunking=model.parent_child_chunking,
+                    reindex_status=model.reindex_status,
+                    reindex_progress=model.reindex_progress,
+                    reindex_total=model.reindex_total,
                     created_at=model.created_at,
                 )
                 for model in models

@@ -31,6 +31,7 @@ from raggae.application.services.chunking_strategy_selector import (
 )
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
+from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
@@ -70,7 +71,12 @@ class DocumentIndexingService:
             self._chunking_strategy_selector = chunking_strategy_selector
         self._chunker_backend = chunker_backend
 
-    async def run_pipeline(self, document: Document, file_content: bytes) -> Document:
+    async def run_pipeline(
+        self,
+        document: Document,
+        project: Project,
+        file_content: bytes,
+    ) -> Document:
         extracted_text = await self._document_text_extractor.extract_text(
             file_name=document.file_name,
             content=file_content,
@@ -88,9 +94,8 @@ class DocumentIndexingService:
             sanitized_text=sanitized_text,
         )
 
-        if self._chunker_backend == "llamaindex":
-            strategy = ChunkingStrategy.FIXED_WINDOW
-        else:
+        strategy = project.chunking_strategy
+        if strategy == ChunkingStrategy.AUTO:
             analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
             strategy = self._chunking_strategy_selector.select(
                 has_headings=analysis.has_headings,

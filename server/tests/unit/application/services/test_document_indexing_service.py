@@ -8,6 +8,7 @@ from raggae.application.dto.document_structure_analysis_dto import DocumentStruc
 from raggae.application.interfaces.services.file_metadata_extractor import FileMetadata
 from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.domain.entities.document import Document
+from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -84,6 +85,18 @@ class TestDocumentIndexingService:
             created_at=datetime.now(UTC),
         )
 
+    @pytest.fixture
+    def project(self) -> Project:
+        return Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
     async def test_run_pipeline_extracts_chunks_and_embeds(
         self,
         mock_document_chunk_repository: AsyncMock,
@@ -93,6 +106,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         service = DocumentIndexingService(
@@ -105,7 +119,7 @@ class TestDocumentIndexingService:
         )
 
         # When
-        result = await service.run_pipeline(document, b"hello world from raggae")
+        result = await service.run_pipeline(document, project, b"hello world from raggae")
 
         # Then
         mock_document_text_extractor.extract_text.assert_called_once()
@@ -137,6 +151,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         mock_text_chunker_service.last_splitter_name = "sentence"
@@ -151,18 +166,20 @@ class TestDocumentIndexingService:
         )
 
         # When
-        result = await service.run_pipeline(document, b"hello world from raggae")
+        result = await service.run_pipeline(document, project, b"hello world from raggae")
 
         # Then
-        mock_document_structure_analyzer.analyze_text.assert_not_called()
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
+            "hello world\n\nfrom raggae"
+        )
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
-            strategy=ChunkingStrategy.FIXED_WINDOW,
+            strategy=ChunkingStrategy.PARAGRAPH,
         )
         saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
         assert saved_chunks[0].metadata_json["chunker_backend"] == "llamaindex"
         assert saved_chunks[0].metadata_json["llamaindex_splitter"] == "sentence"
-        assert result.processing_strategy == ChunkingStrategy.FIXED_WINDOW
+        assert result.processing_strategy == ChunkingStrategy.PARAGRAPH
 
     async def test_run_pipeline_with_empty_chunks(
         self,
@@ -173,6 +190,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         mock_text_chunker_service.chunk_text.return_value = []
@@ -186,7 +204,7 @@ class TestDocumentIndexingService:
         )
 
         # When
-        result = await service.run_pipeline(document, b"empty doc")
+        result = await service.run_pipeline(document, project, b"empty doc")
 
         # Then
         mock_embedding_service.embed_texts.assert_not_called()
@@ -203,6 +221,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         service = DocumentIndexingService(
@@ -215,7 +234,7 @@ class TestDocumentIndexingService:
         )
 
         # When
-        await service.run_pipeline(document, b"hello world from raggae")
+        await service.run_pipeline(document, project, b"hello world from raggae")
 
         # Then
         saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
@@ -235,6 +254,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         pdf_document = Document(
@@ -267,7 +287,7 @@ class TestDocumentIndexingService:
         )
 
         # When
-        await service.run_pipeline(pdf_document, b"%PDF-1.7")
+        await service.run_pipeline(pdf_document, project, b"%PDF-1.7")
 
         # Then
         mock_embedding_service.embed_texts.assert_called_once_with(
@@ -294,6 +314,7 @@ class TestDocumentIndexingService:
         mock_keyword_extractor: AsyncMock,
         mock_file_metadata_extractor: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         service = DocumentIndexingService(
@@ -309,7 +330,7 @@ class TestDocumentIndexingService:
         )
 
         # When
-        result = await service.run_pipeline(document, b"%PDF-1.7")
+        result = await service.run_pipeline(document, project, b"%PDF-1.7")
 
         # Then
         assert result.language == "fr"
@@ -337,6 +358,7 @@ class TestDocumentIndexingService:
         mock_keyword_extractor: AsyncMock,
         mock_file_metadata_extractor: AsyncMock,
         document: Document,
+        project: Project,
     ) -> None:
         # Given
         mock_language_detector.detect_language.side_effect = RuntimeError("boom")
@@ -355,7 +377,7 @@ class TestDocumentIndexingService:
         )
 
         # When
-        result = await service.run_pipeline(document, b"%PDF-1.7")
+        result = await service.run_pipeline(document, project, b"%PDF-1.7")
 
         # Then
         assert result.language is None
@@ -364,3 +386,45 @@ class TestDocumentIndexingService:
         assert result.authors is None
         assert result.document_date is None
         mock_document_chunk_repository.save_many.assert_called_once()
+
+    async def test_run_pipeline_uses_project_chunking_strategy_when_not_auto(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        document: Document,
+        project: Project,
+    ) -> None:
+        # Given
+        project = Project(
+            id=project.id,
+            user_id=project.user_id,
+            name=project.name,
+            description=project.description,
+            system_prompt=project.system_prompt,
+            is_published=project.is_published,
+            created_at=project.created_at,
+            chunking_strategy=ChunkingStrategy.SEMANTIC,
+        )
+        service = DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+        )
+
+        # When
+        result = await service.run_pipeline(document, project, b"%PDF-1.7")
+
+        # Then
+        mock_document_structure_analyzer.analyze_text.assert_not_called()
+        mock_text_chunker_service.chunk_text.assert_called_once_with(
+            "hello world\n\nfrom raggae",
+            strategy=ChunkingStrategy.SEMANTIC,
+        )
+        assert result.processing_strategy == ChunkingStrategy.SEMANTIC

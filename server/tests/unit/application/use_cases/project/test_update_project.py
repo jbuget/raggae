@@ -7,6 +7,7 @@ import pytest
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class TestUpdateProject:
@@ -98,3 +99,37 @@ class TestUpdateProject:
                 description="New description",
                 system_prompt="New prompt",
             )
+
+    async def test_update_project_updates_chunking_settings_when_provided(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        project_id = uuid4()
+        user_id = uuid4()
+        project = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+            chunking_strategy=ChunkingStrategy.SEMANTIC,
+            parent_child_chunking=True,
+        )
+
+        # Then
+        assert result.chunking_strategy == ChunkingStrategy.SEMANTIC
+        assert result.parent_child_chunking is True

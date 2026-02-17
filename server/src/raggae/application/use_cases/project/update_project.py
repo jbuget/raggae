@@ -6,6 +6,7 @@ from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
 )
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class UpdateProject:
@@ -21,6 +22,8 @@ class UpdateProject:
         name: str,
         description: str,
         system_prompt: str,
+        chunking_strategy: ChunkingStrategy | None = None,
+        parent_child_chunking: bool | None = None,
     ) -> ProjectDTO:
         project = await self._project_repository.find_by_id(project_id)
         if project is None or project.user_id != user_id:
@@ -31,6 +34,12 @@ class UpdateProject:
             name=name,
             description=description,
             system_prompt=system_prompt,
+            chunking_strategy=project.chunking_strategy
+            if chunking_strategy is None
+            else chunking_strategy,
+            parent_child_chunking=project.parent_child_chunking
+            if parent_child_chunking is None
+            else parent_child_chunking,
         )
         await self._project_repository.save(updated_project)
         return ProjectDTO.from_entity(updated_project)

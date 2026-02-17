@@ -34,6 +34,8 @@ export interface UpdateProjectRequest {
   name: string;
   description?: string;
   system_prompt?: string;
+  chunking_strategy?: "auto" | "fixed_window" | "paragraph" | "heading_section" | "semantic";
+  parent_child_chunking?: boolean;
 }
 
 export interface ProjectResponse {
@@ -44,6 +46,11 @@ export interface ProjectResponse {
   system_prompt: string;
   is_published: boolean;
   created_at: string;
+  chunking_strategy: "auto" | "fixed_window" | "paragraph" | "heading_section" | "semantic";
+  parent_child_chunking: boolean;
+  reindex_status: string;
+  reindex_progress: number;
+  reindex_total: number;
 }
 
 // Documents

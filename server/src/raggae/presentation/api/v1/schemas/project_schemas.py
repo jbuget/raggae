@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+
 
 class CreateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1)
@@ -14,6 +16,8 @@ class UpdateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = ""
     system_prompt: str = ""
+    chunking_strategy: ChunkingStrategy | None = None
+    parent_child_chunking: bool | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -24,3 +28,8 @@ class ProjectResponse(BaseModel):
     system_prompt: str
     is_published: bool
     created_at: datetime
+    chunking_strategy: ChunkingStrategy
+    parent_child_chunking: bool
+    reindex_status: str
+    reindex_progress: int
+    reindex_total: int

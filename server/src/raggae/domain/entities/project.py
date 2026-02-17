@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from raggae.domain.exceptions.project_exceptions import ProjectAlreadyPublishedError
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,11 @@ class Project:
     system_prompt: str
     is_published: bool
     created_at: datetime
+    chunking_strategy: ChunkingStrategy = ChunkingStrategy.AUTO
+    parent_child_chunking: bool = False
+    reindex_status: str = "idle"
+    reindex_progress: int = 0
+    reindex_total: int = 0
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""

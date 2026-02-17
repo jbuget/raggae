@@ -46,3 +46,18 @@ class TestChunkingStrategySelector:
 
         # Then
         assert strategy == ChunkingStrategy.FIXED_WINDOW
+
+    def test_select_never_returns_auto_or_semantic(self) -> None:
+        # Given
+        selector = DeterministicChunkingStrategySelector()
+
+        # When
+        strategies = {
+            selector.select(has_headings=True, paragraph_count=1, average_paragraph_length=10),
+            selector.select(has_headings=False, paragraph_count=4, average_paragraph_length=120),
+            selector.select(has_headings=False, paragraph_count=1, average_paragraph_length=10),
+        }
+
+        # Then
+        assert ChunkingStrategy.AUTO not in strategies
+        assert ChunkingStrategy.SEMANTIC not in strategies

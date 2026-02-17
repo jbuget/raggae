@@ -57,6 +57,11 @@ async def create_project(
         system_prompt=project_dto.system_prompt,
         is_published=project_dto.is_published,
         created_at=project_dto.created_at,
+        chunking_strategy=project_dto.chunking_strategy,
+        parent_child_chunking=project_dto.parent_child_chunking,
+        reindex_status=project_dto.reindex_status,
+        reindex_progress=project_dto.reindex_progress,
+        reindex_total=project_dto.reindex_total,
     )
 
 
@@ -81,6 +86,11 @@ async def get_project(
         system_prompt=project_dto.system_prompt,
         is_published=project_dto.is_published,
         created_at=project_dto.created_at,
+        chunking_strategy=project_dto.chunking_strategy,
+        parent_child_chunking=project_dto.parent_child_chunking,
+        reindex_status=project_dto.reindex_status,
+        reindex_progress=project_dto.reindex_progress,
+        reindex_total=project_dto.reindex_total,
     )
 
 
@@ -99,6 +109,11 @@ async def list_projects(
             system_prompt=p.system_prompt,
             is_published=p.is_published,
             created_at=p.created_at,
+            chunking_strategy=p.chunking_strategy,
+            parent_child_chunking=p.parent_child_chunking,
+            reindex_status=p.reindex_status,
+            reindex_progress=p.reindex_progress,
+            reindex_total=p.reindex_total,
         )
         for p in project_dtos
     ]
@@ -133,6 +148,8 @@ async def update_project(
             name=data.name,
             description=data.description,
             system_prompt=data.system_prompt,
+            chunking_strategy=data.chunking_strategy,
+            parent_child_chunking=data.parent_child_chunking,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -147,6 +164,11 @@ async def update_project(
         system_prompt=project_dto.system_prompt,
         is_published=project_dto.is_published,
         created_at=project_dto.created_at,
+        chunking_strategy=project_dto.chunking_strategy,
+        parent_child_chunking=project_dto.parent_child_chunking,
+        reindex_status=project_dto.reindex_status,
+        reindex_progress=project_dto.reindex_progress,
+        reindex_total=project_dto.reindex_total,
     )
 
 

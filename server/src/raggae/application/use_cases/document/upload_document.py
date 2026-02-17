@@ -11,6 +11,7 @@ from raggae.application.interfaces.repositories.project_repository import Projec
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.domain.entities.document import Document
+from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import (
     DocumentExtractionError,
     DocumentTooLargeError,
@@ -87,10 +88,11 @@ class UploadDocument:
         file_content: bytes,
         content_type: str,
     ) -> DocumentDTO:
-        await self._assert_project_owner(project_id=project_id, user_id=user_id)
+        project = await self._assert_project_owner(project_id=project_id, user_id=user_id)
         await self._assert_document_quota(project_id=project_id)
         return await self._execute_single(
             project_id=project_id,
+            project=project,
             file_name=file_name,
             file_content=file_content,
             content_type=content_type,
@@ -102,7 +104,7 @@ class UploadDocument:
         user_id: UUID,
         files: list[UploadDocumentItem],
     ) -> UploadDocumentsResult:
-        await self._assert_project_owner(project_id=project_id, user_id=user_id)
+        project = await self._assert_project_owner(project_id=project_id, user_id=user_id)
         existing_documents = await self._document_repository.find_by_project_id(project_id)
         indexed_by_name = {
             doc.file_name.lower()
@@ -139,6 +141,7 @@ class UploadDocument:
             try:
                 document_dto = await self._execute_single(
                     project_id=project_id,
+                    project=project,
                     file_name=stored_filename,
                     file_content=item.file_content,
                     content_type=item.content_type,
@@ -188,10 +191,11 @@ class UploadDocument:
             errors=errors,
         )
 
-    async def _assert_project_owner(self, project_id: UUID, user_id: UUID) -> None:
+    async def _assert_project_owner(self, project_id: UUID, user_id: UUID) -> Project:
         project = await self._project_repository.find_by_id(project_id)
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        return project
 
     async def _assert_document_quota(self, project_id: UUID) -> None:
         if self._max_documents_per_project is None:
@@ -206,6 +210,7 @@ class UploadDocument:
     async def _execute_single(
         self,
         project_id: UUID,
+        project: Project,
         file_name: str,
         file_content: bytes,
         content_type: str,
@@ -238,7 +243,9 @@ class UploadDocument:
                 document = document.transition_to(DocumentStatus.PROCESSING)
                 await self._document_repository.save(document)
                 document = await self._document_indexing_service.run_pipeline(
-                    document, file_content
+                    document=document,
+                    project=project,
+                    file_content=file_content,
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 await self._document_repository.save(document)

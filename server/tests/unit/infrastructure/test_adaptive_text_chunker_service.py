@@ -111,3 +111,25 @@ class TestAdaptiveTextChunkerService:
         )
         paragraph_chunker.chunk_text.assert_not_called()
         heading_section_chunker.chunk_text.assert_not_called()
+
+    async def test_chunk_text_routes_to_semantic_chunker(self) -> None:
+        # Given
+        fixed_window_chunker = AsyncMock()
+        paragraph_chunker = AsyncMock()
+        heading_section_chunker = AsyncMock()
+        semantic_chunker = AsyncMock()
+        semantic_chunker.chunk_text.return_value = ["semantic chunk"]
+        chunker = AdaptiveTextChunkerService(
+            fixed_window_chunker=fixed_window_chunker,
+            paragraph_chunker=paragraph_chunker,
+            heading_section_chunker=heading_section_chunker,
+            semantic_chunker=semantic_chunker,
+        )
+
+        # When
+        result = await chunker.chunk_text("text", ChunkingStrategy.SEMANTIC)
+
+        # Then
+        assert result == ["semantic chunk"]
+        semantic_chunker.chunk_text.assert_called_once_with("text", ChunkingStrategy.SEMANTIC)
+        fixed_window_chunker.chunk_text.assert_not_called()

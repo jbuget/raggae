@@ -331,7 +331,7 @@ class TestUploadDocumentProcessing:
         mock_text_chunker_service.chunk_text.assert_not_called()
         mock_embedding_service.embed_texts.assert_not_called()
 
-    async def test_upload_document_sync_processing_llamaindex_ignores_strategy_selector(
+    async def test_upload_document_sync_processing_llamaindex_uses_project_strategy_resolution(
         self,
         mock_document_repository: AsyncMock,
         mock_project_repository: AsyncMock,
@@ -377,15 +377,17 @@ class TestUploadDocumentProcessing:
         )
 
         # Then
-        mock_document_structure_analyzer.analyze_text.assert_not_called()
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
+            "hello world\n\nfrom raggae"
+        )
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
-            strategy=ChunkingStrategy.FIXED_WINDOW,
+            strategy=ChunkingStrategy.PARAGRAPH,
         )
         saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
         assert saved_chunks[0].metadata_json is not None
-        assert saved_chunks[0].metadata_json["processing_strategy"] == "fixed_window"
-        assert saved_chunks[0].metadata_json["source_type"] == "fixed_window"
+        assert saved_chunks[0].metadata_json["processing_strategy"] == "paragraph"
+        assert saved_chunks[0].metadata_json["source_type"] == "paragraph"
         assert saved_chunks[0].metadata_json["chunker_backend"] == "llamaindex"
         assert saved_chunks[0].metadata_json["llamaindex_splitter"] == "sentence"
 

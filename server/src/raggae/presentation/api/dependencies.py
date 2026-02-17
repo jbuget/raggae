@@ -164,6 +164,9 @@ from raggae.infrastructure.services.paragraph_text_chunker_service import (
 from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
     PdfDocxFileMetadataExtractor,
 )
+from raggae.infrastructure.services.semantic_text_chunker_service import (
+    SemanticTextChunkerService,
+)
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
 )
@@ -173,6 +176,32 @@ from raggae.infrastructure.services.simple_text_sanitizer_service import (
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
+
+
+def _build_embedding_service() -> EmbeddingService:
+    if settings.embedding_backend == "openai":
+        return OpenAIEmbeddingService(
+            api_key=settings.openai_api_key,
+            model=settings.embedding_model,
+            expected_dimension=settings.embedding_dimension,
+        )
+    if settings.embedding_backend == "ollama":
+        from raggae.infrastructure.services.ollama_embedding_service import (
+            OllamaEmbeddingService,
+        )
+
+        return OllamaEmbeddingService(
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_embedding_model,
+            expected_dimension=settings.embedding_dimension,
+        )
+    if settings.embedding_backend == "gemini":
+        return GeminiEmbeddingService(
+            api_key=settings.gemini_api_key,
+            model=settings.gemini_embedding_model,
+            expected_dimension=settings.embedding_dimension,
+        )
+    return InMemoryEmbeddingService(dimension=settings.embedding_dimension)
 
 if settings.persistence_backend == "postgres":
     _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
@@ -222,30 +251,8 @@ if settings.storage_backend == "minio":
     )
 else:
     _file_storage_service = InMemoryFileStorageService()
-if settings.embedding_backend == "openai":
-    _embedding_service: EmbeddingService = OpenAIEmbeddingService(
-        api_key=settings.openai_api_key,
-        model=settings.embedding_model,
-        expected_dimension=settings.embedding_dimension,
-    )
-elif settings.embedding_backend == "ollama":
-    from raggae.infrastructure.services.ollama_embedding_service import (
-        OllamaEmbeddingService,
-    )
-
-    _embedding_service = OllamaEmbeddingService(
-        base_url=settings.ollama_base_url,
-        model=settings.ollama_embedding_model,
-        expected_dimension=settings.embedding_dimension,
-    )
-elif settings.embedding_backend == "gemini":
-    _embedding_service = GeminiEmbeddingService(
-        api_key=settings.gemini_api_key,
-        model=settings.gemini_embedding_model,
-        expected_dimension=settings.embedding_dimension,
-    )
-else:
-    _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
+_embedding_service: EmbeddingService = _build_embedding_service()
+_semantic_embedding_service: EmbeddingService = _build_embedding_service()
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
@@ -271,10 +278,16 @@ elif settings.text_chunker_backend == "native":
     _heading_section_chunker = HeadingSectionTextChunkerService(
         fallback_chunker=_fixed_window_chunker
     )
+    _semantic_chunker = SemanticTextChunkerService(
+        embedding_service=_semantic_embedding_service,
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
+    )
     _text_chunker_service = AdaptiveTextChunkerService(
         fixed_window_chunker=_fixed_window_chunker,
         paragraph_chunker=_paragraph_chunker,
         heading_section_chunker=_heading_section_chunker,
+        semantic_chunker=_semantic_chunker,
         context_window_size=settings.chunk_overlap,
     )
 else:
