@@ -4,5 +4,14 @@ from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.entities.message import Message
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.user import User
+from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 
-__all__ = ["Conversation", "Document", "DocumentChunk", "Message", "Project", "User"]
+__all__ = [
+    "Conversation",
+    "Document",
+    "DocumentChunk",
+    "Message",
+    "Project",
+    "User",
+    "UserModelProviderCredential",
+]

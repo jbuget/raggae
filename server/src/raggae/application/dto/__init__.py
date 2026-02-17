@@ -7,6 +7,7 @@ from raggae.application.dto.document_dto import DocumentDTO
 from raggae.application.dto.document_structure_analysis_dto import DocumentStructureAnalysisDTO
 from raggae.application.dto.message_dto import MessageDTO
 from raggae.application.dto.project_dto import ProjectDTO
+from raggae.application.dto.provider_credential_dto import ProviderCredentialDTO
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.dto.user_dto import UserDTO
 
@@ -20,6 +21,7 @@ __all__ = [
     "DocumentStructureAnalysisDTO",
     "MessageDTO",
     "ProjectDTO",
+    "ProviderCredentialDTO",
     "RetrievedChunkDTO",
     "UserDTO",
 ]

@@ -4,3 +4,7 @@ class InvalidEmailError(ValueError):
 
 class WeakPasswordError(ValueError):
     """Raised when a password does not meet strength requirements."""
+
+
+class InvalidModelProviderError(ValueError):
+    """Raised when a model provider is not supported."""

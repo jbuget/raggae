@@ -20,6 +20,12 @@ from raggae.application.interfaces.services.keyword_extractor import KeywordExtr
 from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.llm_service import LLMService
 from raggae.application.interfaces.services.password_hasher import PasswordHasher
+from raggae.application.interfaces.services.provider_api_key_crypto_service import (
+    ProviderApiKeyCryptoService,
+)
+from raggae.application.interfaces.services.provider_api_key_validator import (
+    ProviderApiKeyValidator,
+)
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
@@ -39,6 +45,8 @@ __all__ = [
     "LanguageDetector",
     "LLMService",
     "PasswordHasher",
+    "ProviderApiKeyCryptoService",
+    "ProviderApiKeyValidator",
     "TextChunkerService",
     "TextSanitizerService",
     "TokenService",
