@@ -120,6 +120,23 @@ class Project:
 - **DTOs** : Objets de transfert de données
 - **Exceptions** : Erreurs applicatives
 
+### Cas d'usage: credentials provider utilisateur
+
+Nouveaux use cases (application layer):
+
+- `SaveProviderApiKey`
+- `ListProviderApiKeys`
+- `ActivateProviderApiKey`
+- `DeleteProviderApiKey`
+- `GetEffectiveProviderApiKey` (résolution clé utilisateur puis fallback global)
+
+Nouveaux ports:
+
+- `ProviderCredentialRepository`
+- `ProviderApiKeyCryptoService`
+- `ProviderApiKeyValidator`
+- `ProviderApiKeyResolver`
+
 **Caractéristiques** :
 - Orchestre les entités du domaine
 - Définit les interfaces (pas les implémentations)
@@ -208,6 +225,15 @@ class ProjectRepository(Protocol):
 - **Database** : SQLAlchemy models, repositories
 - **Services** : OpenAI, password hashing, JWT
 - **Config** : Settings, environment
+
+### Credentials provider: implémentation infra
+
+- Table: `user_model_provider_credentials`
+- Chiffrement: `FernetProviderApiKeyCryptoService`
+- Validation format: `SimpleProviderApiKeyValidator`
+- Repositories:
+  - `SQLAlchemyProviderCredentialRepository`
+  - `InMemoryProviderCredentialRepository`
 
 **Caractéristiques** :
 - Implémente les interfaces de l'Application
@@ -311,6 +337,19 @@ class ProjectModel(Base):
 - **API Endpoints** : Routes FastAPI
 - **Schemas** : Pydantic models pour validation
 - **Dependencies** : Injection de dépendances
+
+### Endpoints API credentials provider
+
+- `POST /api/v1/model-credentials`
+- `GET /api/v1/model-credentials`
+- `PATCH /api/v1/model-credentials/{credential_id}/activate`
+- `DELETE /api/v1/model-credentials/{credential_id}`
+
+Comportement:
+
+- ownership strict (user authentifié uniquement)
+- secrets jamais renvoyés
+- feature flag `USER_PROVIDER_KEYS_ENABLED` (retour `404` si désactivé)
 
 **Caractéristiques** :
 - Valide les inputs (Pydantic)

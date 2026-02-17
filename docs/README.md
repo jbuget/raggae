@@ -239,6 +239,35 @@ Une fois le serveur lancé, la documentation interactive est disponible :
 - Swagger UI : http://localhost:8000/docs
 - ReDoc : http://localhost:8000/redoc
 
+## 🔐 Model Provider Credentials (OpenAI / Gemini / Anthropic)
+
+Les utilisateurs peuvent enregistrer leurs propres clés API provider.
+
+### Endpoints
+
+- `POST /api/v1/model-credentials`
+- `GET /api/v1/model-credentials`
+- `PATCH /api/v1/model-credentials/{credential_id}/activate`
+- `DELETE /api/v1/model-credentials/{credential_id}`
+
+### Principes de sécurité
+
+- Les clés sont chiffrées côté serveur avant persistance.
+- L’API ne renvoie jamais la clé brute (seulement `masked_key`, ex: `...1234`).
+- Les actions sont limitées au propriétaire authentifié.
+- Un seul credential actif par `(user_id, provider)`.
+- Les logs d’audit n’incluent pas de secret.
+
+### Fallback clé utilisateur / clé globale
+
+- Si une clé utilisateur active existe pour le provider, elle est prioritaire.
+- Sinon, la clé globale serveur (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) est utilisée.
+
+### Feature flag
+
+- `USER_PROVIDER_KEYS_ENABLED=true|false`
+- Si désactivé (`false`), les endpoints `model-credentials` répondent `404 Not found`.
+
 ## 🔧 Configuration
 
 ### Variables d'environnement (Backend)
@@ -254,6 +283,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # OpenAI
 OPENAI_API_KEY=sk-...
+
+# Gemini
+GEMINI_API_KEY=
+
+# Anthropic
+ANTHROPIC_API_KEY=
+
+# User provider credentials
+CREDENTIALS_ENCRYPTION_KEY=<fernet-key-base64>
+USER_PROVIDER_KEYS_ENABLED=true
 
 # CORS
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
