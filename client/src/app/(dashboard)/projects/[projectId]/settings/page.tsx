@@ -31,6 +31,7 @@ import {
   useReindexProject,
   useUpdateProject,
 } from "@/lib/hooks/use-projects";
+import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
 import type {
   ChunkingStrategy,
@@ -73,6 +74,7 @@ export default function ProjectSettingsPage() {
   const router = useRouter();
   const { data: project, isLoading } = useProject(params.projectId);
   const { data: documents, isLoading: isDocumentsLoading } = useDocuments(params.projectId);
+  const { data: modelCatalog } = useModelCatalog();
   const updateProject = useUpdateProject(params.projectId);
   const { data: credentials } = useModelCredentials();
   const reindexProject = useReindexProject(params.projectId);
@@ -190,10 +192,14 @@ export default function ProjectSettingsPage() {
     : [];
   const llmCredentialOptions = llmProviderForHints ? credentialsByProvider[llmProviderForHints] : [];
   const embeddingModelOptions = effectiveEmbeddingBackend
-    ? EMBEDDING_MODEL_OPTIONS[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []
+    ? modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ??
+      EMBEDDING_MODEL_OPTIONS[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ??
+      []
     : [];
   const llmModelOptions = effectiveLlmBackend
-    ? LLM_MODEL_OPTIONS[effectiveLlmBackend as ProjectLLMBackend] ?? []
+    ? modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ??
+      LLM_MODEL_OPTIONS[effectiveLlmBackend as ProjectLLMBackend] ??
+      []
     : [];
 
   function handleSave() {

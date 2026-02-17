@@ -230,3 +230,8 @@ export interface ModelCredentialResponse {
   created_at: string;
   updated_at: string;
 }
+
+export interface ModelCatalogResponse {
+  embedding: Record<ProjectEmbeddingBackend, string[]>;
+  llm: Record<ProjectLLMBackend, string[]>;
+}

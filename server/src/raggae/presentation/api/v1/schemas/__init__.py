@@ -20,6 +20,7 @@ from raggae.presentation.api.v1.schemas.model_credential_schemas import (
     ModelCredentialResponse,
     SaveModelCredentialRequest,
 )
+from raggae.presentation.api.v1.schemas.model_catalog_schemas import ModelCatalogResponse
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
     ProjectResponse,
@@ -41,6 +42,7 @@ __all__ = [
     "ProjectResponse",
     "MessageResponse",
     "ModelCredentialResponse",
+    "ModelCatalogResponse",
     "SendMessageRequest",
     "SendMessageResponse",
     "SaveModelCredentialRequest",
