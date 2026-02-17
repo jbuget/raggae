@@ -22,6 +22,7 @@ class SQLAlchemyMessageRepository:
                 content=message.content,
                 source_documents=message.source_documents,
                 reliability_percent=message.reliability_percent,
+                llm_prompt=message.llm_prompt,
                 created_at=message.created_at,
             )
             session.add(model)
@@ -51,6 +52,7 @@ class SQLAlchemyMessageRepository:
                     content=model.content,
                     source_documents=model.source_documents,
                     reliability_percent=model.reliability_percent,
+                    llm_prompt=model.llm_prompt,
                     created_at=model.created_at,
                 )
                 for model in models

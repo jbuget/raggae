@@ -42,7 +42,7 @@ class TestSendMessageStream:
         llm = MagicMock()
         llm.generate_answer = AsyncMock(return_value="answer")
         llm.generate_answer_stream = MagicMock(
-            side_effect=lambda **kwargs: _async_iter(["Hello", " ", "world"])
+            side_effect=lambda prompt: _async_iter(["Hello", " ", "world"])
         )
         return llm
 

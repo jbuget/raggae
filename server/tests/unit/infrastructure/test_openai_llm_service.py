@@ -22,10 +22,7 @@ class TestOpenAILLMService:
         )
 
         # When
-        result = await service.generate_answer(
-            query="What is RAG?",
-            context_chunks=["chunk one", "chunk two"],
-        )
+        result = await service.generate_answer("What is RAG?")
 
         # Then
         assert result == "answer"
@@ -38,7 +35,7 @@ class TestOpenAILLMService:
 
         # When / Then
         with pytest.raises(LLMGenerationError):
-            await service.generate_answer(query="hello", context_chunks=[])
+            await service.generate_answer("hello")
 
     async def test_generate_answer_stream_yields_tokens(self) -> None:
         # Given
@@ -53,10 +50,7 @@ class TestOpenAILLMService:
 
         # When
         tokens: list[str] = []
-        async for token in service.generate_answer_stream(
-            query="What is RAG?",
-            context_chunks=["chunk one"],
-        ):
+        async for token in service.generate_answer_stream("What is RAG?"):
             tokens.append(token)
 
         # Then

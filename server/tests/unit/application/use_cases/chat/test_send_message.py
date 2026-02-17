@@ -115,12 +115,12 @@ class TestSendMessage:
             strategy="hybrid",
             metadata_filters=None,
         )
-        mock_llm_service.generate_answer.assert_awaited_once_with(
-            query="What is Raggae?",
-            context_chunks=["chunk one", "chunk two"],
-            project_system_prompt="project prompt",
-            conversation_history=[],
-        )
+        mock_llm_service.generate_answer.assert_awaited_once()
+        prompt = mock_llm_service.generate_answer.await_args[0][0]
+        assert "What is Raggae?" in prompt
+        assert "chunk one" in prompt
+        assert "chunk two" in prompt
+        assert "project prompt" in prompt
         assert result.answer == "answer"
         assert len(result.chunks) == 2
         assert result.retrieval_strategy_used == "hybrid"
@@ -599,12 +599,13 @@ class TestSendMessage:
         )
 
         # Then
-        mock_llm_service.generate_answer.assert_awaited_with(
-            query="Current question",
-            context_chunks=["chunk one"],
-            project_system_prompt="project prompt",
-            conversation_history=["User: Earlier question", "Assistant: Earlier answer"],
-        )
+        mock_llm_service.generate_answer.assert_awaited_once()
+        prompt = mock_llm_service.generate_answer.await_args[0][0]
+        assert "Current question" in prompt
+        assert "chunk one" in prompt
+        assert "project prompt" in prompt
+        assert "Earlier question" in prompt
+        assert "Earlier answer" in prompt
 
     async def test_send_message_truncates_history_by_char_budget(self) -> None:
         # Given
@@ -687,9 +688,12 @@ class TestSendMessage:
             message="Current question",
         )
 
-        # Then
-        kwargs = mock_llm_service.generate_answer.await_args.kwargs
-        assert kwargs["conversation_history"] == ["Assistant: " + ("c" * 30)]
+        # Then — oldest messages should be truncated, only "c"*30 remains
+        prompt = mock_llm_service.generate_answer.await_args[0][0]
+        assert "c" * 30 in prompt
+        # "a"*100 and "b"*100 should have been truncated by the 80-char budget
+        assert "a" * 100 not in prompt
+        assert "b" * 100 not in prompt
 
     async def test_send_message_keeps_older_same_content_messages_in_history(self) -> None:
         # Given
@@ -765,6 +769,7 @@ class TestSendMessage:
             message="Repeated question",
         )
 
-        # Then
-        history = mock_llm_service.generate_answer.await_args.kwargs["conversation_history"]
-        assert history == ["User: Repeated question", "Assistant: Previous answer"]
+        # Then — history should contain older messages (not the current one)
+        prompt = mock_llm_service.generate_answer.await_args[0][0]
+        assert "Repeated question" in prompt
+        assert "Previous answer" in prompt

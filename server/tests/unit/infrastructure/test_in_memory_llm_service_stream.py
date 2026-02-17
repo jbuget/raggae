@@ -8,27 +8,19 @@ class TestInMemoryLLMServiceStream:
 
         # When
         tokens: list[str] = []
-        async for token in service.generate_answer_stream(
-            query="What is RAG?",
-            context_chunks=["chunk one", "chunk two"],
-        ):
+        async for token in service.generate_answer_stream("What is RAG?"):
             tokens.append(token)
 
         # Then
         assert len(tokens) == 1
-        assert tokens[0] == "Answer based on 2 chunks: What is RAG?"
+        assert "chars)" in tokens[0]
 
-    async def test_generate_answer_stream_no_chunks(self) -> None:
+    async def test_generate_answer_returns_deterministic_response(self) -> None:
         # Given
         service = InMemoryLLMService()
 
         # When
-        tokens: list[str] = []
-        async for token in service.generate_answer_stream(
-            query="hello",
-            context_chunks=[],
-        ):
-            tokens.append(token)
+        result = await service.generate_answer("test prompt")
 
         # Then
-        assert tokens == ["No relevant context found for: hello"]
+        assert "prompt" in result

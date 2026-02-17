@@ -3,20 +3,8 @@ from typing import Protocol
 
 
 class LLMService(Protocol):
-    """Interface for text generation from retrieved context."""
+    """Interface for text generation from a pre-built prompt."""
 
-    async def generate_answer(
-        self,
-        query: str,
-        context_chunks: list[str],
-        project_system_prompt: str | None = None,
-        conversation_history: list[str] | None = None,
-    ) -> str: ...
+    async def generate_answer(self, prompt: str) -> str: ...
 
-    def generate_answer_stream(
-        self,
-        query: str,
-        context_chunks: list[str],
-        project_system_prompt: str | None = None,
-        conversation_history: list[str] | None = None,
-    ) -> AsyncIterator[str]: ...
+    def generate_answer_stream(self, prompt: str) -> AsyncIterator[str]: ...

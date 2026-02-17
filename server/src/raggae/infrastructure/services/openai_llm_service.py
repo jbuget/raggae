@@ -5,7 +5,6 @@ from time import perf_counter
 from openai import AsyncOpenAI
 
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
-from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -17,28 +16,11 @@ class OpenAILLMService:
         self._client = AsyncOpenAI(api_key=api_key)
         self._model = model
 
-    async def generate_answer(
-        self,
-        query: str,
-        context_chunks: list[str],
-        project_system_prompt: str | None = None,
-        conversation_history: list[str] | None = None,
-    ) -> str:
+    async def generate_answer(self, prompt: str) -> str:
         started_at = perf_counter()
         logger.info(
             "llm_request_started",
-            extra={
-                "backend": "openai",
-                "model": self._model,
-                "query_length": len(query),
-                "context_chunks_count": len(context_chunks),
-            },
-        )
-        prompt = build_rag_prompt(
-            query=query,
-            context_chunks=context_chunks,
-            project_system_prompt=project_system_prompt,
-            conversation_history=conversation_history,
+            extra={"backend": "openai", "model": self._model},
         )
         try:
             response = await self._client.chat.completions.create(
@@ -68,28 +50,11 @@ class OpenAILLMService:
             )
             raise LLMGenerationError(f"Failed to generate answer: {exc}") from exc
 
-    async def generate_answer_stream(
-        self,
-        query: str,
-        context_chunks: list[str],
-        project_system_prompt: str | None = None,
-        conversation_history: list[str] | None = None,
-    ) -> AsyncIterator[str]:
+    async def generate_answer_stream(self, prompt: str) -> AsyncIterator[str]:
         started_at = perf_counter()
         logger.info(
             "llm_stream_started",
-            extra={
-                "backend": "openai",
-                "model": self._model,
-                "query_length": len(query),
-                "context_chunks_count": len(context_chunks),
-            },
-        )
-        prompt = build_rag_prompt(
-            query=query,
-            context_chunks=context_chunks,
-            project_system_prompt=project_system_prompt,
-            conversation_history=conversation_history,
+            extra={"backend": "openai", "model": self._model},
         )
         try:
             stream = await self._client.chat.completions.create(

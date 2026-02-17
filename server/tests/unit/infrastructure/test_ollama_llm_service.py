@@ -17,7 +17,7 @@ class TestOllamaLLMService:
         service._client.post.return_value = response
 
         # When
-        result = await service.generate_answer(query="What is RAG?", context_chunks=["chunk one"])
+        result = await service.generate_answer("What is RAG?")
 
         # Then
         assert result == "answer"
@@ -30,4 +30,4 @@ class TestOllamaLLMService:
 
         # When / Then
         with pytest.raises(LLMGenerationError):
-            await service.generate_answer(query="hello", context_chunks=[])
+            await service.generate_answer("hello")

@@ -25,6 +25,7 @@ from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
+from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 
 class SendMessage:
@@ -186,13 +187,14 @@ class SendMessage:
             conversation_id=conversation.id,
             current_user_message_id=current_user_message_id,
         )
+        prompt = build_rag_prompt(
+            query=message,
+            context_chunks=[chunk.content for chunk in relevant_chunks],
+            project_system_prompt=project_system_prompt,
+            conversation_history=conversation_history,
+        )
         try:
-            answer = await self._llm_service.generate_answer(
-                query=message,
-                context_chunks=[chunk.content for chunk in relevant_chunks],
-                project_system_prompt=project_system_prompt,
-                conversation_history=conversation_history,
-            )
+            answer = await self._llm_service.generate_answer(prompt)
             sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
             if sanitized_answer != answer:
                 answer = sanitized_answer
@@ -216,6 +218,7 @@ class SendMessage:
                 content=answer,
                 source_documents=source_documents,
                 reliability_percent=reliability_percent,
+                llm_prompt=prompt,
                 created_at=datetime.now(UTC),
             )
         )
@@ -364,14 +367,15 @@ class SendMessage:
             conversation_id=conversation.id,
             current_user_message_id=current_user_message_id,
         )
+        prompt = build_rag_prompt(
+            query=message,
+            context_chunks=[chunk.content for chunk in relevant_chunks],
+            project_system_prompt=project_system_prompt,
+            conversation_history=conversation_history,
+        )
         accumulated_answer = ""
         try:
-            stream = self._llm_service.generate_answer_stream(
-                query=message,
-                context_chunks=[chunk.content for chunk in relevant_chunks],
-                project_system_prompt=project_system_prompt,
-                conversation_history=conversation_history,
-            )
+            stream = self._llm_service.generate_answer_stream(prompt)
             async for token in stream:
                 accumulated_answer += token
                 yield ChatStreamToken(token=token)
@@ -398,6 +402,7 @@ class SendMessage:
                 content=accumulated_answer,
                 source_documents=source_documents,
                 reliability_percent=reliability_percent,
+                llm_prompt=prompt,
                 created_at=datetime.now(UTC),
             )
         )
