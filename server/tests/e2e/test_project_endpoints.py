@@ -46,12 +46,13 @@ class TestProjectEndpoints:
         headers: dict[str, str],
         provider: str,
         api_key: str,
-    ) -> None:
-        await client.post(
+    ) -> str:
+        response = await client.post(
             "/api/v1/model-credentials",
             json={"provider": provider, "api_key": api_key},
             headers=headers,
         )
+        return response.json()["id"]
 
     async def test_create_project_returns_201(self, client: AsyncClient) -> None:
         # Given
@@ -153,6 +154,40 @@ class TestProjectEndpoints:
                 "llm_backend": "openai",
                 "llm_model": "gpt-4o-mini",
                 "llm_api_key": "sk-owned-1234",
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 201
+        data = response.json()
+        assert data["llm_backend"] == "openai"
+        assert data["llm_model"] == "gpt-4o-mini"
+        assert data["llm_api_key_masked"] is not None
+
+    async def test_create_project_with_llm_api_key_credential_id_returns_201(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+        credential_id = await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="openai",
+            api_key="sk-owned-by-id-1234",
+        )
+
+        # When
+        response = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "My Project",
+                "description": "A test project",
+                "system_prompt": "You are a helpful assistant",
+                "llm_backend": "openai",
+                "llm_model": "gpt-4o-mini",
+                "llm_api_key_credential_id": credential_id,
             },
             headers=headers,
         )
@@ -408,3 +443,40 @@ class TestProjectEndpoints:
         assert data["total_documents"] == 0
         assert data["indexed_documents"] == 0
         assert data["failed_documents"] == 0
+
+    async def test_update_project_with_llm_api_key_credential_id_returns_200(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project_as_authenticated_user(
+            client=client,
+            name="Project to update",
+        )
+        credential_id = await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="openai",
+            api_key="sk-update-by-id-1234",
+        )
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}",
+            json={
+                "name": "Updated project",
+                "description": "Updated description",
+                "system_prompt": "Updated prompt",
+                "llm_backend": "openai",
+                "llm_model": "gpt-4o-mini",
+                "llm_api_key_credential_id": credential_id,
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == project_id
+        assert data["llm_backend"] == "openai"
+        assert data["llm_api_key_masked"] is not None
