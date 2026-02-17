@@ -72,11 +72,9 @@ export default function ProjectSettingsPage() {
   const [parentChildChunking, setParentChildChunking] = useState<boolean | null>(null);
   const [embeddingBackend, setEmbeddingBackend] = useState<ProjectEmbeddingBackend | null>(null);
   const [embeddingModel, setEmbeddingModel] = useState<string | null>(null);
-  const [embeddingApiKey, setEmbeddingApiKey] = useState<string | null>(null);
   const [embeddingCredentialId, setEmbeddingCredentialId] = useState<string | null>(null);
   const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | null>(null);
   const [llmModel, setLlmModel] = useState<string | null>(null);
-  const [llmApiKey, setLlmApiKey] = useState<string | null>(null);
   const [llmCredentialId, setLlmCredentialId] = useState<string | null>(null);
 
   if (isLoading) {
@@ -101,8 +99,6 @@ export default function ProjectSettingsPage() {
   const effectiveEmbeddingModel = embeddingModel ?? (project.embedding_model ?? "");
   const effectiveLlmBackend = llmBackend ?? (project.llm_backend ?? "");
   const effectiveLlmModel = llmModel ?? (project.llm_model ?? "");
-  const effectiveEmbeddingApiKey = embeddingApiKey ?? "";
-  const effectiveLlmApiKey = llmApiKey ?? "";
   const effectiveEmbeddingCredentialId = embeddingCredentialId ?? "";
   const effectiveLlmCredentialId = llmCredentialId ?? "";
   const isProjectReindexing = project.reindex_status === "in_progress";
@@ -118,8 +114,6 @@ export default function ProjectSettingsPage() {
     effectiveEmbeddingModel !== (project.embedding_model ?? "") ||
     effectiveLlmBackend !== (project.llm_backend ?? "") ||
     effectiveLlmModel !== (project.llm_model ?? "") ||
-    effectiveEmbeddingApiKey.trim().length > 0 ||
-    effectiveLlmApiKey.trim().length > 0 ||
     effectiveEmbeddingCredentialId !== "" ||
     effectiveLlmCredentialId !== "";
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
@@ -136,11 +130,11 @@ export default function ProjectSettingsPage() {
     parent_child_chunking: effectiveParentChildChunking,
     embedding_backend: effectiveEmbeddingBackend || null,
     embedding_model: effectiveEmbeddingModel || null,
-    embedding_api_key: effectiveEmbeddingApiKey.trim() || null,
+    embedding_api_key: null,
     embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
     llm_backend: effectiveLlmBackend || null,
     llm_model: effectiveLlmModel || null,
-    llm_api_key: effectiveLlmApiKey.trim() || null,
+    llm_api_key: null,
     llm_api_key_credential_id: effectiveLlmCredentialId || null,
   };
 
@@ -353,7 +347,10 @@ export default function ProjectSettingsPage() {
             <select
               id="embeddingBackend"
               value={effectiveEmbeddingBackend}
-              onChange={(e) => setEmbeddingBackend((e.target.value || null) as ProjectEmbeddingBackend | null)}
+              onChange={(e) => {
+                setEmbeddingBackend((e.target.value || null) as ProjectEmbeddingBackend | null);
+                setEmbeddingCredentialId("");
+              }}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
               <option value="">Default</option>
@@ -373,47 +370,28 @@ export default function ProjectSettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="embeddingApiKey">Embedding API key</Label>
-            <Input
-              id="embeddingApiKey"
-              type="password"
-              value={effectiveEmbeddingApiKey}
-              onChange={(e) => {
-                setEmbeddingApiKey(e.target.value);
-                if (e.target.value.trim() !== "") {
-                  setEmbeddingCredentialId("");
-                }
-              }}
-              placeholder="Optional. Must be one of your saved keys."
-              autoComplete="off"
-            />
+            <Label htmlFor="embeddingCredentialId">Embedding API key</Label>
             {project.embedding_api_key_masked ? (
               <p className="text-xs text-muted-foreground">
                 Existing key: {project.embedding_api_key_masked}
               </p>
             ) : null}
             {embeddingProviderForHints ? (
-              <div className="space-y-2">
-                <Label htmlFor="embeddingCredentialId">Or select one of your saved keys</Label>
-                <select
-                  id="embeddingCredentialId"
-                  value={effectiveEmbeddingCredentialId}
-                  onChange={(e) => {
-                    setEmbeddingCredentialId(e.target.value);
-                    if (e.target.value !== "") {
-                      setEmbeddingApiKey("");
-                    }
-                  }}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="">No selection</option>
-                  {credentialsByProvider[embeddingProviderForHints].map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.masked_key}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                id="embeddingCredentialId"
+                value={effectiveEmbeddingCredentialId}
+                onChange={(e) => {
+                  setEmbeddingCredentialId(e.target.value);
+                }}
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              >
+                <option value="">No selection</option>
+                {credentialsByProvider[embeddingProviderForHints].map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.masked_key}
+                  </option>
+                ))}
+              </select>
             ) : null}
             {embeddingProviderForHints ? (
               <p className="text-xs text-muted-foreground">
@@ -437,7 +415,10 @@ export default function ProjectSettingsPage() {
             <select
               id="llmBackend"
               value={effectiveLlmBackend}
-              onChange={(e) => setLlmBackend((e.target.value || null) as ProjectLLMBackend | null)}
+              onChange={(e) => {
+                setLlmBackend((e.target.value || null) as ProjectLLMBackend | null);
+                setLlmCredentialId("");
+              }}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
               <option value="">Default</option>
@@ -458,47 +439,28 @@ export default function ProjectSettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="llmApiKey">LLM API key</Label>
-            <Input
-              id="llmApiKey"
-              type="password"
-              value={effectiveLlmApiKey}
-              onChange={(e) => {
-                setLlmApiKey(e.target.value);
-                if (e.target.value.trim() !== "") {
-                  setLlmCredentialId("");
-                }
-              }}
-              placeholder="Optional. Must be one of your saved keys."
-              autoComplete="off"
-            />
+            <Label htmlFor="llmCredentialId">LLM API key</Label>
             {project.llm_api_key_masked ? (
               <p className="text-xs text-muted-foreground">
                 Existing key: {project.llm_api_key_masked}
               </p>
             ) : null}
             {llmProviderForHints ? (
-              <div className="space-y-2">
-                <Label htmlFor="llmCredentialId">Or select one of your saved keys</Label>
-                <select
-                  id="llmCredentialId"
-                  value={effectiveLlmCredentialId}
-                  onChange={(e) => {
-                    setLlmCredentialId(e.target.value);
-                    if (e.target.value !== "") {
-                      setLlmApiKey("");
-                    }
-                  }}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="">No selection</option>
-                  {credentialsByProvider[llmProviderForHints].map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.masked_key}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                id="llmCredentialId"
+                value={effectiveLlmCredentialId}
+                onChange={(e) => {
+                  setLlmCredentialId(e.target.value);
+                }}
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              >
+                <option value="">No selection</option>
+                {credentialsByProvider[llmProviderForHints].map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.masked_key}
+                  </option>
+                ))}
+              </select>
             ) : null}
             {llmProviderForHints ? (
               <p className="text-xs text-muted-foreground">
