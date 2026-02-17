@@ -62,9 +62,11 @@ async def create_project(
             embedding_backend=data.embedding_backend,
             embedding_model=data.embedding_model,
             embedding_api_key=data.embedding_api_key,
+            embedding_api_key_credential_id=data.embedding_api_key_credential_id,
             llm_backend=data.llm_backend,
             llm_model=data.llm_model,
             llm_api_key=data.llm_api_key,
+            llm_api_key_credential_id=data.llm_api_key_credential_id,
         )
     except ProjectSystemPromptTooLongError as exc:
         raise HTTPException(
@@ -198,9 +200,11 @@ async def update_project(
             embedding_backend=data.embedding_backend,
             embedding_model=data.embedding_model,
             embedding_api_key=data.embedding_api_key,
+            embedding_api_key_credential_id=data.embedding_api_key_credential_id,
             llm_backend=data.llm_backend,
             llm_model=data.llm_model,
             llm_api_key=data.llm_api_key,
+            llm_api_key_credential_id=data.llm_api_key_credential_id,
         )
     except ProjectNotFoundError:
         raise HTTPException(

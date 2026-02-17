@@ -56,9 +56,11 @@ class CreateProject:
         embedding_backend: str | None = None,
         embedding_model: str | None = None,
         embedding_api_key: str | None = None,
+        embedding_api_key_credential_id: UUID | None = None,
         llm_backend: str | None = None,
         llm_model: str | None = None,
         llm_api_key: str | None = None,
+        llm_api_key_credential_id: UUID | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -70,20 +72,34 @@ class CreateProject:
             )
         if llm_backend is not None and llm_backend not in _SUPPORTED_LLM_BACKENDS:
             raise InvalidProjectLLMBackendError(f"Unsupported llm backend: {llm_backend}")
-        await self._validate_api_key_belongs_to_user(
+        resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
             backend=embedding_backend,
             api_key=embedding_api_key,
+            api_key_credential_id=embedding_api_key_credential_id,
+            config_type="embedding",
+        )
+        resolved_llm_api_key = await self._resolve_api_key_from_credential_id(
+            user_id=user_id,
+            backend=llm_backend,
+            api_key=llm_api_key,
+            api_key_credential_id=llm_api_key_credential_id,
+            config_type="llm",
+        )
+        await self._validate_api_key_belongs_to_user(
+            user_id=user_id,
+            backend=embedding_backend,
+            api_key=resolved_embedding_api_key,
             config_type="embedding",
         )
         await self._validate_api_key_belongs_to_user(
             user_id=user_id,
             backend=llm_backend,
-            api_key=llm_api_key,
+            api_key=resolved_llm_api_key,
             config_type="llm",
         )
-        encrypted_embedding_api_key = self._encrypt_api_key_if_provided(embedding_api_key)
-        encrypted_llm_api_key = self._encrypt_api_key_if_provided(llm_api_key)
+        encrypted_embedding_api_key = self._encrypt_api_key_if_provided(resolved_embedding_api_key)
+        encrypted_llm_api_key = self._encrypt_api_key_if_provided(resolved_llm_api_key)
         project = Project(
             id=uuid4(),
             user_id=user_id,
@@ -144,3 +160,40 @@ class CreateProject:
             raise ProjectAPIKeyNotOwnedError(
                 f"{config_type}_api_key is not registered for this user and backend"
             )
+
+    async def _resolve_api_key_from_credential_id(
+        self,
+        user_id: UUID,
+        backend: str | None,
+        api_key: str | None,
+        api_key_credential_id: UUID | None,
+        config_type: str,
+    ) -> str | None:
+        if api_key_credential_id is None:
+            return api_key
+        if api_key is not None and api_key.strip() != "":
+            raise ProjectAPIKeyNotOwnedError(
+                f"{config_type}_api_key and {config_type}_api_key_credential_id cannot both be set"
+            )
+        if backend is None:
+            raise ProjectAPIKeyNotOwnedError(
+                f"{config_type}_backend is required when {config_type}_api_key_credential_id is provided"
+            )
+        if backend not in {"openai", "gemini", "anthropic"}:
+            raise ProjectAPIKeyNotOwnedError(
+                f"{config_type}_api_key_credential_id cannot be used with backend '{backend}'"
+            )
+        if self._provider_credential_repository is None:
+            raise ProjectAPIKeyNotOwnedError("Provider credential repository is not configured")
+        if self._provider_api_key_crypto_service is None:
+            raise ProjectAPIKeyNotOwnedError("Provider crypto service is not configured")
+        credentials = await self._provider_credential_repository.list_by_user_id_and_provider(
+            user_id=user_id,
+            provider=ModelProvider(backend),
+        )
+        matching = next((cred for cred in credentials if cred.id == api_key_credential_id), None)
+        if matching is None:
+            raise ProjectAPIKeyNotOwnedError(
+                f"{config_type}_api_key_credential_id is not registered for this user and backend"
+            )
+        return self._provider_api_key_crypto_service.decrypt(matching.encrypted_api_key)

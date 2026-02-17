@@ -16,9 +16,11 @@ class CreateProjectRequest(BaseModel):
     embedding_backend: str | None = None
     embedding_model: str | None = None
     embedding_api_key: str | None = None
+    embedding_api_key_credential_id: UUID | None = None
     llm_backend: str | None = None
     llm_model: str | None = None
     llm_api_key: str | None = None
+    llm_api_key_credential_id: UUID | None = None
 
 
 class UpdateProjectRequest(BaseModel):
@@ -30,9 +32,11 @@ class UpdateProjectRequest(BaseModel):
     embedding_backend: str | None = None
     embedding_model: str | None = None
     embedding_api_key: str | None = None
+    embedding_api_key_credential_id: UUID | None = None
     llm_backend: str | None = None
     llm_model: str | None = None
     llm_api_key: str | None = None
+    llm_api_key_credential_id: UUID | None = None
 
 
 class ProjectResponse(BaseModel):

@@ -29,6 +29,7 @@ class TestCreateProject:
     def mock_crypto_service(self) -> Mock:
         crypto = Mock()
         crypto.encrypt.side_effect = lambda value: f"enc:{value}"
+        crypto.decrypt.side_effect = lambda value: value.removeprefix("enc:")
         crypto.fingerprint.side_effect = lambda value: f"fp:{value}"
         return crypto
 
@@ -175,6 +176,39 @@ class TestCreateProject:
             system_prompt="ok",
             llm_backend="openai",
             llm_api_key="sk-user-1234",
+        )
+
+        assert result.llm_backend == "openai"
+        assert result.llm_api_key_masked is not None
+
+    async def test_create_project_with_credential_id_resolves_key_and_succeeds(
+        self,
+        use_case: CreateProject,
+        mock_provider_credential_repository: AsyncMock,
+    ) -> None:
+        user_id = uuid4()
+        credential_id = uuid4()
+        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = [
+            UserModelProviderCredential(
+                id=credential_id,
+                user_id=user_id,
+                provider=ModelProvider("openai"),
+                encrypted_api_key="enc:sk-user-1234",
+                key_fingerprint="fp:sk-user-1234",
+                key_suffix="1234",
+                is_active=True,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        ]
+
+        result = await use_case.execute(
+            user_id=user_id,
+            name="My Project",
+            description="A test project",
+            system_prompt="ok",
+            llm_backend="openai",
+            llm_api_key_credential_id=credential_id,
         )
 
         assert result.llm_backend == "openai"

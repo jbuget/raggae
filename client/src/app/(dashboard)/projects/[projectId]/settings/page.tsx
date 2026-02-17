@@ -73,9 +73,11 @@ export default function ProjectSettingsPage() {
   const [embeddingBackend, setEmbeddingBackend] = useState<ProjectEmbeddingBackend | null>(null);
   const [embeddingModel, setEmbeddingModel] = useState<string | null>(null);
   const [embeddingApiKey, setEmbeddingApiKey] = useState<string | null>(null);
+  const [embeddingCredentialId, setEmbeddingCredentialId] = useState<string | null>(null);
   const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | null>(null);
   const [llmModel, setLlmModel] = useState<string | null>(null);
   const [llmApiKey, setLlmApiKey] = useState<string | null>(null);
+  const [llmCredentialId, setLlmCredentialId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -101,6 +103,8 @@ export default function ProjectSettingsPage() {
   const effectiveLlmModel = llmModel ?? (project.llm_model ?? "");
   const effectiveEmbeddingApiKey = embeddingApiKey ?? "";
   const effectiveLlmApiKey = llmApiKey ?? "";
+  const effectiveEmbeddingCredentialId = embeddingCredentialId ?? "";
+  const effectiveLlmCredentialId = llmCredentialId ?? "";
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -115,7 +119,9 @@ export default function ProjectSettingsPage() {
     effectiveLlmBackend !== (project.llm_backend ?? "") ||
     effectiveLlmModel !== (project.llm_model ?? "") ||
     effectiveEmbeddingApiKey.trim().length > 0 ||
-    effectiveLlmApiKey.trim().length > 0;
+    effectiveLlmApiKey.trim().length > 0 ||
+    effectiveEmbeddingCredentialId !== "" ||
+    effectiveLlmCredentialId !== "";
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
   const systemPromptLength = effectiveSystemPrompt.length;
   const nearSystemPromptLimit = systemPromptLength >= 7000;
@@ -131,16 +137,18 @@ export default function ProjectSettingsPage() {
     embedding_backend: effectiveEmbeddingBackend || null,
     embedding_model: effectiveEmbeddingModel || null,
     embedding_api_key: effectiveEmbeddingApiKey.trim() || null,
+    embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
     llm_backend: effectiveLlmBackend || null,
     llm_model: effectiveLlmModel || null,
     llm_api_key: effectiveLlmApiKey.trim() || null,
+    llm_api_key_credential_id: effectiveLlmCredentialId || null,
   };
 
   const credentialsByProvider = (credentials ?? []).reduce<
-    Record<ModelProvider, string[]>
+    Record<ModelProvider, Array<{ id: string; masked_key: string }>>
   >(
     (acc, credential) => {
-      acc[credential.provider].push(credential.masked_key);
+      acc[credential.provider].push({ id: credential.id, masked_key: credential.masked_key });
       return acc;
     },
     { openai: [], gemini: [], anthropic: [] },
@@ -370,7 +378,12 @@ export default function ProjectSettingsPage() {
               id="embeddingApiKey"
               type="password"
               value={effectiveEmbeddingApiKey}
-              onChange={(e) => setEmbeddingApiKey(e.target.value)}
+              onChange={(e) => {
+                setEmbeddingApiKey(e.target.value);
+                if (e.target.value.trim() !== "") {
+                  setEmbeddingCredentialId("");
+                }
+              }}
               placeholder="Optional. Must be one of your saved keys."
               autoComplete="off"
             />
@@ -380,10 +393,35 @@ export default function ProjectSettingsPage() {
               </p>
             ) : null}
             {embeddingProviderForHints ? (
+              <div className="space-y-2">
+                <Label htmlFor="embeddingCredentialId">Or select one of your saved keys</Label>
+                <select
+                  id="embeddingCredentialId"
+                  value={effectiveEmbeddingCredentialId}
+                  onChange={(e) => {
+                    setEmbeddingCredentialId(e.target.value);
+                    if (e.target.value !== "") {
+                      setEmbeddingApiKey("");
+                    }
+                  }}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">No selection</option>
+                  {credentialsByProvider[embeddingProviderForHints].map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.masked_key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {embeddingProviderForHints ? (
               <p className="text-xs text-muted-foreground">
                 Your saved keys for {embeddingProviderForHints}:{" "}
                 {credentialsByProvider[embeddingProviderForHints].length > 0
-                  ? credentialsByProvider[embeddingProviderForHints].join(", ")
+                  ? credentialsByProvider[embeddingProviderForHints]
+                    .map((item) => item.masked_key)
+                    .join(", ")
                   : "none"}
               </p>
             ) : null}
@@ -425,7 +463,12 @@ export default function ProjectSettingsPage() {
               id="llmApiKey"
               type="password"
               value={effectiveLlmApiKey}
-              onChange={(e) => setLlmApiKey(e.target.value)}
+              onChange={(e) => {
+                setLlmApiKey(e.target.value);
+                if (e.target.value.trim() !== "") {
+                  setLlmCredentialId("");
+                }
+              }}
               placeholder="Optional. Must be one of your saved keys."
               autoComplete="off"
             />
@@ -435,10 +478,35 @@ export default function ProjectSettingsPage() {
               </p>
             ) : null}
             {llmProviderForHints ? (
+              <div className="space-y-2">
+                <Label htmlFor="llmCredentialId">Or select one of your saved keys</Label>
+                <select
+                  id="llmCredentialId"
+                  value={effectiveLlmCredentialId}
+                  onChange={(e) => {
+                    setLlmCredentialId(e.target.value);
+                    if (e.target.value !== "") {
+                      setLlmApiKey("");
+                    }
+                  }}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">No selection</option>
+                  {credentialsByProvider[llmProviderForHints].map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.masked_key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {llmProviderForHints ? (
               <p className="text-xs text-muted-foreground">
                 Your saved keys for {llmProviderForHints}:{" "}
                 {credentialsByProvider[llmProviderForHints].length > 0
-                  ? credentialsByProvider[llmProviderForHints].join(", ")
+                  ? credentialsByProvider[llmProviderForHints]
+                    .map((item) => item.masked_key)
+                    .join(", ")
                   : "none"}
               </p>
             ) : null}

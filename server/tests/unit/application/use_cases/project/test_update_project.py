@@ -31,6 +31,7 @@ class TestUpdateProject:
     def mock_crypto_service(self) -> Mock:
         crypto = Mock()
         crypto.encrypt.side_effect = lambda value: f"enc:{value}"
+        crypto.decrypt.side_effect = lambda value: value.removeprefix("enc:")
         crypto.fingerprint.side_effect = lambda value: f"fp:{value}"
         return crypto
 
@@ -295,6 +296,50 @@ class TestUpdateProject:
             system_prompt="New prompt",
             llm_backend="openai",
             llm_api_key="sk-user-1234",
+        )
+
+        assert result.llm_backend == "openai"
+
+    async def test_update_project_with_credential_id_resolves_key_and_succeeds(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+        mock_provider_credential_repository: AsyncMock,
+    ) -> None:
+        user_id = uuid4()
+        credential_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=user_id,
+            name="Owner name",
+            description="Owner description",
+            system_prompt="Owner prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = [
+            UserModelProviderCredential(
+                id=credential_id,
+                user_id=user_id,
+                provider=ModelProvider("openai"),
+                encrypted_api_key="enc:sk-user-1234",
+                key_fingerprint="fp:sk-user-1234",
+                key_suffix="1234",
+                is_active=True,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        ]
+
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=user_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+            llm_backend="openai",
+            llm_api_key_credential_id=credential_id,
         )
 
         assert result.llm_backend == "openai"
