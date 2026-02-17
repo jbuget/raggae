@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     proxyTimeout: 120_000,
+    proxyClientMaxBodySize: "100mb",
   },
 };
 

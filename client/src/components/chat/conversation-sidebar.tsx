@@ -13,7 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils/format";
@@ -38,7 +37,7 @@ export function ConversationSidebar() {
     : [];
 
   return (
-    <div className="flex h-full w-64 flex-col border-r">
+    <div className="flex h-full min-h-0 w-64 flex-col border-r">
       <div className="border-b p-3">
         <Button asChild className="w-full" size="sm">
           <Link href={`/projects/${params.projectId}/chat`}>
@@ -47,7 +46,7 @@ export function ConversationSidebar() {
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-2 p-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -79,7 +78,7 @@ export function ConversationSidebar() {
             ))}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
@@ -99,53 +98,53 @@ function ConversationItem({
   const conversationLabel = conversation.title || formatDate(conversation.created_at);
 
   return (
-    <div
-      className={cn(
-        "group flex min-w-0 items-center justify-between rounded-md px-2 py-2 text-sm",
-        isActive ? "bg-muted" : "hover:bg-muted/50",
-      )}
-    >
+    <div className="group relative">
       <Link
         href={`/projects/${projectId}/chat/${conversation.id}`}
-        className="block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left [direction:rtl] [unicode-bidi:plaintext]"
+        className={cn(
+          "block w-full min-w-0 truncate rounded-md px-2 py-2 pr-10 text-left text-sm",
+          isActive ? "bg-muted" : "hover:bg-muted/50",
+        )}
         title={conversationLabel}
       >
         {conversationLabel}
       </Link>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
-          >
-            x
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Conversation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this conversation?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
+      <div className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-background/95 p-0.5 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogTrigger asChild>
             <Button
-              variant="destructive"
-              onClick={() => {
-                onDelete(conversation.id);
-                setDeleteOpen(false);
-              }}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 cursor-pointer p-0 opacity-0 group-hover:opacity-100"
             >
-              Delete
+              x
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Conversation</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this conversation?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onDelete(conversation.id);
+                  setDeleteOpen(false);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

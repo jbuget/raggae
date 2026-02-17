@@ -9,7 +9,7 @@ export default function ChatPage() {
 
   return (
     <div className="-m-6 flex h-[calc(100vh-3.5rem)]">
-      <div className="hidden lg:block">
+      <div className="hidden h-full lg:block">
         <ConversationSidebar />
       </div>
       <div className="flex-1">
