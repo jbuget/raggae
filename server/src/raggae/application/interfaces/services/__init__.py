@@ -23,6 +23,9 @@ from raggae.application.interfaces.services.password_hasher import PasswordHashe
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
 )
+from raggae.application.interfaces.services.provider_api_key_resolver import (
+    ProviderApiKeyResolver,
+)
 from raggae.application.interfaces.services.provider_api_key_validator import (
     ProviderApiKeyValidator,
 )
@@ -46,6 +49,7 @@ __all__ = [
     "LLMService",
     "PasswordHasher",
     "ProviderApiKeyCryptoService",
+    "ProviderApiKeyResolver",
     "ProviderApiKeyValidator",
     "TextChunkerService",
     "TextSanitizerService",

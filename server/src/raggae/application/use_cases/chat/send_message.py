@@ -19,6 +19,9 @@ from raggae.application.interfaces.services.conversation_title_generator import 
     ConversationTitleGenerator,
 )
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.interfaces.services.provider_api_key_resolver import (
+    ProviderApiKeyResolver,
+)
 from raggae.application.services.chat_security_policy import StaticChatSecurityPolicy
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.conversation import Conversation
@@ -43,6 +46,8 @@ class SendMessage:
         project_repository: ProjectRepository,
         conversation_repository: ConversationRepository,
         message_repository: MessageRepository,
+        provider_api_key_resolver: ProviderApiKeyResolver | None = None,
+        llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
         max_chunk_limit: int = 40,
@@ -55,6 +60,8 @@ class SendMessage:
         self._project_repository = project_repository
         self._conversation_repository = conversation_repository
         self._message_repository = message_repository
+        self._provider_api_key_resolver = provider_api_key_resolver
+        self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
         self._history_window_size = max(1, history_window_size)
@@ -201,6 +208,11 @@ class SendMessage:
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
+        if self._provider_api_key_resolver is not None:
+            await self._provider_api_key_resolver.resolve(
+                user_id=user_id,
+                provider=self._llm_provider,
+            )
         try:
             answer = await self._llm_service.generate_answer(prompt)
             sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
@@ -385,6 +397,11 @@ class SendMessage:
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
+        if self._provider_api_key_resolver is not None:
+            await self._provider_api_key_resolver.resolve(
+                user_id=user_id,
+                provider=self._llm_provider,
+            )
         accumulated_answer = ""
         try:
             stream = self._llm_service.generate_answer_stream(prompt)

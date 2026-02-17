@@ -81,6 +81,8 @@ class TestSendMessage:
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
+        provider_api_key_resolver = AsyncMock()
+        provider_api_key_resolver.resolve.return_value = "sk-user"
         return SendMessage(
             query_relevant_chunks_use_case=mock_query_relevant_chunks,
             llm_service=mock_llm_service,
@@ -88,6 +90,8 @@ class TestSendMessage:
             project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
+            provider_api_key_resolver=provider_api_key_resolver,
+            llm_provider="openai",
         )
 
     async def test_send_message_success(
@@ -117,6 +121,10 @@ class TestSendMessage:
             offset=0,
             strategy="hybrid",
             metadata_filters=None,
+        )
+        use_case._provider_api_key_resolver.resolve.assert_awaited_once_with(
+            user_id=user_id,
+            provider="openai",
         )
         mock_llm_service.generate_answer.assert_awaited_once()
         prompt = mock_llm_service.generate_answer.await_args[0][0]

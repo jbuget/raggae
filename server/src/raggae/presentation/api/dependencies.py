@@ -84,6 +84,9 @@ from raggae.application.use_cases.provider_credentials.activate_provider_api_key
 from raggae.application.use_cases.provider_credentials.delete_provider_api_key import (
     DeleteProviderApiKey,
 )
+from raggae.application.use_cases.provider_credentials.get_effective_provider_api_key import (
+    GetEffectiveProviderApiKey,
+)
 from raggae.application.use_cases.provider_credentials.list_provider_api_keys import (
     ListProviderApiKeys,
 )
@@ -287,6 +290,15 @@ _provider_api_key_crypto_service: ProviderApiKeyCryptoService = (
     FernetProviderApiKeyCryptoService(encryption_key=settings.credentials_encryption_key)
 )
 _provider_api_key_validator: ProviderApiKeyValidator = SimpleProviderApiKeyValidator()
+_provider_api_key_resolver = GetEffectiveProviderApiKey(
+    provider_credential_repository=_provider_credential_repository,
+    provider_api_key_crypto_service=_provider_api_key_crypto_service,
+    global_api_keys={
+        "openai": settings.openai_api_key,
+        "gemini": settings.gemini_api_key,
+        "anthropic": settings.anthropic_api_key,
+    },
+)
 if settings.storage_backend == "minio":
     _file_storage_service: FileStorageService = MinioFileStorageService(
         endpoint=settings.s3_endpoint_url,
@@ -508,6 +520,8 @@ def get_send_message_use_case() -> SendMessage:
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
+        provider_api_key_resolver=_provider_api_key_resolver,
+        llm_provider=settings.llm_backend,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,
         history_max_chars=settings.chat_history_max_chars,
