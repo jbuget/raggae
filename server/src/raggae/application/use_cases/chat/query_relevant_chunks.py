@@ -80,6 +80,7 @@ class QueryRelevantChunks:
             chunks = [chunk for chunk in chunks if chunk.score >= self._min_score]
 
         chunks = await self._expand_context_window(chunks)
+        chunks = await self._resolve_parent_context(chunks)
 
         return QueryRelevantChunksResultDTO(
             chunks=chunks,
@@ -143,6 +144,35 @@ class QueryRelevantChunks:
         merged = list(chunks) + neighbor_dtos
         merged.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
         return merged
+
+
+    async def _resolve_parent_context(
+        self, chunks: list[RetrievedChunkDTO]
+    ) -> list[RetrievedChunkDTO]:
+        if self._document_chunk_repository is None:
+            return chunks
+
+        resolved: list[RetrievedChunkDTO] = []
+        parent_cache: dict[UUID, str | None] = {}
+
+        for chunk in chunks:
+            if chunk.chunk_level == "child" and chunk.parent_chunk_id is not None:
+                parent_id = chunk.parent_chunk_id
+                if parent_id not in parent_cache:
+                    parent = await self._document_chunk_repository.find_by_id(parent_id)
+                    parent_cache[parent_id] = parent.content if parent else None
+
+                parent_content = parent_cache[parent_id]
+                if parent_content is not None:
+                    from dataclasses import replace
+
+                    resolved.append(replace(chunk, content=parent_content))
+                else:
+                    resolved.append(chunk)
+            else:
+                resolved.append(chunk)
+
+        return resolved
 
 
 def _resolve_strategy(strategy: str, query_text: str) -> str:

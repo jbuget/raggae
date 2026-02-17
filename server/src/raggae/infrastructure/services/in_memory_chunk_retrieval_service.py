@@ -64,6 +64,8 @@ class InMemoryChunkRetrievalService:
                         document_file_name=document.file_name,
                         vector_score=vector_score,
                         fulltext_score=fulltext_score,
+                        chunk_level=chunk.chunk_level.value,
+                        parent_chunk_id=chunk.parent_chunk_id,
                     )
                 )
 

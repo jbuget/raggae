@@ -64,6 +64,8 @@ class SQLAlchemyChunkRetrievalService:
                     d.file_name AS document_file_name,
                     c.content AS content,
                     c.chunk_index AS chunk_index,
+                    c.chunk_level AS chunk_level,
+                    c.parent_chunk_id AS parent_chunk_id,
                     1 - (c.embedding <=> CAST(:query_embedding AS vector))
                         AS vector_score
                 FROM document_chunks c
@@ -103,6 +105,8 @@ class SQLAlchemyChunkRetrievalService:
                     v.document_file_name,
                     v.content,
                     v.chunk_index,
+                    v.chunk_level,
+                    v.parent_chunk_id,
                     v.vector_score,
                     COALESCE(f.fulltext_score, 0.0) AS fulltext_score
                 FROM vector_search v
@@ -114,6 +118,8 @@ class SQLAlchemyChunkRetrievalService:
                     d.file_name AS document_file_name,
                     c.content,
                     c.chunk_index,
+                    c.chunk_level,
+                    c.parent_chunk_id,
                     0.0 AS vector_score,
                     f.fulltext_score
                 FROM fulltext_search f
@@ -135,6 +141,8 @@ class SQLAlchemyChunkRetrievalService:
                     c.document_file_name,
                     c.content,
                     c.chunk_index,
+                    c.chunk_level,
+                    c.parent_chunk_id,
                     COALESCE(
                         c.vector_score / NULLIF(m.max_vector_score, 0),
                         0.0
@@ -152,6 +160,8 @@ class SQLAlchemyChunkRetrievalService:
                 document_file_name,
                 content,
                 chunk_index,
+                chunk_level,
+                parent_chunk_id,
                 normalized_vector_score AS vector_score,
                 normalized_fulltext_score AS fulltext_score,
                 (
@@ -198,6 +208,8 @@ class SQLAlchemyChunkRetrievalService:
                     document_file_name=row["document_file_name"],
                     vector_score=float(row["vector_score"]),
                     fulltext_score=float(row["fulltext_score"]),
+                    chunk_level=row["chunk_level"],
+                    parent_chunk_id=row["parent_chunk_id"],
                 )
                 for row in rows
             ]

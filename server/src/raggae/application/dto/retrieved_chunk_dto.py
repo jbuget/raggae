@@ -14,3 +14,5 @@ class RetrievedChunkDTO:
     document_file_name: str | None = None
     vector_score: float | None = None
     fulltext_score: float | None = None
+    chunk_level: str | None = None
+    parent_chunk_id: UUID | None = None
