@@ -187,7 +187,6 @@ export function ChatPanel({
                     msg.role === "assistant" ? messageSourceDocuments : []
                   }
                   onSourceClick={handleSourceClick}
-                  reliabilityPercent={msg.reliability_percent}
                   timestamp={msg.created_at}
                 />
               </div>

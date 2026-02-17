@@ -37,7 +37,7 @@ export default function ProjectDetailPage() {
         <p className="text-muted-foreground">{project.description}</p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Link href={`/projects/${project.id}/chat`}>
           <Card className="transition-colors hover:bg-muted/50">
             <CardHeader>
@@ -46,19 +46,6 @@ export default function ProjectDetailPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Start a conversation with your documents
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href={`/projects/${project.id}/documents`}>
-          <Card className="transition-colors hover:bg-muted/50">
-            <CardHeader>
-              <CardTitle className="text-base">Documents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Upload and manage documents
               </p>
             </CardContent>
           </Card>

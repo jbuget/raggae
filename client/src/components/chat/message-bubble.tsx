@@ -15,7 +15,6 @@ interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
-  reliabilityPercent?: number | null;
   sourceDocuments?: MessageSourceDocument[];
   onSourceClick?: (source: MessageSourceDocument) => void;
 }
@@ -24,7 +23,6 @@ export function MessageBubble({
   role,
   content,
   timestamp,
-  reliabilityPercent,
   sourceDocuments = [],
   onSourceClick,
 }: MessageBubbleProps) {
@@ -68,11 +66,6 @@ export function MessageBubble({
               </button>
             ))}
           </div>
-        )}
-        {!isUser && reliabilityPercent !== undefined && reliabilityPercent !== null && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Fiabilite: {reliabilityPercent}%
-          </p>
         )}
         {timestamp && (
           <p

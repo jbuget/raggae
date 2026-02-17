@@ -68,7 +68,7 @@ export function Sidebar() {
                 )}
               >
                 <Link
-                  href={`/projects/${project.id}`}
+                  href={`/projects/${project.id}/chat`}
                   className={cn(
                     "min-w-0 flex-1 truncate rounded-md px-2 py-1",
                     pathname.startsWith(`/projects/${project.id}`)
@@ -91,13 +91,10 @@ export function Sidebar() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href={`/projects/${project.id}/chat`}>Chat</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/projects/${project.id}/documents`}>Documents</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href={`/projects/${project.id}/settings`}>Settings</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>

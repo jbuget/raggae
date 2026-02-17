@@ -37,9 +37,7 @@ const MAX_SYSTEM_PROMPT_LENGTH = 8000;
 const SETTINGS_TABS = [
   "General",
   "Knowledge",
-  "Indexing",
-  "Retrieval",
-  "Answer",
+  "Pipeline",
   "Danger zone",
 ] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
@@ -244,8 +242,10 @@ export default function ProjectSettingsPage() {
       </div>
       )}
 
-      {activeTab === "Indexing" && (
+      {activeTab === "Pipeline" && (
         <div className="space-y-4">
+        <div className="space-y-2">
+          <p className="text-base font-semibold tracking-tight">Indexing</p>
         <div className="space-y-2">
           <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
           <select
@@ -281,23 +281,26 @@ export default function ProjectSettingsPage() {
             mais la pertinence est souvent meilleure avec `Semantic`.
           </p>
         ) : null}
-      </div>
-      )}
+        </div>
 
-      {activeTab === "Retrieval" && (
-        <div className="space-y-2">
-        <p className="text-muted-foreground text-sm">
-          Les reglages de retrieval seront centralises ici dans une prochaine iteration.
-        </p>
-      </div>
-      )}
+        <hr className="border-border" />
 
-      {activeTab === "Answer" && (
         <div className="space-y-2">
-        <p className="text-muted-foreground text-sm">
-          Les reglages de generation de reponse seront centralises ici dans une prochaine
-          iteration.
-        </p>
+          <p className="text-base font-semibold tracking-tight">Retrieval</p>
+          <p className="text-muted-foreground text-sm">
+            Les reglages de retrieval seront centralises ici dans une prochaine iteration.
+          </p>
+        </div>
+
+        <hr className="border-border" />
+
+        <div className="space-y-2">
+          <p className="text-base font-semibold tracking-tight">Answer</p>
+          <p className="text-muted-foreground text-sm">
+            Les reglages de generation de reponse seront centralises ici dans une prochaine
+            iteration.
+          </p>
+        </div>
       </div>
       )}
 
@@ -307,7 +310,7 @@ export default function ProjectSettingsPage() {
         </Button>
       ) : null}
 
-      {activeTab === "Indexing" ? (
+      {activeTab === "Pipeline" ? (
         <>
           <hr className="border-border" />
           <Button
