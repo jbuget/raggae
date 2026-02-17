@@ -862,3 +862,80 @@ class TestQueryRelevantChunks:
         assert "standard content" in contents
         assert "neighbor 9" in contents
         assert "neighbor 11" in contents
+
+    async def test_query_deduplicates_children_sharing_same_parent(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given — two child chunks from the same parent
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        parent_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="child A",
+                score=0.9,
+                chunk_index=1,
+                chunk_level="child",
+                parent_chunk_id=parent_id,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="child B",
+                score=0.85,
+                chunk_index=2,
+                chunk_level="child",
+                parent_chunk_id=parent_id,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="standard chunk",
+                score=0.7,
+                chunk_index=5,
+                chunk_level="standard",
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        parent_chunk = DocumentChunk(
+            id=parent_id,
+            document_id=doc_id,
+            chunk_index=0,
+            content="full parent with A and B details",
+            embedding=[],
+            created_at=datetime.now(UTC),
+            chunk_level=ChunkLevel.PARENT,
+        )
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_id.return_value = parent_chunk
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then — only one parent entry (highest-scored child kept), standard unchanged
+        assert len(result.chunks) == 2
+        assert result.chunks[0].content == "full parent with A and B details"
+        assert result.chunks[1].content == "standard chunk"
+        # Parent fetched only once
+        mock_chunk_repo.find_by_id.assert_awaited_once_with(parent_id)

@@ -152,20 +152,27 @@ class QueryRelevantChunks:
         if self._document_chunk_repository is None:
             return chunks
 
+        from dataclasses import replace
+
         resolved: list[RetrievedChunkDTO] = []
         parent_cache: dict[UUID, str | None] = {}
+        seen_parent_ids: set[UUID] = set()
 
         for chunk in chunks:
             if chunk.chunk_level == "child" and chunk.parent_chunk_id is not None:
                 parent_id = chunk.parent_chunk_id
+
+                # Deduplicate: keep only the first (highest-scored) child per parent
+                if parent_id in seen_parent_ids:
+                    continue
+                seen_parent_ids.add(parent_id)
+
                 if parent_id not in parent_cache:
                     parent = await self._document_chunk_repository.find_by_id(parent_id)
                     parent_cache[parent_id] = parent.content if parent else None
 
                 parent_content = parent_cache[parent_id]
                 if parent_content is not None:
-                    from dataclasses import replace
-
                     resolved.append(replace(chunk, content=parent_content))
                 else:
                     resolved.append(chunk)
