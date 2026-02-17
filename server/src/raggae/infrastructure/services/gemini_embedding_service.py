@@ -8,9 +8,15 @@ class GeminiEmbeddingService:
 
     def __init__(self, api_key: str, model: str, expected_dimension: int | None = None) -> None:
         self._api_key = api_key
-        self._model = model
+        self._model = self._normalize_model_name(model)
         self._expected_dimension = expected_dimension
         self._client = httpx.AsyncClient(timeout=120.0)
+
+    def _normalize_model_name(self, model: str) -> str:
+        # Backward compatibility for deprecated aliases that now return 404.
+        if model in {"embedding-001", "gemini-embedding-001"}:
+            return "text-embedding-004"
+        return model
 
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:

@@ -51,7 +51,7 @@ type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 const EMBEDDING_MODEL_OPTIONS: Record<ProjectEmbeddingBackend, string[]> = {
   openai: ["text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"],
-  gemini: ["text-embedding-004", "embedding-001", "text-multilingual-embedding-002"],
+  gemini: ["text-embedding-004", "gemini-embedding-001", "text-multilingual-embedding-002"],
   ollama: ["nomic-embed-text", "mxbai-embed-large", "all-minilm"],
   inmemory: ["inmemory-embed-accurate", "inmemory-embed-balanced", "inmemory-embed-fast"],
 };

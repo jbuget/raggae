@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     llm_backend: str = "inmemory"
     text_chunker_backend: str = "native"
     embedding_model: str = "text-embedding-3-small"
-    gemini_embedding_model: str = "gemini-embedding-001"
+    gemini_embedding_model: str = "text-embedding-004"
     openai_llm_model: str = "gpt-4o-mini"
     gemini_llm_model: str = "gemini-1.5-flash"
     ollama_base_url: str = "http://localhost:11434"
