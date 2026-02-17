@@ -778,3 +778,87 @@ class TestQueryRelevantChunks:
         assert result.chunks[1].content == "standard content"
         # find_by_id called for the parent
         mock_chunk_repo.find_by_id.assert_awaited_once_with(parent_id)
+
+    async def test_query_expansion_skips_child_chunks(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> None:
+        # Given — one child chunk and one standard chunk, window=1
+        user_id = uuid4()
+        project_id = uuid4()
+        doc_id = uuid4()
+        parent_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
+
+        retrieved = [
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="child content",
+                score=0.9,
+                chunk_index=3,
+                chunk_level="child",
+                parent_chunk_id=parent_id,
+            ),
+            RetrievedChunkDTO(
+                chunk_id=uuid4(),
+                document_id=doc_id,
+                content="standard content",
+                score=0.8,
+                chunk_index=10,
+                chunk_level="standard",
+            ),
+        ]
+        mock_retrieval = AsyncMock()
+        mock_retrieval.retrieve_chunks.return_value = retrieved
+
+        neighbor_chunks = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=doc_id,
+                chunk_index=i,
+                content=f"neighbor {i}",
+                embedding=[],
+                created_at=datetime.now(UTC),
+            )
+            for i in [9, 11]
+        ]
+        mock_chunk_repo = AsyncMock()
+        mock_chunk_repo.find_by_id.return_value = DocumentChunk(
+            id=parent_id,
+            document_id=doc_id,
+            chunk_index=0,
+            content="parent content",
+            embedding=[],
+            created_at=datetime.now(UTC),
+            chunk_level=ChunkLevel.PARENT,
+        )
+        mock_chunk_repo.find_by_document_id_and_indices.return_value = neighbor_chunks
+
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_retrieval,
+            document_chunk_repository=mock_chunk_repo,
+            context_window_size=1,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="test",
+            limit=10,
+        )
+
+        # Then — expansion only for standard chunk (indices 9, 11), NOT for child (indices 2, 4)
+        call_args = mock_chunk_repo.find_by_document_id_and_indices.call_args
+        assert call_args.kwargs["indices"] == {9, 11}
+
+        # Child chunk got parent content, standard + neighbors present
+        contents = {c.content for c in result.chunks}
+        assert "parent content" in contents  # child resolved to parent
+        assert "standard content" in contents
+        assert "neighbor 9" in contents
+        assert "neighbor 11" in contents

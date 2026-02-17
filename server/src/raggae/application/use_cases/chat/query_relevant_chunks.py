@@ -94,10 +94,11 @@ class QueryRelevantChunks:
         if self._context_window_size <= 0 or self._document_chunk_repository is None:
             return chunks
 
-        # Group chunks by document_id with their indices
+        # Group chunks by document_id with their indices (skip child chunks —
+        # their context comes from the parent, not from neighbors)
         doc_indices: dict[UUID, set[int]] = defaultdict(set)
         for chunk in chunks:
-            if chunk.chunk_index is not None:
+            if chunk.chunk_index is not None and chunk.chunk_level != "child":
                 doc_indices[chunk.document_id].add(chunk.chunk_index)
 
         if not doc_indices:
