@@ -70,10 +70,12 @@ export default function ProjectSettingsPage() {
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
   const [chunkingStrategy, setChunkingStrategy] = useState<ChunkingStrategy | null>(null);
   const [parentChildChunking, setParentChildChunking] = useState<boolean | null>(null);
-  const [embeddingBackend, setEmbeddingBackend] = useState<ProjectEmbeddingBackend | null>(null);
+  const [embeddingBackend, setEmbeddingBackend] = useState<
+    ProjectEmbeddingBackend | "" | undefined
+  >(undefined);
   const [embeddingModel, setEmbeddingModel] = useState<string | null>(null);
   const [embeddingCredentialId, setEmbeddingCredentialId] = useState<string | null>(null);
-  const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | null>(null);
+  const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | "" | undefined>(undefined);
   const [llmModel, setLlmModel] = useState<string | null>(null);
   const [llmCredentialId, setLlmCredentialId] = useState<string | null>(null);
 
@@ -95,13 +97,18 @@ export default function ProjectSettingsPage() {
   const effectiveSystemPrompt = systemPrompt ?? (project.system_prompt ?? "");
   const effectiveChunkingStrategy = chunkingStrategy ?? project.chunking_strategy;
   const effectiveParentChildChunking = parentChildChunking ?? project.parent_child_chunking;
-  const effectiveEmbeddingBackend = embeddingBackend ?? (project.embedding_backend ?? "");
-  const effectiveEmbeddingModel = embeddingModel ?? (project.embedding_model ?? "");
-  const effectiveLlmBackend = llmBackend ?? (project.llm_backend ?? "");
-  const effectiveLlmModel = llmModel ?? (project.llm_model ?? "");
+  const effectiveEmbeddingBackend =
+    embeddingBackend === undefined ? (project.embedding_backend ?? "") : embeddingBackend;
+  const effectiveLlmBackend = llmBackend === undefined ? (project.llm_backend ?? "") : llmBackend;
+  const effectiveEmbeddingModel =
+    effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? ""));
+  const effectiveLlmModel = effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? ""));
   const effectiveEmbeddingCredentialId =
-    embeddingCredentialId ?? (project.embedding_api_key_credential_id ?? "");
-  const effectiveLlmCredentialId = llmCredentialId ?? (project.llm_api_key_credential_id ?? "");
+    effectiveEmbeddingBackend === ""
+      ? ""
+      : (embeddingCredentialId ?? (project.embedding_api_key_credential_id ?? ""));
+  const effectiveLlmCredentialId =
+    effectiveLlmBackend === "" ? "" : (llmCredentialId ?? (project.llm_api_key_credential_id ?? ""));
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -353,7 +360,7 @@ export default function ProjectSettingsPage() {
               id="embeddingBackend"
               value={effectiveEmbeddingBackend}
               onChange={(e) => {
-                setEmbeddingBackend((e.target.value || null) as ProjectEmbeddingBackend | null);
+                setEmbeddingBackend((e.target.value || "") as ProjectEmbeddingBackend | "");
                 setEmbeddingCredentialId("");
               }}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
@@ -430,7 +437,7 @@ export default function ProjectSettingsPage() {
               id="llmBackend"
               value={effectiveLlmBackend}
               onChange={(e) => {
-                setLlmBackend((e.target.value || null) as ProjectLLMBackend | null);
+                setLlmBackend((e.target.value || "") as ProjectLLMBackend | "");
                 setLlmCredentialId("");
               }}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
