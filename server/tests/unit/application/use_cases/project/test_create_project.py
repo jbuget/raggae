@@ -1,9 +1,14 @@
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
 from raggae.application.use_cases.project.create_project import CreateProject
-from raggae.domain.exceptions.project_exceptions import ProjectSystemPromptTooLongError
+from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectEmbeddingBackendError,
+    InvalidProjectLLMBackendError,
+    ProjectSystemPromptTooLongError,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -22,8 +27,6 @@ class TestCreateProject:
         mock_project_repository: AsyncMock,
     ) -> None:
         # Given
-        from uuid import uuid4
-
         user_id = uuid4()
 
         # When
@@ -48,8 +51,6 @@ class TestCreateProject:
         mock_project_repository: AsyncMock,
     ) -> None:
         # Given
-        from uuid import uuid4
-
         user_id = uuid4()
 
         # When
@@ -72,8 +73,6 @@ class TestCreateProject:
         use_case: CreateProject,
     ) -> None:
         # Given
-        from uuid import uuid4
-
         # When / Then
         with pytest.raises(ProjectSystemPromptTooLongError):
             await use_case.execute(
@@ -81,4 +80,30 @@ class TestCreateProject:
                 name="My Project",
                 description="A test project",
                 system_prompt="x" * 8001,
+            )
+
+    async def test_create_project_with_invalid_embedding_backend_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectEmbeddingBackendError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="ok",
+                embedding_backend="unsupported",
+            )
+
+    async def test_create_project_with_invalid_llm_backend_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectLLMBackendError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="ok",
+                llm_backend="unsupported",
             )

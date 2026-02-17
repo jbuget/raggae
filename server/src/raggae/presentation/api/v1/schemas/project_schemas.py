@@ -13,6 +13,12 @@ class CreateProjectRequest(BaseModel):
     system_prompt: str = Field(default="", max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
     chunking_strategy: ChunkingStrategy | None = None
     parent_child_chunking: bool | None = None
+    embedding_backend: str | None = None
+    embedding_model: str | None = None
+    embedding_api_key: str | None = None
+    llm_backend: str | None = None
+    llm_model: str | None = None
+    llm_api_key: str | None = None
 
 
 class UpdateProjectRequest(BaseModel):
@@ -21,6 +27,12 @@ class UpdateProjectRequest(BaseModel):
     system_prompt: str = Field(default="", max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
     chunking_strategy: ChunkingStrategy | None = None
     parent_child_chunking: bool | None = None
+    embedding_backend: str | None = None
+    embedding_model: str | None = None
+    embedding_api_key: str | None = None
+    llm_backend: str | None = None
+    llm_model: str | None = None
+    llm_api_key: str | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -36,6 +48,12 @@ class ProjectResponse(BaseModel):
     reindex_status: str
     reindex_progress: int
     reindex_total: int
+    embedding_backend: str | None
+    embedding_model: str | None
+    embedding_api_key_masked: str | None
+    llm_backend: str | None
+    llm_model: str | None
+    llm_api_key_masked: str | None
 
 
 class ReindexProjectResponse(BaseModel):

@@ -7,6 +7,8 @@ import pytest
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectEmbeddingBackendError,
+    InvalidProjectLLMBackendError,
     ProjectNotFoundError,
     ProjectSystemPromptTooLongError,
 )
@@ -149,4 +151,56 @@ class TestUpdateProject:
                 name="New name",
                 description="New description",
                 system_prompt="x" * 8001,
+            )
+
+    async def test_update_project_with_invalid_embedding_backend_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Owner name",
+            description="Owner description",
+            system_prompt="Owner prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectEmbeddingBackendError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                embedding_backend="unsupported",
+            )
+
+    async def test_update_project_with_invalid_llm_backend_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Owner name",
+            description="Owner description",
+            system_prompt="Owner prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectLLMBackendError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                llm_backend="unsupported",
             )

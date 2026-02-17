@@ -58,6 +58,12 @@ async def create_project(
             system_prompt=data.system_prompt,
             chunking_strategy=data.chunking_strategy,
             parent_child_chunking=data.parent_child_chunking,
+            embedding_backend=data.embedding_backend,
+            embedding_model=data.embedding_model,
+            embedding_api_key_encrypted=data.embedding_api_key,
+            llm_backend=data.llm_backend,
+            llm_model=data.llm_model,
+            llm_api_key_encrypted=data.llm_api_key,
         )
     except ProjectSystemPromptTooLongError as exc:
         raise HTTPException(
@@ -77,6 +83,12 @@ async def create_project(
         reindex_status=project_dto.reindex_status,
         reindex_progress=project_dto.reindex_progress,
         reindex_total=project_dto.reindex_total,
+        embedding_backend=project_dto.embedding_backend,
+        embedding_model=project_dto.embedding_model,
+        embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        llm_backend=project_dto.llm_backend,
+        llm_model=project_dto.llm_model,
+        llm_api_key_masked=project_dto.llm_api_key_masked,
     )
 
 
@@ -106,6 +118,12 @@ async def get_project(
         reindex_status=project_dto.reindex_status,
         reindex_progress=project_dto.reindex_progress,
         reindex_total=project_dto.reindex_total,
+        embedding_backend=project_dto.embedding_backend,
+        embedding_model=project_dto.embedding_model,
+        embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        llm_backend=project_dto.llm_backend,
+        llm_model=project_dto.llm_model,
+        llm_api_key_masked=project_dto.llm_api_key_masked,
     )
 
 
@@ -129,6 +147,12 @@ async def list_projects(
             reindex_status=p.reindex_status,
             reindex_progress=p.reindex_progress,
             reindex_total=p.reindex_total,
+            embedding_backend=p.embedding_backend,
+            embedding_model=p.embedding_model,
+            embedding_api_key_masked=p.embedding_api_key_masked,
+            llm_backend=p.llm_backend,
+            llm_model=p.llm_model,
+            llm_api_key_masked=p.llm_api_key_masked,
         )
         for p in project_dtos
     ]
@@ -165,6 +189,12 @@ async def update_project(
             system_prompt=data.system_prompt,
             chunking_strategy=data.chunking_strategy,
             parent_child_chunking=data.parent_child_chunking,
+            embedding_backend=data.embedding_backend,
+            embedding_model=data.embedding_model,
+            embedding_api_key_encrypted=data.embedding_api_key,
+            llm_backend=data.llm_backend,
+            llm_model=data.llm_model,
+            llm_api_key_encrypted=data.llm_api_key,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -189,6 +219,12 @@ async def update_project(
         reindex_status=project_dto.reindex_status,
         reindex_progress=project_dto.reindex_progress,
         reindex_total=project_dto.reindex_total,
+        embedding_backend=project_dto.embedding_backend,
+        embedding_model=project_dto.embedding_model,
+        embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        llm_backend=project_dto.llm_backend,
+        llm_model=project_dto.llm_model,
+        llm_api_key_masked=project_dto.llm_api_key_masked,
     )
 
 

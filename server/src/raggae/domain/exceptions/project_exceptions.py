@@ -12,3 +12,11 @@ class ProjectReindexInProgressError(Exception):
 
 class ProjectSystemPromptTooLongError(Exception):
     """Raised when project system prompt exceeds maximum allowed length."""
+
+
+class InvalidProjectEmbeddingBackendError(ValueError):
+    """Raised when project embedding backend is unsupported."""
+
+
+class InvalidProjectLLMBackendError(ValueError):
+    """Raised when project LLM backend is unsupported."""

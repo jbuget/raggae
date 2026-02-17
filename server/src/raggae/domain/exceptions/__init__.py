@@ -8,6 +8,8 @@ from raggae.domain.exceptions.document_exceptions import (
     LLMGenerationError,
 )
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectEmbeddingBackendError,
+    InvalidProjectLLMBackendError,
     ProjectAlreadyPublishedError,
     ProjectNotFoundError,
 )
@@ -41,6 +43,8 @@ __all__ = [
     "InvalidEmailError",
     "InvalidModelProviderError",
     "InvalidProviderApiKeyError",
+    "InvalidProjectEmbeddingBackendError",
+    "InvalidProjectLLMBackendError",
     "ProjectAlreadyPublishedError",
     "ProjectNotFoundError",
     "UserAlreadyExistsError",

@@ -22,9 +22,23 @@ class ProjectDTO:
     reindex_status: str
     reindex_progress: int
     reindex_total: int
+    embedding_backend: str | None
+    embedding_model: str | None
+    embedding_api_key_masked: str | None
+    llm_backend: str | None
+    llm_model: str | None
+    llm_api_key_masked: str | None
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
+        embedding_masked = (
+            f"...{project.embedding_api_key_encrypted[-4:]}"
+            if project.embedding_api_key_encrypted
+            else None
+        )
+        llm_masked = (
+            f"...{project.llm_api_key_encrypted[-4:]}" if project.llm_api_key_encrypted else None
+        )
         return cls(
             id=project.id,
             user_id=project.user_id,
@@ -38,4 +52,10 @@ class ProjectDTO:
             reindex_status=project.reindex_status,
             reindex_progress=project.reindex_progress,
             reindex_total=project.reindex_total,
+            embedding_backend=project.embedding_backend,
+            embedding_model=project.embedding_model,
+            embedding_api_key_masked=embedding_masked,
+            llm_backend=project.llm_backend,
+            llm_model=project.llm_model,
+            llm_api_key_masked=llm_masked,
         )
