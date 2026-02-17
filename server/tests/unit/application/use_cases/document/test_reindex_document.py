@@ -240,3 +240,84 @@ class TestReindexDocument:
                 document_id=other_project_doc.id,
                 user_id=user_id,
             )
+
+    async def test_reindex_document_download_failure_sets_error_status(
+        self,
+        user_id,
+        project_id,
+        document_id,
+        project,
+        document,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        mock_project_repository.find_by_id.return_value = project
+        mock_document_repository.find_by_id.return_value = document
+        mock_file_storage_service.download_file.side_effect = FileNotFoundError("missing object")
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            document_id=document_id,
+            user_id=user_id,
+        )
+
+        # Then
+        assert mock_document_repository.save.call_count == 2
+        first_saved = mock_document_repository.save.call_args_list[0].args[0]
+        second_saved = mock_document_repository.save.call_args_list[1].args[0]
+        assert first_saved.status == DocumentStatus.PROCESSING
+        assert second_saved.status == DocumentStatus.ERROR
+        assert second_saved.error_message is not None
+        assert "missing object" in second_saved.error_message
+        assert result.status == DocumentStatus.ERROR
+
+    async def test_reindex_document_already_processing_does_not_raise(
+        self,
+        user_id,
+        project_id,
+        project,
+        document,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        processing_document = replace(document, status=DocumentStatus.PROCESSING)
+        indexed_document = replace(
+            processing_document,
+            status=DocumentStatus.PROCESSING,
+            processing_strategy=ChunkingStrategy.FIXED_WINDOW,
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_document_repository.find_by_id.return_value = processing_document
+        mock_document_indexing_service.run_pipeline.return_value = indexed_document
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            document_id=processing_document.id,
+            user_id=user_id,
+        )
+
+        # Then
+        assert mock_document_repository.save.call_count == 1
+        saved = mock_document_repository.save.call_args_list[0].args[0]
+        assert saved.status == DocumentStatus.INDEXED
+        assert result.status == DocumentStatus.INDEXED

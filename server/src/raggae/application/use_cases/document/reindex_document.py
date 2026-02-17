@@ -43,15 +43,15 @@ class ReindexDocument:
         if document is None or document.project_id != project_id:
             raise DocumentNotFoundError(f"Document {document_id} not found")
 
-        file_content, _ = await self._file_storage_service.download_file(document.storage_key)
-
-        document = document.transition_to(DocumentStatus.PROCESSING)
-        await self._document_repository.save(document)
-
         try:
+            if document.status != DocumentStatus.PROCESSING:
+                document = document.transition_to(DocumentStatus.PROCESSING)
+                await self._document_repository.save(document)
+
+            file_content, _ = await self._file_storage_service.download_file(document.storage_key)
             document = await self._document_indexing_service.run_pipeline(document, file_content)
             document = document.transition_to(DocumentStatus.INDEXED)
-        except (DocumentExtractionError, EmbeddingGenerationError) as exc:
+        except (DocumentExtractionError, EmbeddingGenerationError, Exception) as exc:
             document = document.transition_to(DocumentStatus.ERROR, error_message=str(exc))
 
         await self._document_repository.save(document)
