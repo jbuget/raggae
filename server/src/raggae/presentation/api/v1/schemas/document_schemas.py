@@ -52,6 +52,8 @@ class DocumentChunkResponse(BaseModel):
     content: str
     created_at: datetime
     metadata_json: dict[str, Any] | None
+    chunk_level: str = "standard"
+    parent_chunk_id: UUID | None = None
 
 
 class DocumentChunksResponse(BaseModel):

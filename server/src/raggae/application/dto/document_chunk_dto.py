@@ -16,6 +16,8 @@ class DocumentChunkDTO:
     content: str
     created_at: datetime
     metadata_json: dict[str, Any] | None
+    chunk_level: str = "standard"
+    parent_chunk_id: UUID | None = None
 
     @classmethod
     def from_entity(cls, chunk: DocumentChunk) -> "DocumentChunkDTO":
@@ -26,4 +28,6 @@ class DocumentChunkDTO:
             content=chunk.content,
             created_at=chunk.created_at,
             metadata_json=chunk.metadata_json,
+            chunk_level=chunk.chunk_level.value,
+            parent_chunk_id=chunk.parent_chunk_id,
         )

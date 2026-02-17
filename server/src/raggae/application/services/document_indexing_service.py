@@ -123,8 +123,7 @@ class DocumentIndexingService:
 
         if chunks:
             use_parent_child = (
-                project.parent_child_chunking
-                and self._parent_child_chunking_service is not None
+                project.parent_child_chunking and self._parent_child_chunking_service is not None
             )
 
             if use_parent_child:
@@ -156,7 +155,7 @@ class DocumentIndexingService:
     ) -> list[DocumentChunk]:
         chunk_payloads = [self._build_chunk_payload(chunk_text) for chunk_text in chunks]
         indexed_payloads = [
-            payload for payload in chunk_payloads if payload["content"].strip()
+            payload for payload in chunk_payloads if str(payload["content"]).strip()
         ]
         if not indexed_payloads:
             return []
@@ -191,7 +190,7 @@ class DocumentIndexingService:
         cleaned_chunks = [
             self._build_chunk_payload(c)["content"]
             for c in chunks
-            if self._build_chunk_payload(c)["content"].strip()
+            if str(self._build_chunk_payload(c)["content"]).strip()
         ]
         if not cleaned_chunks:
             return []
