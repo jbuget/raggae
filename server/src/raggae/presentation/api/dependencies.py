@@ -104,6 +104,7 @@ from raggae.infrastructure.services.adaptive_text_chunker_service import (
     AdaptiveTextChunkerService,
 )
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
+from raggae.infrastructure.services.gemini_embedding_service import GeminiEmbeddingService
 from raggae.infrastructure.services.gemini_llm_service import GeminiLLMService
 from raggae.infrastructure.services.heading_section_text_chunker_service import (
     HeadingSectionTextChunkerService,
@@ -212,6 +213,12 @@ elif settings.embedding_backend == "ollama":
     _embedding_service = OllamaEmbeddingService(
         base_url=settings.ollama_base_url,
         model=settings.ollama_embedding_model,
+        expected_dimension=settings.embedding_dimension,
+    )
+elif settings.embedding_backend == "gemini":
+    _embedding_service = GeminiEmbeddingService(
+        api_key=settings.gemini_api_key,
+        model=settings.gemini_embedding_model,
         expected_dimension=settings.embedding_dimension,
     )
 else:
