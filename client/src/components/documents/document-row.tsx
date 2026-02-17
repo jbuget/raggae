@@ -24,9 +24,17 @@ interface DocumentRowProps {
   isDeleting: boolean;
   onReindex: (id: string) => void;
   reindexingId: string | null;
+  disableReindex?: boolean;
 }
 
-export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindexingId }: DocumentRowProps) {
+export function DocumentRow({
+  document,
+  onDelete,
+  isDeleting,
+  onReindex,
+  reindexingId,
+  disableReindex = false,
+}: DocumentRowProps) {
   const { token } = useAuth();
   const isReindexing = reindexingId === document.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -113,7 +121,7 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
           variant="ghost"
           size="icon-sm"
           className="cursor-pointer"
-          disabled={isReindexing}
+          disabled={isReindexing || disableReindex}
           onClick={() => onReindex(document.id)}
           aria-label={isReindexing ? "Reindexing document" : "Reindex document"}
           title={isReindexing ? "Reindexing..." : "Reindex"}

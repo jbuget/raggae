@@ -58,6 +58,8 @@ export function ProjectForm({
   const parentChildChanged =
     initialData !== undefined &&
     parentChildChunking !== initialData.parent_child_chunking;
+  const isSemanticRecommended =
+    parentChildChunking && chunkingStrategy !== "semantic";
 
   function buildFormData(): ProjectFormData {
     return {
@@ -170,6 +172,16 @@ export function ProjectForm({
               enfants (plus fins pour la recherche). Cela peut ameliorer la pertinence du retrieval
               sur des documents longs, au prix d&apos;une indexation plus lourde.
             </p>
+            <p className="text-muted-foreground text-sm">
+              Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
+              de chunking `Semantic`.
+            </p>
+            {isSemanticRecommended ? (
+              <p className="text-sm text-amber-700">
+                Le mode parent-child est actif avec une strategie non `Semantic`. Cela fonctionne,
+                mais la pertinence est souvent meilleure avec `Semantic`.
+              </p>
+            ) : null}
             <Button type="submit" className="cursor-pointer" disabled={isDisabled}>
               {isLoading ? "Saving..." : submitLabel}
             </Button>

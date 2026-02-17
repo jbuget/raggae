@@ -5,7 +5,10 @@ from uuid import uuid4
 import pytest
 
 from raggae.domain.entities.project import Project
-from raggae.domain.exceptions.project_exceptions import ProjectAlreadyPublishedError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectAlreadyPublishedError,
+    ProjectReindexInProgressError,
+)
 
 
 class TestProject:
@@ -104,3 +107,56 @@ class TestProject:
         # Then
         assert updated.system_prompt == "new prompt"
         assert updated.id == project.id
+
+    def test_start_reindex_sets_in_progress_and_counters(self) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Test",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
+        updated = project.start_reindex(total_documents=5)
+
+        assert updated.reindex_status == "in_progress"
+        assert updated.reindex_progress == 0
+        assert updated.reindex_total == 5
+        assert updated.is_reindexing() is True
+
+    def test_start_reindex_raises_when_already_in_progress(self) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Test",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            reindex_status="in_progress",
+        )
+
+        with pytest.raises(ProjectReindexInProgressError):
+            project.start_reindex(total_documents=1)
+
+    def test_advance_and_finish_reindex(self) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Test",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        ).start_reindex(total_documents=2)
+
+        progressed = project.advance_reindex().advance_reindex().advance_reindex()
+        finished = progressed.finish_reindex()
+
+        assert progressed.reindex_progress == 2
+        assert finished.reindex_status == "idle"
+        assert finished.reindex_progress == 2
+        assert finished.reindex_total == 2
+        assert finished.is_reindexing() is False

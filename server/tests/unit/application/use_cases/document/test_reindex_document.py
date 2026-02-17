@@ -9,7 +9,10 @@ from raggae.application.use_cases.document.reindex_document import ReindexDocume
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import DocumentNotFoundError
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.document_status import DocumentStatus
 
@@ -321,3 +324,33 @@ class TestReindexDocument:
         saved = mock_document_repository.save.call_args_list[0].args[0]
         assert saved.status == DocumentStatus.INDEXED
         assert result.status == DocumentStatus.INDEXED
+
+    async def test_reindex_document_project_reindex_in_progress_raises(
+        self,
+        user_id,
+        project_id,
+        project,
+        document_id,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        mock_project_repository.find_by_id.return_value = replace(
+            project, reindex_status="in_progress"
+        )
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+        )
+
+        # When / Then
+        with pytest.raises(ProjectReindexInProgressError):
+            await use_case.execute(
+                project_id=project_id,
+                document_id=document_id,
+                user_id=user_id,
+            )

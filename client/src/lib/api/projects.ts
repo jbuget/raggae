@@ -1,6 +1,7 @@
 import type {
   CreateProjectRequest,
   ProjectResponse,
+  ReindexProjectResponse,
   UpdateProjectRequest,
 } from "@/lib/types/api";
 import { apiFetch } from "./client";
@@ -45,6 +46,16 @@ export function deleteProject(
 ): Promise<void> {
   return apiFetch<void>(`/projects/${projectId}`, {
     method: "DELETE",
+    token,
+  });
+}
+
+export function reindexProject(
+  token: string,
+  projectId: string,
+): Promise<ReindexProjectResponse> {
+  return apiFetch<ReindexProjectResponse>(`/projects/${projectId}/reindex`, {
+    method: "POST",
     token,
   });
 }

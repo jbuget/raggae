@@ -62,6 +62,13 @@ export interface ProjectResponse {
   reindex_total: number;
 }
 
+export interface ReindexProjectResponse {
+  project_id: string;
+  total_documents: number;
+  indexed_documents: number;
+  failed_documents: number;
+}
+
 // Documents
 export interface DocumentResponse {
   id: string;

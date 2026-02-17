@@ -67,6 +67,7 @@ from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
+from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
@@ -380,6 +381,15 @@ def get_delete_project_use_case() -> DeleteProject:
 
 def get_update_project_use_case() -> UpdateProject:
     return UpdateProject(project_repository=_project_repository)
+
+
+def get_reindex_project_use_case() -> ReindexProject:
+    return ReindexProject(
+        project_repository=_project_repository,
+        document_repository=_document_repository,
+        file_storage_service=_file_storage_service,
+        document_indexing_service=_document_indexing_service,
+    )
 
 
 def get_upload_document_use_case() -> UploadDocument:

@@ -8,8 +8,12 @@ from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
+from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.presentation.api.dependencies import (
     get_create_project_use_case,
     get_current_user_id,
@@ -17,11 +21,13 @@ from raggae.presentation.api.dependencies import (
     get_get_project_use_case,
     get_list_projects_use_case,
     get_query_relevant_chunks_use_case,
+    get_reindex_project_use_case,
     get_update_project_use_case,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
     ProjectResponse,
+    ReindexProjectResponse,
     UpdateProjectRequest,
 )
 from raggae.presentation.api.v1.schemas.query_schemas import (
@@ -209,4 +215,31 @@ async def query_project_chunks(
             )
             for chunk in result.chunks
         ],
+    )
+
+
+@router.post("/{project_id}/reindex", status_code=status.HTTP_200_OK)
+async def reindex_project(
+    project_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[ReindexProject, Depends(get_reindex_project_use_case)],
+) -> ReindexProjectResponse:
+    try:
+        result = await use_case.execute(project_id=project_id, user_id=user_id)
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+    except ProjectReindexInProgressError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project reindex already in progress",
+        ) from None
+
+    return ReindexProjectResponse(
+        project_id=result.project_id,
+        total_documents=result.total_documents,
+        indexed_documents=result.indexed_documents,
+        failed_documents=result.failed_documents,
     )

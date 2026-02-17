@@ -19,6 +19,7 @@ import { ProjectForm } from "@/components/projects/project-form";
 import {
   useDeleteProject,
   useProject,
+  useReindexProject,
   useUpdateProject,
 } from "@/lib/hooks/use-projects";
 
@@ -27,6 +28,7 @@ export default function ProjectSettingsPage() {
   const router = useRouter();
   const { data: project, isLoading } = useProject(params.projectId);
   const updateProject = useUpdateProject(params.projectId);
+  const reindexProject = useReindexProject(params.projectId);
   const deleteProject = useDeleteProject();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -45,6 +47,12 @@ export default function ProjectSettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
+      {project.reindex_status === "in_progress" && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Reindexation en cours ({project.reindex_progress}/{project.reindex_total}).
+          Les actions d&apos;upload, chat et reindex sont temporairement bloquees.
+        </div>
+      )}
       <ProjectForm
         initialData={project}
         submitLabel="Save Changes"
@@ -56,6 +64,25 @@ export default function ProjectSettingsPage() {
           });
         }}
       />
+
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold">Reindexation</h2>
+        <Button
+          className="cursor-pointer"
+          disabled={reindexProject.isPending || project.reindex_status === "in_progress"}
+          onClick={() => {
+            reindexProject.mutate(undefined, {
+              onSuccess: (result) =>
+                toast.success(
+                  `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
+                ),
+              onError: () => toast.error("Failed to reindex project"),
+            });
+          }}
+        >
+          {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+        </Button>
+      </div>
 
       <Separator />
 

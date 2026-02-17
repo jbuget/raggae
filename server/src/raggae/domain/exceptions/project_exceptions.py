@@ -4,3 +4,7 @@ class ProjectAlreadyPublishedError(Exception):
 
 class ProjectNotFoundError(Exception):
     """Raised when a project cannot be found."""
+
+
+class ProjectReindexInProgressError(Exception):
+    """Raised when a project is already in reindexation."""

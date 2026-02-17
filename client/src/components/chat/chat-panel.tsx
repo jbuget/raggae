@@ -21,6 +21,8 @@ import { getDocumentFileBlob } from "@/lib/api/documents";
 interface ChatPanelProps {
   projectId: string;
   conversationId: string | null;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
 interface MessageSourceDocument {
@@ -29,7 +31,12 @@ interface MessageSourceDocument {
   chunkIds: string[];
 }
 
-export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
+export function ChatPanel({
+  projectId,
+  conversationId,
+  disabled = false,
+  disabledMessage,
+}: ChatPanelProps) {
   const router = useRouter();
   const { token } = useAuth();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(
@@ -91,6 +98,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   }, [selectedDocumentUrl]);
 
   async function handleSend(content: string) {
+    if (disabled) return;
     const effectiveConversationId = currentConversationId ?? conversationId;
     const userMessage: MessageResponse = {
       id: `temp-${Date.now()}`,
@@ -227,10 +235,15 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
       )}
 
       <div className="sticky bottom-0 border-t bg-background p-4">
+        {disabled && (
+          <p className="mb-2 text-xs text-amber-700">
+            {disabledMessage || "Chat is temporarily disabled for this project."}
+          </p>
+        )}
         <MessageInput
           onSend={handleSend}
-          disabled={state !== "idle"}
-          isThinking={state !== "idle"}
+          disabled={disabled || state !== "idle"}
+          isThinking={!disabled && state !== "idle"}
         />
       </div>
 

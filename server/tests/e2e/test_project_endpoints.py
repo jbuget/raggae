@@ -315,3 +315,24 @@ class TestProjectEndpoints:
 
         # Then
         assert response.status_code == 404
+
+    async def test_reindex_project_returns_200(self, client: AsyncClient) -> None:
+        # Given
+        headers, project_id = await self._create_project_as_authenticated_user(
+            client=client,
+            name="Project to reindex",
+        )
+
+        # When
+        response = await client.post(
+            f"/api/v1/projects/{project_id}/reindex",
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["project_id"] == project_id
+        assert data["total_documents"] == 0
+        assert data["indexed_documents"] == 0
+        assert data["failed_documents"] == 0

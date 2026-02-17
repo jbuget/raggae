@@ -6,6 +6,7 @@ import {
   deleteProject,
   getProject,
   listProjects,
+  reindexProject,
   updateProject,
 } from "@/lib/api/projects";
 import type { CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/api";
@@ -65,6 +66,20 @@ export function useDeleteProject() {
     mutationFn: (projectId: string) => deleteProject(token!, projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useReindexProject(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => reindexProject(token!, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
     },
   });
 }

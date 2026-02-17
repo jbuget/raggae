@@ -35,3 +35,10 @@ class ProjectResponse(BaseModel):
     reindex_status: str
     reindex_progress: int
     reindex_total: int
+
+
+class ReindexProjectResponse(BaseModel):
+    project_id: UUID
+    total_documents: int
+    indexed_documents: int
+    failed_documents: int

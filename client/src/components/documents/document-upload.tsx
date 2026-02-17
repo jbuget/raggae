@@ -8,9 +8,10 @@ import { formatFileSize } from "@/lib/utils/format";
 interface DocumentUploadProps {
   onUpload: (files: File[]) => void;
   isUploading: boolean;
+  disabled?: boolean;
 }
 
-export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
+export function DocumentUpload({ onUpload, isUploading, disabled = false }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -27,6 +28,7 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
   }, []);
 
   function handleDrop(e: React.DragEvent) {
+    if (disabled) return;
     e.preventDefault();
     setIsDragOver(false);
     const files = Array.from(e.dataTransfer.files);
@@ -34,11 +36,13 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (disabled) return;
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0) handleFiles(files);
   }
 
   function handleUpload() {
+    if (disabled) return;
     if (selectedFiles.length > 0) {
       onUpload(selectedFiles);
       setSelectedFiles([]);
@@ -79,6 +83,7 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
             variant="outline"
             className="cursor-pointer"
             onClick={() => inputRef.current?.click()}
+            disabled={disabled}
           >
             Select Files
           </Button>
@@ -99,7 +104,11 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
                 )}
               </p>
             </div>
-            <Button className="cursor-pointer" onClick={handleUpload} disabled={isUploading}>
+            <Button
+              className="cursor-pointer"
+              onClick={handleUpload}
+              disabled={isUploading || disabled}
+            >
               {isUploading ? "Uploading..." : "Upload"}
             </Button>
           </div>

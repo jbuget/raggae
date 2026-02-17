@@ -25,6 +25,10 @@ from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 
@@ -72,6 +76,11 @@ class SendMessage:
         retrieval_strategy: str = "hybrid",
         retrieval_filters: dict[str, object] | None = None,
     ) -> ChatMessageResponseDTO:
+        project = await self._project_repository.find_by_id(project_id)
+        if project is None:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+        if project.is_reindexing():
+            raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
@@ -181,8 +190,7 @@ class SendMessage:
                 history_messages_used=0,
                 chunks_used=0,
             )
-        project = await self._project_repository.find_by_id(project_id)
-        project_system_prompt = project.system_prompt if project is not None else None
+        project_system_prompt = project.system_prompt
         conversation_history = await self._build_conversation_history(
             conversation_id=conversation.id,
             current_user_message_id=current_user_message_id,
@@ -252,6 +260,11 @@ class SendMessage:
         retrieval_strategy: str = "hybrid",
         retrieval_filters: dict[str, object] | None = None,
     ) -> AsyncIterator[ChatStreamEvent]:
+        project = await self._project_repository.find_by_id(project_id)
+        if project is None:
+            raise ProjectNotFoundError(f"Project {project_id} not found")
+        if project.is_reindexing():
+            raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
@@ -361,8 +374,7 @@ class SendMessage:
                 chunks_used=0,
             )
             return
-        project = await self._project_repository.find_by_id(project_id)
-        project_system_prompt = project.system_prompt if project is not None else None
+        project_system_prompt = project.system_prompt
         conversation_history = await self._build_conversation_history(
             conversation_id=conversation.id,
             current_user_message_id=current_user_message_id,

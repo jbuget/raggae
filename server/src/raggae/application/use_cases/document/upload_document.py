@@ -19,7 +19,10 @@ from raggae.domain.exceptions.document_exceptions import (
     InvalidDocumentTypeError,
     ProjectDocumentLimitReachedError,
 )
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.domain.value_objects.document_status import DocumentStatus
 
 ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx"}
@@ -195,6 +198,8 @@ class UploadDocument:
         project = await self._project_repository.find_by_id(project_id)
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        if project.is_reindexing():
+            raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         return project
 
     async def _assert_document_quota(self, project_id: UUID) -> None:

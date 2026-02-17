@@ -13,7 +13,10 @@ from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 
 
 class TestSendMessage:
@@ -138,6 +141,31 @@ class TestSendMessage:
 
         # When / Then
         with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(
+                project_id=uuid4(),
+                user_id=uuid4(),
+                message="hello",
+                limit=3,
+            )
+
+    async def test_send_message_project_reindex_in_progress_raises_error(
+        self,
+        use_case: SendMessage,
+    ) -> None:
+        # Given
+        use_case._project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            reindex_status="in_progress",
+        )
+
+        # When / Then
+        with pytest.raises(ProjectReindexInProgressError):
             await use_case.execute(
                 project_id=uuid4(),
                 user_id=uuid4(),

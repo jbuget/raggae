@@ -10,7 +10,10 @@ from raggae.domain.exceptions.document_exceptions import (
     DocumentNotFoundError,
     EmbeddingGenerationError,
 )
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.domain.value_objects.document_status import DocumentStatus
 
 
@@ -38,6 +41,8 @@ class ReindexDocument:
         project = await self._project_repository.find_by_id(project_id)
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        if project.is_reindexing():
+            raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
 
         document = await self._document_repository.find_by_id(document_id)
         if document is None or document.project_id != project_id:

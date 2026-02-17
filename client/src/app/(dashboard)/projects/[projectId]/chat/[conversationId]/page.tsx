@@ -3,9 +3,12 @@
 import { useParams } from "next/navigation";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { ConversationSidebar } from "@/components/chat/conversation-sidebar";
+import { useProject } from "@/lib/hooks/use-projects";
 
 export default function ConversationPage() {
   const params = useParams<{ projectId: string; conversationId: string }>();
+  const { data: project } = useProject(params.projectId);
+  const isProjectReindexing = project?.reindex_status === "in_progress";
 
   return (
     <div className="-m-6 flex h-[calc(100vh-3.5rem)]">
@@ -16,6 +19,12 @@ export default function ConversationPage() {
         <ChatPanel
           projectId={params.projectId}
           conversationId={params.conversationId}
+          disabled={isProjectReindexing}
+          disabledMessage={
+            isProjectReindexing
+              ? `Reindexation en cours (${project?.reindex_progress}/${project?.reindex_total}). Le chat est temporairement desactive.`
+              : undefined
+          }
         />
       </div>
     </div>

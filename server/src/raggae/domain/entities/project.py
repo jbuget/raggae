@@ -2,7 +2,10 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from uuid import UUID
 
-from raggae.domain.exceptions.project_exceptions import ProjectAlreadyPublishedError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectAlreadyPublishedError,
+    ProjectReindexInProgressError,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -32,3 +35,27 @@ class Project:
     def update_prompt(self, new_prompt: str) -> "Project":
         """Return a new Project with an updated system prompt."""
         return replace(self, system_prompt=new_prompt)
+
+    def start_reindex(self, total_documents: int) -> "Project":
+        """Mark project as being reindexed and initialize progress."""
+        if self.is_reindexing():
+            raise ProjectReindexInProgressError("Project reindex is already in progress")
+        total = max(0, total_documents)
+        return replace(self, reindex_status="in_progress", reindex_progress=0, reindex_total=total)
+
+    def advance_reindex(self) -> "Project":
+        """Advance reindex progress by one document."""
+        if not self.is_reindexing():
+            return self
+        progress = min(self.reindex_progress + 1, max(0, self.reindex_total))
+        return replace(self, reindex_progress=progress)
+
+    def finish_reindex(self) -> "Project":
+        """Mark reindex as finished and keep final counters."""
+        total = max(0, self.reindex_total)
+        progress = min(max(0, self.reindex_progress), total)
+        return replace(self, reindex_status="idle", reindex_progress=progress, reindex_total=total)
+
+    def is_reindexing(self) -> bool:
+        """Whether project is currently being reindexed."""
+        return self.reindex_status == "in_progress"

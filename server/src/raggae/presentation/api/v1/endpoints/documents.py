@@ -18,7 +18,10 @@ from raggae.application.use_cases.document.upload_document import (
 from raggae.domain.exceptions.document_exceptions import (
     DocumentNotFoundError,
 )
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.infrastructure.config.settings import settings
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
@@ -100,6 +103,11 @@ async def upload_document(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        ) from None
+    except ProjectReindexInProgressError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project reindex already in progress",
         ) from None
 
     return UploadDocumentsResponse(
@@ -189,6 +197,11 @@ async def reindex_document(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found",
+        ) from None
+    except ProjectReindexInProgressError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project reindex already in progress",
         ) from None
 
     return _dto_to_response(document_dto)

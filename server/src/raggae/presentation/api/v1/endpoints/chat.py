@@ -18,7 +18,10 @@ from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.application.use_cases.chat.update_conversation import UpdateConversation
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 from raggae.infrastructure.config.settings import settings
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
@@ -76,6 +79,11 @@ async def send_message(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        ) from None
+    except ProjectReindexInProgressError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project reindex already in progress",
         ) from None
     except ConversationNotFoundError:
         raise HTTPException(
@@ -198,6 +206,8 @@ async def stream_message(
                     )
         except ProjectNotFoundError:
             yield f"data: {json.dumps({'error': 'Project not found'})}\n\n"
+        except ProjectReindexInProgressError:
+            yield f"data: {json.dumps({'error': 'Project reindex already in progress'})}\n\n"
         except ConversationNotFoundError:
             yield f"data: {json.dumps({'error': 'Conversation not found'})}\n\n"
         except LLMGenerationError as exc:

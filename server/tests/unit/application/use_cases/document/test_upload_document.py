@@ -12,7 +12,10 @@ from raggae.domain.exceptions.document_exceptions import (
     InvalidDocumentTypeError,
     ProjectDocumentLimitReachedError,
 )
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectReindexInProgressError,
+)
 
 
 class TestUploadDocument:
@@ -119,6 +122,33 @@ class TestUploadDocument:
                 file_name="doc.exe",
                 file_content=b"content",
                 content_type="application/octet-stream",
+            )
+
+    async def test_upload_document_project_reindex_in_progress_raises_error(
+        self,
+        use_case: UploadDocument,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            reindex_status="in_progress",
+        )
+
+        with pytest.raises(ProjectReindexInProgressError):
+            await use_case.execute(
+                project_id=project_id,
+                user_id=user_id,
+                file_name="doc.pdf",
+                file_content=b"content",
+                content_type="application/pdf",
             )
 
     async def test_upload_document_too_large_raises_error(
