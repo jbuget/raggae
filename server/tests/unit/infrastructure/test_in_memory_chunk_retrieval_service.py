@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
+from raggae.domain.value_objects.chunk_level import ChunkLevel
 from raggae.infrastructure.database.repositories.in_memory_document_chunk_repository import (
     InMemoryDocumentChunkRepository,
 )
@@ -333,3 +334,71 @@ class TestInMemoryChunkRetrievalService:
         # Then
         assert len(result) == 1
         assert result[0].content == "second hit"
+
+    async def test_retrieve_chunks_excludes_parent_chunks(self) -> None:
+        # Given
+        project_id = uuid4()
+        document_repository = InMemoryDocumentRepository()
+        chunk_repository = InMemoryDocumentChunkRepository()
+        service = InMemoryChunkRetrievalService(
+            document_repository=document_repository,
+            document_chunk_repository=chunk_repository,
+        )
+        doc = Document(
+            id=uuid4(),
+            project_id=project_id,
+            file_name="doc.txt",
+            content_type="text/plain",
+            file_size=10,
+            storage_key="doc",
+            created_at=datetime.now(UTC),
+        )
+        await document_repository.save(doc)
+        parent_id = uuid4()
+        await chunk_repository.save_many(
+            [
+                DocumentChunk(
+                    id=parent_id,
+                    document_id=doc.id,
+                    chunk_index=0,
+                    content="parent content",
+                    embedding=[],
+                    created_at=datetime.now(UTC),
+                    chunk_level=ChunkLevel.PARENT,
+                ),
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=1,
+                    content="child content",
+                    embedding=[1.0, 0.0],
+                    created_at=datetime.now(UTC),
+                    chunk_level=ChunkLevel.CHILD,
+                    parent_chunk_id=parent_id,
+                ),
+                DocumentChunk(
+                    id=uuid4(),
+                    document_id=doc.id,
+                    chunk_index=2,
+                    content="standard content",
+                    embedding=[0.9, 0.1],
+                    created_at=datetime.now(UTC),
+                    chunk_level=ChunkLevel.STANDARD,
+                ),
+            ]
+        )
+
+        # When
+        result = await service.retrieve_chunks(
+            project_id=project_id,
+            query_text="content",
+            query_embedding=[1.0, 0.0],
+            limit=10,
+        )
+
+        # Then — parent chunk is excluded
+        assert len(result) == 2
+        contents = {r.content for r in result}
+        assert "parent content" not in contents
+        assert "child content" in contents
+        assert "standard content" in contents

@@ -69,6 +69,7 @@ class SQLAlchemyChunkRetrievalService:
                 FROM document_chunks c
                 JOIN documents d ON d.id = c.document_id
                 WHERE d.project_id = :project_id
+                  AND (c.chunk_level IS NULL OR c.chunk_level IN ('standard', 'child'))
                   {metadata_where}
                 ORDER BY c.embedding <=> CAST(:query_embedding AS vector) ASC
                 LIMIT :candidate_limit
@@ -87,6 +88,7 @@ class SQLAlchemyChunkRetrievalService:
                 JOIN documents d ON d.id = c.document_id
                 CROSS JOIN fulltext_query fq
                 WHERE d.project_id = :project_id
+                  AND (c.chunk_level IS NULL OR c.chunk_level IN ('standard', 'child'))
                   {metadata_where}
                   AND to_tsvector(
                       CAST(:fulltext_language AS regconfig), c.content

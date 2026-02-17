@@ -6,6 +6,7 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
     DocumentChunkRepository,
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
+from raggae.domain.value_objects.chunk_level import ChunkLevel
 
 
 class InMemoryChunkRetrievalService:
@@ -46,6 +47,8 @@ class InMemoryChunkRetrievalService:
         for document in project_documents:
             chunks = await self._document_chunk_repository.find_by_document_id(document.id)
             for chunk in chunks:
+                if chunk.chunk_level == ChunkLevel.PARENT:
+                    continue
                 if not _matches_filters(chunk.metadata_json, metadata_filters):
                     continue
                 vector_score = _cosine_similarity(query_embedding, chunk.embedding)
