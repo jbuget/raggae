@@ -199,6 +199,72 @@ class TestProjectEndpoints:
         assert data["llm_model"] == "gpt-4o-mini"
         assert data["llm_api_key_masked"] is not None
 
+    async def test_create_project_with_embedding_api_key_credential_id_returns_201(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+        credential_id = await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="gemini",
+            api_key="AIza-owned-by-id-1234",
+        )
+
+        # When
+        response = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "My Project",
+                "description": "A test project",
+                "system_prompt": "You are a helpful assistant",
+                "embedding_backend": "gemini",
+                "embedding_model": "text-embedding-004",
+                "embedding_api_key_credential_id": credential_id,
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 201
+        data = response.json()
+        assert data["embedding_backend"] == "gemini"
+        assert data["embedding_model"] == "text-embedding-004"
+        assert data["embedding_api_key_masked"] is not None
+
+    async def test_create_project_with_llm_api_key_and_credential_id_returns_422(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+        credential_id = await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="openai",
+            api_key="sk-owned-by-id-5678",
+        )
+
+        # When
+        response = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "My Project",
+                "description": "A test project",
+                "system_prompt": "You are a helpful assistant",
+                "llm_backend": "openai",
+                "llm_model": "gpt-4o-mini",
+                "llm_api_key": "sk-owned-by-id-5678",
+                "llm_api_key_credential_id": credential_id,
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 422
+        assert "cannot both be set" in response.json()["detail"]
+
     async def test_get_project_returns_200(self, client: AsyncClient) -> None:
         # Given
         headers = await self._auth_headers(client)
@@ -480,3 +546,75 @@ class TestProjectEndpoints:
         assert data["id"] == project_id
         assert data["llm_backend"] == "openai"
         assert data["llm_api_key_masked"] is not None
+
+    async def test_update_project_with_embedding_api_key_credential_id_returns_200(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project_as_authenticated_user(
+            client=client,
+            name="Project to update",
+        )
+        credential_id = await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="gemini",
+            api_key="AIza-update-by-id-1234",
+        )
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}",
+            json={
+                "name": "Updated project",
+                "description": "Updated description",
+                "system_prompt": "Updated prompt",
+                "embedding_backend": "gemini",
+                "embedding_model": "text-embedding-004",
+                "embedding_api_key_credential_id": credential_id,
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == project_id
+        assert data["embedding_backend"] == "gemini"
+        assert data["embedding_api_key_masked"] is not None
+
+    async def test_update_project_with_embedding_api_key_and_credential_id_returns_422(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project_as_authenticated_user(
+            client=client,
+            name="Project to update",
+        )
+        credential_id = await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="gemini",
+            api_key="AIza-update-by-id-5678",
+        )
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}",
+            json={
+                "name": "Updated project",
+                "description": "Updated description",
+                "system_prompt": "Updated prompt",
+                "embedding_backend": "gemini",
+                "embedding_model": "text-embedding-004",
+                "embedding_api_key": "AIza-update-by-id-5678",
+                "embedding_api_key_credential_id": credential_id,
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 422
+        assert "cannot both be set" in response.json()["detail"]
