@@ -164,6 +164,7 @@ class TestProjectEndpoints:
         assert data["llm_backend"] == "openai"
         assert data["llm_model"] == "gpt-4o-mini"
         assert data["llm_api_key_masked"] is not None
+        assert data["llm_api_key_credential_id"] is None
 
     async def test_create_project_with_llm_api_key_credential_id_returns_201(
         self,

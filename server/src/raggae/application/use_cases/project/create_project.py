@@ -100,6 +100,16 @@ class CreateProject:
         )
         encrypted_embedding_api_key = self._encrypt_api_key_if_provided(resolved_embedding_api_key)
         encrypted_llm_api_key = self._encrypt_api_key_if_provided(resolved_llm_api_key)
+        effective_embedding_api_key_credential_id = (
+            embedding_api_key_credential_id
+            if embedding_api_key_credential_id is not None and resolved_embedding_api_key is not None
+            else None
+        )
+        effective_llm_api_key_credential_id = (
+            llm_api_key_credential_id
+            if llm_api_key_credential_id is not None and resolved_llm_api_key is not None
+            else None
+        )
         project = Project(
             id=uuid4(),
             user_id=user_id,
@@ -113,9 +123,11 @@ class CreateProject:
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_encrypted=encrypted_embedding_api_key,
+            embedding_api_key_credential_id=effective_embedding_api_key_credential_id,
             llm_backend=llm_backend,
             llm_model=llm_model,
             llm_api_key_encrypted=encrypted_llm_api_key,
+            llm_api_key_credential_id=effective_llm_api_key_credential_id,
         )
 
         await self._project_repository.save(project)

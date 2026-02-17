@@ -25,9 +25,11 @@ class ProjectDTO:
     embedding_backend: str | None
     embedding_model: str | None
     embedding_api_key_masked: str | None
+    embedding_api_key_credential_id: UUID | None
     llm_backend: str | None
     llm_model: str | None
     llm_api_key_masked: str | None
+    llm_api_key_credential_id: UUID | None
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
@@ -55,7 +57,9 @@ class ProjectDTO:
             embedding_backend=project.embedding_backend,
             embedding_model=project.embedding_model,
             embedding_api_key_masked=embedding_masked,
+            embedding_api_key_credential_id=project.embedding_api_key_credential_id,
             llm_backend=project.llm_backend,
             llm_model=project.llm_model,
             llm_api_key_masked=llm_masked,
+            llm_api_key_credential_id=project.llm_api_key_credential_id,
         )

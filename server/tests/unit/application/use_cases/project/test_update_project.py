@@ -343,3 +343,4 @@ class TestUpdateProject:
         )
 
         assert result.llm_backend == "openai"
+        assert result.llm_api_key_credential_id == credential_id

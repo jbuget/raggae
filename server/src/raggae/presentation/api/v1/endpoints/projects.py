@@ -94,9 +94,11 @@ async def create_project(
         embedding_backend=project_dto.embedding_backend,
         embedding_model=project_dto.embedding_model,
         embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        embedding_api_key_credential_id=project_dto.embedding_api_key_credential_id,
         llm_backend=project_dto.llm_backend,
         llm_model=project_dto.llm_model,
         llm_api_key_masked=project_dto.llm_api_key_masked,
+        llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
     )
 
 
@@ -129,9 +131,11 @@ async def get_project(
         embedding_backend=project_dto.embedding_backend,
         embedding_model=project_dto.embedding_model,
         embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        embedding_api_key_credential_id=project_dto.embedding_api_key_credential_id,
         llm_backend=project_dto.llm_backend,
         llm_model=project_dto.llm_model,
         llm_api_key_masked=project_dto.llm_api_key_masked,
+        llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
     )
 
 
@@ -158,9 +162,11 @@ async def list_projects(
             embedding_backend=p.embedding_backend,
             embedding_model=p.embedding_model,
             embedding_api_key_masked=p.embedding_api_key_masked,
+            embedding_api_key_credential_id=p.embedding_api_key_credential_id,
             llm_backend=p.llm_backend,
             llm_model=p.llm_model,
             llm_api_key_masked=p.llm_api_key_masked,
+            llm_api_key_credential_id=p.llm_api_key_credential_id,
         )
         for p in project_dtos
     ]
@@ -237,9 +243,11 @@ async def update_project(
         embedding_backend=project_dto.embedding_backend,
         embedding_model=project_dto.embedding_model,
         embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        embedding_api_key_credential_id=project_dto.embedding_api_key_credential_id,
         llm_backend=project_dto.llm_backend,
         llm_model=project_dto.llm_model,
         llm_api_key_masked=project_dto.llm_api_key_masked,
+        llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
     )
 
 

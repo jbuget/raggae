@@ -33,9 +33,11 @@ class SQLAlchemyProjectRepository:
                     embedding_backend=project.embedding_backend,
                     embedding_model=project.embedding_model,
                     embedding_api_key_encrypted=project.embedding_api_key_encrypted,
+                    embedding_api_key_credential_id=project.embedding_api_key_credential_id,
                     llm_backend=project.llm_backend,
                     llm_model=project.llm_model,
                     llm_api_key_encrypted=project.llm_api_key_encrypted,
+                    llm_api_key_credential_id=project.llm_api_key_credential_id,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -53,9 +55,11 @@ class SQLAlchemyProjectRepository:
                 model.embedding_backend = project.embedding_backend
                 model.embedding_model = project.embedding_model
                 model.embedding_api_key_encrypted = project.embedding_api_key_encrypted
+                model.embedding_api_key_credential_id = project.embedding_api_key_credential_id
                 model.llm_backend = project.llm_backend
                 model.llm_model = project.llm_model
                 model.llm_api_key_encrypted = project.llm_api_key_encrypted
+                model.llm_api_key_credential_id = project.llm_api_key_credential_id
             await session.commit()
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
@@ -78,9 +82,11 @@ class SQLAlchemyProjectRepository:
                 embedding_backend=model.embedding_backend,
                 embedding_model=model.embedding_model,
                 embedding_api_key_encrypted=model.embedding_api_key_encrypted,
+                embedding_api_key_credential_id=model.embedding_api_key_credential_id,
                 llm_backend=model.llm_backend,
                 llm_model=model.llm_model,
                 llm_api_key_encrypted=model.llm_api_key_encrypted,
+                llm_api_key_credential_id=model.llm_api_key_credential_id,
                 created_at=model.created_at,
             )
 
@@ -106,9 +112,11 @@ class SQLAlchemyProjectRepository:
                     embedding_backend=model.embedding_backend,
                     embedding_model=model.embedding_model,
                     embedding_api_key_encrypted=model.embedding_api_key_encrypted,
+                    embedding_api_key_credential_id=model.embedding_api_key_credential_id,
                     llm_backend=model.llm_backend,
                     llm_model=model.llm_model,
                     llm_api_key_encrypted=model.llm_api_key_encrypted,
+                    llm_api_key_credential_id=model.llm_api_key_credential_id,
                     created_at=model.created_at,
                 )
                 for model in models

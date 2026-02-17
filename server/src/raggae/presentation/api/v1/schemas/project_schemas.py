@@ -55,9 +55,11 @@ class ProjectResponse(BaseModel):
     embedding_backend: str | None
     embedding_model: str | None
     embedding_api_key_masked: str | None
+    embedding_api_key_credential_id: UUID | None
     llm_backend: str | None
     llm_model: str | None
     llm_api_key_masked: str | None
+    llm_api_key_credential_id: UUID | None
 
 
 class ReindexProjectResponse(BaseModel):

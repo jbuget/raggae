@@ -87,9 +87,11 @@ export interface ProjectResponse {
   embedding_backend?: ProjectEmbeddingBackend | null;
   embedding_model?: string | null;
   embedding_api_key_masked?: string | null;
+  embedding_api_key_credential_id?: string | null;
   llm_backend?: ProjectLLMBackend | null;
   llm_model?: string | null;
   llm_api_key_masked?: string | null;
+  llm_api_key_credential_id?: string | null;
 }
 
 export interface ReindexProjectResponse {

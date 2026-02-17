@@ -28,9 +28,11 @@ class Project:
     embedding_backend: str | None = None
     embedding_model: str | None = None
     embedding_api_key_encrypted: str | None = None
+    embedding_api_key_credential_id: UUID | None = None
     llm_backend: str | None = None
     llm_model: str | None = None
     llm_api_key_encrypted: str | None = None
+    llm_api_key_credential_id: UUID | None = None
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""

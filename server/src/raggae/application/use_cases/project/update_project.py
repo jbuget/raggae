@@ -119,6 +119,22 @@ class UpdateProject:
             current_value=project.llm_api_key_encrypted,
             provided_value=resolved_llm_api_key,
         )
+        next_embedding_backend = (
+            project.embedding_backend if embedding_backend is None else embedding_backend
+        )
+        next_llm_backend = project.llm_backend if llm_backend is None else llm_backend
+        next_embedding_api_key_credential_id = self._resolve_next_credential_id(
+            current_value=project.embedding_api_key_credential_id,
+            provided_credential_id=embedding_api_key_credential_id,
+            provided_api_key=embedding_api_key,
+            backend=next_embedding_backend,
+        )
+        next_llm_api_key_credential_id = self._resolve_next_credential_id(
+            current_value=project.llm_api_key_credential_id,
+            provided_credential_id=llm_api_key_credential_id,
+            provided_api_key=llm_api_key,
+            backend=next_llm_backend,
+        )
         updated_project = replace(
             project,
             name=name,
@@ -130,14 +146,14 @@ class UpdateProject:
             parent_child_chunking=project.parent_child_chunking
             if parent_child_chunking is None
             else parent_child_chunking,
-            embedding_backend=project.embedding_backend
-            if embedding_backend is None
-            else embedding_backend,
+            embedding_backend=next_embedding_backend,
             embedding_model=project.embedding_model if embedding_model is None else embedding_model,
             embedding_api_key_encrypted=encrypted_embedding_api_key,
-            llm_backend=project.llm_backend if llm_backend is None else llm_backend,
+            embedding_api_key_credential_id=next_embedding_api_key_credential_id,
+            llm_backend=next_llm_backend,
             llm_model=project.llm_model if llm_model is None else llm_model,
             llm_api_key_encrypted=encrypted_llm_api_key,
+            llm_api_key_credential_id=next_llm_api_key_credential_id,
         )
         await self._project_repository.save(updated_project)
         return ProjectDTO.from_entity(updated_project)
@@ -225,3 +241,18 @@ class UpdateProject:
                 f"{config_type}_api_key_credential_id is not registered for this user and backend"
             )
         return self._provider_api_key_crypto_service.decrypt(matching.encrypted_api_key)
+
+    def _resolve_next_credential_id(
+        self,
+        current_value: UUID | None,
+        provided_credential_id: UUID | None,
+        provided_api_key: str | None,
+        backend: str | None,
+    ) -> UUID | None:
+        if backend not in {"openai", "gemini", "anthropic"}:
+            return None
+        if provided_credential_id is not None:
+            return provided_credential_id
+        if provided_api_key is None:
+            return current_value
+        return None

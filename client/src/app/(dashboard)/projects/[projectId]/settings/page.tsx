@@ -99,8 +99,9 @@ export default function ProjectSettingsPage() {
   const effectiveEmbeddingModel = embeddingModel ?? (project.embedding_model ?? "");
   const effectiveLlmBackend = llmBackend ?? (project.llm_backend ?? "");
   const effectiveLlmModel = llmModel ?? (project.llm_model ?? "");
-  const effectiveEmbeddingCredentialId = embeddingCredentialId ?? "";
-  const effectiveLlmCredentialId = llmCredentialId ?? "";
+  const effectiveEmbeddingCredentialId =
+    embeddingCredentialId ?? (project.embedding_api_key_credential_id ?? "");
+  const effectiveLlmCredentialId = llmCredentialId ?? (project.llm_api_key_credential_id ?? "");
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
