@@ -44,9 +44,7 @@ class TestLangdetectLanguageDetector:
         # Then
         assert result == "fr"
 
-    async def test_detect_language_detects_english(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_detect_language_detects_english(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Given
         detector = LangdetectLanguageDetector(minimum_chars=20)
         text = "This is an English document with enough words to detect the language."

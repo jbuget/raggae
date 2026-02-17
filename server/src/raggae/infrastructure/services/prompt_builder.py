@@ -4,7 +4,13 @@ def build_rag_prompt(
     project_system_prompt: str | None = None,
     conversation_history: list[str] | None = None,
 ) -> str:
-    context = "\n\n".join(context_chunks) if context_chunks else "No context available."
+    if context_chunks:
+        numbered = [
+            f"--- Document excerpt {i + 1} ---\n{chunk}" for i, chunk in enumerate(context_chunks)
+        ]
+        context = "\n\n".join(numbered)
+    else:
+        context = "No context available."
     history = (
         "\n".join(conversation_history)
         if conversation_history
