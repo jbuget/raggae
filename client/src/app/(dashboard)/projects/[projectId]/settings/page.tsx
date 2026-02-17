@@ -63,7 +63,7 @@ export default function ProjectSettingsPage() {
         <h2 className="text-lg font-semibold text-destructive">Danger Zone</h2>
         <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
           <DialogTrigger asChild>
-            <Button variant="destructive">Delete Project</Button>
+            <Button variant="destructive" className="cursor-pointer">Delete Project</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -76,12 +76,14 @@ export default function ProjectSettingsPage() {
             <DialogFooter>
               <Button
                 variant="outline"
+                className="cursor-pointer"
                 onClick={() => setDeleteOpen(false)}
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
+                className="cursor-pointer"
                 disabled={deleteProject.isPending}
                 onClick={() => {
                   deleteProject.mutate(project.id, {

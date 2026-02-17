@@ -10,6 +10,7 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="sm"
+      className="cursor-pointer"
       onClick={toggleTheme}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
     >

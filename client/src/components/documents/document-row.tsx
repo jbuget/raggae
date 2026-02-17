@@ -48,6 +48,7 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
         <Button
           variant="ghost"
           size="sm"
+          className="cursor-pointer"
           disabled={isReindexing}
           onClick={() => onReindex(document.id)}
         >
@@ -56,7 +57,7 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-destructive">
+          <Button variant="ghost" size="sm" className="cursor-pointer text-destructive">
             Delete
           </Button>
         </DialogTrigger>
@@ -68,11 +69,12 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+            <Button variant="outline" className="cursor-pointer" onClick={() => setDeleteOpen(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
+              className="cursor-pointer"
               disabled={isDeleting}
               onClick={() => {
                 onDelete(document.id);

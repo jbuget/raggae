@@ -75,7 +75,7 @@ export function ProjectForm({
               rows={5}
             />
           </div>
-          <Button type="submit" disabled={isDisabled}>
+          <Button type="submit" className="cursor-pointer" disabled={isDisabled}>
             {isLoading ? "Saving..." : submitLabel}
           </Button>
         </form>

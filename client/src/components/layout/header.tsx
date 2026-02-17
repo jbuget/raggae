@@ -36,7 +36,7 @@ export function Header() {
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="cursor-pointer">
               {user?.email ?? "Account"}
             </Button>
           </DropdownMenuTrigger>

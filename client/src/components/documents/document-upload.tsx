@@ -77,6 +77,7 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
           <Button
             type="button"
             variant="outline"
+            className="cursor-pointer"
             onClick={() => inputRef.current?.click()}
           >
             Select Files
@@ -98,7 +99,7 @@ export function DocumentUpload({ onUpload, isUploading }: DocumentUploadProps) {
                 )}
               </p>
             </div>
-            <Button onClick={handleUpload} disabled={isUploading}>
+            <Button className="cursor-pointer" onClick={handleUpload} disabled={isUploading}>
               {isUploading ? "Uploading..." : "Upload"}
             </Button>
           </div>
