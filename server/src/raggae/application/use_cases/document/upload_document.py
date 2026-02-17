@@ -9,6 +9,9 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
+from raggae.application.interfaces.services.project_embedding_service_resolver import (
+    ProjectEmbeddingServiceResolver,
+)
 from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project
@@ -70,6 +73,7 @@ class UploadDocument:
         processing_mode: str = "off",
         document_chunk_repository: DocumentChunkRepository | None = None,
         document_indexing_service: DocumentIndexingService | None = None,
+        project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         max_documents_per_project: int | None = None,
     ) -> None:
         self._document_repository = document_repository
@@ -81,6 +85,7 @@ class UploadDocument:
             raise ValueError(f"Unsupported processing mode: {self._processing_mode}")
         self._document_chunk_repository = document_chunk_repository
         self._document_indexing_service = document_indexing_service
+        self._project_embedding_service_resolver = project_embedding_service_resolver
         self._max_documents_per_project = max_documents_per_project
 
     async def execute(
@@ -247,10 +252,16 @@ class UploadDocument:
             if self._processing_mode == "sync" and self._document_indexing_service is not None:
                 document = document.transition_to(DocumentStatus.PROCESSING)
                 await self._document_repository.save(document)
+                embedding_service = (
+                    self._project_embedding_service_resolver.resolve(project)
+                    if self._project_embedding_service_resolver is not None
+                    else None
+                )
                 document = await self._document_indexing_service.run_pipeline(
                     document=document,
                     project=project,
                     file_content=file_content,
+                    embedding_service=embedding_service,
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 await self._document_repository.save(document)

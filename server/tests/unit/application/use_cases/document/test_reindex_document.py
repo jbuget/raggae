@@ -1,6 +1,6 @@
 from dataclasses import replace
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -122,6 +122,49 @@ class TestReindexDocument:
         assert result.id == document_id
         assert result.processing_strategy == ChunkingStrategy.PARAGRAPH
         assert result.status == DocumentStatus.INDEXED
+
+    async def test_reindex_document_uses_project_embedding_service_resolver(
+        self,
+        user_id,
+        project_id,
+        document_id,
+        project,
+        document,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        mock_project_repository.find_by_id.return_value = project
+        mock_document_repository.find_by_id.return_value = document
+        mock_document_indexing_service.run_pipeline.return_value = replace(
+            document,
+            status=DocumentStatus.PROCESSING,
+            processing_strategy=ChunkingStrategy.PARAGRAPH,
+        )
+        resolver = Mock()
+        embedding_service = AsyncMock()
+        resolver.resolve.return_value = embedding_service
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+            project_embedding_service_resolver=resolver,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            document_id=document_id,
+            user_id=user_id,
+        )
+
+        # Then
+        resolver.resolve.assert_called_once_with(project)
+        kwargs = mock_document_indexing_service.run_pipeline.await_args.kwargs
+        assert kwargs["embedding_service"] is embedding_service
 
     async def test_reindex_document_project_not_found_raises_error(
         self,

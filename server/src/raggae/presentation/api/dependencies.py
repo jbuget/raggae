@@ -474,6 +474,7 @@ def get_reindex_project_use_case() -> ReindexProject:
         document_repository=_document_repository,
         file_storage_service=_file_storage_service,
         document_indexing_service=_document_indexing_service,
+        project_embedding_service_resolver=_project_embedding_service_resolver,
     )
 
 
@@ -486,6 +487,7 @@ def get_upload_document_use_case() -> UploadDocument:
         processing_mode=settings.processing_mode,
         document_chunk_repository=_document_chunk_repository,
         document_indexing_service=_document_indexing_service,
+        project_embedding_service_resolver=_project_embedding_service_resolver,
         max_documents_per_project=settings.max_documents_per_project,
     )
 
@@ -496,6 +498,7 @@ def get_reindex_document_use_case() -> ReindexDocument:
         project_repository=_project_repository,
         file_storage_service=_file_storage_service,
         document_indexing_service=_document_indexing_service,
+        project_embedding_service_resolver=_project_embedding_service_resolver,
     )
 
 

@@ -82,7 +82,9 @@ class DocumentIndexingService:
         document: Document,
         project: Project,
         file_content: bytes,
+        embedding_service: EmbeddingService | None = None,
     ) -> Document:
+        effective_embedding_service = embedding_service or self._embedding_service
         extracted_text = await self._document_text_extractor.extract_text(
             file_name=document.file_name,
             content=file_content,
@@ -132,6 +134,7 @@ class DocumentIndexingService:
                     document=document,
                     strategy=strategy,
                     llamaindex_splitter=llamaindex_splitter,
+                    embedding_service=effective_embedding_service,
                 )
             else:
                 document_chunks = await self._build_standard_chunks(
@@ -139,6 +142,7 @@ class DocumentIndexingService:
                     document=document,
                     strategy=strategy,
                     llamaindex_splitter=llamaindex_splitter,
+                    embedding_service=effective_embedding_service,
                 )
 
             if document_chunks:
@@ -152,6 +156,7 @@ class DocumentIndexingService:
         document: Document,
         strategy: ChunkingStrategy,
         llamaindex_splitter: str | None,
+        embedding_service: EmbeddingService,
     ) -> list[DocumentChunk]:
         chunk_payloads = [self._build_chunk_payload(chunk_text) for chunk_text in chunks]
         indexed_payloads = [
@@ -161,7 +166,7 @@ class DocumentIndexingService:
             return []
 
         chunk_contents = [str(payload["content"]) for payload in indexed_payloads]
-        embeddings = await self._embedding_service.embed_texts(chunk_contents)
+        embeddings = await embedding_service.embed_texts(chunk_contents)
         return [
             DocumentChunk(
                 id=uuid4(),
@@ -185,6 +190,7 @@ class DocumentIndexingService:
         document: Document,
         strategy: ChunkingStrategy,
         llamaindex_splitter: str | None,
+        embedding_service: EmbeddingService,
     ) -> list[DocumentChunk]:
         assert self._parent_child_chunking_service is not None
         cleaned_chunks = [
@@ -209,7 +215,7 @@ class DocumentIndexingService:
             end = len(all_child_texts)
             parent_child_map.append((parent_idx, start, end))
 
-        embeddings = await self._embedding_service.embed_texts(all_child_texts)
+        embeddings = await embedding_service.embed_texts(all_child_texts)
         embedding_dim = len(embeddings[0]) if embeddings else 0
         zero_embedding = [0.0] * embedding_dim
 

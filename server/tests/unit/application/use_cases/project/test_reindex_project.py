@@ -1,6 +1,6 @@
 from dataclasses import replace
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -172,3 +172,34 @@ class TestReindexProject:
 
         assert result.indexed_documents == 0
         assert result.failed_documents == 1
+
+    async def test_reindex_project_uses_project_embedding_service_resolver(
+        self, project_id, user_id, project, document
+    ) -> None:
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = project
+        document_repository = AsyncMock()
+        document_repository.find_by_project_id.return_value = [document]
+        file_storage_service = AsyncMock()
+        file_storage_service.download_file.return_value = (b"hello", "text/plain")
+        indexing_service = AsyncMock()
+        indexing_service.run_pipeline.return_value = replace(
+            document, status=DocumentStatus.PROCESSING
+        )
+        resolver = Mock()
+        embedding_service = AsyncMock()
+        resolver.resolve.return_value = embedding_service
+
+        use_case = ReindexProject(
+            project_repository=project_repository,
+            document_repository=document_repository,
+            file_storage_service=file_storage_service,
+            document_indexing_service=indexing_service,
+            project_embedding_service_resolver=resolver,
+        )
+
+        await use_case.execute(project_id=project_id, user_id=user_id)
+
+        resolver.resolve.assert_called_once()
+        kwargs = indexing_service.run_pipeline.await_args.kwargs
+        assert kwargs["embedding_service"] is embedding_service
