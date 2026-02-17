@@ -31,6 +31,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_message_repository i
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
 )
+from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_repository import (
+    SQLAlchemyProviderCredentialRepository,
+)
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
 )
@@ -47,5 +50,6 @@ __all__ = [
     "SQLAlchemyDocumentRepository",
     "SQLAlchemyMessageRepository",
     "SQLAlchemyProjectRepository",
+    "SQLAlchemyProviderCredentialRepository",
     "SQLAlchemyUserRepository",
 ]

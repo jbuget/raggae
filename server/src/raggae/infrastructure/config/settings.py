@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     openai_api_key: str = ""
     gemini_api_key: str = ""
+    anthropic_api_key: str = ""
+    credentials_encryption_key: str = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
     allowed_origins: str = "http://localhost:3000,http://localhost:8000"
     max_upload_size: int = 10485760
     max_documents_per_project: int = 100
