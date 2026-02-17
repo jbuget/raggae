@@ -206,6 +206,7 @@ def _build_embedding_service() -> EmbeddingService:
         )
     return InMemoryEmbeddingService(dimension=settings.embedding_dimension)
 
+
 if settings.persistence_backend == "postgres":
     _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
     _project_repository: ProjectRepository = SQLAlchemyProjectRepository(

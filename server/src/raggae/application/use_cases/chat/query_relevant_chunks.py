@@ -145,7 +145,6 @@ class QueryRelevantChunks:
         merged.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
         return merged
 
-
     async def _resolve_parent_context(
         self, chunks: list[RetrievedChunkDTO]
     ) -> list[RetrievedChunkDTO]:

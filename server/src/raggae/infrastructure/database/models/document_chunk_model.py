@@ -28,9 +28,7 @@ class DocumentChunkModel(Base):
     )
     metadata_json: Mapped[dict[str, object] | None] = mapped_column(JSONB(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    chunk_level: Mapped[str] = mapped_column(
-        String(16), nullable=False, server_default="standard"
-    )
+    chunk_level: Mapped[str] = mapped_column(String(16), nullable=False, server_default="standard")
     parent_chunk_id: Mapped[UUID | None] = mapped_column(
         PGUUID(as_uuid=True),
         ForeignKey("document_chunks.id", ondelete="CASCADE"),

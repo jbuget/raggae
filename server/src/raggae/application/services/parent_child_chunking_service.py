@@ -24,7 +24,10 @@ class ParentChildChunkingService:
             return []
 
         parents = self._group_into_parents(non_empty, parent_size)
-        return [(parent, self._split_into_children(parent, child_size, child_overlap)) for parent in parents]
+        return [
+            (parent, self._split_into_children(parent, child_size, child_overlap))
+            for parent in parents
+        ]
 
     def _group_into_parents(self, chunks: list[str], parent_size: int) -> list[str]:
         parents: list[str] = []
@@ -47,9 +50,7 @@ class ParentChildChunkingService:
 
         return parents
 
-    def _split_into_children(
-        self, text: str, child_size: int, child_overlap: int
-    ) -> list[str]:
+    def _split_into_children(self, text: str, child_size: int, child_overlap: int) -> list[str]:
         if len(text) <= child_size:
             return [text]
 
