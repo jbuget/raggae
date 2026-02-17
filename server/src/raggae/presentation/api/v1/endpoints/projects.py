@@ -48,6 +48,8 @@ async def create_project(
         name=data.name,
         description=data.description,
         system_prompt=data.system_prompt,
+        chunking_strategy=data.chunking_strategy,
+        parent_child_chunking=data.parent_child_chunking,
     )
     return ProjectResponse(
         id=project_dto.id,

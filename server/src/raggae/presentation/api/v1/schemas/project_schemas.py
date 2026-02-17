@@ -10,6 +10,8 @@ class CreateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = ""
     system_prompt: str = ""
+    chunking_strategy: ChunkingStrategy | None = None
+    parent_child_chunking: bool | None = None
 
 
 class UpdateProjectRequest(BaseModel):

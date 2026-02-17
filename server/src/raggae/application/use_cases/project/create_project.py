@@ -6,6 +6,7 @@ from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
 )
 from raggae.domain.entities.project import Project
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class CreateProject:
@@ -20,6 +21,8 @@ class CreateProject:
         name: str,
         description: str,
         system_prompt: str,
+        chunking_strategy: ChunkingStrategy | None = None,
+        parent_child_chunking: bool | None = None,
     ) -> ProjectDTO:
         project = Project(
             id=uuid4(),
@@ -29,6 +32,8 @@ class CreateProject:
             system_prompt=system_prompt,
             is_published=False,
             created_at=datetime.now(UTC),
+            chunking_strategy=chunking_strategy or ChunkingStrategy.AUTO,
+            parent_child_chunking=parent_child_chunking or False,
         )
 
         await self._project_repository.save(project)

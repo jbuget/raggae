@@ -67,6 +67,31 @@ class TestProjectEndpoints:
         assert data["parent_child_chunking"] is False
         assert "id" in data
 
+    async def test_create_project_with_chunking_settings_returns_201(
+        self, client: AsyncClient
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "My Project",
+                "description": "A test project",
+                "system_prompt": "You are a helpful assistant",
+                "chunking_strategy": "semantic",
+                "parent_child_chunking": True,
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 201
+        data = response.json()
+        assert data["chunking_strategy"] == "semantic"
+        assert data["parent_child_chunking"] is True
+
     async def test_get_project_returns_200(self, client: AsyncClient) -> None:
         # Given
         headers = await self._auth_headers(client)

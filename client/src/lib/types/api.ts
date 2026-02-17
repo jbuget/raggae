@@ -24,17 +24,26 @@ export interface TokenResponse {
 }
 
 // Projects
+export type ChunkingStrategy =
+  | "auto"
+  | "fixed_window"
+  | "paragraph"
+  | "heading_section"
+  | "semantic";
+
 export interface CreateProjectRequest {
   name: string;
   description?: string;
   system_prompt?: string;
+  chunking_strategy?: ChunkingStrategy;
+  parent_child_chunking?: boolean;
 }
 
 export interface UpdateProjectRequest {
   name: string;
   description?: string;
   system_prompt?: string;
-  chunking_strategy?: "auto" | "fixed_window" | "paragraph" | "heading_section" | "semantic";
+  chunking_strategy?: ChunkingStrategy;
   parent_child_chunking?: boolean;
 }
 
@@ -46,7 +55,7 @@ export interface ProjectResponse {
   system_prompt: string;
   is_published: boolean;
   created_at: string;
-  chunking_strategy: "auto" | "fixed_window" | "paragraph" | "heading_section" | "semantic";
+  chunking_strategy: ChunkingStrategy;
   parent_child_chunking: boolean;
   reindex_status: string;
   reindex_progress: number;
