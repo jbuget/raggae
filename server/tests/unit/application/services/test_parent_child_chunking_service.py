@@ -85,7 +85,7 @@ class TestParentChildChunkingService:
         # When
         result = service.split_into_parent_child(chunks)
 
-        # Then — defaults: parent_size=2000
+        # Then — defaults: parent_size=10000
         assert len(result) == 1
 
     def test_whitespace_only_chunks_are_skipped(self) -> None:

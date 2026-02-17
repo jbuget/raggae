@@ -8,7 +8,7 @@ class ParentChildChunkingService:
     def split_into_parent_child(
         self,
         chunks: list[str],
-        parent_size: int = 2000,
+        parent_size: int = 10000,
     ) -> list[tuple[str, list[str]]]:
         """Group chunks into parents, keeping original chunks as children.
 
