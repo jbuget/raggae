@@ -13,6 +13,7 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.exceptions.provider_credential_exceptions import (
     MultipleActiveProviderCredentialsError,
+    ProviderCredentialNotFoundError,
 )
 from raggae.domain.exceptions.user_exceptions import (
     InvalidCredentialsError,
@@ -33,6 +34,7 @@ __all__ = [
     "EmbeddingGenerationError",
     "LLMGenerationError",
     "MultipleActiveProviderCredentialsError",
+    "ProviderCredentialNotFoundError",
     "InvalidCredentialsError",
     "InvalidDocumentTypeError",
     "InvalidEmailError",
