@@ -29,7 +29,12 @@ from raggae.application.interfaces.services.document_text_extractor import (
     DocumentTextExtractor,
 )
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
+from raggae.application.interfaces.services.file_metadata_extractor import (
+    FileMetadataExtractor,
+)
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
+from raggae.application.interfaces.services.keyword_extractor import KeywordExtractor
+from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.llm_service import LLMService
 from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
@@ -118,11 +123,26 @@ from raggae.infrastructure.services.in_memory_chunk_retrieval_service import (
 from raggae.infrastructure.services.in_memory_embedding_service import (
     InMemoryEmbeddingService,
 )
+from raggae.infrastructure.services.in_memory_file_metadata_extractor import (
+    InMemoryFileMetadataExtractor,
+)
 from raggae.infrastructure.services.in_memory_file_storage_service import (
     InMemoryFileStorageService,
 )
+from raggae.infrastructure.services.in_memory_keyword_extractor import (
+    InMemoryKeywordExtractor,
+)
+from raggae.infrastructure.services.in_memory_language_detector import (
+    InMemoryLanguageDetector,
+)
 from raggae.infrastructure.services.in_memory_llm_service import InMemoryLLMService
 from raggae.infrastructure.services.jwt_token_service import JwtTokenService
+from raggae.infrastructure.services.keybert_keyword_extractor import (
+    KeybertKeywordExtractor,
+)
+from raggae.infrastructure.services.langdetect_language_detector import (
+    LangdetectLanguageDetector,
+)
 from raggae.infrastructure.services.llamaindex_text_chunker_service import (
     LlamaIndexTextChunkerService,
 )
@@ -140,6 +160,9 @@ from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbedd
 from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
+)
+from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
+    PdfDocxFileMetadataExtractor,
 )
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
@@ -226,6 +249,13 @@ else:
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
+_file_metadata_extractor: FileMetadataExtractor = PdfDocxFileMetadataExtractor()
+_language_detector: LanguageDetector = LangdetectLanguageDetector()
+_keyword_extractor: KeywordExtractor = KeybertKeywordExtractor()
+if settings.persistence_backend != "postgres":
+    _file_metadata_extractor = InMemoryFileMetadataExtractor()
+    _language_detector = InMemoryLanguageDetector(language="en")
+    _keyword_extractor = InMemoryKeywordExtractor()
 _chunking_strategy_selector = DeterministicChunkingStrategySelector()
 if settings.text_chunker_backend == "llamaindex":
     _text_chunker_service: TextChunkerService = LlamaIndexTextChunkerService(
@@ -256,6 +286,9 @@ _document_indexing_service = DocumentIndexingService(
     document_structure_analyzer=_document_structure_analyzer,
     text_chunker_service=_text_chunker_service,
     embedding_service=_embedding_service,
+    language_detector=_language_detector,
+    keyword_extractor=_keyword_extractor,
+    file_metadata_extractor=_file_metadata_extractor,
     chunking_strategy_selector=_chunking_strategy_selector,
     chunker_backend=settings.text_chunker_backend,
 )

@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 
 from raggae.application.dto.document_structure_analysis_dto import DocumentStructureAnalysisDTO
+from raggae.application.interfaces.services.file_metadata_extractor import FileMetadata
 from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.domain.entities.document import Document
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
@@ -48,6 +49,28 @@ class TestDocumentIndexingService:
         embedding = AsyncMock()
         embedding.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
         return embedding
+
+    @pytest.fixture
+    def mock_language_detector(self) -> AsyncMock:
+        detector = AsyncMock()
+        detector.detect_language.return_value = "fr"
+        return detector
+
+    @pytest.fixture
+    def mock_keyword_extractor(self) -> AsyncMock:
+        extractor = AsyncMock()
+        extractor.extract_keywords.return_value = ["workflow", "borne"]
+        return extractor
+
+    @pytest.fixture
+    def mock_file_metadata_extractor(self) -> AsyncMock:
+        extractor = AsyncMock()
+        extractor.extract_metadata.return_value = FileMetadata(
+            title="Titre PDF",
+            authors=["Alice", "Bob"],
+            document_date=datetime(2026, 1, 27, tzinfo=UTC).date(),
+        )
+        return extractor
 
     @pytest.fixture
     def document(self) -> Document:
@@ -258,3 +281,86 @@ class TestDocumentIndexingService:
         assert saved_chunks[1].metadata_json["pages"] == [1, 2]
         assert saved_chunks[1].metadata_json["page_start"] == 1
         assert saved_chunks[1].metadata_json["page_end"] == 2
+
+    async def test_run_pipeline_enriches_document_metadata(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_language_detector: AsyncMock,
+        mock_keyword_extractor: AsyncMock,
+        mock_file_metadata_extractor: AsyncMock,
+        document: Document,
+    ) -> None:
+        # Given
+        service = DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+            language_detector=mock_language_detector,
+            keyword_extractor=mock_keyword_extractor,
+            file_metadata_extractor=mock_file_metadata_extractor,
+        )
+
+        # When
+        result = await service.run_pipeline(document, b"%PDF-1.7")
+
+        # Then
+        assert result.language == "fr"
+        assert result.keywords == ["workflow", "borne"]
+        assert result.title == "Titre PDF"
+        assert result.authors == ["Alice", "Bob"]
+        assert result.document_date is not None
+        mock_file_metadata_extractor.extract_metadata.assert_called_once()
+        mock_language_detector.detect_language.assert_called_once_with(
+            "hello\x00 world\r\n\r\nfrom raggae   "
+        )
+        mock_keyword_extractor.extract_keywords.assert_called_once_with(
+            "hello world\n\nfrom raggae"
+        )
+
+    async def test_run_pipeline_metadata_extractor_failure_does_not_block_pipeline(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_language_detector: AsyncMock,
+        mock_keyword_extractor: AsyncMock,
+        mock_file_metadata_extractor: AsyncMock,
+        document: Document,
+    ) -> None:
+        # Given
+        mock_language_detector.detect_language.side_effect = RuntimeError("boom")
+        mock_keyword_extractor.extract_keywords.side_effect = RuntimeError("boom")
+        mock_file_metadata_extractor.extract_metadata.side_effect = RuntimeError("boom")
+        service = DocumentIndexingService(
+            document_chunk_repository=mock_document_chunk_repository,
+            document_text_extractor=mock_document_text_extractor,
+            text_sanitizer_service=mock_text_sanitizer_service,
+            document_structure_analyzer=mock_document_structure_analyzer,
+            text_chunker_service=mock_text_chunker_service,
+            embedding_service=mock_embedding_service,
+            language_detector=mock_language_detector,
+            keyword_extractor=mock_keyword_extractor,
+            file_metadata_extractor=mock_file_metadata_extractor,
+        )
+
+        # When
+        result = await service.run_pipeline(document, b"%PDF-1.7")
+
+        # Then
+        assert result.language is None
+        assert result.keywords is None
+        assert result.title is None
+        assert result.authors is None
+        assert result.document_date is None
+        mock_document_chunk_repository.save_many.assert_called_once()

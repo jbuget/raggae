@@ -1,6 +1,7 @@
+import logging
+import re
 from dataclasses import replace
 from datetime import UTC, datetime
-import re
 from uuid import uuid4
 
 from raggae.application.interfaces.repositories.document_chunk_repository import (
@@ -16,6 +17,11 @@ from raggae.application.interfaces.services.document_text_extractor import (
     DocumentTextExtractor,
 )
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
+from raggae.application.interfaces.services.file_metadata_extractor import (
+    FileMetadataExtractor,
+)
+from raggae.application.interfaces.services.keyword_extractor import KeywordExtractor
+from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
@@ -28,6 +34,7 @@ from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
+logger = logging.getLogger(__name__)
 
 
 class DocumentIndexingService:
@@ -41,6 +48,9 @@ class DocumentIndexingService:
         document_structure_analyzer: DocumentStructureAnalyzer,
         text_chunker_service: TextChunkerService,
         embedding_service: EmbeddingService,
+        language_detector: LanguageDetector | None = None,
+        keyword_extractor: KeywordExtractor | None = None,
+        file_metadata_extractor: FileMetadataExtractor | None = None,
         chunking_strategy_selector: ChunkingStrategySelector | None = None,
         chunker_backend: str = "native",
     ) -> None:
@@ -50,6 +60,9 @@ class DocumentIndexingService:
         self._document_structure_analyzer = document_structure_analyzer
         self._text_chunker_service = text_chunker_service
         self._embedding_service = embedding_service
+        self._language_detector = language_detector
+        self._keyword_extractor = keyword_extractor
+        self._file_metadata_extractor = file_metadata_extractor
         self._chunking_strategy_selector: ChunkingStrategySelector
         if chunking_strategy_selector is None:
             self._chunking_strategy_selector = DeterministicChunkingStrategySelector()
@@ -63,7 +76,17 @@ class DocumentIndexingService:
             content=file_content,
             content_type=document.content_type,
         )
+
+        document = await self._enrich_document_metadata(
+            document=document,
+            extracted_text=extracted_text,
+            file_content=file_content,
+        )
         sanitized_text = await self._text_sanitizer_service.sanitize_text(extracted_text)
+        document = await self._enrich_document_keywords(
+            document=document,
+            sanitized_text=sanitized_text,
+        )
 
         if self._chunker_backend == "llamaindex":
             strategy = ChunkingStrategy.FIXED_WINDOW
@@ -143,3 +166,46 @@ class DocumentIndexingService:
             payload["page_start"] = pages[0]
             payload["page_end"] = pages[-1]
         return payload
+
+    async def _enrich_document_metadata(
+        self,
+        document: Document,
+        extracted_text: str,
+        file_content: bytes,
+    ) -> Document:
+        updated = document
+
+        if self._file_metadata_extractor is not None:
+            try:
+                file_metadata = await self._file_metadata_extractor.extract_metadata(
+                    file_name=document.file_name,
+                    content=file_content,
+                    content_type=document.content_type,
+                )
+                updated = replace(
+                    updated,
+                    title=file_metadata.title,
+                    authors=file_metadata.authors,
+                    document_date=file_metadata.document_date,
+                )
+            except Exception:
+                logger.warning("file_metadata_extraction_failed", exc_info=True)
+
+        if self._language_detector is not None:
+            try:
+                language = await self._language_detector.detect_language(extracted_text)
+                updated = replace(updated, language=language)
+            except Exception:
+                logger.warning("language_detection_failed", exc_info=True)
+
+        return updated
+
+    async def _enrich_document_keywords(self, document: Document, sanitized_text: str) -> Document:
+        if self._keyword_extractor is None:
+            return document
+        try:
+            keywords = await self._keyword_extractor.extract_keywords(sanitized_text)
+            return replace(document, keywords=keywords or None)
+        except Exception:
+            logger.warning("keyword_extraction_failed", exc_info=True)
+            return document
