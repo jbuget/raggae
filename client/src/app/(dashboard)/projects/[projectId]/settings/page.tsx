@@ -158,6 +158,10 @@ export default function ProjectSettingsPage() {
     effectiveLlmBackend === "anthropic"
       ? effectiveLlmBackend
       : null;
+  const embeddingCredentialOptions = embeddingProviderForHints
+    ? credentialsByProvider[embeddingProviderForHints]
+    : [];
+  const llmCredentialOptions = llmProviderForHints ? credentialsByProvider[llmProviderForHints] : [];
 
   function handleSave() {
     const parentChildChanged =
@@ -376,33 +380,36 @@ export default function ProjectSettingsPage() {
                 Existing key: {project.embedding_api_key_masked}
               </p>
             ) : null}
-            {embeddingProviderForHints ? (
-              <select
-                id="embeddingCredentialId"
-                value={effectiveEmbeddingCredentialId}
-                onChange={(e) => {
-                  setEmbeddingCredentialId(e.target.value);
-                }}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="">No selection</option>
-                {credentialsByProvider[embeddingProviderForHints].map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.masked_key}
-                  </option>
-                ))}
-              </select>
-            ) : null}
+            <select
+              id="embeddingCredentialId"
+              value={effectiveEmbeddingCredentialId}
+              onChange={(e) => {
+                setEmbeddingCredentialId(e.target.value);
+              }}
+              disabled={!embeddingProviderForHints}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+            >
+              <option value="">
+                {embeddingProviderForHints ? "No selection" : "Select OpenAI or Gemini backend first"}
+              </option>
+              {embeddingCredentialOptions.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.masked_key}
+                </option>
+              ))}
+            </select>
             {embeddingProviderForHints ? (
               <p className="text-xs text-muted-foreground">
                 Your saved keys for {embeddingProviderForHints}:{" "}
-                {credentialsByProvider[embeddingProviderForHints].length > 0
-                  ? credentialsByProvider[embeddingProviderForHints]
-                    .map((item) => item.masked_key)
-                    .join(", ")
+                {embeddingCredentialOptions.length > 0
+                  ? embeddingCredentialOptions.map((item) => item.masked_key).join(", ")
                   : "none"}
               </p>
-            ) : null}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Credentials are available only for OpenAI/Gemini user keys.
+              </p>
+            )}
           </div>
         </div>
 
@@ -445,33 +452,38 @@ export default function ProjectSettingsPage() {
                 Existing key: {project.llm_api_key_masked}
               </p>
             ) : null}
-            {llmProviderForHints ? (
-              <select
-                id="llmCredentialId"
-                value={effectiveLlmCredentialId}
-                onChange={(e) => {
-                  setLlmCredentialId(e.target.value);
-                }}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="">No selection</option>
-                {credentialsByProvider[llmProviderForHints].map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.masked_key}
-                  </option>
-                ))}
-              </select>
-            ) : null}
+            <select
+              id="llmCredentialId"
+              value={effectiveLlmCredentialId}
+              onChange={(e) => {
+                setLlmCredentialId(e.target.value);
+              }}
+              disabled={!llmProviderForHints}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+            >
+              <option value="">
+                {llmProviderForHints
+                  ? "No selection"
+                  : "Select OpenAI, Gemini or Anthropic backend first"}
+              </option>
+              {llmCredentialOptions.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.masked_key}
+                </option>
+              ))}
+            </select>
             {llmProviderForHints ? (
               <p className="text-xs text-muted-foreground">
                 Your saved keys for {llmProviderForHints}:{" "}
-                {credentialsByProvider[llmProviderForHints].length > 0
-                  ? credentialsByProvider[llmProviderForHints]
-                    .map((item) => item.masked_key)
-                    .join(", ")
+                {llmCredentialOptions.length > 0
+                  ? llmCredentialOptions.map((item) => item.masked_key).join(", ")
                   : "none"}
               </p>
-            ) : null}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Credentials are available only for OpenAI/Gemini/Anthropic user keys.
+              </p>
+            )}
           </div>
         </div>
       </div>
