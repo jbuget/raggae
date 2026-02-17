@@ -40,6 +40,19 @@ class TestProjectEndpoints:
         project_id = response.json()["id"]
         return headers, project_id
 
+    async def _create_model_credential(
+        self,
+        client: AsyncClient,
+        headers: dict[str, str],
+        provider: str,
+        api_key: str,
+    ) -> None:
+        await client.post(
+            "/api/v1/model-credentials",
+            json={"provider": provider, "api_key": api_key},
+            headers=headers,
+        )
+
     async def test_create_project_returns_201(self, client: AsyncClient) -> None:
         # Given
         headers = await self._auth_headers(client)
@@ -91,6 +104,65 @@ class TestProjectEndpoints:
         data = response.json()
         assert data["chunking_strategy"] == "semantic"
         assert data["parent_child_chunking"] is True
+
+    async def test_create_project_with_non_owned_llm_api_key_returns_422(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "My Project",
+                "description": "A test project",
+                "system_prompt": "You are a helpful assistant",
+                "llm_backend": "openai",
+                "llm_model": "gpt-4o-mini",
+                "llm_api_key": "sk-not-owned-1234",
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 422
+        assert "not registered for this user" in response.json()["detail"]
+
+    async def test_create_project_with_owned_llm_api_key_returns_201(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+        await self._create_model_credential(
+            client=client,
+            headers=headers,
+            provider="openai",
+            api_key="sk-owned-1234",
+        )
+
+        # When
+        response = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "My Project",
+                "description": "A test project",
+                "system_prompt": "You are a helpful assistant",
+                "llm_backend": "openai",
+                "llm_model": "gpt-4o-mini",
+                "llm_api_key": "sk-owned-1234",
+            },
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 201
+        data = response.json()
+        assert data["llm_backend"] == "openai"
+        assert data["llm_model"] == "gpt-4o-mini"
+        assert data["llm_api_key_masked"] is not None
 
     async def test_get_project_returns_200(self, client: AsyncClient) -> None:
         # Given
