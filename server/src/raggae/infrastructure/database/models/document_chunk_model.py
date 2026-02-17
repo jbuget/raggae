@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
-from sqlalchemy import DateTime, ForeignKey, Integer, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -28,3 +28,12 @@ class DocumentChunkModel(Base):
     )
     metadata_json: Mapped[dict[str, object] | None] = mapped_column(JSONB(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    chunk_level: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="standard"
+    )
+    parent_chunk_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("document_chunks.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
+    )
