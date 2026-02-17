@@ -163,6 +163,33 @@ class TestSendMessage:
         resolved_llm_service.generate_answer.assert_awaited_once()
         assert result.answer == "resolved answer"
 
+    async def test_send_message_resolves_provider_api_key_from_project_backend(
+        self,
+        use_case: SendMessage,
+    ) -> None:
+        use_case._project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            llm_backend="gemini",
+        )
+
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="hello",
+            limit=2,
+        )
+
+        use_case._provider_api_key_resolver.resolve.assert_awaited_with(
+            user_id=ANY,
+            provider="gemini",
+        )
+
     async def test_send_message_project_not_found_bubbles_error(
         self,
         use_case: SendMessage,

@@ -29,6 +29,7 @@ from raggae.application.services.chat_security_policy import StaticChatSecurityP
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
+from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.domain.exceptions.project_exceptions import (
@@ -36,6 +37,8 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectReindexInProgressError,
 )
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
+
+_API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
 
 
 class SendMessage:
@@ -213,10 +216,14 @@ class SendMessage:
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
-        if self._provider_api_key_resolver is not None:
+        effective_llm_provider = self._resolve_effective_llm_provider(project)
+        if (
+            self._provider_api_key_resolver is not None
+            and effective_llm_provider in _API_KEY_PROVIDERS
+        ):
             await self._provider_api_key_resolver.resolve(
                 user_id=user_id,
-                provider=self._llm_provider,
+                provider=effective_llm_provider,
             )
         llm_service = (
             self._project_llm_service_resolver.resolve(project)
@@ -407,10 +414,14 @@ class SendMessage:
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
-        if self._provider_api_key_resolver is not None:
+        effective_llm_provider = self._resolve_effective_llm_provider(project)
+        if (
+            self._provider_api_key_resolver is not None
+            and effective_llm_provider in _API_KEY_PROVIDERS
+        ):
             await self._provider_api_key_resolver.resolve(
                 user_id=user_id,
-                provider=self._llm_provider,
+                provider=effective_llm_provider,
             )
         llm_service = (
             self._project_llm_service_resolver.resolve(project)
@@ -527,6 +538,11 @@ class SendMessage:
         else:
             base = self._default_chunk_limit
         return max(1, min(base, self._max_chunk_limit))
+
+    def _resolve_effective_llm_provider(self, project: Project) -> str:
+        if project.llm_backend is not None and project.llm_backend.strip() != "":
+            return project.llm_backend
+        return self._llm_provider
 
     def _select_useful_chunks(
         self,
