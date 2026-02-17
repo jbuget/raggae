@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from unittest.mock import ANY, AsyncMock
+from unittest.mock import ANY, AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -138,6 +138,30 @@ class TestSendMessage:
         assert result.retrieval_execution_time_ms == 12.3
         assert result.history_messages_used == 0
         assert result.chunks_used == 2
+
+    async def test_send_message_uses_project_llm_service_resolver(
+        self,
+        use_case: SendMessage,
+    ) -> None:
+        # Given
+        resolved_llm_service = AsyncMock()
+        resolved_llm_service.generate_answer.return_value = "resolved answer"
+        project_llm_service_resolver = Mock()
+        project_llm_service_resolver.resolve.return_value = resolved_llm_service
+        use_case._project_llm_service_resolver = project_llm_service_resolver
+
+        # When
+        result = await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="hello",
+            limit=2,
+        )
+
+        # Then
+        project_llm_service_resolver.resolve.assert_called_once()
+        resolved_llm_service.generate_answer.assert_awaited_once()
+        assert result.answer == "resolved answer"
 
     async def test_send_message_project_not_found_bubbles_error(
         self,

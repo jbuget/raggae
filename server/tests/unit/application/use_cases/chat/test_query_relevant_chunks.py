@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -103,6 +103,41 @@ class TestQueryRelevantChunks:
         assert result.chunks[0].content == "first chunk"
         assert result.strategy_used == "hybrid"
         assert result.execution_time_ms >= 0.0
+
+    async def test_query_relevant_chunks_uses_project_embedding_service_resolver(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        project = _make_project(project_id, user_id)
+        mock_project_repository.find_by_id.return_value = project
+        resolver_embedding_service = AsyncMock()
+        resolver_embedding_service.embed_texts.return_value = [[9.0, 9.0]]
+        resolver = Mock()
+        resolver.resolve.return_value = resolver_embedding_service
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_chunk_retrieval_service,
+            project_embedding_service_resolver=resolver,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            query="resolved embedding",
+            limit=2,
+        )
+
+        # Then
+        resolver.resolve.assert_called_once_with(project)
+        resolver_embedding_service.embed_texts.assert_awaited_once_with(["resolved embedding"])
+        mock_embedding_service.embed_texts.assert_not_called()
 
     async def test_query_relevant_chunks_unknown_project_raises_error(
         self,

@@ -39,6 +39,12 @@ from raggae.application.interfaces.services.file_storage_service import FileStor
 from raggae.application.interfaces.services.keyword_extractor import KeywordExtractor
 from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.interfaces.services.project_embedding_service_resolver import (
+    ProjectEmbeddingServiceResolver,
+)
+from raggae.application.interfaces.services.project_llm_service_resolver import (
+    ProjectLLMServiceResolver,
+)
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
 )
@@ -201,6 +207,12 @@ from raggae.infrastructure.services.paragraph_text_chunker_service import (
 from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
     PdfDocxFileMetadataExtractor,
 )
+from raggae.infrastructure.services.project_embedding_service_resolver import (
+    ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
+)
+from raggae.infrastructure.services.project_llm_service_resolver import (
+    ProjectLLMServiceResolver as RuntimeProjectLLMServiceResolver,
+)
 from raggae.infrastructure.services.semantic_text_chunker_service import (
     SemanticTextChunkerService,
 )
@@ -290,6 +302,16 @@ _provider_api_key_crypto_service: ProviderApiKeyCryptoService = (
     FernetProviderApiKeyCryptoService(encryption_key=settings.credentials_encryption_key)
 )
 _provider_api_key_validator: ProviderApiKeyValidator = SimpleProviderApiKeyValidator()
+_project_embedding_service_resolver: ProjectEmbeddingServiceResolver = (
+    RuntimeProjectEmbeddingServiceResolver(
+        settings=settings,
+        provider_api_key_crypto_service=_provider_api_key_crypto_service,
+    )
+)
+_project_llm_service_resolver: ProjectLLMServiceResolver = RuntimeProjectLLMServiceResolver(
+    settings=settings,
+    provider_api_key_crypto_service=_provider_api_key_crypto_service,
+)
 _provider_api_key_resolver = GetEffectiveProviderApiKey(
     provider_credential_repository=_provider_credential_repository,
     provider_api_key_crypto_service=_provider_api_key_crypto_service,
@@ -513,6 +535,7 @@ def get_query_relevant_chunks_use_case() -> QueryRelevantChunks:
     return QueryRelevantChunks(
         project_repository=_project_repository,
         embedding_service=_embedding_service,
+        project_embedding_service_resolver=_project_embedding_service_resolver,
         chunk_retrieval_service=_chunk_retrieval_service,
         min_score=settings.retrieval_min_score,
         reranker_service=_reranker_service,
@@ -531,6 +554,7 @@ def get_send_message_use_case() -> SendMessage:
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
         provider_api_key_resolver=_provider_api_key_resolver,
+        project_llm_service_resolver=_project_llm_service_resolver,
         llm_provider=settings.llm_backend,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,

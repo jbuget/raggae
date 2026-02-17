@@ -14,6 +14,9 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.chunk_retrieval_service import ChunkRetrievalService
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
+from raggae.application.interfaces.services.project_embedding_service_resolver import (
+    ProjectEmbeddingServiceResolver,
+)
 from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 
@@ -26,6 +29,7 @@ class QueryRelevantChunks:
         project_repository: ProjectRepository,
         embedding_service: EmbeddingService,
         chunk_retrieval_service: ChunkRetrievalService,
+        project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         min_score: float = 0.0,
         reranker_service: RerankerService | None = None,
         reranker_candidate_multiplier: int = 3,
@@ -35,6 +39,7 @@ class QueryRelevantChunks:
         self._project_repository = project_repository
         self._embedding_service = embedding_service
         self._chunk_retrieval_service = chunk_retrieval_service
+        self._project_embedding_service_resolver = project_embedding_service_resolver
         self._min_score = min_score
         self._reranker_service = reranker_service
         self._reranker_candidate_multiplier = reranker_candidate_multiplier
@@ -56,7 +61,12 @@ class QueryRelevantChunks:
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")
 
-        query_embedding = (await self._embedding_service.embed_texts([query]))[0]
+        embedding_service = (
+            self._project_embedding_service_resolver.resolve(project)
+            if self._project_embedding_service_resolver is not None
+            else self._embedding_service
+        )
+        query_embedding = (await embedding_service.embed_texts([query]))[0]
         strategy_used = _resolve_strategy(strategy, query)
 
         fetch_limit = (

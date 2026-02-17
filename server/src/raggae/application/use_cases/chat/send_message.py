@@ -19,6 +19,9 @@ from raggae.application.interfaces.services.conversation_title_generator import 
     ConversationTitleGenerator,
 )
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.interfaces.services.project_llm_service_resolver import (
+    ProjectLLMServiceResolver,
+)
 from raggae.application.interfaces.services.provider_api_key_resolver import (
     ProviderApiKeyResolver,
 )
@@ -47,6 +50,7 @@ class SendMessage:
         conversation_repository: ConversationRepository,
         message_repository: MessageRepository,
         provider_api_key_resolver: ProviderApiKeyResolver | None = None,
+        project_llm_service_resolver: ProjectLLMServiceResolver | None = None,
         llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
@@ -61,6 +65,7 @@ class SendMessage:
         self._conversation_repository = conversation_repository
         self._message_repository = message_repository
         self._provider_api_key_resolver = provider_api_key_resolver
+        self._project_llm_service_resolver = project_llm_service_resolver
         self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
@@ -213,8 +218,13 @@ class SendMessage:
                 user_id=user_id,
                 provider=self._llm_provider,
             )
+        llm_service = (
+            self._project_llm_service_resolver.resolve(project)
+            if self._project_llm_service_resolver is not None
+            else self._llm_service
+        )
         try:
-            answer = await self._llm_service.generate_answer(prompt)
+            answer = await llm_service.generate_answer(prompt)
             sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
             if sanitized_answer != answer:
                 answer = sanitized_answer
@@ -402,9 +412,14 @@ class SendMessage:
                 user_id=user_id,
                 provider=self._llm_provider,
             )
+        llm_service = (
+            self._project_llm_service_resolver.resolve(project)
+            if self._project_llm_service_resolver is not None
+            else self._llm_service
+        )
         accumulated_answer = ""
         try:
-            stream = self._llm_service.generate_answer_stream(prompt)
+            stream = llm_service.generate_answer_stream(prompt)
             async for token in stream:
                 accumulated_answer += token
                 yield ChatStreamToken(token=token)
