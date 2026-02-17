@@ -55,6 +55,8 @@ export interface DocumentResponse {
   file_size: number;
   created_at: string;
   processing_strategy: string | null;
+  status: "uploaded" | "processing" | "indexed" | "error";
+  error_message?: string | null;
 }
 
 export interface DocumentChunkResponse {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,11 +26,25 @@ interface DocumentRowProps {
 export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindexingId }: DocumentRowProps) {
   const isReindexing = reindexingId === document.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const statusLabel = document.status.charAt(0).toUpperCase() + document.status.slice(1);
+  const statusClassName =
+    document.status === "indexed"
+      ? "border-emerald-200 bg-emerald-100 text-emerald-800"
+      : document.status === "processing"
+        ? "border-sky-200 bg-sky-100 text-sky-800"
+        : document.status === "uploaded"
+          ? "border-amber-200 bg-amber-100 text-amber-800"
+          : "border-red-200 bg-red-100 text-red-800";
 
   return (
     <div className="flex items-center justify-between rounded-md border p-4">
       <div className="space-y-1">
-        <p className="text-sm font-medium">{document.file_name}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium">{document.file_name}</p>
+          <Badge variant="outline" className={statusClassName}>
+            {statusLabel}
+          </Badge>
+        </div>
         <div className="flex gap-3 text-xs text-muted-foreground">
           <span
             className="font-mono cursor-pointer hover:text-foreground"
@@ -41,6 +56,9 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
           <span>{document.content_type}</span>
           <span>{formatFileSize(document.file_size)}</span>
           <span>{formatDate(document.created_at)}</span>
+          {document.status === "error" && document.error_message && (
+            <span className="text-destructive">{document.error_message}</span>
+          )}
         </div>
       </div>
 
