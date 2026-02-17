@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Eye, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,26 +101,36 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
       <div className="flex gap-2">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon-sm"
           className="cursor-pointer"
           onClick={handlePreviewOpen}
+          aria-label="Preview document"
+          title="Preview"
         >
-          Preview
+          <Eye />
         </Button>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon-sm"
           className="cursor-pointer"
           disabled={isReindexing}
           onClick={() => onReindex(document.id)}
+          aria-label={isReindexing ? "Reindexing document" : "Reindex document"}
+          title={isReindexing ? "Reindexing..." : "Reindex"}
         >
-          {isReindexing ? "Reindexing..." : "Reindex"}
+          <RefreshCw className={isReindexing ? "animate-spin" : ""} />
         </Button>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="cursor-pointer text-destructive">
-            Delete
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="cursor-pointer text-destructive"
+            aria-label="Delete document"
+            title="Delete"
+          >
+            <Trash2 />
           </Button>
         </DialogTrigger>
         <DialogContent>
@@ -160,7 +171,7 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
           }
         }}
       >
-        <DialogContent className="h-[90vh] max-w-5xl overflow-hidden">
+        <DialogContent className="h-[94vh] max-h-[94vh] w-[98vw] max-w-[98vw] overflow-hidden p-4 sm:max-w-none sm:p-6">
           <DialogHeader>
             <DialogTitle>{document.file_name}</DialogTitle>
           </DialogHeader>
@@ -170,13 +181,13 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
               <p className="text-sm text-destructive">{previewError}</p>
             )}
             {!previewLoading && !previewError && previewUrl && previewType === "application/pdf" && (
-              <iframe src={previewUrl} title={document.file_name} className="h-[76vh] w-full rounded-md border" />
+              <iframe src={previewUrl} title={document.file_name} className="h-[84vh] w-full rounded-md border" />
             )}
             {!previewLoading && !previewError && previewUrl && previewType.startsWith("image/") && (
-              <img src={previewUrl} alt={document.file_name} className="mx-auto max-h-[76vh] object-contain" />
+              <img src={previewUrl} alt={document.file_name} className="mx-auto max-h-[84vh] object-contain" />
             )}
             {!previewLoading && !previewError && previewUrl && previewType.startsWith("text/") && (
-              <iframe src={previewUrl} title={document.file_name} className="h-[76vh] w-full rounded-md border bg-background" />
+              <iframe src={previewUrl} title={document.file_name} className="h-[84vh] w-full rounded-md border bg-background" />
             )}
             {!previewLoading &&
               !previewError &&
