@@ -1,6 +1,6 @@
-from io import BytesIO
 import sys
 import types
+from io import BytesIO
 
 import pytest
 from docx import Document as DocxDocument
