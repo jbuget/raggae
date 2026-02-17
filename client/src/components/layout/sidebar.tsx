@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
+import { Github, MoreHorizontal } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,15 +20,18 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { data: projects, isLoading } = useProjects();
+  const gitBranch = process.env.NEXT_PUBLIC_APP_GIT_BRANCH ?? "unknown";
+  const gitCommit = process.env.NEXT_PUBLIC_APP_GIT_COMMIT ?? "unknown";
+  const shortCommit = gitCommit === "unknown" ? gitCommit : gitCommit.slice(0, 7);
 
   return (
-    <aside className="hidden w-64 border-r bg-muted/30 md:block">
+    <aside className="hidden h-full w-64 border-r bg-muted/30 md:flex md:flex-col">
       <div className="flex h-14 items-center border-b px-6">
         <Link href="/projects" className="text-xl font-bold">
           Raggae
         </Link>
       </div>
-      <nav className="space-y-1 p-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
         {navItems.map((item) => (
           <Link
             key={item.href}
@@ -103,6 +106,20 @@ export function Sidebar() {
             ))}
         </div>
       </nav>
+      <div className="border-t p-3">
+        <a
+          href="https://github.com/jbuget/raggae"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <Github className="size-4" />
+          <span>GitHub project</span>
+        </a>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {gitBranch}@{shortCommit}
+        </p>
+      </div>
     </aside>
   );
 }
