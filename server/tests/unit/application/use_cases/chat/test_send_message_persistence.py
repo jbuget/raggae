@@ -15,6 +15,80 @@ from raggae.domain.entities.project import Project
 
 
 class TestSendMessagePersistence:
+    async def test_send_message_reliability_ignores_zero_score_context_chunks(self) -> None:
+        # Given
+        project_id = uuid4()
+        user_id = uuid4()
+        conversation = Conversation(
+            id=uuid4(),
+            project_id=project_id,
+            user_id=user_id,
+            created_at=datetime.now(UTC),
+        )
+        document_id = uuid4()
+        query_use_case = AsyncMock()
+        query_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=document_id,
+                    content="context neighbor with zero score",
+                    score=0.0,
+                    chunk_index=0,
+                ),
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=document_id,
+                    content="actual relevant chunk",
+                    score=0.8,
+                    chunk_index=1,
+                ),
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=5.0,
+        )
+        llm_service = AsyncMock()
+        llm_service.generate_answer.return_value = "assistant answer"
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "Generated title"
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = []
+        conversation_repository.create.return_value = conversation
+        message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
+
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=query_use_case,
+            llm_service=llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            message="hello",
+            limit=3,
+        )
+
+        # Then
+        second_saved = message_repository.save.call_args_list[1].args[0]
+        assert second_saved.reliability_percent == 80
+
     async def test_send_message_persists_user_and_assistant_messages(self) -> None:
         # Given
         project_id = uuid4()

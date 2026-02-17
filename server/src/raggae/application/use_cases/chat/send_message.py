@@ -451,7 +451,9 @@ class SendMessage:
     def _compute_reliability_percent(self, chunks: list[RetrievedChunkDTO]) -> int:
         if not chunks:
             return 0
-        average_score = sum(chunk.score for chunk in chunks) / len(chunks)
+        scored_chunks = [chunk for chunk in chunks if chunk.score > 0.0]
+        target_chunks = scored_chunks if scored_chunks else chunks
+        average_score = sum(chunk.score for chunk in target_chunks) / len(target_chunks)
         bounded = min(max(average_score, 0.0), 1.0)
         return int(round(bounded * 100))
 
