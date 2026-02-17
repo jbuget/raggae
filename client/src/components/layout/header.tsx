@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,9 @@ export function Header() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem disabled>
               {user?.email}
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">User settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>

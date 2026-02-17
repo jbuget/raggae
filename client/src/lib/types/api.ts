@@ -181,3 +181,20 @@ export interface StreamDoneEvent {
 }
 
 export type StreamEvent = StreamTokenEvent | StreamDoneEvent;
+
+// User model provider credentials
+export type ModelProvider = "openai" | "gemini" | "anthropic";
+
+export interface SaveModelCredentialRequest {
+  provider: ModelProvider;
+  api_key: string;
+}
+
+export interface ModelCredentialResponse {
+  id: string;
+  provider: ModelProvider;
+  masked_key: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/projects", label: "Projects", icon: "folder" },
+  { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
 export function Sidebar() {

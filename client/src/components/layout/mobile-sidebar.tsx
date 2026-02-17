@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/projects", label: "Projects" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function MobileSidebar() {
