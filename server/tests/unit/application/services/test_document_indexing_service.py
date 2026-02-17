@@ -477,7 +477,7 @@ class TestDocumentIndexingService:
         child_chunks = [c for c in saved_chunks if c.chunk_level == ChunkLevel.CHILD]
         assert len(parent_chunks) >= 1
         assert len(child_chunks) >= 1
-        assert parent_chunks[0].embedding == []
+        assert parent_chunks[0].embedding == [0.0, 0.0]
         assert child_chunks[0].parent_chunk_id == parent_chunks[0].id
         assert child_chunks[0].embedding != []
 

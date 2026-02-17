@@ -210,6 +210,8 @@ class DocumentIndexingService:
             parent_child_map.append((parent_idx, start, end))
 
         embeddings = await self._embedding_service.embed_texts(all_child_texts)
+        embedding_dim = len(embeddings[0]) if embeddings else 0
+        zero_embedding = [0.0] * embedding_dim
 
         chunk_index = 0
         for parent_idx, (parent_text, _) in enumerate(parent_children):
@@ -226,7 +228,7 @@ class DocumentIndexingService:
                 document_id=document.id,
                 chunk_index=chunk_index,
                 content=parent_text,
-                embedding=[],
+                embedding=zero_embedding,
                 created_at=now,
                 metadata_json=metadata,
                 chunk_level=ChunkLevel.PARENT,
