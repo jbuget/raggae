@@ -13,6 +13,7 @@ class TestOllamaEmbeddingService:
         return OllamaEmbeddingService(
             base_url="http://localhost:11434",
             model="nomic-embed-text",
+            expected_dimension=3,
         )
 
     async def test_embed_texts_returns_embeddings(self, service: OllamaEmbeddingService) -> None:
@@ -65,9 +66,9 @@ class TestOllamaEmbeddingService:
         mock_response.status_code = 200
         mock_response.raise_for_status = lambda: None
         mock_response.json.side_effect = [
-            {"embeddings": [[0.1, 0.2]]},
-            {"embeddings": [[0.3, 0.4]]},
-            {"embeddings": [[0.5, 0.6]]},
+            {"embeddings": [[0.1, 0.2, 0.3]]},
+            {"embeddings": [[0.3, 0.4, 0.5]]},
+            {"embeddings": [[0.5, 0.6, 0.7]]},
         ]
 
         with patch.object(service._client, "post", return_value=mock_response) as mock_post:
@@ -121,3 +122,20 @@ class TestOllamaEmbeddingService:
                 "http://localhost:11434/api/embed",
                 json={"model": "nomic-embed-text", "input": "test"},
             )
+
+    async def test_embed_texts_wrong_dimension_raises_embedding_error(self) -> None:
+        # Given
+        service = OllamaEmbeddingService(
+            base_url="http://localhost:11434",
+            model="nomic-embed-text",
+            expected_dimension=1536,
+        )
+        mock_response = AsyncMock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.raise_for_status = lambda: None
+        mock_response.json.return_value = {"embeddings": [[0.1, 0.2, 0.3]]}
+
+        with patch.object(service._client, "post", return_value=mock_response):
+            # When / Then
+            with pytest.raises(EmbeddingGenerationError, match="dimension"):
+                await service.embed_texts(["hello"])

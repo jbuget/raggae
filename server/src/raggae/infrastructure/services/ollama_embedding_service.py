@@ -15,10 +15,12 @@ class OllamaEmbeddingService:
         base_url: str,
         model: str,
         max_chars_per_text: int = _DEFAULT_MAX_CHARS,
+        expected_dimension: int | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._model = model
         self._max_chars = max_chars_per_text
+        self._expected_dimension = expected_dimension
         self._client = httpx.AsyncClient(timeout=120.0)
 
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
@@ -39,11 +41,19 @@ class OllamaEmbeddingService:
             )
             response.raise_for_status()
             payload = response.json()
-            return list(payload["embeddings"][0])
+            embedding = list(payload["embeddings"][0])
+            if self._expected_dimension is not None and len(embedding) != self._expected_dimension:
+                raise EmbeddingGenerationError(
+                    "Invalid embedding dimension: "
+                    f"expected {self._expected_dimension}, got {len(embedding)}"
+                )
+            return embedding
         except httpx.HTTPStatusError as exc:
             body = exc.response.text if exc.response is not None else ""
             raise EmbeddingGenerationError(
                 f"Ollama embed returned {exc.response.status_code}: {body}"
             ) from exc
+        except EmbeddingGenerationError:
+            raise
         except Exception as exc:
             raise EmbeddingGenerationError(f"Failed to generate embeddings: {exc}") from exc

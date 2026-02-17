@@ -202,6 +202,7 @@ if settings.embedding_backend == "openai":
     _embedding_service: EmbeddingService = OpenAIEmbeddingService(
         api_key=settings.openai_api_key,
         model=settings.embedding_model,
+        expected_dimension=settings.embedding_dimension,
     )
 elif settings.embedding_backend == "ollama":
     from raggae.infrastructure.services.ollama_embedding_service import (
@@ -211,6 +212,7 @@ elif settings.embedding_backend == "ollama":
     _embedding_service = OllamaEmbeddingService(
         base_url=settings.ollama_base_url,
         model=settings.ollama_embedding_model,
+        expected_dimension=settings.embedding_dimension,
     )
 else:
     _embedding_service = InMemoryEmbeddingService(dimension=settings.embedding_dimension)
