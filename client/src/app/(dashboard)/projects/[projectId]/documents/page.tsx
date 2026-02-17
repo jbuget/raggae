@@ -18,10 +18,19 @@ export default function DocumentsPage() {
   const uploadDocument = useUploadDocument(params.projectId);
   const reindexDocument = useReindexDocument(params.projectId);
   const deleteDocument = useDeleteDocument(params.projectId);
+  const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
+  const totalCount = documents?.length ?? 0;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Documents</h1>
+      <div>
+        <h1 className="text-2xl font-bold">Documents</h1>
+        {!isLoading && (
+          <p className="text-sm text-muted-foreground">
+            {indexedCount} indexed / {totalCount} total
+          </p>
+        )}
+      </div>
 
       <DocumentUpload
         onUpload={(files) => {
