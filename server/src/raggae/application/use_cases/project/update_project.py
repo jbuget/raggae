@@ -1,11 +1,15 @@
 from dataclasses import replace
 from uuid import UUID
 
+from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 from raggae.application.dto.project_dto import ProjectDTO
 from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
 )
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectSystemPromptTooLongError,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -25,6 +29,10 @@ class UpdateProject:
         chunking_strategy: ChunkingStrategy | None = None,
         parent_child_chunking: bool | None = None,
     ) -> ProjectDTO:
+        if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
+            raise ProjectSystemPromptTooLongError(
+                f"System prompt exceeds {MAX_PROJECT_SYSTEM_PROMPT_LENGTH} characters"
+            )
         project = await self._project_repository.find_by_id(project_id)
         if project is None or project.user_id != user_id:
             raise ProjectNotFoundError(f"Project {project_id} not found")

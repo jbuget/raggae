@@ -35,6 +35,8 @@ interface ProjectFormProps {
   submitLabel?: string;
 }
 
+const MAX_SYSTEM_PROMPT_LENGTH = 8000;
+
 export function ProjectForm({
   initialData,
   onSubmit,
@@ -60,6 +62,8 @@ export function ProjectForm({
     parentChildChunking !== initialData.parent_child_chunking;
   const isSemanticRecommended =
     parentChildChunking && chunkingStrategy !== "semantic";
+  const systemPromptLength = systemPrompt.length;
+  const nearSystemPromptLimit = systemPromptLength >= 7000;
 
   function buildFormData(): ProjectFormData {
     return {
@@ -126,14 +130,32 @@ export function ProjectForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="systemPrompt">System Prompt</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="systemPrompt">System Prompt</Label>
+                <span
+                  className={`text-xs ${
+                    nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"
+                  }`}
+                >
+                  {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
+                </span>
+              </div>
               <Textarea
                 id="systemPrompt"
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder="Instructions for the AI assistant..."
                 rows={5}
+                maxLength={MAX_SYSTEM_PROMPT_LENGTH}
               />
+              <p className="text-muted-foreground text-xs">
+                Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+              </p>
+              {nearSystemPromptLimit ? (
+                <p className="text-xs text-amber-700">
+                  Tu approches de la limite. Pense a raccourcir si possible.
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="chunkingStrategy">Chunking Strategy</Label>

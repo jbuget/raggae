@@ -8,3 +8,7 @@ class ProjectNotFoundError(Exception):
 
 class ProjectReindexInProgressError(Exception):
     """Raised when a project is already in reindexation."""
+
+
+class ProjectSystemPromptTooLongError(Exception):
+    """Raised when project system prompt exceeds maximum allowed length."""

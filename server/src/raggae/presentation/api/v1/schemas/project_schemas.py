@@ -3,13 +3,14 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class CreateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = ""
-    system_prompt: str = ""
+    system_prompt: str = Field(default="", max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
     chunking_strategy: ChunkingStrategy | None = None
     parent_child_chunking: bool | None = None
 
@@ -17,7 +18,7 @@ class CreateProjectRequest(BaseModel):
 class UpdateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1)
     description: str = ""
-    system_prompt: str = ""
+    system_prompt: str = Field(default="", max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
     chunking_strategy: ChunkingStrategy | None = None
     parent_child_chunking: bool | None = None
 

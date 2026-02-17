@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from raggae.application.use_cases.project.create_project import CreateProject
+from raggae.domain.exceptions.project_exceptions import ProjectSystemPromptTooLongError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -65,3 +66,19 @@ class TestCreateProject:
         assert result.chunking_strategy == ChunkingStrategy.SEMANTIC
         assert result.parent_child_chunking is True
         mock_project_repository.save.assert_called_once()
+
+    async def test_create_project_with_too_long_system_prompt_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        # Given
+        from uuid import uuid4
+
+        # When / Then
+        with pytest.raises(ProjectSystemPromptTooLongError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="x" * 8001,
+            )

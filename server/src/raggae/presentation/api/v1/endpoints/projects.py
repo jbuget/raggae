@@ -13,6 +13,7 @@ from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
+    ProjectSystemPromptTooLongError,
 )
 from raggae.presentation.api.dependencies import (
     get_create_project_use_case,
@@ -49,14 +50,20 @@ async def create_project(
     data: CreateProjectRequest,
     use_case: Annotated[CreateProject, Depends(get_create_project_use_case)],
 ) -> ProjectResponse:
-    project_dto = await use_case.execute(
-        user_id=user_id,
-        name=data.name,
-        description=data.description,
-        system_prompt=data.system_prompt,
-        chunking_strategy=data.chunking_strategy,
-        parent_child_chunking=data.parent_child_chunking,
-    )
+    try:
+        project_dto = await use_case.execute(
+            user_id=user_id,
+            name=data.name,
+            description=data.description,
+            system_prompt=data.system_prompt,
+            chunking_strategy=data.chunking_strategy,
+            parent_child_chunking=data.parent_child_chunking,
+        )
+    except ProjectSystemPromptTooLongError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
@@ -163,6 +170,11 @@ async def update_project(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
+        ) from None
+    except ProjectSystemPromptTooLongError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
         ) from None
     return ProjectResponse(
         id=project_dto.id,

@@ -6,7 +6,10 @@ import pytest
 
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.entities.project import Project
-from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.exceptions.project_exceptions import (
+    ProjectNotFoundError,
+    ProjectSystemPromptTooLongError,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -133,3 +136,17 @@ class TestUpdateProject:
         # Then
         assert result.chunking_strategy == ChunkingStrategy.SEMANTIC
         assert result.parent_child_chunking is True
+
+    async def test_update_project_with_too_long_system_prompt_raises_error(
+        self,
+        use_case: UpdateProject,
+    ) -> None:
+        # When / Then
+        with pytest.raises(ProjectSystemPromptTooLongError):
+            await use_case.execute(
+                project_id=uuid4(),
+                user_id=uuid4(),
+                name="New name",
+                description="New description",
+                system_prompt="x" * 8001,
+            )
