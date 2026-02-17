@@ -337,7 +337,7 @@ export default function ProjectSettingsPage() {
       {activeTab === "Pipeline" && (
         <div className="space-y-4">
         <div className="space-y-2">
-          <p className="text-base font-semibold tracking-tight">Indexing</p>
+          <p className="text-base font-semibold tracking-tight">Knowledge ingestion</p>
         <div className="space-y-2">
           <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
           <select
@@ -378,7 +378,7 @@ export default function ProjectSettingsPage() {
         <hr className="border-border" />
 
         <div className="space-y-2">
-          <p className="text-base font-semibold tracking-tight">Retrieval</p>
+          <p className="text-base font-semibold tracking-tight">Chunks retrieval</p>
           <div className="space-y-2">
             <Label htmlFor="embeddingBackend">Embedding backend</Label>
             <select
@@ -463,7 +463,7 @@ export default function ProjectSettingsPage() {
         <hr className="border-border" />
 
         <div className="space-y-2">
-          <p className="text-base font-semibold tracking-tight">Answer</p>
+          <p className="text-base font-semibold tracking-tight">Answer generation</p>
           <div className="space-y-2">
             <Label htmlFor="llmBackend">LLM backend</Label>
             <select
