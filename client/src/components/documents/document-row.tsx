@@ -85,9 +85,17 @@ export function DocumentRow({
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium">{document.file_name}</p>
-          <Badge variant="outline" className={statusClassName}>
+          <Badge
+            variant="outline"
+            className={`${statusClassName} px-1.5 py-0 text-[10px] leading-4`}
+          >
             {statusLabel}
           </Badge>
+          {document.status === "indexed" && document.last_indexed_at ? (
+            <Badge variant="outline" className="px-1.5 py-0 text-[10px] leading-4">
+              Indexed {formatDateTime(document.last_indexed_at)}
+            </Badge>
+          ) : null}
         </div>
         <div className="flex gap-3 text-xs text-muted-foreground">
           <span
@@ -97,13 +105,8 @@ export function DocumentRow({
           >
             {document.id}
           </span>
-          <span>{document.content_type}</span>
           <span>{formatFileSize(document.file_size)}</span>
           <span>{formatDate(document.created_at)}</span>
-          <span>
-            Last indexed:{" "}
-            {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "Never"}
-          </span>
           {document.status === "error" && document.error_message && (
             <span className="text-destructive">{document.error_message}</span>
           )}

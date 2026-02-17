@@ -15,9 +15,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { DocumentRow } from "@/components/documents/document-row";
+import { DocumentUpload } from "@/components/documents/document-upload";
+import {
+  useDeleteDocument,
+  useDocuments,
+  useReindexDocument,
+  useUploadDocument,
+} from "@/lib/hooks/use-documents";
 import {
   useDeleteProject,
   useProject,
@@ -27,17 +34,31 @@ import {
 import type { ChunkingStrategy, UpdateProjectRequest } from "@/lib/types/api";
 
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
+const SETTINGS_TABS = [
+  "General",
+  "Knowledge",
+  "Indexing",
+  "Retrieval",
+  "Answer",
+  "Danger zone",
+] as const;
+type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export default function ProjectSettingsPage() {
   const params = useParams<{ projectId: string }>();
   const router = useRouter();
   const { data: project, isLoading } = useProject(params.projectId);
+  const { data: documents, isLoading: isDocumentsLoading } = useDocuments(params.projectId);
   const updateProject = useUpdateProject(params.projectId);
   const reindexProject = useReindexProject(params.projectId);
+  const uploadDocument = useUploadDocument(params.projectId);
+  const reindexDocument = useReindexDocument(params.projectId);
+  const deleteDocument = useDeleteDocument(params.projectId);
   const deleteProject = useDeleteProject();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reindexWarningOpen, setReindexWarningOpen] = useState(false);
   const [pendingData, setPendingData] = useState<UpdateProjectRequest | null>(null);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("General");
   const [name, setName] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
@@ -63,6 +84,8 @@ export default function ProjectSettingsPage() {
   const effectiveChunkingStrategy = chunkingStrategy ?? project.chunking_strategy;
   const effectiveParentChildChunking = parentChildChunking ?? project.parent_child_chunking;
   const isProjectReindexing = project.reindex_status === "in_progress";
+  const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
+  const totalCount = documents?.length ?? 0;
   const hasChanges =
     effectiveName !== project.name ||
     effectiveDescription !== (project.description ?? "") ||
@@ -99,14 +122,29 @@ export default function ProjectSettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
+      <div className="flex flex-wrap gap-2">
+        {SETTINGS_TABS.map((tab) => (
+          <Button
+            key={tab}
+            type="button"
+            variant={activeTab === tab ? "default" : "outline"}
+            className="cursor-pointer"
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </Button>
+        ))}
+      </div>
+
       {isProjectReindexing && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Reindexation en cours ({project.reindex_progress}/{project.reindex_total}).
           Les actions d&apos;upload, chat et reindex sont temporairement bloquees.
         </div>
       )}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Presentation</h2>
+
+      {activeTab === "General" && (
+        <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Name *</Label>
           <Input
@@ -126,12 +164,6 @@ export default function ProjectSettingsPage() {
             rows={3}
           />
         </div>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Prompt</h2>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="systemPrompt">System Prompt</Label>
@@ -144,7 +176,7 @@ export default function ProjectSettingsPage() {
             value={effectiveSystemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
             placeholder="Instructions for the AI assistant..."
-            rows={10}
+            rows={16}
             maxLength={MAX_SYSTEM_PROMPT_LENGTH}
           />
           <p className="text-muted-foreground text-xs">
@@ -152,20 +184,68 @@ export default function ProjectSettingsPage() {
           </p>
         </div>
       </div>
+      )}
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Knowledge</h2>
+      {activeTab === "Knowledge" && (
+        <div className="space-y-4">
         <p className="text-muted-foreground text-sm">
           La base documentaire du projet est configuree via les options d&apos;indexation.
         </p>
+        <p className="text-sm text-muted-foreground">
+          {indexedCount} indexed / {totalCount} total
+        </p>
+        <DocumentUpload
+          onUpload={(files) => {
+            uploadDocument.mutate(files, {
+              onSuccess: (result) =>
+                toast.success(`${result.succeeded} uploaded, ${result.failed} failed`),
+              onError: () => toast.error("Failed to upload document"),
+            });
+          }}
+          isUploading={uploadDocument.isPending}
+          disabled={isProjectReindexing}
+        />
+        {isDocumentsLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-16" />
+            ))}
+          </div>
+        ) : documents && documents.length > 0 ? (
+          <div className="space-y-3">
+            {documents.map((doc) => (
+              <DocumentRow
+                key={doc.id}
+                document={doc}
+                onReindex={(id) => {
+                  if (isProjectReindexing) return;
+                  reindexDocument.mutate(id, {
+                    onSuccess: () => toast.success("Document reindexed"),
+                    onError: () => toast.error("Failed to reindex document"),
+                  });
+                }}
+                reindexingId={reindexDocument.isPending ? (reindexDocument.variables ?? null) : null}
+                disableReindex={isProjectReindexing}
+                onDelete={(id) => {
+                  deleteDocument.mutate(id, {
+                    onSuccess: () => toast.success("Document deleted"),
+                    onError: () => toast.error("Failed to delete document"),
+                  });
+                }}
+                isDeleting={deleteDocument.isPending}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No documents yet. Upload your first document in this section.
+          </p>
+        )}
       </div>
+      )}
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Indexing</h2>
+      {activeTab === "Indexing" && (
+        <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
           <select
@@ -202,53 +282,54 @@ export default function ProjectSettingsPage() {
           </p>
         ) : null}
       </div>
+      )}
 
-      <Separator />
-
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">Retrieval</h2>
+      {activeTab === "Retrieval" && (
+        <div className="space-y-2">
         <p className="text-muted-foreground text-sm">
           Les reglages de retrieval seront centralises ici dans une prochaine iteration.
         </p>
       </div>
+      )}
 
-      <Separator />
-
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">Answer</h2>
+      {activeTab === "Answer" && (
+        <div className="space-y-2">
         <p className="text-muted-foreground text-sm">
           Les reglages de generation de reponse seront centralises ici dans une prochaine
           iteration.
         </p>
       </div>
+      )}
 
-      <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
-        {updateProject.isPending ? "Saving..." : "Save changes"}
-      </Button>
-
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">Reindexation</h2>
-        <Button
-          className="cursor-pointer"
-          disabled={reindexProject.isPending || isProjectReindexing}
-          onClick={() => {
-            reindexProject.mutate(undefined, {
-              onSuccess: (result) =>
-                toast.success(
-                  `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
-                ),
-              onError: () => toast.error("Failed to reindex project"),
-            });
-          }}
-        >
-          {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+      {activeTab !== "Knowledge" && activeTab !== "Danger zone" ? (
+        <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
+          {updateProject.isPending ? "Saving..." : "Save changes"}
         </Button>
-      </div>
+      ) : null}
 
-      <Separator />
+      {activeTab === "Indexing" ? (
+        <>
+          <hr className="border-border" />
+          <Button
+            className="cursor-pointer"
+            disabled={reindexProject.isPending || isProjectReindexing}
+            onClick={() => {
+              reindexProject.mutate(undefined, {
+                onSuccess: (result) =>
+                  toast.success(
+                    `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
+                  ),
+                onError: () => toast.error("Failed to reindex project"),
+              });
+            }}
+          >
+            {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+          </Button>
+        </>
+      ) : null}
 
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-destructive">Danger zone</h2>
+      {activeTab === "Danger zone" && (
+        <div className="space-y-4">
         <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
           <DialogTrigger asChild>
             <Button variant="destructive" className="cursor-pointer">Delete Project</Button>
@@ -289,6 +370,7 @@ export default function ProjectSettingsPage() {
           </DialogContent>
         </Dialog>
       </div>
+      )}
 
       <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
         <DialogContent>
