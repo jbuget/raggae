@@ -32,4 +32,10 @@ class ProjectModel(Base):
     reindex_total: Mapped[int] = mapped_column(
         Integer(), nullable=False, default=0, server_default="0"
     )
+    embedding_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    embedding_api_key_encrypted: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    llm_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    llm_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    llm_api_key_encrypted: Mapped[str | None] = mapped_column(Text(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

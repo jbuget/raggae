@@ -52,6 +52,12 @@ class TestSQLAlchemyProjectRepository:
             reindex_status="in_progress",
             reindex_progress=3,
             reindex_total=10,
+            embedding_backend="openai",
+            embedding_model="text-embedding-3-small",
+            embedding_api_key_encrypted="enc-embedding",
+            llm_backend="gemini",
+            llm_model="gemini-2.0-flash",
+            llm_api_key_encrypted="enc-llm",
         )
 
         # When
@@ -65,3 +71,9 @@ class TestSQLAlchemyProjectRepository:
         assert found.reindex_status == "in_progress"
         assert found.reindex_progress == 3
         assert found.reindex_total == 10
+        assert found.embedding_backend == "openai"
+        assert found.embedding_model == "text-embedding-3-small"
+        assert found.embedding_api_key_encrypted == "enc-embedding"
+        assert found.llm_backend == "gemini"
+        assert found.llm_model == "gemini-2.0-flash"
+        assert found.llm_api_key_encrypted == "enc-llm"
