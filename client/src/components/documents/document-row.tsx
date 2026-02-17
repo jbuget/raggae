@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getDocumentFileBlob } from "@/lib/api/documents";
+import { useAuth } from "@/lib/hooks/use-auth";
 import type { DocumentResponse } from "@/lib/types/api";
 import { formatDate, formatFileSize } from "@/lib/utils/format";
 
@@ -24,8 +26,14 @@ interface DocumentRowProps {
 }
 
 export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindexingId }: DocumentRowProps) {
+  const { token } = useAuth();
   const isReindexing = reindexingId === document.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewType, setPreviewType] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const statusLabel = document.status.charAt(0).toUpperCase() + document.status.slice(1);
   const statusClassName =
     document.status === "indexed"
@@ -35,6 +43,33 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
         : document.status === "uploaded"
           ? "border-amber-200 bg-amber-100 text-amber-800"
           : "border-red-200 bg-red-100 text-red-800";
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  async function handlePreviewOpen() {
+    if (!token) return;
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setPreviewType(null);
+    setPreviewError(null);
+    setPreviewLoading(true);
+    setPreviewOpen(true);
+
+    try {
+      const blob = await getDocumentFileBlob(token, document.project_id, document.id);
+      setPreviewUrl(URL.createObjectURL(blob));
+      setPreviewType(blob.type || "application/octet-stream");
+    } catch {
+      setPreviewError("Unable to load preview for this document.");
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
 
   return (
     <div className="flex items-center justify-between rounded-md border p-4">
@@ -63,6 +98,14 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
       </div>
 
       <div className="flex gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="cursor-pointer"
+          onClick={handlePreviewOpen}
+        >
+          Preview
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -102,6 +145,59 @@ export function DocumentRow({ document, onDelete, isDeleting, onReindex, reindex
               {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) {
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+            setPreviewType(null);
+            setPreviewError(null);
+          }
+        }}
+      >
+        <DialogContent className="h-[90vh] max-w-5xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{document.file_name}</DialogTitle>
+          </DialogHeader>
+          <div className="h-full min-h-0 overflow-y-auto rounded-md border bg-muted/20 p-3">
+            {previewLoading && <p className="text-sm text-muted-foreground">Loading preview...</p>}
+            {!previewLoading && previewError && (
+              <p className="text-sm text-destructive">{previewError}</p>
+            )}
+            {!previewLoading && !previewError && previewUrl && previewType === "application/pdf" && (
+              <iframe src={previewUrl} title={document.file_name} className="h-[76vh] w-full rounded-md border" />
+            )}
+            {!previewLoading && !previewError && previewUrl && previewType.startsWith("image/") && (
+              <img src={previewUrl} alt={document.file_name} className="mx-auto max-h-[76vh] object-contain" />
+            )}
+            {!previewLoading && !previewError && previewUrl && previewType.startsWith("text/") && (
+              <iframe src={previewUrl} title={document.file_name} className="h-[76vh] w-full rounded-md border bg-background" />
+            )}
+            {!previewLoading &&
+              !previewError &&
+              previewUrl &&
+              !previewType.startsWith("image/") &&
+              previewType !== "application/pdf" &&
+              !previewType.startsWith("text/") && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Preview is not available for this file type.
+                  </p>
+                  <a
+                    href={previewUrl}
+                    download={document.file_name}
+                    className="inline-flex rounded-md border bg-background px-3 py-2 text-sm"
+                  >
+                    Download document
+                  </a>
+                </div>
+              )}
+          </div>
         </DialogContent>
       </Dialog>
       </div>
