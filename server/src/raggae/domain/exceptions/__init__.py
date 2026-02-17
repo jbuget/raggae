@@ -11,6 +11,7 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     ProjectAlreadyPublishedError,
+    ProjectAPIKeyNotOwnedError,
     ProjectNotFoundError,
 )
 from raggae.domain.exceptions.provider_credential_exceptions import (
@@ -45,6 +46,7 @@ __all__ = [
     "InvalidProviderApiKeyError",
     "InvalidProjectEmbeddingBackendError",
     "InvalidProjectLLMBackendError",
+    "ProjectAPIKeyNotOwnedError",
     "ProjectAlreadyPublishedError",
     "ProjectNotFoundError",
     "UserAlreadyExistsError",

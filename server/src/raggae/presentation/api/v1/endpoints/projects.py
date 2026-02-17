@@ -11,6 +11,7 @@ from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.exceptions.project_exceptions import (
+    ProjectAPIKeyNotOwnedError,
     ProjectNotFoundError,
     ProjectReindexInProgressError,
     ProjectSystemPromptTooLongError,
@@ -60,12 +61,17 @@ async def create_project(
             parent_child_chunking=data.parent_child_chunking,
             embedding_backend=data.embedding_backend,
             embedding_model=data.embedding_model,
-            embedding_api_key_encrypted=data.embedding_api_key,
+            embedding_api_key=data.embedding_api_key,
             llm_backend=data.llm_backend,
             llm_model=data.llm_model,
-            llm_api_key_encrypted=data.llm_api_key,
+            llm_api_key=data.llm_api_key,
         )
     except ProjectSystemPromptTooLongError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except ProjectAPIKeyNotOwnedError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
@@ -191,10 +197,10 @@ async def update_project(
             parent_child_chunking=data.parent_child_chunking,
             embedding_backend=data.embedding_backend,
             embedding_model=data.embedding_model,
-            embedding_api_key_encrypted=data.embedding_api_key,
+            embedding_api_key=data.embedding_api_key,
             llm_backend=data.llm_backend,
             llm_model=data.llm_model,
-            llm_api_key_encrypted=data.llm_api_key,
+            llm_api_key=data.llm_api_key,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -202,6 +208,11 @@ async def update_project(
             detail="Project not found",
         ) from None
     except ProjectSystemPromptTooLongError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except ProjectAPIKeyNotOwnedError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),

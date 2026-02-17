@@ -417,7 +417,12 @@ def get_login_user_use_case() -> LoginUser:
 
 
 def get_create_project_use_case() -> CreateProject:
-    return CreateProject(project_repository=_project_repository)
+    return CreateProject(
+        project_repository=_project_repository,
+        provider_credential_repository=_provider_credential_repository,
+    ).with_crypto_service(
+        _provider_api_key_crypto_service
+    )
 
 
 def get_get_project_use_case() -> GetProject:
@@ -433,7 +438,12 @@ def get_delete_project_use_case() -> DeleteProject:
 
 
 def get_update_project_use_case() -> UpdateProject:
-    return UpdateProject(project_repository=_project_repository)
+    return UpdateProject(
+        project_repository=_project_repository,
+        provider_credential_repository=_provider_credential_repository,
+    ).with_crypto_service(
+        _provider_api_key_crypto_service
+    )
 
 
 def get_reindex_project_use_case() -> ReindexProject:

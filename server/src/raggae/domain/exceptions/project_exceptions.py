@@ -20,3 +20,7 @@ class InvalidProjectEmbeddingBackendError(ValueError):
 
 class InvalidProjectLLMBackendError(ValueError):
     """Raised when project LLM backend is unsupported."""
+
+
+class ProjectAPIKeyNotOwnedError(ValueError):
+    """Raised when project API key is not registered for the current user."""

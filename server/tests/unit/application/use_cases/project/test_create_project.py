@@ -1,15 +1,19 @@
-from unittest.mock import AsyncMock
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
 
 from raggae.application.use_cases.project.create_project import CreateProject
+from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.model_provider import ModelProvider
 
 
 class TestCreateProject:
@@ -18,8 +22,27 @@ class TestCreateProject:
         return AsyncMock()
 
     @pytest.fixture
-    def use_case(self, mock_project_repository: AsyncMock) -> CreateProject:
-        return CreateProject(project_repository=mock_project_repository)
+    def mock_provider_credential_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_crypto_service(self) -> Mock:
+        crypto = Mock()
+        crypto.encrypt.side_effect = lambda value: f"enc:{value}"
+        crypto.fingerprint.side_effect = lambda value: f"fp:{value}"
+        return crypto
+
+    @pytest.fixture
+    def use_case(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_provider_credential_repository: AsyncMock,
+        mock_crypto_service: Mock,
+    ) -> CreateProject:
+        return CreateProject(
+            project_repository=mock_project_repository,
+            provider_credential_repository=mock_provider_credential_repository,
+        ).with_crypto_service(mock_crypto_service)
 
     async def test_create_project_success(
         self,
@@ -107,3 +130,52 @@ class TestCreateProject:
                 system_prompt="ok",
                 llm_backend="unsupported",
             )
+
+    async def test_create_project_with_non_owned_api_key_raises(
+        self,
+        use_case: CreateProject,
+        mock_provider_credential_repository: AsyncMock,
+    ) -> None:
+        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = []
+
+        with pytest.raises(ProjectAPIKeyNotOwnedError, match="not registered for this user"):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="ok",
+                llm_backend="openai",
+                llm_api_key="sk-user-1234",
+            )
+
+    async def test_create_project_with_owned_api_key_encrypts_and_succeeds(
+        self,
+        use_case: CreateProject,
+        mock_provider_credential_repository: AsyncMock,
+    ) -> None:
+        user_id = uuid4()
+        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = [
+            UserModelProviderCredential(
+                id=uuid4(),
+                user_id=user_id,
+                provider=ModelProvider("openai"),
+                encrypted_api_key="enc:sk-user-1234",
+                key_fingerprint="fp:sk-user-1234",
+                key_suffix="1234",
+                is_active=True,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+        ]
+
+        result = await use_case.execute(
+            user_id=user_id,
+            name="My Project",
+            description="A test project",
+            system_prompt="ok",
+            llm_backend="openai",
+            llm_api_key="sk-user-1234",
+        )
+
+        assert result.llm_backend == "openai"
+        assert result.llm_api_key_masked is not None
