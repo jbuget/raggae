@@ -15,6 +15,7 @@ class DocumentResponse(BaseModel):
     content_type: str
     file_size: int
     created_at: datetime
+    last_indexed_at: datetime | None = None
     processing_strategy: ChunkingStrategy | None
     status: DocumentStatus
     error_message: str | None = None

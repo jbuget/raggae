@@ -48,6 +48,7 @@ def _dto_to_response(doc: DocumentDTO) -> DocumentResponse:
         content_type=doc.content_type,
         file_size=doc.file_size,
         created_at=doc.created_at,
+        last_indexed_at=doc.last_indexed_at,
         processing_strategy=doc.processing_strategy,
         status=doc.status,
         error_message=doc.error_message,

@@ -77,6 +77,7 @@ export interface DocumentResponse {
   content_type: string;
   file_size: number;
   created_at: string;
+  last_indexed_at?: string | null;
   processing_strategy: string | null;
   status: "uploaded" | "processing" | "indexed" | "error";
   error_message?: string | null;

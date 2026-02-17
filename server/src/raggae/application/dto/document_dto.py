@@ -18,6 +18,7 @@ class DocumentDTO:
     file_size: int
     storage_key: str
     created_at: datetime
+    last_indexed_at: datetime | None
     processing_strategy: ChunkingStrategy | None
     status: DocumentStatus
     error_message: str | None
@@ -37,6 +38,7 @@ class DocumentDTO:
             file_size=document.file_size,
             storage_key=document.storage_key,
             created_at=document.created_at,
+            last_indexed_at=document.last_indexed_at,
             processing_strategy=document.processing_strategy,
             status=document.status,
             error_message=document.error_message,

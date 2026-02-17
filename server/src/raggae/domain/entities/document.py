@@ -1,5 +1,5 @@
 from dataclasses import dataclass, replace
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 from raggae.domain.exceptions.document_exceptions import (
@@ -27,6 +27,7 @@ class Document:
     file_size: int
     storage_key: str
     created_at: datetime
+    last_indexed_at: datetime | None = None
     processing_strategy: ChunkingStrategy | None = None
     status: DocumentStatus = DocumentStatus.UPLOADED
     error_message: str | None = None
@@ -49,4 +50,11 @@ class Document:
             )
         if new_status == DocumentStatus.ERROR:
             return replace(self, status=new_status, error_message=error_message)
+        if new_status == DocumentStatus.INDEXED:
+            return replace(
+                self,
+                status=new_status,
+                error_message=None,
+                last_indexed_at=datetime.now(UTC),
+            )
         return replace(self, status=new_status, error_message=None)

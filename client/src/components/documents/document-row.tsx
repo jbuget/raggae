@@ -16,7 +16,7 @@ import {
 import { getDocumentFileBlob } from "@/lib/api/documents";
 import { useAuth } from "@/lib/hooks/use-auth";
 import type { DocumentResponse } from "@/lib/types/api";
-import { formatDate, formatFileSize } from "@/lib/utils/format";
+import { formatDate, formatDateTime, formatFileSize } from "@/lib/utils/format";
 
 interface DocumentRowProps {
   document: DocumentResponse;
@@ -100,6 +100,10 @@ export function DocumentRow({
           <span>{document.content_type}</span>
           <span>{formatFileSize(document.file_size)}</span>
           <span>{formatDate(document.created_at)}</span>
+          <span>
+            Last indexed:{" "}
+            {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "Never"}
+          </span>
           {document.status === "error" && document.error_message && (
             <span className="text-destructive">{document.error_message}</span>
           )}

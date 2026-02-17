@@ -25,6 +25,7 @@ class DocumentModel(Base):
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     processing_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_indexed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="indexed")
     error_message: Mapped[str | None] = mapped_column(Text(), nullable=True)
     language: Mapped[str | None] = mapped_column(String(8), nullable=True)

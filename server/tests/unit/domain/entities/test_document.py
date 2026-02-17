@@ -57,6 +57,7 @@ class TestDocumentTransitions:
         doc = _make_document(DocumentStatus.PROCESSING)
         result = doc.transition_to(DocumentStatus.INDEXED)
         assert result.status == DocumentStatus.INDEXED
+        assert result.last_indexed_at is not None
 
     def test_processing_to_error(self) -> None:
         doc = _make_document(DocumentStatus.PROCESSING)

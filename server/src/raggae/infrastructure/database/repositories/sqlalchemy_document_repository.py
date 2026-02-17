@@ -18,6 +18,7 @@ def _to_entity(model: DocumentModel) -> Document:
         file_size=model.file_size,
         storage_key=model.storage_key,
         created_at=model.created_at,
+        last_indexed_at=model.last_indexed_at,
         processing_strategy=(
             ChunkingStrategy(model.processing_strategy)
             if model.processing_strategy is not None
@@ -56,6 +57,7 @@ class SQLAlchemyDocumentRepository:
                         else None
                     ),
                     created_at=document.created_at,
+                    last_indexed_at=document.last_indexed_at,
                     status=document.status.value,
                     error_message=document.error_message,
                     language=document.language,
@@ -76,6 +78,7 @@ class SQLAlchemyDocumentRepository:
                     if document.processing_strategy is not None
                     else None
                 )
+                model.last_indexed_at = document.last_indexed_at
                 model.status = document.status.value
                 model.error_message = document.error_message
                 model.language = document.language

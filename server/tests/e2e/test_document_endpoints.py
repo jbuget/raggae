@@ -79,6 +79,7 @@ class TestDocumentEndpoints:
         assert len(data) == 1
         assert data[0]["file_name"] == "guide.md"
         assert "processing_strategy" in data[0]
+        assert "last_indexed_at" in data[0]
 
     async def test_list_project_documents_of_another_user_returns_404(
         self,
