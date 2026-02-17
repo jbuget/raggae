@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type {
   ChunkingStrategy,
@@ -110,100 +111,142 @@ export function ProjectForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My project"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="What is this project about?"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="systemPrompt">System Prompt</Label>
-                <span
-                  className={`text-xs ${
-                    nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"
-                  }`}
-                >
-                  {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
-                </span>
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold">Presentation</h3>
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="My project"
+                />
               </div>
-              <Textarea
-                id="systemPrompt"
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                placeholder="Instructions for the AI assistant..."
-                rows={5}
-                maxLength={MAX_SYSTEM_PROMPT_LENGTH}
-              />
-              <p className="text-muted-foreground text-xs">
-                Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What is this project about?"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold">Prompt</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="systemPrompt">System Prompt</Label>
+                  <span
+                    className={`text-xs ${
+                      nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"
+                    }`}
+                  >
+                    {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
+                  </span>
+                </div>
+                <Textarea
+                  id="systemPrompt"
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  placeholder="Instructions for the AI assistant..."
+                  rows={5}
+                  maxLength={MAX_SYSTEM_PROMPT_LENGTH}
+                />
+                <p className="text-muted-foreground text-xs">
+                  Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+                </p>
+                {nearSystemPromptLimit ? (
+                  <p className="text-xs text-amber-700">
+                    Tu approches de la limite. Pense a raccourcir si possible.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold">Knowledge</h3>
+              <p className="text-muted-foreground text-sm">
+                Les reglages ci-dessous controlent comment les documents sont prepares avant
+                indexation.
               </p>
-              {nearSystemPromptLimit ? (
-                <p className="text-xs text-amber-700">
-                  Tu approches de la limite. Pense a raccourcir si possible.
+              <div className="space-y-2">
+                <Label htmlFor="chunkingStrategy">Chunking Strategy</Label>
+                <select
+                  id="chunkingStrategy"
+                  value={chunkingStrategy}
+                  onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="fixed_window">Fixed window</option>
+                  <option value="paragraph">Paragraph</option>
+                  <option value="heading_section">Heading section</option>
+                  <option value="semantic">Semantic</option>
+                </select>
+                <p className="text-muted-foreground text-sm">
+                  Le chunking definit comment un document est decoupe avant indexation. `Auto`
+                  choisit automatiquement selon la structure du texte.
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold">Indexing</h3>
+              <div className="flex items-center gap-2">
+                <input
+                  id="parentChildChunking"
+                  type="checkbox"
+                  checked={parentChildChunking}
+                  onChange={(e) => setParentChildChunking(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Le mode parent-child construit de gros chunks parents (contexte riche) et des
+                chunks enfants (plus fins pour la recherche). Cela peut ameliorer la pertinence du
+                retrieval sur des documents longs, au prix d&apos;une indexation plus lourde.
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
+                de chunking `Semantic`.
+              </p>
+              {isSemanticRecommended ? (
+                <p className="text-sm text-amber-700">
+                  Le mode parent-child est actif avec une strategie non `Semantic`. Cela
+                  fonctionne, mais la pertinence est souvent meilleure avec `Semantic`.
                 </p>
               ) : null}
             </div>
+
+            <Separator />
+
             <div className="space-y-2">
-              <Label htmlFor="chunkingStrategy">Chunking Strategy</Label>
-              <select
-                id="chunkingStrategy"
-                value={chunkingStrategy}
-                onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="auto">Auto</option>
-                <option value="fixed_window">Fixed window</option>
-                <option value="paragraph">Paragraph</option>
-                <option value="heading_section">Heading section</option>
-                <option value="semantic">Semantic</option>
-              </select>
+              <h3 className="text-base font-semibold">Retrieval</h3>
               <p className="text-muted-foreground text-sm">
-                Le chunking definit comment un document est decoupe avant indexation. `Auto` choisit
-                automatiquement selon la structure du texte, `Fixed window` coupe par taille fixe,
-                `Paragraph` suit les paragraphes, `Heading section` suit les sections/titres, et
-                `Semantic` essaie de couper sur des ruptures de sens pour produire des chunks plus
-                coherents.
+                Les reglages de retrieval seront centralises ici dans une prochaine iteration.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="parentChildChunking"
-                type="checkbox"
-                checked={parentChildChunking}
-                onChange={(e) => setParentChildChunking(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              Le mode parent-child construit de gros chunks parents (contexte riche) et des chunks
-              enfants (plus fins pour la recherche). Cela peut ameliorer la pertinence du retrieval
-              sur des documents longs, au prix d&apos;une indexation plus lourde.
-            </p>
-            <p className="text-muted-foreground text-sm">
-              Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
-              de chunking `Semantic`.
-            </p>
-            {isSemanticRecommended ? (
-              <p className="text-sm text-amber-700">
-                Le mode parent-child est actif avec une strategie non `Semantic`. Cela fonctionne,
-                mais la pertinence est souvent meilleure avec `Semantic`.
+
+            <Separator />
+
+            <div className="space-y-2">
+              <h3 className="text-base font-semibold">Answer</h3>
+              <p className="text-muted-foreground text-sm">
+                Les reglages de generation de reponse seront centralises ici dans une prochaine
+                iteration.
               </p>
-            ) : null}
+            </div>
+
             <Button type="submit" className="cursor-pointer" disabled={isDisabled}>
               {isLoading ? "Saving..." : submitLabel}
             </Button>
