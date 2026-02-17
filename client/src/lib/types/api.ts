@@ -31,12 +31,26 @@ export type ChunkingStrategy =
   | "heading_section"
   | "semantic";
 
+export type ProjectEmbeddingBackend = "openai" | "gemini" | "ollama" | "inmemory";
+export type ProjectLLMBackend =
+  | "openai"
+  | "gemini"
+  | "anthropic"
+  | "ollama"
+  | "inmemory";
+
 export interface CreateProjectRequest {
   name: string;
   description?: string;
   system_prompt?: string;
   chunking_strategy?: ChunkingStrategy;
   parent_child_chunking?: boolean;
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key?: string | null;
 }
 
 export interface UpdateProjectRequest {
@@ -45,6 +59,12 @@ export interface UpdateProjectRequest {
   system_prompt?: string;
   chunking_strategy?: ChunkingStrategy;
   parent_child_chunking?: boolean;
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key?: string | null;
 }
 
 export interface ProjectResponse {
@@ -60,6 +80,12 @@ export interface ProjectResponse {
   reindex_status: string;
   reindex_progress: number;
   reindex_total: number;
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key_masked?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key_masked?: string | null;
 }
 
 export interface ReindexProjectResponse {

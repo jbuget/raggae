@@ -31,7 +31,14 @@ import {
   useReindexProject,
   useUpdateProject,
 } from "@/lib/hooks/use-projects";
-import type { ChunkingStrategy, UpdateProjectRequest } from "@/lib/types/api";
+import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
+import type {
+  ChunkingStrategy,
+  ModelProvider,
+  ProjectEmbeddingBackend,
+  ProjectLLMBackend,
+  UpdateProjectRequest,
+} from "@/lib/types/api";
 
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
 const SETTINGS_TABS = [
@@ -48,6 +55,7 @@ export default function ProjectSettingsPage() {
   const { data: project, isLoading } = useProject(params.projectId);
   const { data: documents, isLoading: isDocumentsLoading } = useDocuments(params.projectId);
   const updateProject = useUpdateProject(params.projectId);
+  const { data: credentials } = useModelCredentials();
   const reindexProject = useReindexProject(params.projectId);
   const uploadDocument = useUploadDocument(params.projectId);
   const reindexDocument = useReindexDocument(params.projectId);
@@ -62,6 +70,12 @@ export default function ProjectSettingsPage() {
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
   const [chunkingStrategy, setChunkingStrategy] = useState<ChunkingStrategy | null>(null);
   const [parentChildChunking, setParentChildChunking] = useState<boolean | null>(null);
+  const [embeddingBackend, setEmbeddingBackend] = useState<ProjectEmbeddingBackend | null>(null);
+  const [embeddingModel, setEmbeddingModel] = useState<string | null>(null);
+  const [embeddingApiKey, setEmbeddingApiKey] = useState<string | null>(null);
+  const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | null>(null);
+  const [llmModel, setLlmModel] = useState<string | null>(null);
+  const [llmApiKey, setLlmApiKey] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -81,6 +95,12 @@ export default function ProjectSettingsPage() {
   const effectiveSystemPrompt = systemPrompt ?? (project.system_prompt ?? "");
   const effectiveChunkingStrategy = chunkingStrategy ?? project.chunking_strategy;
   const effectiveParentChildChunking = parentChildChunking ?? project.parent_child_chunking;
+  const effectiveEmbeddingBackend = embeddingBackend ?? (project.embedding_backend ?? "");
+  const effectiveEmbeddingModel = embeddingModel ?? (project.embedding_model ?? "");
+  const effectiveLlmBackend = llmBackend ?? (project.llm_backend ?? "");
+  const effectiveLlmModel = llmModel ?? (project.llm_model ?? "");
+  const effectiveEmbeddingApiKey = embeddingApiKey ?? "";
+  const effectiveLlmApiKey = llmApiKey ?? "";
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -89,7 +109,13 @@ export default function ProjectSettingsPage() {
     effectiveDescription !== (project.description ?? "") ||
     effectiveSystemPrompt !== (project.system_prompt ?? "") ||
     effectiveChunkingStrategy !== project.chunking_strategy ||
-    effectiveParentChildChunking !== project.parent_child_chunking;
+    effectiveParentChildChunking !== project.parent_child_chunking ||
+    effectiveEmbeddingBackend !== (project.embedding_backend ?? "") ||
+    effectiveEmbeddingModel !== (project.embedding_model ?? "") ||
+    effectiveLlmBackend !== (project.llm_backend ?? "") ||
+    effectiveLlmModel !== (project.llm_model ?? "") ||
+    effectiveEmbeddingApiKey.trim().length > 0 ||
+    effectiveLlmApiKey.trim().length > 0;
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
   const systemPromptLength = effectiveSystemPrompt.length;
   const nearSystemPromptLimit = systemPromptLength >= 7000;
@@ -102,7 +128,34 @@ export default function ProjectSettingsPage() {
     system_prompt: effectiveSystemPrompt,
     chunking_strategy: effectiveChunkingStrategy,
     parent_child_chunking: effectiveParentChildChunking,
+    embedding_backend: effectiveEmbeddingBackend || null,
+    embedding_model: effectiveEmbeddingModel || null,
+    embedding_api_key: effectiveEmbeddingApiKey.trim() || null,
+    llm_backend: effectiveLlmBackend || null,
+    llm_model: effectiveLlmModel || null,
+    llm_api_key: effectiveLlmApiKey.trim() || null,
   };
+
+  const credentialsByProvider = (credentials ?? []).reduce<
+    Record<ModelProvider, string[]>
+  >(
+    (acc, credential) => {
+      acc[credential.provider].push(credential.masked_key);
+      return acc;
+    },
+    { openai: [], gemini: [], anthropic: [] },
+  );
+
+  const embeddingProviderForHints =
+    effectiveEmbeddingBackend === "openai" || effectiveEmbeddingBackend === "gemini"
+      ? effectiveEmbeddingBackend
+      : null;
+  const llmProviderForHints =
+    effectiveLlmBackend === "openai" ||
+    effectiveLlmBackend === "gemini" ||
+    effectiveLlmBackend === "anthropic"
+      ? effectiveLlmBackend
+      : null;
 
   function handleSave() {
     const parentChildChanged =
@@ -287,19 +340,109 @@ export default function ProjectSettingsPage() {
 
         <div className="space-y-2">
           <p className="text-base font-semibold tracking-tight">Retrieval</p>
-          <p className="text-muted-foreground text-sm">
-            Les reglages de retrieval seront centralises ici dans une prochaine iteration.
-          </p>
+          <div className="space-y-2">
+            <Label htmlFor="embeddingBackend">Embedding backend</Label>
+            <select
+              id="embeddingBackend"
+              value={effectiveEmbeddingBackend}
+              onChange={(e) => setEmbeddingBackend((e.target.value || null) as ProjectEmbeddingBackend | null)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Default</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+              <option value="ollama">Ollama</option>
+              <option value="inmemory">InMemory</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="embeddingModel">Embedding model</Label>
+            <Input
+              id="embeddingModel"
+              value={effectiveEmbeddingModel}
+              onChange={(e) => setEmbeddingModel(e.target.value)}
+              placeholder="text-embedding-3-large / gemini-embedding-001 / ..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="embeddingApiKey">Embedding API key</Label>
+            <Input
+              id="embeddingApiKey"
+              type="password"
+              value={effectiveEmbeddingApiKey}
+              onChange={(e) => setEmbeddingApiKey(e.target.value)}
+              placeholder="Optional. Must be one of your saved keys."
+              autoComplete="off"
+            />
+            {project.embedding_api_key_masked ? (
+              <p className="text-xs text-muted-foreground">
+                Existing key: {project.embedding_api_key_masked}
+              </p>
+            ) : null}
+            {embeddingProviderForHints ? (
+              <p className="text-xs text-muted-foreground">
+                Your saved keys for {embeddingProviderForHints}:{" "}
+                {credentialsByProvider[embeddingProviderForHints].length > 0
+                  ? credentialsByProvider[embeddingProviderForHints].join(", ")
+                  : "none"}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <hr className="border-border" />
 
         <div className="space-y-2">
           <p className="text-base font-semibold tracking-tight">Answer</p>
-          <p className="text-muted-foreground text-sm">
-            Les reglages de generation de reponse seront centralises ici dans une prochaine
-            iteration.
-          </p>
+          <div className="space-y-2">
+            <Label htmlFor="llmBackend">LLM backend</Label>
+            <select
+              id="llmBackend"
+              value={effectiveLlmBackend}
+              onChange={(e) => setLlmBackend((e.target.value || null) as ProjectLLMBackend | null)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Default</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="ollama">Ollama</option>
+              <option value="inmemory">InMemory</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="llmModel">LLM model</Label>
+            <Input
+              id="llmModel"
+              value={effectiveLlmModel}
+              onChange={(e) => setLlmModel(e.target.value)}
+              placeholder="gpt-4.1 / gemini-2.0-flash / claude-3-5-sonnet / ..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="llmApiKey">LLM API key</Label>
+            <Input
+              id="llmApiKey"
+              type="password"
+              value={effectiveLlmApiKey}
+              onChange={(e) => setLlmApiKey(e.target.value)}
+              placeholder="Optional. Must be one of your saved keys."
+              autoComplete="off"
+            />
+            {project.llm_api_key_masked ? (
+              <p className="text-xs text-muted-foreground">
+                Existing key: {project.llm_api_key_masked}
+              </p>
+            ) : null}
+            {llmProviderForHints ? (
+              <p className="text-xs text-muted-foreground">
+                Your saved keys for {llmProviderForHints}:{" "}
+                {credentialsByProvider[llmProviderForHints].length > 0
+                  ? credentialsByProvider[llmProviderForHints].join(", ")
+                  : "none"}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
       )}
