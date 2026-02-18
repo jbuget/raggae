@@ -1,4 +1,5 @@
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
+from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -23,17 +24,28 @@ class AdaptiveTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.FIXED_WINDOW,
+        embedding_service: EmbeddingService | None = None,
     ) -> list[str]:
         if strategy == ChunkingStrategy.PARAGRAPH:
-            chunks = await self._paragraph_chunker.chunk_text(text, strategy)
+            chunks = await self._paragraph_chunker.chunk_text(
+                text, strategy, embedding_service=embedding_service
+            )
             return self._apply_context_window(chunks)
         if strategy == ChunkingStrategy.HEADING_SECTION:
-            chunks = await self._heading_section_chunker.chunk_text(text, strategy)
+            chunks = await self._heading_section_chunker.chunk_text(
+                text, strategy, embedding_service=embedding_service
+            )
             return self._apply_context_window(chunks)
         if strategy == ChunkingStrategy.SEMANTIC and self._semantic_chunker is not None:
-            chunks = await self._semantic_chunker.chunk_text(text, strategy)
+            chunks = await self._semantic_chunker.chunk_text(
+                text, strategy, embedding_service=embedding_service
+            )
             return self._apply_context_window(chunks)
-        return await self._fixed_window_chunker.chunk_text(text, ChunkingStrategy.FIXED_WINDOW)
+        return await self._fixed_window_chunker.chunk_text(
+            text,
+            ChunkingStrategy.FIXED_WINDOW,
+            embedding_service=embedding_service,
+        )
 
     def _apply_context_window(self, chunks: list[str]) -> list[str]:
         if self._context_window_size == 0 or len(chunks) <= 1:

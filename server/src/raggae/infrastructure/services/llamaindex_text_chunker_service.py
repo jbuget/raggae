@@ -35,7 +35,9 @@ class LlamaIndexTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.FIXED_WINDOW,
+        embedding_service=None,
     ) -> list[str]:
+        del embedding_service
         del strategy
         normalized = text.strip()
         if not normalized:

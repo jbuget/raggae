@@ -26,8 +26,10 @@ class SemanticTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.SEMANTIC,
+        embedding_service: EmbeddingService | None = None,
     ) -> list[str]:
         del strategy
+        effective_embedding_service = embedding_service or self._embedding_service
         normalized = text.strip()
         if not normalized:
             return []
@@ -38,7 +40,7 @@ class SemanticTextChunkerService:
         if len(sentences) == 1:
             return self._split_large_chunk(sentences[0])
 
-        embeddings = await self._embedding_service.embed_texts(sentences)
+        embeddings = await effective_embedding_service.embed_texts(sentences)
 
         chunks: list[str] = []
         current_sentences: list[str] = []

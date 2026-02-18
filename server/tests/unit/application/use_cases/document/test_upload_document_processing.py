@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -157,6 +157,7 @@ class TestUploadDocumentProcessing:
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
+            embedding_service=ANY,
         )
         mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
         mock_document_chunk_repository.save_many.assert_called_once()
@@ -277,6 +278,7 @@ class TestUploadDocumentProcessing:
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.HEADING_SECTION,
+            embedding_service=ANY,
         )
 
     async def test_upload_document_processing_async_does_not_save_chunks(
@@ -383,6 +385,7 @@ class TestUploadDocumentProcessing:
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
+            embedding_service=ANY,
         )
         saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
         assert saved_chunks[0].metadata_json is not None

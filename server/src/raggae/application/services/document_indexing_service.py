@@ -113,7 +113,11 @@ class DocumentIndexingService:
 
         document = replace(document, processing_strategy=strategy)
 
-        chunks = await self._text_chunker_service.chunk_text(sanitized_text, strategy=strategy)
+        chunks = await self._text_chunker_service.chunk_text(
+            sanitized_text,
+            strategy=strategy,
+            embedding_service=effective_embedding_service,
+        )
 
         llamaindex_splitter = None
         if self._chunker_backend == "llamaindex":

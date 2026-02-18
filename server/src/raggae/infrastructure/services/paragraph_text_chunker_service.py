@@ -11,7 +11,9 @@ class ParagraphTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.PARAGRAPH,
+        embedding_service=None,
     ) -> list[str]:
+        del embedding_service
         del strategy
         normalized = text.strip()
         if not normalized:

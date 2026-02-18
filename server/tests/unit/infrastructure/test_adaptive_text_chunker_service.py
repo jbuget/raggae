@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import ANY, AsyncMock
 
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.services.adaptive_text_chunker_service import AdaptiveTextChunkerService
@@ -22,7 +22,11 @@ class TestAdaptiveTextChunkerService:
 
         # Then
         assert result == ["paragraph chunk"]
-        paragraph_chunker.chunk_text.assert_called_once_with("text", ChunkingStrategy.PARAGRAPH)
+        paragraph_chunker.chunk_text.assert_called_once_with(
+            "text",
+            ChunkingStrategy.PARAGRAPH,
+            embedding_service=ANY,
+        )
         heading_section_chunker.chunk_text.assert_not_called()
         fixed_window_chunker.chunk_text.assert_not_called()
 
@@ -65,6 +69,7 @@ class TestAdaptiveTextChunkerService:
         heading_section_chunker.chunk_text.assert_called_once_with(
             "text",
             ChunkingStrategy.HEADING_SECTION,
+            embedding_service=ANY,
         )
         paragraph_chunker.chunk_text.assert_not_called()
         fixed_window_chunker.chunk_text.assert_not_called()
@@ -108,6 +113,7 @@ class TestAdaptiveTextChunkerService:
         fixed_window_chunker.chunk_text.assert_called_once_with(
             "text",
             ChunkingStrategy.FIXED_WINDOW,
+            embedding_service=ANY,
         )
         paragraph_chunker.chunk_text.assert_not_called()
         heading_section_chunker.chunk_text.assert_not_called()
@@ -131,5 +137,9 @@ class TestAdaptiveTextChunkerService:
 
         # Then
         assert result == ["semantic chunk"]
-        semantic_chunker.chunk_text.assert_called_once_with("text", ChunkingStrategy.SEMANTIC)
+        semantic_chunker.chunk_text.assert_called_once_with(
+            "text",
+            ChunkingStrategy.SEMANTIC,
+            embedding_service=ANY,
+        )
         fixed_window_chunker.chunk_text.assert_not_called()

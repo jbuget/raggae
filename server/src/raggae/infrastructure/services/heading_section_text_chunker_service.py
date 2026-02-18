@@ -16,7 +16,9 @@ class HeadingSectionTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.HEADING_SECTION,
+        embedding_service=None,
     ) -> list[str]:
+        del embedding_service
         del strategy
         normalized = text.strip()
         if not normalized:
