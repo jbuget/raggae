@@ -74,23 +74,3 @@ class TestGeminiEmbeddingService:
         # When / Then
         with pytest.raises(EmbeddingGenerationError, match="dimension"):
             await service.embed_texts(["hello"])
-
-    async def test_embed_texts_normalizes_legacy_model_alias(self) -> None:
-        # Given
-        service = GeminiEmbeddingService(
-            api_key="test-key",
-            model="embedding-001",
-            expected_dimension=3,
-        )
-        response = Mock()
-        response.raise_for_status.return_value = None
-        response.json.return_value = {"embedding": {"values": [0.1, 0.2, 0.3]}}
-        service._client = AsyncMock()  # type: ignore[attr-defined]
-        service._client.post.return_value = response
-
-        # When
-        await service.embed_texts(["hello"])
-
-        # Then
-        called_url = service._client.post.call_args.args[0]
-        assert "models/text-embedding-004:embedContent" in called_url

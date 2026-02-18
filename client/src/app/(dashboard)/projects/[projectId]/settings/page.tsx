@@ -50,25 +50,6 @@ const SETTINGS_TABS = [
 ] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
 
-const EMBEDDING_MODEL_OPTIONS: Record<ProjectEmbeddingBackend, string[]> = {
-  openai: ["text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"],
-  gemini: ["text-embedding-004", "gemini-embedding-001", "text-multilingual-embedding-002"],
-  ollama: ["nomic-embed-text", "mxbai-embed-large", "all-minilm"],
-  inmemory: ["inmemory-embed-accurate", "inmemory-embed-balanced", "inmemory-embed-fast"],
-};
-
-const LLM_MODEL_OPTIONS: Record<ProjectLLMBackend, string[]> = {
-  openai: ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"],
-  gemini: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"],
-  anthropic: [
-    "claude-3-7-sonnet-latest",
-    "claude-3-5-sonnet-latest",
-    "claude-3-5-haiku-latest",
-  ],
-  ollama: ["llama3.1:8b", "mistral:7b", "qwen2.5:7b"],
-  inmemory: ["inmemory-chat-accurate", "inmemory-chat-balanced", "inmemory-chat-fast"],
-};
-
 export default function ProjectSettingsPage() {
   const params = useParams<{ projectId: string }>();
   const router = useRouter();
@@ -192,14 +173,10 @@ export default function ProjectSettingsPage() {
     : [];
   const llmCredentialOptions = llmProviderForHints ? credentialsByProvider[llmProviderForHints] : [];
   const embeddingModelOptions = effectiveEmbeddingBackend
-    ? modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ??
-      EMBEDDING_MODEL_OPTIONS[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ??
-      []
+    ? modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []
     : [];
   const llmModelOptions = effectiveLlmBackend
-    ? modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ??
-      LLM_MODEL_OPTIONS[effectiveLlmBackend as ProjectLLMBackend] ??
-      []
+    ? modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []
     : [];
 
   function handleSave() {
