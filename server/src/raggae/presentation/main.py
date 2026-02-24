@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from raggae.presentation.api.v1.endpoints.auth import router as auth_router
@@ -10,10 +13,18 @@ from raggae.presentation.api.v1.endpoints.model_credentials import (
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
 from raggae.presentation.api.dependencies import get_query_relevant_chunks_use_case
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Warm up heavy retrieval dependencies at startup."""
+    get_query_relevant_chunks_use_case()
+    yield
+
 app = FastAPI(
     title="Raggae",
     description="RAG Generator Agent Expert",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.include_router(auth_router, prefix="/api/v1")
@@ -22,13 +33,6 @@ app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(model_catalog_router, prefix="/api/v1")
 app.include_router(model_credentials_router, prefix="/api/v1")
-
-
-@app.on_event("startup")
-async def warmup_models() -> None:
-    """Warm up heavy retrieval dependencies (e.g. cross-encoder reranker)."""
-    get_query_relevant_chunks_use_case()
-
 
 @app.get("/health")
 async def health() -> dict[str, str]:
