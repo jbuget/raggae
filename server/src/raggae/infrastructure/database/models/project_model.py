@@ -58,4 +58,10 @@ class ProjectModel(Base):
     retrieval_min_score: Mapped[float] = mapped_column(
         Float(), nullable=False, default=0.3, server_default="0.3"
     )
+    chat_history_window_size: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=8, server_default="8"
+    )
+    chat_history_max_chars: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=4000, server_default="4000"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

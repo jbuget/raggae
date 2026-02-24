@@ -33,6 +33,8 @@ class ProjectDTO:
     retrieval_strategy: str
     retrieval_top_k: int
     retrieval_min_score: float
+    chat_history_window_size: int
+    chat_history_max_chars: int
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
@@ -68,4 +70,6 @@ class ProjectDTO:
             retrieval_strategy=project.retrieval_strategy,
             retrieval_top_k=project.retrieval_top_k,
             retrieval_min_score=project.retrieval_min_score,
+            chat_history_window_size=project.chat_history_window_size,
+            chat_history_max_chars=project.chat_history_max_chars,
         )

@@ -34,5 +34,13 @@ class InvalidProjectRetrievalMinScoreError(ValueError):
     """Raised when project retrieval min-score threshold is unsupported."""
 
 
+class InvalidProjectChatHistoryWindowSizeError(ValueError):
+    """Raised when project chat history window size is unsupported."""
+
+
+class InvalidProjectChatHistoryMaxCharsError(ValueError):
+    """Raised when project chat history max chars is unsupported."""
+
+
 class ProjectAPIKeyNotOwnedError(ValueError):
     """Raised when project API key is not registered for the current user."""

@@ -57,6 +57,8 @@ export interface CreateProjectRequest {
   retrieval_strategy?: RetrievalStrategy | null;
   retrieval_top_k?: number | null;
   retrieval_min_score?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
 }
 
 export interface UpdateProjectRequest {
@@ -76,6 +78,8 @@ export interface UpdateProjectRequest {
   retrieval_strategy?: RetrievalStrategy | null;
   retrieval_top_k?: number | null;
   retrieval_min_score?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
 }
 
 export interface ProjectResponse {
@@ -102,6 +106,8 @@ export interface ProjectResponse {
   retrieval_strategy: RetrievalStrategy;
   retrieval_top_k: number;
   retrieval_min_score: number;
+  chat_history_window_size: number;
+  chat_history_max_chars: number;
 }
 
 export interface ReindexProjectResponse {

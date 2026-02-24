@@ -8,6 +8,8 @@ from raggae.domain.exceptions.document_exceptions import (
     LLMGenerationError,
 )
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChatHistoryMaxCharsError,
+    InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRetrievalMinScoreError,
@@ -47,6 +49,8 @@ __all__ = [
     "InvalidEmailError",
     "InvalidModelProviderError",
     "InvalidProviderApiKeyError",
+    "InvalidProjectChatHistoryMaxCharsError",
+    "InvalidProjectChatHistoryWindowSizeError",
     "InvalidProjectEmbeddingBackendError",
     "InvalidProjectLLMBackendError",
     "InvalidProjectRetrievalMinScoreError",

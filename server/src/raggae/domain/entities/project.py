@@ -36,6 +36,8 @@ class Project:
     retrieval_strategy: str = "hybrid"
     retrieval_top_k: int = 8
     retrieval_min_score: float = 0.3
+    chat_history_window_size: int = 8
+    chat_history_max_chars: int = 4000
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""

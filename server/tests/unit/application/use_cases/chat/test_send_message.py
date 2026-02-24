@@ -543,6 +543,7 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
+            chat_history_max_chars=80,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -596,6 +597,7 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
+            chat_history_max_chars=80,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -832,6 +834,7 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
+            chat_history_max_chars=80,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -842,7 +845,6 @@ class TestSendMessage:
             project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
-            history_max_chars=80,
         )
 
         # When

@@ -11,6 +11,8 @@ from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChatHistoryMaxCharsError,
+    InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
@@ -75,6 +77,8 @@ async def create_project(
             retrieval_strategy=data.retrieval_strategy,
             retrieval_top_k=data.retrieval_top_k,
             retrieval_min_score=data.retrieval_min_score,
+            chat_history_window_size=data.chat_history_window_size,
+            chat_history_max_chars=data.chat_history_max_chars,
         )
     except ProjectSystemPromptTooLongError as exc:
         raise HTTPException(
@@ -97,6 +101,16 @@ async def create_project(
             detail=str(exc),
         ) from None
     except InvalidProjectRetrievalMinScoreError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except InvalidProjectChatHistoryWindowSizeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except InvalidProjectChatHistoryMaxCharsError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
@@ -125,6 +139,8 @@ async def create_project(
         retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
         retrieval_top_k=project_dto.retrieval_top_k,
         retrieval_min_score=project_dto.retrieval_min_score,
+        chat_history_window_size=project_dto.chat_history_window_size,
+        chat_history_max_chars=project_dto.chat_history_max_chars,
     )
 
 
@@ -165,6 +181,8 @@ async def get_project(
         retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
         retrieval_top_k=project_dto.retrieval_top_k,
         retrieval_min_score=project_dto.retrieval_min_score,
+        chat_history_window_size=project_dto.chat_history_window_size,
+        chat_history_max_chars=project_dto.chat_history_max_chars,
     )
 
 
@@ -199,6 +217,8 @@ async def list_projects(
             retrieval_strategy=cast(ProjectRetrievalStrategy, p.retrieval_strategy),
             retrieval_top_k=p.retrieval_top_k,
             retrieval_min_score=p.retrieval_min_score,
+            chat_history_window_size=p.chat_history_window_size,
+            chat_history_max_chars=p.chat_history_max_chars,
         )
         for p in project_dtos
     ]
@@ -246,6 +266,8 @@ async def update_project(
             retrieval_strategy=data.retrieval_strategy,
             retrieval_top_k=data.retrieval_top_k,
             retrieval_min_score=data.retrieval_min_score,
+            chat_history_window_size=data.chat_history_window_size,
+            chat_history_max_chars=data.chat_history_max_chars,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -277,6 +299,16 @@ async def update_project(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from None
+    except InvalidProjectChatHistoryWindowSizeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except InvalidProjectChatHistoryMaxCharsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
@@ -301,6 +333,8 @@ async def update_project(
         retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
         retrieval_top_k=project_dto.retrieval_top_k,
         retrieval_min_score=project_dto.retrieval_min_score,
+        chat_history_window_size=project_dto.chat_history_window_size,
+        chat_history_max_chars=project_dto.chat_history_max_chars,
     )
 
 

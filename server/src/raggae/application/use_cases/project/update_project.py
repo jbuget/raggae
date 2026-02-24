@@ -2,9 +2,13 @@ from dataclasses import replace
 from uuid import UUID
 
 from raggae.application.constants import (
+    MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
+    MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
+    MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
+    MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
@@ -19,6 +23,8 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
     ProviderApiKeyCryptoService,
 )
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChatHistoryMaxCharsError,
+    InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRetrievalMinScoreError,
@@ -75,6 +81,8 @@ class UpdateProject:
         retrieval_strategy: str | None = None,
         retrieval_top_k: int | None = None,
         retrieval_min_score: float | None = None,
+        chat_history_window_size: int | None = None,
+        chat_history_max_chars: int | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -111,6 +119,26 @@ class UpdateProject:
             raise InvalidProjectRetrievalMinScoreError(
                 f"retrieval_min_score must be between {MIN_PROJECT_RETRIEVAL_MIN_SCORE} "
                 f"and {MAX_PROJECT_RETRIEVAL_MIN_SCORE}"
+            )
+        if chat_history_window_size is not None and not (
+            MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE
+            <= chat_history_window_size
+            <= MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE
+        ):
+            raise InvalidProjectChatHistoryWindowSizeError(
+                f"chat_history_window_size must be between "
+                f"{MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE} and "
+                f"{MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE}"
+            )
+        if chat_history_max_chars is not None and not (
+            MIN_PROJECT_CHAT_HISTORY_MAX_CHARS
+            <= chat_history_max_chars
+            <= MAX_PROJECT_CHAT_HISTORY_MAX_CHARS
+        ):
+            raise InvalidProjectChatHistoryMaxCharsError(
+                f"chat_history_max_chars must be between "
+                f"{MIN_PROJECT_CHAT_HISTORY_MAX_CHARS} and "
+                f"{MAX_PROJECT_CHAT_HISTORY_MAX_CHARS}"
             )
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
@@ -194,6 +222,16 @@ class UpdateProject:
                 project.retrieval_min_score
                 if retrieval_min_score is None
                 else retrieval_min_score
+            ),
+            chat_history_window_size=(
+                project.chat_history_window_size
+                if chat_history_window_size is None
+                else chat_history_window_size
+            ),
+            chat_history_max_chars=(
+                project.chat_history_max_chars
+                if chat_history_max_chars is None
+                else chat_history_max_chars
             ),
         )
         await self._project_repository.save(updated_project)

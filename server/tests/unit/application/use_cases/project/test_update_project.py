@@ -7,6 +7,8 @@ from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChatHistoryMaxCharsError,
+    InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRetrievalMinScoreError,
@@ -243,6 +245,35 @@ class TestUpdateProject:
 
         assert result.retrieval_min_score == 0.55
 
+    async def test_update_project_updates_chat_history_settings_when_provided(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=project.user_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+            chat_history_window_size=16,
+            chat_history_max_chars=5000,
+        )
+
+        assert result.chat_history_window_size == 16
+        assert result.chat_history_max_chars == 5000
+
     async def test_update_project_with_invalid_retrieval_min_score_raises_error(
         self,
         use_case: UpdateProject,
@@ -267,6 +298,58 @@ class TestUpdateProject:
                 description="New description",
                 system_prompt="New prompt",
                 retrieval_min_score=-0.1,
+            )
+
+    async def test_update_project_with_invalid_chat_history_window_size_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectChatHistoryWindowSizeError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                chat_history_window_size=100,
+            )
+
+    async def test_update_project_with_invalid_chat_history_max_chars_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectChatHistoryMaxCharsError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                chat_history_max_chars=64,
             )
 
     async def test_update_project_with_too_long_system_prompt_raises_error(

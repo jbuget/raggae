@@ -97,6 +97,8 @@ class SendMessage:
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
         effective_retrieval_min_score = project.retrieval_min_score
+        effective_history_window_size = max(1, project.chat_history_window_size)
+        effective_history_max_chars = max(128, project.chat_history_max_chars)
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
@@ -217,6 +219,8 @@ class SendMessage:
         conversation_history = await self._build_conversation_history(
             conversation_id=conversation.id,
             current_user_message_id=current_user_message_id,
+            history_window_size=effective_history_window_size,
+            history_max_chars=effective_history_max_chars,
         )
         prompt = build_rag_prompt(
             query=message,
@@ -295,6 +299,8 @@ class SendMessage:
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
         effective_retrieval_min_score = project.retrieval_min_score
+        effective_history_window_size = max(1, project.chat_history_window_size)
+        effective_history_max_chars = max(128, project.chat_history_max_chars)
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
@@ -415,6 +421,8 @@ class SendMessage:
         conversation_history = await self._build_conversation_history(
             conversation_id=conversation.id,
             current_user_message_id=current_user_message_id,
+            history_window_size=effective_history_window_size,
+            history_max_chars=effective_history_max_chars,
         )
         prompt = build_rag_prompt(
             query=message,
@@ -611,12 +619,14 @@ class SendMessage:
         self,
         conversation_id: UUID,
         current_user_message_id: UUID | None,
+        history_window_size: int,
+        history_max_chars: int,
     ) -> list[str]:
         total_messages = await self._message_repository.count_by_conversation_id(conversation_id)
-        offset = max(0, total_messages - self._history_window_size)
+        offset = max(0, total_messages - history_window_size)
         messages = await self._message_repository.find_by_conversation_id(
             conversation_id=conversation_id,
-            limit=self._history_window_size,
+            limit=history_window_size,
             offset=offset,
         )
         history: list[str] = []
@@ -625,14 +635,16 @@ class SendMessage:
                 continue
             label = "User" if message.role == "user" else "Assistant"
             history.append(f"{label}: {message.content}")
-        return self._truncate_history_by_chars(history[-self._history_window_size :])
+        return self._truncate_history_by_chars(
+            history[-history_window_size :], history_max_chars
+        )
 
-    def _truncate_history_by_chars(self, history: list[str]) -> list[str]:
+    def _truncate_history_by_chars(self, history: list[str], history_max_chars: int) -> list[str]:
         total_chars = sum(len(item) for item in history)
-        if total_chars <= self._history_max_chars:
+        if total_chars <= history_max_chars:
             return history
         trimmed = history[:]
-        while trimmed and total_chars > self._history_max_chars:
+        while trimmed and total_chars > history_max_chars:
             removed = trimmed.pop(0)
             total_chars -= len(removed)
         return trimmed

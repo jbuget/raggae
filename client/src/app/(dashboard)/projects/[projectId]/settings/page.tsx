@@ -87,6 +87,8 @@ export default function ProjectSettingsPage() {
   const [retrievalStrategy, setRetrievalStrategy] = useState<RetrievalStrategy | null>(null);
   const [retrievalTopK, setRetrievalTopK] = useState<number | null>(null);
   const [retrievalMinScore, setRetrievalMinScore] = useState<number | null>(null);
+  const [chatHistoryWindowSize, setChatHistoryWindowSize] = useState<number | null>(null);
+  const [chatHistoryMaxChars, setChatHistoryMaxChars] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -122,6 +124,10 @@ export default function ProjectSettingsPage() {
     retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
   const effectiveRetrievalTopK = retrievalTopK ?? project.retrieval_top_k ?? 8;
   const effectiveRetrievalMinScore = retrievalMinScore ?? project.retrieval_min_score ?? 0.3;
+  const effectiveChatHistoryWindowSize =
+    chatHistoryWindowSize ?? project.chat_history_window_size ?? 8;
+  const effectiveChatHistoryMaxChars =
+    chatHistoryMaxChars ?? project.chat_history_max_chars ?? 4000;
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -138,6 +144,8 @@ export default function ProjectSettingsPage() {
     effectiveRetrievalStrategy !== (project.retrieval_strategy ?? "hybrid") ||
     effectiveRetrievalTopK !== (project.retrieval_top_k ?? 8) ||
     effectiveRetrievalMinScore !== (project.retrieval_min_score ?? 0.3) ||
+    effectiveChatHistoryWindowSize !== (project.chat_history_window_size ?? 8) ||
+    effectiveChatHistoryMaxChars !== (project.chat_history_max_chars ?? 4000) ||
     effectiveEmbeddingCredentialId !== "" ||
     effectiveLlmCredentialId !== "";
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
@@ -163,6 +171,8 @@ export default function ProjectSettingsPage() {
     retrieval_strategy: effectiveRetrievalStrategy,
     retrieval_top_k: effectiveRetrievalTopK,
     retrieval_min_score: effectiveRetrievalMinScore,
+    chat_history_window_size: effectiveChatHistoryWindowSize,
+    chat_history_max_chars: effectiveChatHistoryMaxChars,
   };
 
   const credentialsByProvider = (credentials ?? [])
@@ -701,7 +711,7 @@ export default function ProjectSettingsPage() {
         <div className="max-w-3xl space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="systemPrompt">System Prompt</Label>
+              <Label htmlFor="systemPrompt">Project prompt</Label>
               <span
                 className={`text-xs ${nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"}`}
               >
@@ -718,6 +728,42 @@ export default function ProjectSettingsPage() {
             />
             <p className="text-muted-foreground text-xs">
               Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="chatHistoryWindowSize">Chat history window size</Label>
+            <Input
+              id="chatHistoryWindowSize"
+              type="number"
+              min={1}
+              max={40}
+              value={effectiveChatHistoryWindowSize}
+              onChange={(e) => {
+                const parsed = Number.parseInt(e.target.value, 10);
+                if (Number.isNaN(parsed)) return;
+                setChatHistoryWindowSize(Math.max(1, Math.min(40, parsed)));
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Maximum number of recent conversation messages kept in prompt context.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="chatHistoryMaxChars">Chat history max chars</Label>
+            <Input
+              id="chatHistoryMaxChars"
+              type="number"
+              min={128}
+              max={16000}
+              value={effectiveChatHistoryMaxChars}
+              onChange={(e) => {
+                const parsed = Number.parseInt(e.target.value, 10);
+                if (Number.isNaN(parsed)) return;
+                setChatHistoryMaxChars(Math.max(128, Math.min(16000, parsed)));
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Character budget for injected conversation history in the LLM prompt.
             </p>
           </div>
         </div>

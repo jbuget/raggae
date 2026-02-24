@@ -41,6 +41,8 @@ class SQLAlchemyProjectRepository:
                     retrieval_strategy=project.retrieval_strategy,
                     retrieval_top_k=project.retrieval_top_k,
                     retrieval_min_score=project.retrieval_min_score,
+                    chat_history_window_size=project.chat_history_window_size,
+                    chat_history_max_chars=project.chat_history_max_chars,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -66,6 +68,8 @@ class SQLAlchemyProjectRepository:
                 model.retrieval_strategy = project.retrieval_strategy
                 model.retrieval_top_k = project.retrieval_top_k
                 model.retrieval_min_score = project.retrieval_min_score
+                model.chat_history_window_size = project.chat_history_window_size
+                model.chat_history_max_chars = project.chat_history_max_chars
             await session.commit()
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
@@ -96,6 +100,8 @@ class SQLAlchemyProjectRepository:
                 retrieval_strategy=model.retrieval_strategy,
                 retrieval_top_k=model.retrieval_top_k,
                 retrieval_min_score=model.retrieval_min_score,
+                chat_history_window_size=model.chat_history_window_size,
+                chat_history_max_chars=model.chat_history_max_chars,
                 created_at=model.created_at,
             )
 
@@ -129,6 +135,8 @@ class SQLAlchemyProjectRepository:
                     retrieval_strategy=model.retrieval_strategy,
                     retrieval_top_k=model.retrieval_top_k,
                     retrieval_min_score=model.retrieval_min_score,
+                    chat_history_window_size=model.chat_history_window_size,
+                    chat_history_max_chars=model.chat_history_max_chars,
                     created_at=model.created_at,
                 )
                 for model in models

@@ -60,6 +60,8 @@ class TestSQLAlchemyProjectRepository:
             retrieval_strategy="fulltext",
             retrieval_top_k=11,
             retrieval_min_score=0.37,
+            chat_history_window_size=10,
+            chat_history_max_chars=5000,
         )
 
         # When
@@ -82,3 +84,5 @@ class TestSQLAlchemyProjectRepository:
         assert found.retrieval_strategy == "fulltext"
         assert found.retrieval_top_k == 11
         assert found.retrieval_min_score == 0.37
+        assert found.chat_history_window_size == 10
+        assert found.chat_history_max_chars == 5000

@@ -5,9 +5,13 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from raggae.application.constants import (
+    MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
+    MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
+    MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
+    MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
@@ -39,6 +43,16 @@ class CreateProjectRequest(BaseModel):
         ge=MIN_PROJECT_RETRIEVAL_MIN_SCORE,
         le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     )
+    chat_history_window_size: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+        le=MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+    )
+    chat_history_max_chars: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
+        le=MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
+    )
 
 
 class UpdateProjectRequest(BaseModel):
@@ -66,6 +80,16 @@ class UpdateProjectRequest(BaseModel):
         ge=MIN_PROJECT_RETRIEVAL_MIN_SCORE,
         le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     )
+    chat_history_window_size: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+        le=MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+    )
+    chat_history_max_chars: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
+        le=MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
+    )
 
 
 class ProjectResponse(BaseModel):
@@ -92,6 +116,8 @@ class ProjectResponse(BaseModel):
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
     retrieval_top_k: int
     retrieval_min_score: float
+    chat_history_window_size: int
+    chat_history_max_chars: int
 
 
 class ReindexProjectResponse(BaseModel):

@@ -6,6 +6,8 @@ import pytest
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChatHistoryMaxCharsError,
+    InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRetrievalMinScoreError,
@@ -134,6 +136,22 @@ class TestCreateProject:
 
         assert result.retrieval_min_score == 0.42
 
+    async def test_create_project_with_chat_history_settings(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        result = await use_case.execute(
+            user_id=uuid4(),
+            name="My Project",
+            description="A test project",
+            system_prompt="You are a helpful assistant",
+            chat_history_window_size=12,
+            chat_history_max_chars=6000,
+        )
+
+        assert result.chat_history_window_size == 12
+        assert result.chat_history_max_chars == 6000
+
     async def test_create_project_with_invalid_retrieval_min_score_raises(
         self,
         use_case: CreateProject,
@@ -145,6 +163,32 @@ class TestCreateProject:
                 description="A test project",
                 system_prompt="You are a helpful assistant",
                 retrieval_min_score=1.1,
+            )
+
+    async def test_create_project_with_invalid_chat_history_window_size_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectChatHistoryWindowSizeError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="You are a helpful assistant",
+                chat_history_window_size=0,
+            )
+
+    async def test_create_project_with_invalid_chat_history_max_chars_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectChatHistoryMaxCharsError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="You are a helpful assistant",
+                chat_history_max_chars=42,
             )
 
     async def test_create_project_with_too_long_system_prompt_raises(
