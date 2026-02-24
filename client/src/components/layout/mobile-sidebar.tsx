@@ -45,7 +45,7 @@ export function MobileSidebar() {
               My Projects
             </p>
             <Button asChild variant="ghost" size="icon" className="h-6 w-6">
-              <Link href="/projects/new" aria-label="Create project">
+              <Link href="/projects?create=1" aria-label="Create project">
                 <Plus className="h-4 w-4" />
               </Link>
             </Button>
