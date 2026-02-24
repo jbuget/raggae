@@ -2,7 +2,7 @@ from raggae.presentation.api.v1.schemas.chat_schemas import SendMessageRequest
 
 
 class TestSendMessageRequest:
-    def test_retrieval_strategy_when_not_provided_defaults_to_none(self) -> None:
+    def test_retrieval_filters_when_not_provided_defaults_to_none(self) -> None:
         # Given
         payload = {"message": "hello"}
 
@@ -10,14 +10,15 @@ class TestSendMessageRequest:
         request = SendMessageRequest(**payload)
 
         # Then
-        assert request.retrieval_strategy is None
+        assert request.retrieval_filters is None
 
-    def test_retrieval_strategy_when_provided_uses_given_value(self) -> None:
+    def test_retrieval_filters_when_provided_uses_given_value(self) -> None:
         # Given
-        payload = {"message": "hello", "retrieval_strategy": "vector"}
+        payload = {"message": "hello", "retrieval_filters": {"source_type": "paragraph"}}
 
         # When
         request = SendMessageRequest(**payload)
 
         # Then
-        assert request.retrieval_strategy == "vector"
+        assert request.retrieval_filters is not None
+        assert request.retrieval_filters.source_type == "paragraph"

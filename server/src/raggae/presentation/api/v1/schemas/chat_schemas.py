@@ -21,7 +21,6 @@ class SendMessageRequest(BaseModel):
     offset: int = Field(default=0, ge=0)
     conversation_id: UUID | None = None
     start_new_conversation: bool = False
-    retrieval_strategy: Literal["vector", "fulltext", "hybrid", "auto"] | None = None
     retrieval_filters: RetrievalFiltersRequest | None = None
 
 

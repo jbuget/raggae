@@ -71,7 +71,6 @@ async def send_message(
             offset=data.offset,
             conversation_id=data.conversation_id,
             start_new_conversation=data.start_new_conversation,
-            retrieval_strategy=data.retrieval_strategy,
             retrieval_filters=(
                 data.retrieval_filters.model_dump(exclude_none=True)
                 if data.retrieval_filters is not None
@@ -165,7 +164,6 @@ async def stream_message(
                 offset=data.offset,
                 conversation_id=data.conversation_id,
                 start_new_conversation=data.start_new_conversation,
-                retrieval_strategy=data.retrieval_strategy,
                 retrieval_filters=(
                     data.retrieval_filters.model_dump(exclude_none=True)
                     if data.retrieval_filters is not None

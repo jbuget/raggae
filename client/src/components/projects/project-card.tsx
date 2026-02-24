@@ -16,7 +16,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <Link href={`/projects/${project.id}`}>
+    <Link href={`/projects/${project.id}/chat`}>
       <Card className="transition-colors hover:bg-muted/50">
         <CardHeader>
           <CardTitle className="text-lg">{project.name}</CardTitle>

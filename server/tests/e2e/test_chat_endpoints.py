@@ -60,7 +60,7 @@ class TestChatEndpoints:
         assert "history_messages_used" in data
         assert "chunks_used" in data
 
-    async def test_send_message_accepts_retrieval_strategy_and_filters(
+    async def test_send_message_accepts_retrieval_filters(
         self,
         client: AsyncClient,
     ) -> None:
@@ -73,7 +73,6 @@ class TestChatEndpoints:
             json={
                 "message": "jwt token expiration",
                 "limit": 3,
-                "retrieval_strategy": "auto",
                 "retrieval_filters": {"source_type": "paragraph"},
             },
             headers=headers,

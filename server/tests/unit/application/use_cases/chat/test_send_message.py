@@ -159,7 +159,6 @@ class TestSendMessage:
             user_id=uuid4(),
             message="What is Raggae?",
             limit=2,
-            retrieval_strategy=None,
         )
 
         mock_query_relevant_chunks.execute.assert_awaited_once_with(
@@ -394,18 +393,28 @@ class TestSendMessage:
             "Please ask a question related to your project content."
         )
 
-    async def test_send_message_passes_retrieval_options(
+    async def test_send_message_uses_project_retrieval_strategy_and_passes_filters(
         self,
         use_case: SendMessage,
         mock_query_relevant_chunks: AsyncMock,
     ) -> None:
+        use_case._project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            retrieval_strategy="fulltext",
+        )
+
         # When
         await use_case.execute(
             project_id=uuid4(),
             user_id=uuid4(),
             message="JWT token expiration",
             limit=2,
-            retrieval_strategy="fulltext",
             retrieval_filters={"source_type": "paragraph"},
         )
 
