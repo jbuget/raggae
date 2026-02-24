@@ -58,6 +58,7 @@ class TestOrganizationUseCases:
         organization = Organization(
             id=uuid4(),
             name="Acme",
+            slug=None,
             description=None,
             logo_url=None,
             created_by_user_id=user_id,
@@ -98,6 +99,7 @@ class TestOrganizationUseCases:
         organization = Organization(
             id=uuid4(),
             name="Acme",
+            slug=None,
             description=None,
             logo_url=None,
             created_by_user_id=owner_id,
@@ -124,16 +126,19 @@ class TestOrganizationUseCases:
             organization_id=organization.id,
             user_id=owner_id,
             name="Acme Updated",
+            slug="acme-updated",
             description="desc",
             logo_url=None,
         )
         assert updated.name == "Acme Updated"
+        assert updated.slug == "acme-updated"
 
         with pytest.raises(OrganizationAccessDeniedError):
             await use_case.execute(
                 organization_id=organization.id,
                 user_id=other_user_id,
                 name="Denied",
+                slug=None,
                 description=None,
                 logo_url=None,
             )
@@ -148,6 +153,7 @@ class TestOrganizationUseCases:
         organization = Organization(
             id=uuid4(),
             name="Acme",
+            slug=None,
             description=None,
             logo_url=None,
             created_by_user_id=owner_id,

@@ -11,12 +11,14 @@ from raggae.domain.value_objects.organization_member_role import OrganizationMem
 
 class CreateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
+    slug: str | None = Field(default=None, min_length=1, max_length=128)
     description: str | None = None
     logo_url: str | None = None
 
 
 class UpdateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
+    slug: str | None = Field(default=None, min_length=1, max_length=128)
     description: str | None = None
     logo_url: str | None = None
 
@@ -24,6 +26,7 @@ class UpdateOrganizationRequest(BaseModel):
 class OrganizationResponse(BaseModel):
     id: UUID
     name: str
+    slug: str | None
     description: str | None
     logo_url: str | None
     created_by_user_id: UUID

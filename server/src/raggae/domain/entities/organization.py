@@ -13,6 +13,7 @@ class Organization:
 
     id: UUID
     name: str
+    slug: str | None
     description: str | None
     logo_url: str | None
     created_by_user_id: UUID
@@ -20,12 +21,18 @@ class Organization:
     updated_at: datetime
 
     def update_profile(
-        self, name: str, description: str | None, logo_url: str | None, updated_at: datetime
+        self,
+        name: str,
+        slug: str | None,
+        description: str | None,
+        logo_url: str | None,
+        updated_at: datetime,
     ) -> "Organization":
         """Return a new organization with updated public profile fields."""
         return replace(
             self,
             name=name,
+            slug=slug,
             description=description,
             logo_url=logo_url,
             updated_at=updated_at,

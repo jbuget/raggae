@@ -11,6 +11,7 @@ class OrganizationDTO:
 
     id: UUID
     name: str
+    slug: str | None
     description: str | None
     logo_url: str | None
     created_by_user_id: UUID
@@ -22,6 +23,7 @@ class OrganizationDTO:
         return cls(
             id=organization.id,
             name=organization.name,
+            slug=organization.slug,
             description=organization.description,
             logo_url=organization.logo_url,
             created_by_user_id=organization.created_by_user_id,

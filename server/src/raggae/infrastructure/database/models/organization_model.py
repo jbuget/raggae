@@ -13,6 +13,7 @@ class OrganizationModel(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    slug: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
     logo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     created_by_user_id: Mapped[UUID] = mapped_column(

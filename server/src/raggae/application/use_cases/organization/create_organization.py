@@ -28,6 +28,7 @@ class CreateOrganization:
         self,
         user_id: UUID,
         name: str,
+        slug: str | None = None,
         description: str | None = None,
         logo_url: str | None = None,
     ) -> OrganizationDTO:
@@ -35,6 +36,7 @@ class CreateOrganization:
         organization = Organization(
             id=uuid4(),
             name=name,
+            slug=slug,
             description=description,
             logo_url=logo_url,
             created_by_user_id=user_id,

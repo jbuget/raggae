@@ -49,6 +49,7 @@ class TestOrganizationMemberUseCases:
         org = Organization(
             id=uuid4(),
             name="Acme",
+            slug=None,
             description=None,
             logo_url=None,
             created_by_user_id=owner_user_id,

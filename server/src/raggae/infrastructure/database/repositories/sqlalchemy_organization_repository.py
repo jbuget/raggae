@@ -20,6 +20,7 @@ class SQLAlchemyOrganizationRepository:
                 model = OrganizationModel(
                     id=organization.id,
                     name=organization.name,
+                    slug=organization.slug,
                     description=organization.description,
                     logo_url=organization.logo_url,
                     created_by_user_id=organization.created_by_user_id,
@@ -29,6 +30,7 @@ class SQLAlchemyOrganizationRepository:
                 session.add(model)
             else:
                 model.name = organization.name
+                model.slug = organization.slug
                 model.description = organization.description
                 model.logo_url = organization.logo_url
                 model.created_by_user_id = organization.created_by_user_id
@@ -59,6 +61,7 @@ class SQLAlchemyOrganizationRepository:
         return Organization(
             id=model.id,
             name=model.name,
+            slug=model.slug,
             description=model.description,
             logo_url=model.logo_url,
             created_by_user_id=model.created_by_user_id,

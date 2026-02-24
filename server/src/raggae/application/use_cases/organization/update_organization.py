@@ -31,6 +31,7 @@ class UpdateOrganization:
         organization_id: UUID,
         user_id: UUID,
         name: str,
+        slug: str | None,
         description: str | None,
         logo_url: str | None,
     ) -> OrganizationDTO:
@@ -47,6 +48,7 @@ class UpdateOrganization:
             )
         updated = organization.update_profile(
             name=name,
+            slug=slug,
             description=description,
             logo_url=logo_url,
             updated_at=datetime.now(UTC),

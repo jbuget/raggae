@@ -81,6 +81,7 @@ async def create_organization(
     organization = await use_case.execute(
         user_id=user_id,
         name=data.name,
+        slug=data.slug,
         description=data.description,
         logo_url=data.logo_url,
     )
@@ -127,6 +128,7 @@ async def update_organization(
             organization_id=organization_id,
             user_id=user_id,
             name=data.name,
+            slug=data.slug,
             description=data.description,
             logo_url=data.logo_url,
         )

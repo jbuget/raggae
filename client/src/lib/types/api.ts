@@ -139,12 +139,14 @@ export interface ReindexProjectResponse {
 // Organizations
 export interface CreateOrganizationRequest {
   name: string;
+  slug?: string | null;
   description?: string | null;
   logo_url?: string | null;
 }
 
 export interface UpdateOrganizationRequest {
   name: string;
+  slug?: string | null;
   description?: string | null;
   logo_url?: string | null;
 }
@@ -152,6 +154,7 @@ export interface UpdateOrganizationRequest {
 export interface OrganizationResponse {
   id: string;
   name: string;
+  slug: string | null;
   description: string | null;
   logo_url: string | null;
   created_by_user_id: string;

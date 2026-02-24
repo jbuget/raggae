@@ -16,6 +16,7 @@ class TestOrganization:
         organization = Organization(
             id=uuid4(),
             name="Raggae",
+            slug=None,
             description="desc",
             logo_url=None,
             created_by_user_id=uuid4(),
@@ -25,12 +26,14 @@ class TestOrganization:
 
         updated = organization.update_profile(
             name="Raggae AI",
+            slug="raggae-ai",
             description="new desc",
             logo_url="https://example.com/logo.png",
             updated_at=now,
         )
 
         assert updated.name == "Raggae AI"
+        assert updated.slug == "raggae-ai"
         assert updated.description == "new desc"
         assert updated.logo_url == "https://example.com/logo.png"
         assert organization.name == "Raggae"
@@ -39,6 +42,7 @@ class TestOrganization:
         organization = Organization(
             id=uuid4(),
             name="Raggae",
+            slug=None,
             description=None,
             logo_url=None,
             created_by_user_id=uuid4(),

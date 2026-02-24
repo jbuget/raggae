@@ -70,6 +70,7 @@ class TestSQLAlchemyOrganizationRepositories:
         org = Organization(
             id=uuid4(),
             name="Org",
+            slug=None,
             description="desc",
             logo_url=None,
             created_by_user_id=user_id,
@@ -99,6 +100,7 @@ class TestSQLAlchemyOrganizationRepositories:
         organization = Organization(
             id=uuid4(),
             name="Org 2",
+            slug=None,
             description=None,
             logo_url=None,
             created_by_user_id=owner_user_id,
