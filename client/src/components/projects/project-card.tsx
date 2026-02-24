@@ -16,14 +16,14 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <Link href={`/projects/${project.id}/chat`}>
-      <Card className="transition-colors hover:bg-muted/50">
-        <CardHeader>
+    <Link href={`/projects/${project.id}/chat`} className="h-full">
+      <Card className="h-full transition-colors hover:bg-muted/50">
+        <CardHeader className="flex h-full flex-col">
           <CardTitle className="text-lg">{project.name}</CardTitle>
-          <CardDescription>
+          <CardDescription className="line-clamp-3">
             {project.description || "No description"}
           </CardDescription>
-          <p className="text-xs text-muted-foreground">
+          <p className="mt-auto pt-2 text-xs text-muted-foreground">
             Created {formatDate(project.created_at)}
           </p>
         </CardHeader>

@@ -26,7 +26,8 @@ export function ProjectList() {
   const createProject = useCreateProject();
   const shouldOpenFromQuery = searchParams.get("create") === "1";
   const organizationIdFromQuery = searchParams.get("organizationId");
-  const [createOpen, setCreateOpen] = useState(shouldOpenFromQuery);
+  const [createOpen, setCreateOpen] = useState(false);
+  const effectiveCreateOpen = createOpen || shouldOpenFromQuery;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -52,7 +53,15 @@ export function ProjectList() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projects</h1>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <Dialog
+          open={effectiveCreateOpen}
+          onOpenChange={(open) => {
+            setCreateOpen(open);
+            if (!open && shouldOpenFromQuery) {
+              router.replace("/projects");
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button>New Project</Button>
           </DialogTrigger>
