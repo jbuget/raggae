@@ -67,11 +67,11 @@ export function Sidebar() {
           </Link>
         ))}
         <div className="mt-4 border-t pt-3">
-          <div className="flex items-center justify-between px-3 pb-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="flex h-7 items-center justify-between px-1 pb-2">
+            <p className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               My Projects
             </p>
-            <Button asChild variant="ghost" size="icon" className="h-6 w-6">
+            <Button asChild variant="ghost" size="icon" className="h-7 w-7">
               <Link href="/projects?create=1" aria-label="Create project">
                 <Plus className="h-4 w-4" />
               </Link>
@@ -133,14 +133,14 @@ export function Sidebar() {
         </div>
         {(organizations ?? []).map((organization) => (
           <div key={organization.id} className="mt-4 border-t pt-3">
-            <div className="flex items-center justify-between px-3 pb-2">
+            <div className="flex h-7 items-center justify-between px-1 pb-2">
               <p
-                className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                className="truncate px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 title={organization.name}
               >
                 {organization.name}
               </p>
-              <Button asChild variant="ghost" size="icon" className="h-6 w-6">
+              <Button asChild variant="ghost" size="icon" className="h-7 w-7">
                 <Link
                   href={`/projects?create=1&organizationId=${organization.id}`}
                   aria-label={`Create project in ${organization.name}`}
