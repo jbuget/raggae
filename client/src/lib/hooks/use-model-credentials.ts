@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   activateModelCredential,
   createModelCredential,
+  deactivateModelCredential,
   deleteModelCredential,
   listModelCredentials,
 } from "@/lib/api/model-credentials";
@@ -38,6 +39,18 @@ export function useActivateModelCredential() {
 
   return useMutation({
     mutationFn: (credentialId: string) => activateModelCredential(token!, credentialId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["model-credentials"] });
+    },
+  });
+}
+
+export function useDeactivateModelCredential() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (credentialId: string) => deactivateModelCredential(token!, credentialId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["model-credentials"] });
     },

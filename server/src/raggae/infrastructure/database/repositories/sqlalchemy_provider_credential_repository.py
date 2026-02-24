@@ -79,6 +79,20 @@ class SQLAlchemyProviderCredentialRepository:
             )
             await session.commit()
 
+    async def set_inactive(self, credential_id: UUID, user_id: UUID) -> None:
+        async with self._session_factory() as session:
+            target = await session.get(UserModelProviderCredentialModel, credential_id)
+            if target is None or target.user_id != user_id:
+                await session.commit()
+                return
+
+            await session.execute(
+                update(UserModelProviderCredentialModel)
+                .where(UserModelProviderCredentialModel.id == credential_id)
+                .values(is_active=False)
+            )
+            await session.commit()
+
     async def delete(self, credential_id: UUID, user_id: UUID) -> None:
         async with self._session_factory() as session:
             await session.execute(

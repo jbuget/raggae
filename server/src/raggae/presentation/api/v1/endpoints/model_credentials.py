@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from raggae.application.use_cases.provider_credentials.activate_provider_api_key import (
     ActivateProviderApiKey,
 )
+from raggae.application.use_cases.provider_credentials.deactivate_provider_api_key import (
+    DeactivateProviderApiKey,
+)
 from raggae.application.use_cases.provider_credentials.delete_provider_api_key import (
     DeleteProviderApiKey,
 )
@@ -28,6 +31,7 @@ from raggae.infrastructure.config.settings import settings
 from raggae.presentation.api.dependencies import (
     get_activate_provider_api_key_use_case,
     get_current_user_id,
+    get_deactivate_provider_api_key_use_case,
     get_delete_provider_api_key_use_case,
     get_list_provider_api_keys_use_case,
     get_save_provider_api_key_use_case,
@@ -144,6 +148,29 @@ async def activate_model_credential(
         ) from None
     logger.info(
         "provider_credential_activated",
+        extra={
+            "user_id": str(user_id),
+            "credential_id": str(credential_id),
+        },
+    )
+
+
+@router.patch("/{credential_id}/deactivate", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_model_credential(
+    credential_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[DeactivateProviderApiKey, Depends(get_deactivate_provider_api_key_use_case)],
+) -> None:
+    _raise_if_user_provider_keys_disabled()
+    try:
+        await use_case.execute(credential_id=credential_id, user_id=user_id)
+    except ProviderCredentialNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider credential not found",
+        ) from None
+    logger.info(
+        "provider_credential_deactivated",
         extra={
             "user_id": str(user_id),
             "credential_id": str(credential_id),

@@ -26,6 +26,13 @@ export function activateModelCredential(token: string, credentialId: string): Pr
   });
 }
 
+export function deactivateModelCredential(token: string, credentialId: string): Promise<void> {
+  return apiFetch<void>(`/model-credentials/${credentialId}/deactivate`, {
+    method: "PATCH",
+    token,
+  });
+}
+
 export function deleteModelCredential(token: string, credentialId: string): Promise<void> {
   return apiFetch<void>(`/model-credentials/${credentialId}`, {
     method: "DELETE",

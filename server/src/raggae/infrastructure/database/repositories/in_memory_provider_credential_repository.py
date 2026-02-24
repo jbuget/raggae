@@ -39,6 +39,13 @@ class InMemoryProviderCredentialRepository:
 
         self._credentials[credential_id] = replace(target, is_active=True)
 
+    async def set_inactive(self, credential_id: UUID, user_id: UUID) -> None:
+        target = self._credentials.get(credential_id)
+        if target is None or target.user_id != user_id:
+            return
+
+        self._credentials[credential_id] = replace(target, is_active=False)
+
     async def delete(self, credential_id: UUID, user_id: UUID) -> None:
         credential = self._credentials.get(credential_id)
         if credential is None or credential.user_id != user_id:

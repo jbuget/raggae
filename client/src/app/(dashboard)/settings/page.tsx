@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useActivateModelCredential,
   useCreateModelCredential,
+  useDeactivateModelCredential,
   useDeleteModelCredential,
   useModelCredentials,
 } from "@/lib/hooks/use-model-credentials";
@@ -33,6 +34,7 @@ export default function UserSettingsPage() {
   const { data: credentials, isLoading } = useModelCredentials();
   const createCredential = useCreateModelCredential();
   const activateCredential = useActivateModelCredential();
+  const deactivateCredential = useDeactivateModelCredential();
   const deleteCredential = useDeleteModelCredential();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -66,6 +68,13 @@ export default function UserSettingsPage() {
     activateCredential.mutate(credentialId, {
       onSuccess: () => toast.success("API key activated"),
       onError: () => toast.error("Failed to activate API key"),
+    });
+  }
+
+  function handleDeactivate(credentialId: string) {
+    deactivateCredential.mutate(credentialId, {
+      onSuccess: () => toast.success("API key deactivated"),
+      onError: () => toast.error("Failed to deactivate API key"),
     });
   }
 
@@ -144,6 +153,16 @@ export default function UserSettingsPage() {
                       onClick={() => handleActivate(item.id)}
                     >
                       Activate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      disabled={!item.is_active || deactivateCredential.isPending}
+                      onClick={() => handleDeactivate(item.id)}
+                    >
+                      Deactivate
                     </Button>
                     <Button
                       type="button"

@@ -87,6 +87,9 @@ from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.provider_credentials.activate_provider_api_key import (
     ActivateProviderApiKey,
 )
+from raggae.application.use_cases.provider_credentials.deactivate_provider_api_key import (
+    DeactivateProviderApiKey,
+)
 from raggae.application.use_cases.provider_credentials.delete_provider_api_key import (
     DeleteProviderApiKey,
 )
@@ -583,6 +586,10 @@ def get_delete_provider_api_key_use_case() -> DeleteProviderApiKey:
 
 def get_activate_provider_api_key_use_case() -> ActivateProviderApiKey:
     return ActivateProviderApiKey(provider_credential_repository=_provider_credential_repository)
+
+
+def get_deactivate_provider_api_key_use_case() -> DeactivateProviderApiKey:
+    return DeactivateProviderApiKey(provider_credential_repository=_provider_credential_repository)
 
 
 def get_list_conversation_messages_use_case() -> ListConversationMessages:
