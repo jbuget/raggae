@@ -20,6 +20,9 @@ import { useCreateOrganization, useOrganizations } from "@/lib/hooks/use-organiz
 
 export function OrganizationList() {
   const { data, isLoading, error } = useOrganizations();
+  const sortedOrganizations = [...(data ?? [])].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
   const createOrganization = useCreateOrganization();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -100,9 +103,9 @@ export function OrganizationList() {
         </DialogContent>
       </Dialog>
 
-      {data && data.length > 0 ? (
+      {sortedOrganizations.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">
-          {data.map((organization) => (
+          {sortedOrganizations.map((organization) => (
             <div key={organization.id} className="rounded-md border p-4">
               <p className="text-base font-semibold">{organization.name}</p>
               <p className="text-xs text-muted-foreground">

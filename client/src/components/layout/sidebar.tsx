@@ -27,15 +27,18 @@ export function Sidebar() {
   const { token } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const { data: organizations } = useOrganizations();
+  const sortedOrganizations = [...(organizations ?? [])].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
   const organizationProjectsQueries = useQueries({
-    queries: (organizations ?? []).map((organization) => ({
+    queries: sortedOrganizations.map((organization) => ({
       queryKey: ["organization-projects", organization.id],
       queryFn: () => listOrganizationProjects(token!, organization.id),
       enabled: !!token,
     })),
   });
   const organizationProjectsMap = new Map(
-    (organizations ?? []).map((organization, index) => [
+    sortedOrganizations.map((organization, index) => [
       organization.id,
       organizationProjectsQueries[index]?.data ?? [],
     ]),
@@ -131,7 +134,7 @@ export function Sidebar() {
               </div>
               ))}
         </div>
-        {(organizations ?? []).map((organization) => (
+        {sortedOrganizations.map((organization) => (
           <div key={organization.id} className="mt-4 border-t pt-3">
             <div className="flex h-7 items-center justify-between px-1 pb-2">
               <p
@@ -153,19 +156,48 @@ export function Sidebar() {
               <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>
             ) : (
               (organizationProjectsMap.get(organization.id) ?? []).map((project) => (
-                <Link
+                <div
                   key={project.id}
-                  href={`/projects/${project.id}/chat`}
                   className={cn(
-                    "mx-1 block truncate rounded-md px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
                     pathname.startsWith(`/projects/${project.id}`)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      ? "bg-primary/10"
+                      : "hover:bg-muted",
                   )}
-                  title={project.name}
                 >
-                  {project.name}
-                </Link>
+                  <Link
+                    href={`/projects/${project.id}/chat`}
+                    className={cn(
+                      "min-w-0 flex-1 truncate rounded-md px-2 py-1",
+                      pathname.startsWith(`/projects/${project.id}`)
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    title={project.name}
+                  >
+                    {project.name}
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 cursor-pointer"
+                        aria-label={`Project menu ${project.name}`}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href={`/projects/${project.id}/chat`}>Chat</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ))
             )}
           </div>

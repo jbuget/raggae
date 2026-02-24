@@ -21,15 +21,18 @@ export function MobileSidebar() {
   const { token } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const { data: organizations } = useOrganizations();
+  const sortedOrganizations = [...(organizations ?? [])].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
   const organizationProjectsQueries = useQueries({
-    queries: (organizations ?? []).map((organization) => ({
+    queries: sortedOrganizations.map((organization) => ({
       queryKey: ["organization-projects", organization.id],
       queryFn: () => listOrganizationProjects(token!, organization.id),
       enabled: !!token,
     })),
   });
   const organizationProjectsMap = new Map(
-    (organizations ?? []).map((organization, index) => [
+    sortedOrganizations.map((organization, index) => [
       organization.id,
       organizationProjectsQueries[index]?.data ?? [],
     ]),
@@ -93,7 +96,7 @@ export function MobileSidebar() {
               </Link>
               ))}
         </div>
-        {(organizations ?? []).map((organization) => (
+        {sortedOrganizations.map((organization) => (
           <div key={organization.id} className="mt-4 border-t pt-3">
             <div className="flex h-7 items-center justify-between px-1 pb-2">
               <p
