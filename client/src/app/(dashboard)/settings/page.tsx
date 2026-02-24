@@ -127,13 +127,14 @@ export default function UserSettingsPage() {
                   key={item.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
-                        {providerLabel}
-                      </span>
-                      <p className="text-sm font-medium">{item.masked_key}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
+                      {providerLabel}
+                    </span>
+                    <p className="text-sm font-medium">{item.masked_key}</p>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </span>
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                         item.is_active
