@@ -12,6 +12,9 @@ from raggae.application.interfaces.services.provider_api_key_validator import (
     ProviderApiKeyValidator,
 )
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
+from raggae.domain.exceptions.provider_credential_exceptions import (
+    DuplicateProviderCredentialError,
+)
 from raggae.domain.value_objects.model_provider import ModelProvider
 
 
@@ -31,13 +34,19 @@ class SaveProviderApiKey:
     async def execute(self, user_id: UUID, provider: str, api_key: str) -> ProviderCredentialDTO:
         model_provider = ModelProvider(provider)
         self._provider_api_key_validator.validate(model_provider, api_key)
+        fingerprint = self._provider_api_key_crypto_service.fingerprint(api_key)
+        existing = await self._provider_credential_repository.list_by_user_id_and_provider(
+            user_id, model_provider
+        )
+        if any(c.key_fingerprint == fingerprint for c in existing):
+            raise DuplicateProviderCredentialError()
         now = datetime.now(UTC)
         credential = UserModelProviderCredential(
             id=uuid4(),
             user_id=user_id,
             provider=model_provider,
             encrypted_api_key=self._provider_api_key_crypto_service.encrypt(api_key),
-            key_fingerprint=self._provider_api_key_crypto_service.fingerprint(api_key),
+            key_fingerprint=fingerprint,
             key_suffix=api_key[-4:],
             is_active=False,
             created_at=now,

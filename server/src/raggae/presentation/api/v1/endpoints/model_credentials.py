@@ -17,6 +17,7 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
     SaveProviderApiKey,
 )
 from raggae.domain.exceptions.provider_credential_exceptions import (
+    DuplicateProviderCredentialError,
     ProviderCredentialNotFoundError,
 )
 from raggae.domain.exceptions.validation_errors import (
@@ -74,6 +75,11 @@ async def save_model_credential(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Invalid API key format",
+        ) from None
+    except DuplicateProviderCredentialError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This API key is already saved for this provider",
         ) from None
 
     logger.info(

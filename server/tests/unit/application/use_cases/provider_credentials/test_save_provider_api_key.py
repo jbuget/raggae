@@ -6,6 +6,9 @@ import pytest
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
+from raggae.domain.exceptions.provider_credential_exceptions import (
+    DuplicateProviderCredentialError,
+)
 from raggae.domain.exceptions.validation_errors import InvalidModelProviderError
 
 
@@ -64,6 +67,41 @@ class TestSaveProviderApiKey:
         assert saved_credentials[0].is_active is False
         repository.set_active.assert_awaited_once_with(result.id, user_id)
         assert result.is_active is True
+
+    async def test_save_provider_api_key_duplicate_fingerprint_raises_error(self) -> None:
+        # Given — an existing credential with the same fingerprint
+        from raggae.domain.entities.user_model_provider_credential import (
+            UserModelProviderCredential,
+        )
+        from raggae.domain.value_objects.model_provider import ModelProvider
+        from datetime import UTC, datetime
+
+        user_id = uuid4()
+        existing = UserModelProviderCredential(
+            id=uuid4(),
+            user_id=user_id,
+            provider=ModelProvider("gemini"),
+            encrypted_api_key="enc",
+            key_fingerprint="same-fingerprint",
+            key_suffix="1234",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        repository = AsyncMock()
+        repository.list_by_user_id_and_provider = AsyncMock(return_value=[existing])
+        crypto_service = Mock()
+        crypto_service.fingerprint.return_value = "same-fingerprint"
+        crypto_service.encrypt.return_value = "encrypted"
+        use_case = SaveProviderApiKey(
+            provider_credential_repository=repository,
+            provider_api_key_validator=Mock(),
+            provider_api_key_crypto_service=crypto_service,
+        )
+
+        # When / Then
+        with pytest.raises(DuplicateProviderCredentialError):
+            await use_case.execute(user_id=user_id, provider="gemini", api_key="AIzatest1234")
 
     async def test_save_provider_api_key_invalid_provider_raises_error(self) -> None:
         # Given
