@@ -79,9 +79,7 @@ class UpdateProject:
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
             backend=(
-                embedding_backend
-                if embedding_backend is not None
-                else project.embedding_backend
+                embedding_backend if embedding_backend is not None else project.embedding_backend
             ),
             api_key=embedding_api_key,
             api_key_credential_id=embedding_api_key_credential_id,
@@ -97,9 +95,7 @@ class UpdateProject:
         await self._validate_api_key_belongs_to_user(
             user_id=user_id,
             backend=(
-                embedding_backend
-                if embedding_backend is not None
-                else project.embedding_backend
+                embedding_backend if embedding_backend is not None else project.embedding_backend
             ),
             api_key=resolved_embedding_api_key,
             config_type="embedding",

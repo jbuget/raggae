@@ -129,13 +129,8 @@ class TestChatEndpoints:
         # Given
         from raggae.presentation.api import dependencies
 
-        async def raise_llm_error(
-            query: str,
-            context_chunks: list[str],
-            project_system_prompt: str | None = None,
-            conversation_history: list[str] | None = None,
-        ) -> str:
-            del query, context_chunks, project_system_prompt, conversation_history
+        async def raise_llm_error(prompt: str) -> str:
+            del prompt
             raise LLMGenerationError("llm provider unavailable")
 
         monkeypatch.setattr(

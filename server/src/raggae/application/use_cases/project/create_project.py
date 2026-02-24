@@ -102,7 +102,8 @@ class CreateProject:
         encrypted_llm_api_key = self._encrypt_api_key_if_provided(resolved_llm_api_key)
         effective_embedding_api_key_credential_id = (
             embedding_api_key_credential_id
-            if embedding_api_key_credential_id is not None and resolved_embedding_api_key is not None
+            if embedding_api_key_credential_id is not None
+            and resolved_embedding_api_key is not None
             else None
         )
         effective_llm_api_key_credential_id = (

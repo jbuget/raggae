@@ -299,7 +299,7 @@ class TestSendMessage:
         assert result.answer == "I could not find relevant context to answer your message."
         assert result.chunks == []
 
-    async def test_send_message_llm_failure_returns_graceful_fallback(
+    async def test_send_message_llm_failure_raises_error(
         self,
         use_case: SendMessage,
         mock_llm_service: AsyncMock,
@@ -307,19 +307,14 @@ class TestSendMessage:
         # Given
         mock_llm_service.generate_answer.side_effect = LLMGenerationError("provider down")
 
-        # When
-        result = await use_case.execute(
-            project_id=uuid4(),
-            user_id=uuid4(),
-            message="hello",
-            limit=2,
-        )
-
-        # Then
-        assert result.answer == (
-            "I found relevant context but could not generate an answer right now. "
-            "Please try again in a few seconds."
-        )
+        # When / Then
+        with pytest.raises(LLMGenerationError):
+            await use_case.execute(
+                project_id=uuid4(),
+                user_id=uuid4(),
+                message="hello",
+                limit=2,
+            )
 
     async def test_send_message_rejects_prompt_exfiltration_attempt(
         self,

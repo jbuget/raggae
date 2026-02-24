@@ -16,6 +16,10 @@ class ActivateProviderApiKey:
 
     async def execute(self, credential_id: UUID, user_id: UUID) -> None:
         credentials = await self._provider_credential_repository.list_by_user_id(user_id)
-        if not any(credential.id == credential_id for credential in credentials):
+        target = next((c for c in credentials if c.id == credential_id), None)
+        if target is None:
             raise ProviderCredentialNotFoundError()
+        for credential in credentials:
+            if credential.provider == target.provider and credential.id != credential_id:
+                await self._provider_credential_repository.set_inactive(credential.id, user_id)
         await self._provider_credential_repository.set_active(credential_id, user_id)

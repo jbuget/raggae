@@ -136,6 +136,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
+            embedding_service=mock_embedding_service,
         )
         mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
         mock_document_chunk_repository.delete_by_document_id.assert_called_once_with(document.id)
@@ -179,6 +180,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
+            embedding_service=mock_embedding_service,
         )
         saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
         assert saved_chunks[0].metadata_json["chunker_backend"] == "llamaindex"
@@ -430,6 +432,7 @@ class TestDocumentIndexingService:
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.SEMANTIC,
+            embedding_service=mock_embedding_service,
         )
         assert result.processing_strategy == ChunkingStrategy.SEMANTIC
 

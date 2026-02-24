@@ -17,9 +17,11 @@ class ProjectEmbeddingServiceResolver:
         self,
         settings: Settings,
         provider_api_key_crypto_service: ProviderApiKeyCryptoService,
+        default_embedding_service: EmbeddingService | None = None,
     ) -> None:
         self._settings = settings
         self._provider_api_key_crypto_service = provider_api_key_crypto_service
+        self._default_embedding_service = default_embedding_service
 
     def resolve(self, project: Project) -> EmbeddingService:
         backend = project.embedding_backend or self._settings.embedding_backend
@@ -56,7 +58,11 @@ class ProjectEmbeddingServiceResolver:
                 expected_dimension=self._settings.embedding_dimension,
             )
 
-        return InMemoryEmbeddingService(dimension=self._settings.embedding_dimension)
+        return (
+            self._default_embedding_service
+            if self._default_embedding_service is not None
+            else InMemoryEmbeddingService(dimension=self._settings.embedding_dimension)
+        )
 
     def _resolve_api_key(self, encrypted_api_key: str | None, fallback_api_key: str) -> str:
         if encrypted_api_key is None or encrypted_api_key.strip() == "":

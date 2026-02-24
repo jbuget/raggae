@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import pytest
 
+from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.domain.entities.project import Project
@@ -68,6 +69,15 @@ class TestDocumentProcessingFlow:
         document_chunk_repository = InMemoryDocumentChunkRepository()
         file_storage_service = InMemoryFileStorageService()
 
+        embedding_service = InMemoryEmbeddingService(dimension=16)
+        document_indexing_service = DocumentIndexingService(
+            document_chunk_repository=document_chunk_repository,
+            document_text_extractor=MultiFormatDocumentTextExtractor(),
+            text_sanitizer_service=SimpleTextSanitizerService(),
+            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
+            text_chunker_service=SimpleTextChunkerService(chunk_size=10, chunk_overlap=0),
+            embedding_service=embedding_service,
+        )
         upload_use_case = UploadDocument(
             document_repository=document_repository,
             project_repository=project_repository,
@@ -75,11 +85,7 @@ class TestDocumentProcessingFlow:
             max_file_size=104857600,
             processing_mode="sync",
             document_chunk_repository=document_chunk_repository,
-            document_text_extractor=MultiFormatDocumentTextExtractor(),
-            text_sanitizer_service=SimpleTextSanitizerService(),
-            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
-            text_chunker_service=SimpleTextChunkerService(chunk_size=10, chunk_overlap=0),
-            embedding_service=InMemoryEmbeddingService(dimension=16),
+            document_indexing_service=document_indexing_service,
         )
         delete_use_case = DeleteDocument(
             document_repository=document_repository,
@@ -137,6 +143,15 @@ class TestDocumentProcessingFlow:
                 fallback_chunker=fixed_window_chunker
             ),
         )
+        embedding_service = InMemoryEmbeddingService(dimension=16)
+        document_indexing_service = DocumentIndexingService(
+            document_chunk_repository=document_chunk_repository,
+            document_text_extractor=MultiFormatDocumentTextExtractor(),
+            text_sanitizer_service=SimpleTextSanitizerService(),
+            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
+            text_chunker_service=text_chunker_service,
+            embedding_service=embedding_service,
+        )
         upload_use_case = UploadDocument(
             document_repository=document_repository,
             project_repository=project_repository,
@@ -144,11 +159,7 @@ class TestDocumentProcessingFlow:
             max_file_size=104857600,
             processing_mode="sync",
             document_chunk_repository=document_chunk_repository,
-            document_text_extractor=MultiFormatDocumentTextExtractor(),
-            text_sanitizer_service=SimpleTextSanitizerService(),
-            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
-            text_chunker_service=text_chunker_service,
-            embedding_service=InMemoryEmbeddingService(dimension=16),
+            document_indexing_service=document_indexing_service,
         )
 
         # When
@@ -200,6 +211,15 @@ class TestDocumentProcessingFlow:
             ),
             context_window_size=6,
         )
+        embedding_service = InMemoryEmbeddingService(dimension=16)
+        document_indexing_service = DocumentIndexingService(
+            document_chunk_repository=document_chunk_repository,
+            document_text_extractor=MultiFormatDocumentTextExtractor(),
+            text_sanitizer_service=SimpleTextSanitizerService(),
+            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
+            text_chunker_service=text_chunker_service,
+            embedding_service=embedding_service,
+        )
         upload_use_case = UploadDocument(
             document_repository=document_repository,
             project_repository=project_repository,
@@ -207,11 +227,7 @@ class TestDocumentProcessingFlow:
             max_file_size=104857600,
             processing_mode="sync",
             document_chunk_repository=document_chunk_repository,
-            document_text_extractor=MultiFormatDocumentTextExtractor(),
-            text_sanitizer_service=SimpleTextSanitizerService(),
-            document_structure_analyzer=HeuristicDocumentStructureAnalyzer(),
-            text_chunker_service=text_chunker_service,
-            embedding_service=InMemoryEmbeddingService(dimension=16),
+            document_indexing_service=document_indexing_service,
         )
         content = (
             b"This is paragraph one with enough text to keep narrative style and avoid "

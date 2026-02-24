@@ -28,7 +28,7 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.value_objects.document_status import DocumentStatus
 
-ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx"}
+ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc"}
 
 
 @dataclass(frozen=True)

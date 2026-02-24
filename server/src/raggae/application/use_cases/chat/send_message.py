@@ -230,23 +230,15 @@ class SendMessage:
             if self._project_llm_service_resolver is not None
             else self._llm_service
         )
-        try:
-            answer = await llm_service.generate_answer(prompt)
-            sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
-            if sanitized_answer != answer:
-                answer = sanitized_answer
-                source_documents = []
-                reliability_percent = 0
-            else:
-                source_documents = self._extract_source_documents(relevant_chunks)
-                reliability_percent = self._compute_reliability_percent(relevant_chunks)
-        except LLMGenerationError:
-            answer = (
-                "I found relevant context but could not generate an answer right now. "
-                "Please try again in a few seconds."
-            )
+        answer = await llm_service.generate_answer(prompt)
+        sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
+        if sanitized_answer != answer:
+            answer = sanitized_answer
             source_documents = []
             reliability_percent = 0
+        else:
+            source_documents = self._extract_source_documents(relevant_chunks)
+            reliability_percent = self._compute_reliability_percent(relevant_chunks)
         await self._message_repository.save(
             Message(
                 id=uuid4(),

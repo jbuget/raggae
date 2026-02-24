@@ -16,6 +16,7 @@ from raggae.application.use_cases.chat.list_conversation_messages import (
 from raggae.application.use_cases.chat.list_conversations import ListConversations
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.application.use_cases.chat.update_conversation import UpdateConversation
+from raggae.application.use_cases.project.get_project import GetProject
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.domain.exceptions.project_exceptions import (
@@ -27,6 +28,7 @@ from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_delete_conversation_use_case,
     get_get_conversation_use_case,
+    get_get_project_use_case,
     get_list_conversation_messages_use_case,
     get_list_conversations_use_case,
     get_send_message_use_case,
@@ -138,7 +140,15 @@ async def stream_message(
     data: SendMessageRequest,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[SendMessage, Depends(get_send_message_use_case)],
+    get_project: Annotated[GetProject, Depends(get_get_project_use_case)],
 ) -> StreamingResponse:
+    try:
+        await get_project.execute(project_id=project_id, user_id=user_id)
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
     from raggae.application.dto.chat_stream_event import ChatStreamDone, ChatStreamToken
 
     retrieval_strategy = data.retrieval_strategy or settings.retrieval_default_strategy

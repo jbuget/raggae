@@ -160,7 +160,9 @@ async def activate_model_credential(
 async def deactivate_model_credential(
     credential_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[DeactivateProviderApiKey, Depends(get_deactivate_provider_api_key_use_case)],
+    use_case: Annotated[
+        DeactivateProviderApiKey, Depends(get_deactivate_provider_api_key_use_case)
+    ],
 ) -> None:
     _raise_if_user_provider_keys_disabled()
     try:

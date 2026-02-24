@@ -301,20 +301,10 @@ else:
         fulltext_weight=settings.retrieval_fulltext_weight,
     )
 _password_hasher = BcryptPasswordHasher()
-_provider_api_key_crypto_service: ProviderApiKeyCryptoService = (
-    FernetProviderApiKeyCryptoService(encryption_key=settings.credentials_encryption_key)
+_provider_api_key_crypto_service: ProviderApiKeyCryptoService = FernetProviderApiKeyCryptoService(
+    encryption_key=settings.credentials_encryption_key
 )
 _provider_api_key_validator: ProviderApiKeyValidator = SimpleProviderApiKeyValidator()
-_project_embedding_service_resolver: ProjectEmbeddingServiceResolver = (
-    RuntimeProjectEmbeddingServiceResolver(
-        settings=settings,
-        provider_api_key_crypto_service=_provider_api_key_crypto_service,
-    )
-)
-_project_llm_service_resolver: ProjectLLMServiceResolver = RuntimeProjectLLMServiceResolver(
-    settings=settings,
-    provider_api_key_crypto_service=_provider_api_key_crypto_service,
-)
 _provider_api_key_resolver = GetEffectiveProviderApiKey(
     provider_credential_repository=_provider_credential_repository,
     provider_api_key_crypto_service=_provider_api_key_crypto_service,
@@ -411,6 +401,18 @@ elif settings.llm_backend == "ollama":
     )
 else:
     _llm_service = InMemoryLLMService()
+_project_embedding_service_resolver: ProjectEmbeddingServiceResolver = (
+    RuntimeProjectEmbeddingServiceResolver(
+        settings=settings,
+        provider_api_key_crypto_service=_provider_api_key_crypto_service,
+        default_embedding_service=_embedding_service,
+    )
+)
+_project_llm_service_resolver: ProjectLLMServiceResolver = RuntimeProjectLLMServiceResolver(
+    settings=settings,
+    provider_api_key_crypto_service=_provider_api_key_crypto_service,
+    default_llm_service=_llm_service,
+)
 if settings.reranker_backend == "cross_encoder":
     from raggae.infrastructure.services.cross_encoder_reranker_service import (
         CrossEncoderRerankerService,
@@ -445,9 +447,7 @@ def get_create_project_use_case() -> CreateProject:
     return CreateProject(
         project_repository=_project_repository,
         provider_credential_repository=_provider_credential_repository,
-    ).with_crypto_service(
-        _provider_api_key_crypto_service
-    )
+    ).with_crypto_service(_provider_api_key_crypto_service)
 
 
 def get_get_project_use_case() -> GetProject:
@@ -466,9 +466,7 @@ def get_update_project_use_case() -> UpdateProject:
     return UpdateProject(
         project_repository=_project_repository,
         provider_credential_repository=_provider_credential_repository,
-    ).with_crypto_service(
-        _provider_api_key_crypto_service
-    )
+    ).with_crypto_service(_provider_api_key_crypto_service)
 
 
 def get_reindex_project_use_case() -> ReindexProject:

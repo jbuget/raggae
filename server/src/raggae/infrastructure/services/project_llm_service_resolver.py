@@ -17,9 +17,11 @@ class ProjectLLMServiceResolver:
         self,
         settings: Settings,
         provider_api_key_crypto_service: ProviderApiKeyCryptoService,
+        default_llm_service: LLMService | None = None,
     ) -> None:
         self._settings = settings
         self._provider_api_key_crypto_service = provider_api_key_crypto_service
+        self._default_llm_service = default_llm_service
 
     def resolve(self, project: Project) -> LLMService:
         backend = project.llm_backend or self._settings.llm_backend
@@ -49,7 +51,11 @@ class ProjectLLMServiceResolver:
                 keep_alive=self._settings.ollama_keep_alive,
             )
 
-        return InMemoryLLMService()
+        return (
+            self._default_llm_service
+            if self._default_llm_service is not None
+            else InMemoryLLMService()
+        )
 
     def _resolve_api_key(self, encrypted_api_key: str | None, fallback_api_key: str) -> str:
         if encrypted_api_key is None or encrypted_api_key.strip() == "":

@@ -179,7 +179,7 @@ class TestUploadDocument:
                 content_type="application/pdf",
             )
 
-    async def test_upload_doc_format_raises_error(
+    async def test_upload_unsupported_format_raises_error(
         self,
         use_case: UploadDocument,
         mock_project_repository: AsyncMock,
@@ -202,9 +202,9 @@ class TestUploadDocument:
             await use_case.execute(
                 project_id=project_id,
                 user_id=user_id,
-                file_name="doc.doc",
+                file_name="script.exe",
                 file_content=b"content",
-                content_type="application/msword",
+                content_type="application/octet-stream",
             )
 
     async def test_upload_document_quota_reached_raises_error(

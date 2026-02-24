@@ -1,5 +1,5 @@
-from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
+from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
