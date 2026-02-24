@@ -4,3 +4,7 @@ class ProviderCredentialNotFoundError(ValueError):
 
 class DuplicateProviderCredentialError(ValueError):
     """Raised when a credential with the same API key already exists for a user and provider."""
+
+
+class CredentialInUseError(ValueError):
+    """Raised when a credential cannot be deactivated because a project is using it."""

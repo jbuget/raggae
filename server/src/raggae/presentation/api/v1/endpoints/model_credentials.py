@@ -20,6 +20,7 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
     SaveProviderApiKey,
 )
 from raggae.domain.exceptions.provider_credential_exceptions import (
+    CredentialInUseError,
     DuplicateProviderCredentialError,
     ProviderCredentialNotFoundError,
 )
@@ -168,6 +169,11 @@ async def deactivate_model_credential(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Provider credential not found",
+        ) from None
+    except CredentialInUseError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This API key is used by one or more projects and cannot be deactivated",
         ) from None
     logger.info(
         "provider_credential_deactivated",

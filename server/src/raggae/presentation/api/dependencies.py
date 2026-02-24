@@ -589,7 +589,10 @@ def get_activate_provider_api_key_use_case() -> ActivateProviderApiKey:
 
 
 def get_deactivate_provider_api_key_use_case() -> DeactivateProviderApiKey:
-    return DeactivateProviderApiKey(provider_credential_repository=_provider_credential_repository)
+    return DeactivateProviderApiKey(
+        provider_credential_repository=_provider_credential_repository,
+        project_repository=_project_repository,
+    )
 
 
 def get_list_conversation_messages_use_case() -> ListConversationMessages:
