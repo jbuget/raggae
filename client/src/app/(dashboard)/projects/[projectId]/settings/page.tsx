@@ -148,15 +148,15 @@ export default function ProjectSettingsPage() {
     llm_api_key_credential_id: effectiveLlmCredentialId || null,
   };
 
-  const credentialsByProvider = (credentials ?? []).reduce<
-    Record<ModelProvider, Array<{ id: string; masked_key: string }>>
-  >(
-    (acc, credential) => {
-      acc[credential.provider].push({ id: credential.id, masked_key: credential.masked_key });
-      return acc;
-    },
-    { openai: [], gemini: [], anthropic: [] },
-  );
+  const credentialsByProvider = (credentials ?? [])
+    .filter((c) => c.is_active)
+    .reduce<Record<ModelProvider, Array<{ id: string; masked_key: string }>>>(
+      (acc, credential) => {
+        acc[credential.provider].push({ id: credential.id, masked_key: credential.masked_key });
+        return acc;
+      },
+      { openai: [], gemini: [], anthropic: [] },
+    );
 
   const embeddingProviderForHints =
     effectiveEmbeddingBackend === "openai" || effectiveEmbeddingBackend === "gemini"
