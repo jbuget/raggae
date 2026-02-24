@@ -268,6 +268,38 @@ Les utilisateurs peuvent enregistrer leurs propres clés API provider.
 - `USER_PROVIDER_KEYS_ENABLED=true|false`
 - Si désactivé (`false`), les endpoints `model-credentials` répondent `404 Not found`.
 
+## 🏢 Organizations (B2B/B2C foundation)
+
+The backend now supports organization entities and membership management.
+
+### Roles
+
+- `owner`: can update organization profile, invite/resend/revoke invitations, manage member roles and remove members.
+- `maker`: regular member role (non-admin).
+- `user`: regular member role (non-admin).
+
+Business guardrails:
+
+- Organization creator is automatically added as the first `owner`.
+- The last owner cannot be removed, demoted, or leave the organization.
+
+### Endpoints
+
+- `POST /api/v1/organizations`
+- `GET /api/v1/organizations`
+- `GET /api/v1/organizations/{organization_id}`
+- `PATCH /api/v1/organizations/{organization_id}`
+- `DELETE /api/v1/organizations/{organization_id}`
+- `GET /api/v1/organizations/{organization_id}/members`
+- `PATCH /api/v1/organizations/{organization_id}/members/{member_id}`
+- `DELETE /api/v1/organizations/{organization_id}/members/{member_id}`
+- `POST /api/v1/organizations/{organization_id}/leave`
+- `POST /api/v1/organizations/{organization_id}/invitations`
+- `GET /api/v1/organizations/{organization_id}/invitations`
+- `POST /api/v1/organizations/{organization_id}/invitations/{invitation_id}/resend`
+- `DELETE /api/v1/organizations/{organization_id}/invitations/{invitation_id}`
+- `POST /api/v1/organizations/invitations/accept`
+
 ## 🔧 Configuration
 
 ### Variables d'environnement (Backend)
