@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Github, MoreHorizontal } from "lucide-react";
+import { Github, MoreHorizontal, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,9 +49,16 @@ export function Sidebar() {
           </Link>
         ))}
         <div className="mt-4 border-t pt-3">
-          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            My Projects
-          </p>
+          <div className="flex items-center justify-between px-3 pb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              My Projects
+            </p>
+            <Button asChild variant="ghost" size="icon" className="h-6 w-6">
+              <Link href="/projects/new" aria-label="Create project">
+                <Plus className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
           {isLoading && (
             <p className="px-3 py-1 text-sm text-muted-foreground">Loading...</p>
           )}
