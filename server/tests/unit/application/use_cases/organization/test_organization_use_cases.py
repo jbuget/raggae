@@ -234,6 +234,7 @@ class TestOrganizationUseCases:
         )
         await use_case.execute(organization_id=organization.id, user_id=owner_id)
         assert await org_repo.find_by_id(organization.id) is None
+        assert await member_repo.find_by_organization_id(organization.id) == []
 
     async def test_get_organization_errors(
         self,

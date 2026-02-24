@@ -36,4 +36,9 @@ class DeleteOrganization:
             raise OrganizationAccessDeniedError(
                 f"User {user_id} cannot delete organization {organization_id}"
             )
+        members = await self._organization_member_repository.find_by_organization_id(
+            organization_id
+        )
+        for org_member in members:
+            await self._organization_member_repository.delete(org_member.id)
         await self._organization_repository.delete(organization_id)
