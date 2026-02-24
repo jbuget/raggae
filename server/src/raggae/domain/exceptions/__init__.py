@@ -7,6 +7,12 @@ from raggae.domain.exceptions.document_exceptions import (
     InvalidDocumentTypeError,
     LLMGenerationError,
 )
+from raggae.domain.exceptions.organization_exceptions import (
+    LastOrganizationOwnerError,
+    OrganizationAccessDeniedError,
+    OrganizationInvitationInvalidError,
+    OrganizationNotFoundError,
+)
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
@@ -63,6 +69,10 @@ __all__ = [
     "ProjectAPIKeyNotOwnedError",
     "ProjectAlreadyPublishedError",
     "ProjectNotFoundError",
+    "LastOrganizationOwnerError",
+    "OrganizationAccessDeniedError",
+    "OrganizationInvitationInvalidError",
+    "OrganizationNotFoundError",
     "UserAlreadyExistsError",
     "UserAlreadyInactiveError",
     "WeakPasswordError",
