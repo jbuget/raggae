@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { OrganizationMembersPanel } from "@/components/organizations/organization-members-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +74,8 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
           {deleteOrganization.isPending ? "Deleting..." : "Delete organization"}
         </Button>
       </div>
+
+      <OrganizationMembersPanel organizationId={organizationId} />
     </div>
   );
 }
