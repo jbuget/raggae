@@ -96,6 +96,7 @@ class SendMessage:
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
+        effective_retrieval_min_score = project.retrieval_min_score
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
@@ -174,6 +175,7 @@ class SendMessage:
             limit=effective_limit,
             offset=offset,
             strategy=effective_retrieval_strategy,
+            min_score=effective_retrieval_min_score,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(
@@ -292,6 +294,7 @@ class SendMessage:
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
+        effective_retrieval_min_score = project.retrieval_min_score
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
@@ -370,6 +373,7 @@ class SendMessage:
             limit=effective_limit,
             offset=offset,
             strategy=effective_retrieval_strategy,
+            min_score=effective_retrieval_min_score,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(

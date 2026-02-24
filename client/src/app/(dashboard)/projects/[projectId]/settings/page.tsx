@@ -86,6 +86,7 @@ export default function ProjectSettingsPage() {
   const [llmCredentialId, setLlmCredentialId] = useState<string | null>(null);
   const [retrievalStrategy, setRetrievalStrategy] = useState<RetrievalStrategy | null>(null);
   const [retrievalTopK, setRetrievalTopK] = useState<number | null>(null);
+  const [retrievalMinScore, setRetrievalMinScore] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -120,6 +121,7 @@ export default function ProjectSettingsPage() {
   const effectiveRetrievalStrategy =
     retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
   const effectiveRetrievalTopK = retrievalTopK ?? project.retrieval_top_k ?? 8;
+  const effectiveRetrievalMinScore = retrievalMinScore ?? project.retrieval_min_score ?? 0.3;
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -135,6 +137,7 @@ export default function ProjectSettingsPage() {
     effectiveLlmModel !== (project.llm_model ?? "") ||
     effectiveRetrievalStrategy !== (project.retrieval_strategy ?? "hybrid") ||
     effectiveRetrievalTopK !== (project.retrieval_top_k ?? 8) ||
+    effectiveRetrievalMinScore !== (project.retrieval_min_score ?? 0.3) ||
     effectiveEmbeddingCredentialId !== "" ||
     effectiveLlmCredentialId !== "";
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
@@ -159,6 +162,7 @@ export default function ProjectSettingsPage() {
     llm_api_key_credential_id: effectiveLlmCredentialId || null,
     retrieval_strategy: effectiveRetrievalStrategy,
     retrieval_top_k: effectiveRetrievalTopK,
+    retrieval_min_score: effectiveRetrievalMinScore,
   };
 
   const credentialsByProvider = (credentials ?? [])
@@ -652,6 +656,26 @@ export default function ProjectSettingsPage() {
             />
             <p className="text-xs text-muted-foreground">
               Default number of chunks retrieved for each user message.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="retrievalMinScore">Min score threshold</Label>
+            <Input
+              id="retrievalMinScore"
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={effectiveRetrievalMinScore}
+              onChange={(e) => {
+                const parsed = Number.parseFloat(e.target.value);
+                if (Number.isNaN(parsed)) return;
+                const bounded = Math.max(0, Math.min(1, parsed));
+                setRetrievalMinScore(Math.round(bounded * 100) / 100);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Discard chunks scored below this threshold (between 0.0 and 1.0).
             </p>
           </div>
         </div>

@@ -120,6 +120,7 @@ class TestSendMessage:
             limit=2,
             offset=0,
             strategy="hybrid",
+            min_score=0.3,
             metadata_filters=None,
         )
         use_case._provider_api_key_resolver.resolve.assert_awaited_once_with(
@@ -169,6 +170,7 @@ class TestSendMessage:
             limit=2,
             offset=0,
             strategy="fulltext",
+            min_score=0.3,
             metadata_filters=None,
         )
 
@@ -202,6 +204,7 @@ class TestSendMessage:
             limit=13,
             offset=0,
             strategy="hybrid",
+            min_score=0.3,
             metadata_filters=None,
         )
 
@@ -460,6 +463,7 @@ class TestSendMessage:
             limit=2,
             offset=0,
             strategy="fulltext",
+            min_score=0.3,
             metadata_filters={"source_type": "paragraph"},
         )
 
@@ -484,6 +488,7 @@ class TestSendMessage:
             limit=14,
             offset=0,
             strategy="hybrid",
+            min_score=0.3,
             metadata_filters=None,
         )
 
@@ -620,6 +625,7 @@ class TestSendMessage:
             limit=8,
             offset=0,
             strategy="hybrid",
+            min_score=0.3,
             metadata_filters=None,
         )
 

@@ -5,8 +5,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from raggae.application.constants import (
+    MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
+    MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
@@ -32,6 +34,11 @@ class CreateProjectRequest(BaseModel):
         ge=MIN_PROJECT_RETRIEVAL_TOP_K,
         le=MAX_PROJECT_RETRIEVAL_TOP_K,
     )
+    retrieval_min_score: float | None = Field(
+        default=None,
+        ge=MIN_PROJECT_RETRIEVAL_MIN_SCORE,
+        le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
+    )
 
 
 class UpdateProjectRequest(BaseModel):
@@ -53,6 +60,11 @@ class UpdateProjectRequest(BaseModel):
         default=None,
         ge=MIN_PROJECT_RETRIEVAL_TOP_K,
         le=MAX_PROJECT_RETRIEVAL_TOP_K,
+    )
+    retrieval_min_score: float | None = Field(
+        default=None,
+        ge=MIN_PROJECT_RETRIEVAL_MIN_SCORE,
+        le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     )
 
 
@@ -79,6 +91,7 @@ class ProjectResponse(BaseModel):
     llm_api_key_credential_id: UUID | None
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
     retrieval_top_k: int
+    retrieval_min_score: float
 
 
 class ReindexProjectResponse(BaseModel):

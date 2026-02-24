@@ -2,8 +2,10 @@ from dataclasses import replace
 from uuid import UUID
 
 from raggae.application.constants import (
+    MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
+    MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
 from raggae.application.dto.project_dto import ProjectDTO
@@ -19,6 +21,7 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
     ProjectAPIKeyNotOwnedError,
@@ -71,6 +74,7 @@ class UpdateProject:
         llm_api_key_credential_id: UUID | None = None,
         retrieval_strategy: str | None = None,
         retrieval_top_k: int | None = None,
+        retrieval_min_score: float | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -98,6 +102,15 @@ class UpdateProject:
             raise InvalidProjectRetrievalTopKError(
                 f"retrieval_top_k must be between {MIN_PROJECT_RETRIEVAL_TOP_K} "
                 f"and {MAX_PROJECT_RETRIEVAL_TOP_K}"
+            )
+        if retrieval_min_score is not None and not (
+            MIN_PROJECT_RETRIEVAL_MIN_SCORE
+            <= retrieval_min_score
+            <= MAX_PROJECT_RETRIEVAL_MIN_SCORE
+        ):
+            raise InvalidProjectRetrievalMinScoreError(
+                f"retrieval_min_score must be between {MIN_PROJECT_RETRIEVAL_MIN_SCORE} "
+                f"and {MAX_PROJECT_RETRIEVAL_MIN_SCORE}"
             )
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
@@ -177,6 +190,11 @@ class UpdateProject:
                 project.retrieval_strategy if retrieval_strategy is None else retrieval_strategy
             ),
             retrieval_top_k=project.retrieval_top_k if retrieval_top_k is None else retrieval_top_k,
+            retrieval_min_score=(
+                project.retrieval_min_score
+                if retrieval_min_score is None
+                else retrieval_min_score
+            ),
         )
         await self._project_repository.save(updated_project)
         return ProjectDTO.from_entity(updated_project)

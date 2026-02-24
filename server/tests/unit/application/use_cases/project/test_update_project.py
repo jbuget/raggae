@@ -9,6 +9,7 @@ from raggae.domain.entities.user_model_provider_credential import UserModelProvi
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRetrievalMinScoreError,
     ProjectAPIKeyNotOwnedError,
     ProjectNotFoundError,
     ProjectSystemPromptTooLongError,
@@ -214,6 +215,59 @@ class TestUpdateProject:
         )
 
         assert result.retrieval_top_k == 14
+
+    async def test_update_project_updates_retrieval_min_score_when_provided(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=project.user_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+            retrieval_min_score=0.55,
+        )
+
+        assert result.retrieval_min_score == 0.55
+
+    async def test_update_project_with_invalid_retrieval_min_score_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectRetrievalMinScoreError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                retrieval_min_score=-0.1,
+            )
 
     async def test_update_project_with_too_long_system_prompt_raises_error(
         self,

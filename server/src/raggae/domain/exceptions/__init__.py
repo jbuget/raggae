@@ -10,6 +10,7 @@ from raggae.domain.exceptions.document_exceptions import (
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
     ProjectAlreadyPublishedError,
@@ -48,6 +49,7 @@ __all__ = [
     "InvalidProviderApiKeyError",
     "InvalidProjectEmbeddingBackendError",
     "InvalidProjectLLMBackendError",
+    "InvalidProjectRetrievalMinScoreError",
     "InvalidProjectRetrievalTopKError",
     "InvalidProjectRetrievalStrategyError",
     "ProjectAPIKeyNotOwnedError",

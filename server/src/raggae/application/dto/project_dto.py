@@ -32,6 +32,7 @@ class ProjectDTO:
     llm_api_key_credential_id: UUID | None
     retrieval_strategy: str
     retrieval_top_k: int
+    retrieval_min_score: float
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
@@ -66,4 +67,5 @@ class ProjectDTO:
             llm_api_key_credential_id=project.llm_api_key_credential_id,
             retrieval_strategy=project.retrieval_strategy,
             retrieval_top_k=project.retrieval_top_k,
+            retrieval_min_score=project.retrieval_min_score,
         )

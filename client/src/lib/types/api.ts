@@ -56,6 +56,7 @@ export interface CreateProjectRequest {
   llm_api_key_credential_id?: string | null;
   retrieval_strategy?: RetrievalStrategy | null;
   retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
 }
 
 export interface UpdateProjectRequest {
@@ -74,6 +75,7 @@ export interface UpdateProjectRequest {
   llm_api_key_credential_id?: string | null;
   retrieval_strategy?: RetrievalStrategy | null;
   retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
 }
 
 export interface ProjectResponse {
@@ -99,6 +101,7 @@ export interface ProjectResponse {
   llm_api_key_credential_id?: string | null;
   retrieval_strategy: RetrievalStrategy;
   retrieval_top_k: number;
+  retrieval_min_score: number;
 }
 
 export interface ReindexProjectResponse {

@@ -40,6 +40,7 @@ class SQLAlchemyProjectRepository:
                     llm_api_key_credential_id=project.llm_api_key_credential_id,
                     retrieval_strategy=project.retrieval_strategy,
                     retrieval_top_k=project.retrieval_top_k,
+                    retrieval_min_score=project.retrieval_min_score,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -64,6 +65,7 @@ class SQLAlchemyProjectRepository:
                 model.llm_api_key_credential_id = project.llm_api_key_credential_id
                 model.retrieval_strategy = project.retrieval_strategy
                 model.retrieval_top_k = project.retrieval_top_k
+                model.retrieval_min_score = project.retrieval_min_score
             await session.commit()
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
@@ -93,6 +95,7 @@ class SQLAlchemyProjectRepository:
                 llm_api_key_credential_id=model.llm_api_key_credential_id,
                 retrieval_strategy=model.retrieval_strategy,
                 retrieval_top_k=model.retrieval_top_k,
+                retrieval_min_score=model.retrieval_min_score,
                 created_at=model.created_at,
             )
 
@@ -125,6 +128,7 @@ class SQLAlchemyProjectRepository:
                     llm_api_key_credential_id=model.llm_api_key_credential_id,
                     retrieval_strategy=model.retrieval_strategy,
                     retrieval_top_k=model.retrieval_top_k,
+                    retrieval_min_score=model.retrieval_min_score,
                     created_at=model.created_at,
                 )
                 for model in models

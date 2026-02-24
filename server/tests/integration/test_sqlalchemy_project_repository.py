@@ -59,6 +59,7 @@ class TestSQLAlchemyProjectRepository:
             llm_api_key_encrypted="enc-llm",
             retrieval_strategy="fulltext",
             retrieval_top_k=11,
+            retrieval_min_score=0.37,
         )
 
         # When
@@ -80,3 +81,4 @@ class TestSQLAlchemyProjectRepository:
         assert found.llm_api_key_encrypted == "enc-llm"
         assert found.retrieval_strategy == "fulltext"
         assert found.retrieval_top_k == 11
+        assert found.retrieval_min_score == 0.37

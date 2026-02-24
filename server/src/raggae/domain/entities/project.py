@@ -35,6 +35,7 @@ class Project:
     llm_api_key_credential_id: UUID | None = None
     retrieval_strategy: str = "hybrid"
     retrieval_top_k: int = 8
+    retrieval_min_score: float = 0.3
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""

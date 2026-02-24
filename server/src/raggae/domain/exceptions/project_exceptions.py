@@ -30,5 +30,9 @@ class InvalidProjectRetrievalTopKError(ValueError):
     """Raised when project retrieval top-k is unsupported."""
 
 
+class InvalidProjectRetrievalMinScoreError(ValueError):
+    """Raised when project retrieval min-score threshold is unsupported."""
+
+
 class ProjectAPIKeyNotOwnedError(ValueError):
     """Raised when project API key is not registered for the current user."""

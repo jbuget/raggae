@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -54,5 +54,8 @@ class ProjectModel(Base):
     )
     retrieval_top_k: Mapped[int] = mapped_column(
         Integer(), nullable=False, default=8, server_default="8"
+    )
+    retrieval_min_score: Mapped[float] = mapped_column(
+        Float(), nullable=False, default=0.3, server_default="0.3"
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

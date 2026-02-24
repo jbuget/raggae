@@ -53,6 +53,7 @@ class QueryRelevantChunks:
         query: str,
         limit: int = 5,
         strategy: str = "hybrid",
+        min_score: float | None = None,
         metadata_filters: dict[str, object] | None = None,
         offset: int = 0,
     ) -> QueryRelevantChunksResultDTO:
@@ -68,6 +69,7 @@ class QueryRelevantChunks:
         )
         query_embedding = (await embedding_service.embed_texts([query]))[0]
         strategy_used = _resolve_strategy(strategy, query)
+        effective_min_score = self._min_score if min_score is None else min_score
 
         fetch_limit = (
             limit * self._reranker_candidate_multiplier if self._reranker_service else limit
@@ -79,7 +81,7 @@ class QueryRelevantChunks:
             query_embedding=query_embedding,
             limit=fetch_limit,
             offset=offset,
-            min_score=self._min_score,
+            min_score=effective_min_score,
             strategy=strategy_used,
             metadata_filters=metadata_filters,
         )
@@ -87,7 +89,7 @@ class QueryRelevantChunks:
         if self._reranker_service is not None:
             chunks = await self._reranker_service.rerank(query, chunks, top_k=limit)
         else:
-            chunks = [chunk for chunk in chunks if chunk.score >= self._min_score]
+            chunks = [chunk for chunk in chunks if chunk.score >= effective_min_score]
 
         chunks = await self._expand_context_window(chunks)
         chunks = await self._resolve_parent_context(chunks)

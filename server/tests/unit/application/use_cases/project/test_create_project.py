@@ -8,6 +8,7 @@ from raggae.domain.entities.user_model_provider_credential import UserModelProvi
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRetrievalMinScoreError,
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
@@ -118,6 +119,33 @@ class TestCreateProject:
         )
 
         assert result.retrieval_top_k == 12
+
+    async def test_create_project_with_retrieval_min_score(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        result = await use_case.execute(
+            user_id=uuid4(),
+            name="My Project",
+            description="A test project",
+            system_prompt="You are a helpful assistant",
+            retrieval_min_score=0.42,
+        )
+
+        assert result.retrieval_min_score == 0.42
+
+    async def test_create_project_with_invalid_retrieval_min_score_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectRetrievalMinScoreError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="You are a helpful assistant",
+                retrieval_min_score=1.1,
+            )
 
     async def test_create_project_with_too_long_system_prompt_raises(
         self,
