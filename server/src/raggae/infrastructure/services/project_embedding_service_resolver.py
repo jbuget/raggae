@@ -24,14 +24,14 @@ class ProjectEmbeddingServiceResolver:
         self._default_embedding_service = default_embedding_service
 
     def resolve(self, project: Project) -> EmbeddingService:
-        backend = project.embedding_backend or self._settings.embedding_backend
+        backend = project.embedding_backend or self._settings.default_embedding_provider
 
         if backend == "openai":
             api_key = self._resolve_api_key(
                 encrypted_api_key=project.embedding_api_key_encrypted,
-                fallback_api_key=self._settings.openai_api_key,
+                fallback_api_key=self._resolve_default_api_key(backend),
             )
-            model = project.embedding_model or self._settings.embedding_model
+            model = project.embedding_model or self._resolve_default_model(backend)
             return OpenAIEmbeddingService(
                 api_key=api_key,
                 model=model,
@@ -41,9 +41,9 @@ class ProjectEmbeddingServiceResolver:
         if backend == "gemini":
             api_key = self._resolve_api_key(
                 encrypted_api_key=project.embedding_api_key_encrypted,
-                fallback_api_key=self._settings.gemini_api_key,
+                fallback_api_key=self._resolve_default_api_key(backend),
             )
-            model = project.embedding_model or self._settings.gemini_embedding_model
+            model = project.embedding_model or self._resolve_default_model(backend)
             return GeminiEmbeddingService(
                 api_key=api_key,
                 model=model,
@@ -51,7 +51,7 @@ class ProjectEmbeddingServiceResolver:
             )
 
         if backend == "ollama":
-            model = project.embedding_model or self._settings.ollama_embedding_model
+            model = project.embedding_model or self._resolve_default_model(backend)
             return OllamaEmbeddingService(
                 base_url=self._settings.ollama_base_url,
                 model=model,
@@ -68,3 +68,17 @@ class ProjectEmbeddingServiceResolver:
         if encrypted_api_key is None or encrypted_api_key.strip() == "":
             return fallback_api_key
         return self._provider_api_key_crypto_service.decrypt(encrypted_api_key)
+
+    def _resolve_default_api_key(self, backend: str) -> str:
+        if backend == self._settings.default_embedding_provider:
+            return self._settings.default_embedding_api_key
+        return ""
+
+    def _resolve_default_model(self, backend: str) -> str:
+        if backend == self._settings.default_embedding_provider:
+            return self._settings.default_embedding_model
+        if backend == "gemini":
+            return self._settings.gemini_embedding_model
+        if backend == "ollama":
+            return self._settings.ollama_embedding_model
+        return "text-embedding-3-small"

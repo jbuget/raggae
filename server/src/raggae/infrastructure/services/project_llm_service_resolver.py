@@ -24,26 +24,26 @@ class ProjectLLMServiceResolver:
         self._default_llm_service = default_llm_service
 
     def resolve(self, project: Project) -> LLMService:
-        backend = project.llm_backend or self._settings.llm_backend
+        backend = project.llm_backend or self._settings.default_llm_provider
 
         if backend == "openai":
             api_key = self._resolve_api_key(
                 encrypted_api_key=project.llm_api_key_encrypted,
-                fallback_api_key=self._settings.openai_api_key,
+                fallback_api_key=self._resolve_default_api_key(backend),
             )
-            model = project.llm_model or self._settings.openai_llm_model
+            model = project.llm_model or self._resolve_default_model(backend)
             return OpenAILLMService(api_key=api_key, model=model)
 
         if backend == "gemini":
             api_key = self._resolve_api_key(
                 encrypted_api_key=project.llm_api_key_encrypted,
-                fallback_api_key=self._settings.gemini_api_key,
+                fallback_api_key=self._resolve_default_api_key(backend),
             )
-            model = project.llm_model or self._settings.gemini_llm_model
+            model = project.llm_model or self._resolve_default_model(backend)
             return GeminiLLMService(api_key=api_key, model=model)
 
         if backend == "ollama":
-            model = project.llm_model or self._settings.ollama_llm_model
+            model = project.llm_model or self._resolve_default_model(backend)
             return OllamaLLMService(
                 base_url=self._settings.ollama_base_url,
                 model=model,
@@ -61,3 +61,17 @@ class ProjectLLMServiceResolver:
         if encrypted_api_key is None or encrypted_api_key.strip() == "":
             return fallback_api_key
         return self._provider_api_key_crypto_service.decrypt(encrypted_api_key)
+
+    def _resolve_default_api_key(self, backend: str) -> str:
+        if backend == self._settings.default_llm_provider:
+            return self._settings.default_llm_api_key
+        return ""
+
+    def _resolve_default_model(self, backend: str) -> str:
+        if backend == self._settings.default_llm_provider:
+            return self._settings.default_llm_model
+        if backend == "gemini":
+            return self._settings.gemini_llm_model
+        if backend == "ollama":
+            return self._settings.ollama_llm_model
+        return "gpt-4o-mini"

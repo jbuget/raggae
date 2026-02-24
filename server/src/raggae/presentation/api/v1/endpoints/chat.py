@@ -106,7 +106,7 @@ async def send_message(
             "user_id": str(user_id),
             "limit": data.limit,
             "chunks_count": len(response.chunks),
-            "llm_backend": settings.llm_backend,
+            "llm_backend": settings.default_llm_provider,
             "elapsed_ms": round(elapsed_ms, 2),
         },
     )
@@ -209,7 +209,7 @@ async def stream_message(
                             "user_id": str(user_id),
                             "limit": data.limit,
                             "chunks_count": len(event.chunks),
-                            "llm_backend": settings.llm_backend,
+                            "llm_backend": settings.default_llm_provider,
                             "elapsed_ms": round(elapsed_ms, 2),
                         },
                     )

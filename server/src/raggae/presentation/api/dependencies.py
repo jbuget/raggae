@@ -240,13 +240,13 @@ from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
 
 
 def _build_embedding_service() -> EmbeddingService:
-    if settings.embedding_backend == "openai":
+    if settings.default_embedding_provider == "openai":
         return OpenAIEmbeddingService(
-            api_key=settings.openai_api_key,
-            model=settings.embedding_model,
+            api_key=settings.default_embedding_api_key,
+            model=settings.default_embedding_model,
             expected_dimension=settings.embedding_dimension,
         )
-    if settings.embedding_backend == "ollama":
+    if settings.default_embedding_provider == "ollama":
         from raggae.infrastructure.services.ollama_embedding_service import (
             OllamaEmbeddingService,
         )
@@ -256,10 +256,10 @@ def _build_embedding_service() -> EmbeddingService:
             model=settings.ollama_embedding_model,
             expected_dimension=settings.embedding_dimension,
         )
-    if settings.embedding_backend == "gemini":
+    if settings.default_embedding_provider == "gemini":
         return GeminiEmbeddingService(
-            api_key=settings.gemini_api_key,
-            model=settings.gemini_embedding_model,
+            api_key=settings.default_embedding_api_key,
+            model=settings.default_embedding_model,
             expected_dimension=settings.embedding_dimension,
         )
     return InMemoryEmbeddingService(dimension=settings.embedding_dimension)
@@ -315,9 +315,11 @@ _provider_api_key_resolver = GetEffectiveProviderApiKey(
     provider_credential_repository=_provider_credential_repository,
     provider_api_key_crypto_service=_provider_api_key_crypto_service,
     global_api_keys={
-        "openai": settings.openai_api_key,
-        "gemini": settings.gemini_api_key,
-        "anthropic": settings.anthropic_api_key,
+        "openai": settings.default_llm_api_key if settings.default_llm_provider == "openai" else "",
+        "gemini": settings.default_llm_api_key if settings.default_llm_provider == "gemini" else "",
+        "anthropic": settings.default_llm_api_key
+        if settings.default_llm_provider == "anthropic"
+        else "",
     },
 )
 if settings.storage_backend == "minio":
@@ -388,20 +390,20 @@ _document_indexing_service = DocumentIndexingService(
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
-if settings.llm_backend == "openai":
+if settings.default_llm_provider == "openai":
     _llm_service: LLMService = OpenAILLMService(
-        api_key=settings.openai_api_key,
-        model=settings.openai_llm_model,
+        api_key=settings.default_llm_api_key,
+        model=settings.default_llm_model,
     )
-elif settings.llm_backend == "gemini":
+elif settings.default_llm_provider == "gemini":
     _llm_service = GeminiLLMService(
-        api_key=settings.gemini_api_key,
-        model=settings.gemini_llm_model,
+        api_key=settings.default_llm_api_key,
+        model=settings.default_llm_model,
     )
-elif settings.llm_backend == "ollama":
+elif settings.default_llm_provider == "ollama":
     _llm_service = OllamaLLMService(
         base_url=settings.ollama_base_url,
-        model=settings.ollama_llm_model,
+        model=settings.default_llm_model,
         timeout_seconds=settings.llm_request_timeout_seconds,
         keep_alive=settings.ollama_keep_alive,
     )
@@ -572,7 +574,7 @@ def get_send_message_use_case() -> SendMessage:
         provider_api_key_resolver=_provider_api_key_resolver,
         project_llm_service_resolver=_project_llm_service_resolver,
         project_reranker_service_resolver=_project_reranker_service_resolver,
-        llm_provider=settings.llm_backend,
+        llm_provider=settings.default_llm_provider,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,
         history_max_chars=settings.chat_history_max_chars,

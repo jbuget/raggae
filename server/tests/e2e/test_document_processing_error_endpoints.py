@@ -12,7 +12,7 @@ class TestDocumentProcessingErrorEndpoints:
         monkeypatch,
     ) -> tuple[AsyncClient, object]:
         monkeypatch.setenv("PROCESSING_MODE", "sync")
-        monkeypatch.setenv("EMBEDDING_BACKEND", "inmemory")
+        monkeypatch.setenv("DEFAULT_EMBEDDING_PROVIDER", "inmemory")
         monkeypatch.setenv("STORAGE_BACKEND", "inmemory")
         monkeypatch.setenv("PERSISTENCE_BACKEND", "inmemory")
 

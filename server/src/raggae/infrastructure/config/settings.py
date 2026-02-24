@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 _SERVER_ROOT = Path(__file__).resolve().parents[4]
@@ -12,9 +13,14 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-here"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    openai_api_key: str = ""
-    gemini_api_key: str = ""
-    anthropic_api_key: str = ""
+    default_llm_provider: str = Field(default="inmemory", alias="DEFAULT_LLM_PROVIDER")
+    default_llm_api_key: str = Field(default="", alias="DEFAULT_LLM_API_KEY")
+    default_llm_model: str = Field(default="", alias="DEFAULT_LLM_MODEL")
+    default_embedding_provider: str = Field(
+        default="inmemory", alias="DEFAULT_EMBEDDING_PROVIDER"
+    )
+    default_embedding_api_key: str = Field(default="", alias="DEFAULT_EMBEDDING_API_KEY")
+    default_embedding_model: str = Field(default="", alias="DEFAULT_EMBEDDING_MODEL")
     credentials_encryption_key: str = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
     user_provider_keys_enabled: bool = True
     allowed_origins: str = "http://localhost:3000,http://localhost:8000"
@@ -24,12 +30,8 @@ class Settings(BaseSettings):
     storage_backend: str = "inmemory"
     persistence_backend: str = "inmemory"
     processing_mode: str = "off"
-    embedding_backend: str = "inmemory"
-    llm_backend: str = "inmemory"
     text_chunker_backend: str = "native"
-    embedding_model: str = "text-embedding-3-small"
     gemini_embedding_model: str = "text-embedding-004"
-    openai_llm_model: str = "gpt-4o-mini"
     gemini_llm_model: str = "gemini-1.5-flash"
     ollama_base_url: str = "http://localhost:11434"
     ollama_llm_model: str = "llama3.1"

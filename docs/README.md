@@ -261,7 +261,7 @@ Les utilisateurs peuvent enregistrer leurs propres clés API provider.
 ### Fallback clé utilisateur / clé globale
 
 - Si une clé utilisateur active existe pour le provider, elle est prioritaire.
-- Sinon, la clé globale serveur (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) est utilisée.
+- Sinon, la clé globale serveur `DEFAULT_LLM_API_KEY` (pour le provider LLM par défaut) est utilisée.
 
 ### Feature flag
 
@@ -281,14 +281,13 @@ SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# Gemini
-GEMINI_API_KEY=
-
-# Anthropic
-ANTHROPIC_API_KEY=
+# Defaults
+DEFAULT_LLM_PROVIDER=openai
+DEFAULT_LLM_API_KEY=sk-...
+DEFAULT_LLM_MODEL=gpt-4o-mini
+DEFAULT_EMBEDDING_PROVIDER=openai
+DEFAULT_EMBEDDING_API_KEY=sk-...
+DEFAULT_EMBEDDING_MODEL=text-embedding-3-small
 
 # User provider credentials
 CREDENTIALS_ENCRYPTION_KEY=<fernet-key-base64>

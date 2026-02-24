@@ -9,8 +9,8 @@ def pytest_configure(config: pytest.Config) -> None:
     os.environ.setdefault("STORAGE_BACKEND", "inmemory")
     os.environ.setdefault("PERSISTENCE_BACKEND", "inmemory")
     os.environ.setdefault("PROCESSING_MODE", "off")
-    os.environ.setdefault("EMBEDDING_BACKEND", "inmemory")
-    os.environ.setdefault("LLM_BACKEND", "inmemory")
+    os.environ.setdefault("DEFAULT_EMBEDDING_PROVIDER", "inmemory")
+    os.environ.setdefault("DEFAULT_LLM_PROVIDER", "inmemory")
 
 
 def _reset_repositories() -> None:
@@ -39,8 +39,8 @@ async def client() -> AsyncClient:
     os.environ["STORAGE_BACKEND"] = "inmemory"
     os.environ["PERSISTENCE_BACKEND"] = "inmemory"
     os.environ["PROCESSING_MODE"] = "off"
-    os.environ["EMBEDDING_BACKEND"] = "inmemory"
-    os.environ["LLM_BACKEND"] = "inmemory"
+    os.environ["DEFAULT_EMBEDDING_PROVIDER"] = "inmemory"
+    os.environ["DEFAULT_LLM_PROVIDER"] = "inmemory"
     from raggae.presentation.main import app
 
     _reset_repositories()
