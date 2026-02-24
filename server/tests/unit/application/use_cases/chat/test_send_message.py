@@ -77,6 +77,7 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
+            retrieval_top_k=14,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -168,6 +169,39 @@ class TestSendMessage:
             limit=2,
             offset=0,
             strategy="fulltext",
+            metadata_filters=None,
+        )
+
+    async def test_send_message_uses_project_retrieval_top_k_when_limit_missing(
+        self,
+        use_case: SendMessage,
+        mock_query_relevant_chunks: AsyncMock,
+    ) -> None:
+        use_case._project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            retrieval_top_k=13,
+        )
+
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="How do we design a scalable retrieval architecture?",
+            limit=None,
+        )
+
+        mock_query_relevant_chunks.execute.assert_awaited_with(
+            project_id=ANY,
+            user_id=ANY,
+            query="How do we design a scalable retrieval architecture?",
+            limit=13,
+            offset=0,
+            strategy="hybrid",
             metadata_filters=None,
         )
 
@@ -429,7 +463,7 @@ class TestSendMessage:
             metadata_filters={"source_type": "paragraph"},
         )
 
-    async def test_send_message_uses_adaptive_limit_when_missing(
+    async def test_send_message_uses_project_default_limit_when_missing(
         self,
         use_case: SendMessage,
         mock_query_relevant_chunks: AsyncMock,
@@ -447,7 +481,7 @@ class TestSendMessage:
             project_id=ANY,
             user_id=ANY,
             query="How do we design a scalable retrieval architecture?",
-            limit=8,
+            limit=14,
             offset=0,
             strategy="hybrid",
             metadata_filters=None,
@@ -528,7 +562,7 @@ class TestSendMessage:
         assert len(result.chunks) == 2
         assert result.chunks[0].document_id != result.chunks[1].document_id
 
-    async def test_send_message_uses_configured_default_chunk_limit(self) -> None:
+    async def test_send_message_uses_default_project_top_k_when_missing(self) -> None:
         # Given
         mock_query_relevant_chunks = AsyncMock()
         mock_query_relevant_chunks.execute.return_value = QueryRelevantChunksResultDTO(
@@ -583,7 +617,7 @@ class TestSendMessage:
             project_id=ANY,
             user_id=ANY,
             query="short question",
-            limit=14,
+            limit=8,
             offset=0,
             strategy="hybrid",
             metadata_filters=None,

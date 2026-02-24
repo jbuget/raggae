@@ -58,6 +58,7 @@ class TestSQLAlchemyProjectRepository:
             llm_model="gemini-2.0-flash",
             llm_api_key_encrypted="enc-llm",
             retrieval_strategy="fulltext",
+            retrieval_top_k=11,
         )
 
         # When
@@ -78,3 +79,4 @@ class TestSQLAlchemyProjectRepository:
         assert found.llm_model == "gemini-2.0-flash"
         assert found.llm_api_key_encrypted == "enc-llm"
         assert found.retrieval_strategy == "fulltext"
+        assert found.retrieval_top_k == 11

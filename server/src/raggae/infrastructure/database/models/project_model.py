@@ -52,4 +52,7 @@ class ProjectModel(Base):
     retrieval_strategy: Mapped[str] = mapped_column(
         String(16), nullable=False, default="hybrid", server_default="hybrid"
     )
+    retrieval_top_k: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=8, server_default="8"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

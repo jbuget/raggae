@@ -12,6 +12,7 @@ from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectRetrievalStrategyError,
+    InvalidProjectRetrievalTopKError,
     ProjectAPIKeyNotOwnedError,
     ProjectNotFoundError,
     ProjectReindexInProgressError,
@@ -71,6 +72,7 @@ async def create_project(
             llm_api_key=data.llm_api_key,
             llm_api_key_credential_id=data.llm_api_key_credential_id,
             retrieval_strategy=data.retrieval_strategy,
+            retrieval_top_k=data.retrieval_top_k,
         )
     except ProjectSystemPromptTooLongError as exc:
         raise HTTPException(
@@ -83,6 +85,11 @@ async def create_project(
             detail=str(exc),
         ) from None
     except InvalidProjectRetrievalStrategyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except InvalidProjectRetrievalTopKError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
@@ -109,6 +116,7 @@ async def create_project(
         llm_api_key_masked=project_dto.llm_api_key_masked,
         llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
         retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
+        retrieval_top_k=project_dto.retrieval_top_k,
     )
 
 
@@ -147,6 +155,7 @@ async def get_project(
         llm_api_key_masked=project_dto.llm_api_key_masked,
         llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
         retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
+        retrieval_top_k=project_dto.retrieval_top_k,
     )
 
 
@@ -179,6 +188,7 @@ async def list_projects(
             llm_api_key_masked=p.llm_api_key_masked,
             llm_api_key_credential_id=p.llm_api_key_credential_id,
             retrieval_strategy=cast(ProjectRetrievalStrategy, p.retrieval_strategy),
+            retrieval_top_k=p.retrieval_top_k,
         )
         for p in project_dtos
     ]
@@ -224,6 +234,7 @@ async def update_project(
             llm_api_key=data.llm_api_key,
             llm_api_key_credential_id=data.llm_api_key_credential_id,
             retrieval_strategy=data.retrieval_strategy,
+            retrieval_top_k=data.retrieval_top_k,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -241,6 +252,11 @@ async def update_project(
             detail=str(exc),
         ) from None
     except InvalidProjectRetrievalStrategyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
+    except InvalidProjectRetrievalTopKError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
@@ -267,6 +283,7 @@ async def update_project(
         llm_api_key_masked=project_dto.llm_api_key_masked,
         llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
         retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
+        retrieval_top_k=project_dto.retrieval_top_k,
     )
 
 

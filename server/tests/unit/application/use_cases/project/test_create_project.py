@@ -105,6 +105,20 @@ class TestCreateProject:
 
         assert result.retrieval_strategy == "fulltext"
 
+    async def test_create_project_with_retrieval_top_k(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        result = await use_case.execute(
+            user_id=uuid4(),
+            name="My Project",
+            description="A test project",
+            system_prompt="You are a helpful assistant",
+            retrieval_top_k=12,
+        )
+
+        assert result.retrieval_top_k == 12
+
     async def test_create_project_with_too_long_system_prompt_raises(
         self,
         use_case: CreateProject,

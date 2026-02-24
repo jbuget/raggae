@@ -38,6 +38,7 @@ import type {
   ModelProvider,
   ProjectEmbeddingBackend,
   ProjectLLMBackend,
+  RetrievalStrategy,
   UpdateProjectRequest,
 } from "@/lib/types/api";
 
@@ -52,7 +53,6 @@ const SETTINGS_TABS = [
   "Answer generation",
 ] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
-type RetrievalStrategy = "vector" | "fulltext" | "hybrid";
 
 export default function ProjectSettingsPage() {
   const params = useParams<{ projectId: string }>();
@@ -84,7 +84,8 @@ export default function ProjectSettingsPage() {
   const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | "" | undefined>(undefined);
   const [llmModel, setLlmModel] = useState<string | null>(null);
   const [llmCredentialId, setLlmCredentialId] = useState<string | null>(null);
-  const [retrievalStrategy, setRetrievalStrategy] = useState<RetrievalStrategy>("hybrid");
+  const [retrievalStrategy, setRetrievalStrategy] = useState<RetrievalStrategy | null>(null);
+  const [retrievalTopK, setRetrievalTopK] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -116,6 +117,9 @@ export default function ProjectSettingsPage() {
       : (embeddingCredentialId ?? (project.embedding_api_key_credential_id ?? ""));
   const effectiveLlmCredentialId =
     effectiveLlmBackend === "" ? "" : (llmCredentialId ?? (project.llm_api_key_credential_id ?? ""));
+  const effectiveRetrievalStrategy =
+    retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
+  const effectiveRetrievalTopK = retrievalTopK ?? project.retrieval_top_k ?? 8;
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -129,6 +133,8 @@ export default function ProjectSettingsPage() {
     effectiveEmbeddingModel !== (project.embedding_model ?? "") ||
     effectiveLlmBackend !== (project.llm_backend ?? "") ||
     effectiveLlmModel !== (project.llm_model ?? "") ||
+    effectiveRetrievalStrategy !== (project.retrieval_strategy ?? "hybrid") ||
+    effectiveRetrievalTopK !== (project.retrieval_top_k ?? 8) ||
     effectiveEmbeddingCredentialId !== "" ||
     effectiveLlmCredentialId !== "";
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
@@ -151,6 +157,8 @@ export default function ProjectSettingsPage() {
     llm_model: effectiveLlmModel || null,
     llm_api_key: null,
     llm_api_key_credential_id: effectiveLlmCredentialId || null,
+    retrieval_strategy: effectiveRetrievalStrategy,
+    retrieval_top_k: effectiveRetrievalTopK,
   };
 
   const credentialsByProvider = (credentials ?? [])
@@ -619,7 +627,7 @@ export default function ProjectSettingsPage() {
             <Label htmlFor="retrievalStrategy">Search type</Label>
             <select
               id="retrievalStrategy"
-              value={retrievalStrategy}
+              value={effectiveRetrievalStrategy}
               onChange={(e) => setRetrievalStrategy(e.target.value as RetrievalStrategy)}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
@@ -627,9 +635,23 @@ export default function ProjectSettingsPage() {
               <option value="vector">Vector</option>
               <option value="fulltext">Fulltext</option>
             </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="retrievalTopK">Top-K</Label>
+            <Input
+              id="retrievalTopK"
+              type="number"
+              min={1}
+              max={40}
+              value={effectiveRetrievalTopK}
+              onChange={(e) => {
+                const parsed = Number.parseInt(e.target.value, 10);
+                if (Number.isNaN(parsed)) return;
+                setRetrievalTopK(Math.max(1, Math.min(40, parsed)));
+              }}
+            />
             <p className="text-xs text-muted-foreground">
-              This selection is currently informational in settings and will be wired as a
-              project-level default when backend support is added.
+              Default number of chunks retrieved for each user message.
             </p>
           </div>
         </div>

@@ -100,6 +100,7 @@ class SendMessage:
             message=message,
             requested_limit=limit,
             retrieval_strategy=effective_retrieval_strategy,
+            default_limit=project.retrieval_top_k,
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
@@ -295,6 +296,7 @@ class SendMessage:
             message=message,
             requested_limit=limit,
             retrieval_strategy=effective_retrieval_strategy,
+            default_limit=project.retrieval_top_k,
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
@@ -527,18 +529,13 @@ class SendMessage:
         message: str,
         requested_limit: int | None,
         retrieval_strategy: str,
+        default_limit: int,
     ) -> int:
         if requested_limit is not None:
             return max(1, min(requested_limit, self._max_chunk_limit))
-        words = len(message.split())
-        if retrieval_strategy == "fulltext":
-            base = 6
-        elif words > 20:
-            base = 12
-        elif words > 8:
-            base = 10
-        else:
-            base = self._default_chunk_limit
+        del message
+        del retrieval_strategy
+        base = default_limit if default_limit > 0 else self._default_chunk_limit
         return max(1, min(base, self._max_chunk_limit))
 
     def _resolve_effective_llm_provider(self, project: Project) -> str:

@@ -4,7 +4,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
+from raggae.application.constants import (
+    MAX_PROJECT_RETRIEVAL_TOP_K,
+    MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
+    MIN_PROJECT_RETRIEVAL_TOP_K,
+)
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -23,6 +27,11 @@ class CreateProjectRequest(BaseModel):
     llm_api_key: str | None = None
     llm_api_key_credential_id: UUID | None = None
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"] | None = None
+    retrieval_top_k: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_RETRIEVAL_TOP_K,
+        le=MAX_PROJECT_RETRIEVAL_TOP_K,
+    )
 
 
 class UpdateProjectRequest(BaseModel):
@@ -40,6 +49,11 @@ class UpdateProjectRequest(BaseModel):
     llm_api_key: str | None = None
     llm_api_key_credential_id: UUID | None = None
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"] | None = None
+    retrieval_top_k: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_RETRIEVAL_TOP_K,
+        le=MAX_PROJECT_RETRIEVAL_TOP_K,
+    )
 
 
 class ProjectResponse(BaseModel):
@@ -64,6 +78,7 @@ class ProjectResponse(BaseModel):
     llm_api_key_masked: str | None
     llm_api_key_credential_id: UUID | None
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
+    retrieval_top_k: int
 
 
 class ReindexProjectResponse(BaseModel):

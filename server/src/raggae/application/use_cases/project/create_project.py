@@ -1,7 +1,12 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
+from raggae.application.constants import (
+    DEFAULT_PROJECT_RETRIEVAL_TOP_K,
+    MAX_PROJECT_RETRIEVAL_TOP_K,
+    MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
+    MIN_PROJECT_RETRIEVAL_TOP_K,
+)
 from raggae.application.dto.project_dto import ProjectDTO
 from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
@@ -17,6 +22,7 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRetrievalStrategyError,
+    InvalidProjectRetrievalTopKError,
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
@@ -64,6 +70,7 @@ class CreateProject:
         llm_api_key: str | None = None,
         llm_api_key_credential_id: UUID | None = None,
         retrieval_strategy: str | None = None,
+        retrieval_top_k: int | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -81,6 +88,13 @@ class CreateProject:
         ):
             raise InvalidProjectRetrievalStrategyError(
                 f"Unsupported retrieval strategy: {retrieval_strategy}"
+            )
+        if retrieval_top_k is not None and not (
+            MIN_PROJECT_RETRIEVAL_TOP_K <= retrieval_top_k <= MAX_PROJECT_RETRIEVAL_TOP_K
+        ):
+            raise InvalidProjectRetrievalTopKError(
+                f"retrieval_top_k must be between {MIN_PROJECT_RETRIEVAL_TOP_K} "
+                f"and {MAX_PROJECT_RETRIEVAL_TOP_K}"
             )
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
@@ -140,6 +154,7 @@ class CreateProject:
             llm_api_key_encrypted=encrypted_llm_api_key,
             llm_api_key_credential_id=effective_llm_api_key_credential_id,
             retrieval_strategy=retrieval_strategy or "hybrid",
+            retrieval_top_k=retrieval_top_k or DEFAULT_PROJECT_RETRIEVAL_TOP_K,
         )
 
         await self._project_repository.save(project)

@@ -38,6 +38,7 @@ export type ProjectLLMBackend =
   | "anthropic"
   | "ollama"
   | "inmemory";
+export type RetrievalStrategy = "vector" | "fulltext" | "hybrid";
 
 export interface CreateProjectRequest {
   name: string;
@@ -53,6 +54,8 @@ export interface CreateProjectRequest {
   llm_model?: string | null;
   llm_api_key?: string | null;
   llm_api_key_credential_id?: string | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
 }
 
 export interface UpdateProjectRequest {
@@ -69,6 +72,8 @@ export interface UpdateProjectRequest {
   llm_model?: string | null;
   llm_api_key?: string | null;
   llm_api_key_credential_id?: string | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
 }
 
 export interface ProjectResponse {
@@ -92,6 +97,8 @@ export interface ProjectResponse {
   llm_model?: string | null;
   llm_api_key_masked?: string | null;
   llm_api_key_credential_id?: string | null;
+  retrieval_strategy: RetrievalStrategy;
+  retrieval_top_k: number;
 }
 
 export interface ReindexProjectResponse {
