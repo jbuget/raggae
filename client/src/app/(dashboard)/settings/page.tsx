@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   useActivateModelCredential,
   useCreateModelCredential,
@@ -64,18 +65,18 @@ export default function UserSettingsPage() {
     );
   }
 
-  function handleActivate(credentialId: string) {
-    activateCredential.mutate(credentialId, {
-      onSuccess: () => toast.success("API key activated"),
-      onError: () => toast.error("Failed to activate API key"),
-    });
-  }
-
-  function handleDeactivate(credentialId: string) {
-    deactivateCredential.mutate(credentialId, {
-      onSuccess: () => toast.success("API key deactivated"),
-      onError: () => toast.error("Failed to deactivate API key"),
-    });
+  function handleToggleActive(credentialId: string, currentlyActive: boolean) {
+    if (currentlyActive) {
+      deactivateCredential.mutate(credentialId, {
+        onSuccess: () => toast.success("API key deactivated"),
+        onError: (error) => toast.error((error as Error).message || "Failed to deactivate API key"),
+      });
+    } else {
+      activateCredential.mutate(credentialId, {
+        onSuccess: () => toast.success("API key activated"),
+        onError: () => toast.error("Failed to activate API key"),
+      });
+    }
   }
 
   function handleDelete(credentialId: string) {
@@ -144,26 +145,11 @@ export default function UserSettingsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="cursor-pointer"
-                      disabled={item.is_active || activateCredential.isPending}
-                      onClick={() => handleActivate(item.id)}
-                    >
-                      Activate
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="cursor-pointer"
-                      disabled={!item.is_active || deactivateCredential.isPending}
-                      onClick={() => handleDeactivate(item.id)}
-                    >
-                      Deactivate
-                    </Button>
+                    <Switch
+                      checked={item.is_active}
+                      disabled={activateCredential.isPending || deactivateCredential.isPending}
+                      onCheckedChange={() => handleToggleActive(item.id, item.is_active)}
+                    />
                     <Button
                       type="button"
                       variant="destructive"
