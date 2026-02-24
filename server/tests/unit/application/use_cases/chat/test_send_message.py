@@ -138,6 +138,40 @@ class TestSendMessage:
         assert result.history_messages_used == 0
         assert result.chunks_used == 2
 
+    async def test_send_message_uses_project_default_retrieval_strategy(
+        self,
+        use_case: SendMessage,
+        mock_query_relevant_chunks: AsyncMock,
+    ) -> None:
+        use_case._project_repository.find_by_id.return_value = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="project prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            retrieval_strategy="fulltext",
+        )
+
+        await use_case.execute(
+            project_id=uuid4(),
+            user_id=uuid4(),
+            message="What is Raggae?",
+            limit=2,
+            retrieval_strategy=None,
+        )
+
+        mock_query_relevant_chunks.execute.assert_awaited_once_with(
+            project_id=ANY,
+            user_id=ANY,
+            query="What is Raggae?",
+            limit=2,
+            offset=0,
+            strategy="fulltext",
+            metadata_filters=None,
+        )
+
     async def test_send_message_uses_project_llm_service_resolver(
         self,
         use_case: SendMessage,

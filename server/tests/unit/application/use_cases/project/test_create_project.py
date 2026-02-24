@@ -91,6 +91,20 @@ class TestCreateProject:
         assert result.parent_child_chunking is True
         mock_project_repository.save.assert_called_once()
 
+    async def test_create_project_with_retrieval_strategy(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        result = await use_case.execute(
+            user_id=uuid4(),
+            name="My Project",
+            description="A test project",
+            system_prompt="You are a helpful assistant",
+            retrieval_strategy="fulltext",
+        )
+
+        assert result.retrieval_strategy == "fulltext"
+
     async def test_create_project_with_too_long_system_prompt_raises(
         self,
         use_case: CreateProject,

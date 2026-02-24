@@ -22,5 +22,9 @@ class InvalidProjectLLMBackendError(ValueError):
     """Raised when project LLM backend is unsupported."""
 
 
+class InvalidProjectRetrievalStrategyError(ValueError):
+    """Raised when project retrieval strategy is unsupported."""
+
+
 class ProjectAPIKeyNotOwnedError(ValueError):
     """Raised when project API key is not registered for the current user."""

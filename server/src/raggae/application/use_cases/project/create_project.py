@@ -16,6 +16,7 @@ from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRetrievalStrategyError,
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
@@ -24,6 +25,7 @@ from raggae.domain.value_objects.model_provider import ModelProvider
 
 _SUPPORTED_EMBEDDING_BACKENDS = {"openai", "gemini", "ollama", "inmemory"}
 _SUPPORTED_LLM_BACKENDS = {"openai", "gemini", "anthropic", "ollama", "inmemory"}
+_SUPPORTED_RETRIEVAL_STRATEGIES = {"vector", "fulltext", "hybrid"}
 
 
 class CreateProject:
@@ -61,6 +63,7 @@ class CreateProject:
         llm_model: str | None = None,
         llm_api_key: str | None = None,
         llm_api_key_credential_id: UUID | None = None,
+        retrieval_strategy: str | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -72,6 +75,13 @@ class CreateProject:
             )
         if llm_backend is not None and llm_backend not in _SUPPORTED_LLM_BACKENDS:
             raise InvalidProjectLLMBackendError(f"Unsupported llm backend: {llm_backend}")
+        if (
+            retrieval_strategy is not None
+            and retrieval_strategy not in _SUPPORTED_RETRIEVAL_STRATEGIES
+        ):
+            raise InvalidProjectRetrievalStrategyError(
+                f"Unsupported retrieval strategy: {retrieval_strategy}"
+            )
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
             backend=embedding_backend,
@@ -129,6 +139,7 @@ class CreateProject:
             llm_model=llm_model,
             llm_api_key_encrypted=encrypted_llm_api_key,
             llm_api_key_credential_id=effective_llm_api_key_credential_id,
+            retrieval_strategy=retrieval_strategy or "hybrid",
         )
 
         await self._project_repository.save(project)

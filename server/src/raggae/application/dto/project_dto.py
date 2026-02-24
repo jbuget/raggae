@@ -30,6 +30,7 @@ class ProjectDTO:
     llm_model: str | None
     llm_api_key_masked: str | None
     llm_api_key_credential_id: UUID | None
+    retrieval_strategy: str
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
@@ -62,4 +63,5 @@ class ProjectDTO:
             llm_model=project.llm_model,
             llm_api_key_masked=llm_masked,
             llm_api_key_credential_id=project.llm_api_key_credential_id,
+            retrieval_strategy=project.retrieval_strategy,
         )

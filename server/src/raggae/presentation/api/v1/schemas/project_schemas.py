@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -21,6 +22,7 @@ class CreateProjectRequest(BaseModel):
     llm_model: str | None = None
     llm_api_key: str | None = None
     llm_api_key_credential_id: UUID | None = None
+    retrieval_strategy: Literal["vector", "fulltext", "hybrid"] | None = None
 
 
 class UpdateProjectRequest(BaseModel):
@@ -37,6 +39,7 @@ class UpdateProjectRequest(BaseModel):
     llm_model: str | None = None
     llm_api_key: str | None = None
     llm_api_key_credential_id: UUID | None = None
+    retrieval_strategy: Literal["vector", "fulltext", "hybrid"] | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -60,6 +63,7 @@ class ProjectResponse(BaseModel):
     llm_model: str | None
     llm_api_key_masked: str | None
     llm_api_key_credential_id: UUID | None
+    retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
 
 
 class ReindexProjectResponse(BaseModel):

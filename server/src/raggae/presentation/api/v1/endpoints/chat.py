@@ -61,7 +61,6 @@ async def send_message(
     user_id: Annotated[UUID, Depends(get_current_user_id)],
     use_case: Annotated[SendMessage, Depends(get_send_message_use_case)],
 ) -> SendMessageResponse:
-    retrieval_strategy = data.retrieval_strategy or settings.retrieval_default_strategy
     started_at = perf_counter()
     try:
         response = await use_case.execute(
@@ -72,7 +71,7 @@ async def send_message(
             offset=data.offset,
             conversation_id=data.conversation_id,
             start_new_conversation=data.start_new_conversation,
-            retrieval_strategy=retrieval_strategy,
+            retrieval_strategy=data.retrieval_strategy,
             retrieval_filters=(
                 data.retrieval_filters.model_dump(exclude_none=True)
                 if data.retrieval_filters is not None
@@ -155,8 +154,6 @@ async def stream_message(
         ) from None
     from raggae.application.dto.chat_stream_event import ChatStreamDone, ChatStreamToken
 
-    retrieval_strategy = data.retrieval_strategy or settings.retrieval_default_strategy
-
     async def event_stream() -> AsyncIterator[str]:
         started_at = perf_counter()
         try:
@@ -168,7 +165,7 @@ async def stream_message(
                 offset=data.offset,
                 conversation_id=data.conversation_id,
                 start_new_conversation=data.start_new_conversation,
-                retrieval_strategy=retrieval_strategy,
+                retrieval_strategy=data.retrieval_strategy,
                 retrieval_filters=(
                     data.retrieval_filters.model_dump(exclude_none=True)
                     if data.retrieval_filters is not None

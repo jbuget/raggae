@@ -88,7 +88,7 @@ class SendMessage:
         offset: int = 0,
         conversation_id: UUID | None = None,
         start_new_conversation: bool = False,
-        retrieval_strategy: str = "hybrid",
+        retrieval_strategy: str | None = None,
         retrieval_filters: dict[str, object] | None = None,
     ) -> ChatMessageResponseDTO:
         project = await self._project_repository.find_by_id(project_id)
@@ -96,10 +96,11 @@ class SendMessage:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
+        effective_retrieval_strategy = retrieval_strategy or project.retrieval_strategy
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
-            retrieval_strategy=retrieval_strategy,
+            retrieval_strategy=effective_retrieval_strategy,
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
@@ -172,7 +173,7 @@ class SendMessage:
             query=message,
             limit=effective_limit,
             offset=offset,
-            strategy=retrieval_strategy,
+            strategy=effective_retrieval_strategy,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(
@@ -283,7 +284,7 @@ class SendMessage:
         offset: int = 0,
         conversation_id: UUID | None = None,
         start_new_conversation: bool = False,
-        retrieval_strategy: str = "hybrid",
+        retrieval_strategy: str | None = None,
         retrieval_filters: dict[str, object] | None = None,
     ) -> AsyncIterator[ChatStreamEvent]:
         project = await self._project_repository.find_by_id(project_id)
@@ -291,10 +292,11 @@ class SendMessage:
             raise ProjectNotFoundError(f"Project {project_id} not found")
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
+        effective_retrieval_strategy = retrieval_strategy or project.retrieval_strategy
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
-            retrieval_strategy=retrieval_strategy,
+            retrieval_strategy=effective_retrieval_strategy,
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
@@ -367,7 +369,7 @@ class SendMessage:
             query=message,
             limit=effective_limit,
             offset=offset,
-            strategy=retrieval_strategy,
+            strategy=effective_retrieval_strategy,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(

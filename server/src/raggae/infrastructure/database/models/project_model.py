@@ -49,4 +49,7 @@ class ProjectModel(Base):
     llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(
         PGUUID(as_uuid=True), nullable=True
     )
+    retrieval_strategy: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="hybrid", server_default="hybrid"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

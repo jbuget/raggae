@@ -38,6 +38,7 @@ class SQLAlchemyProjectRepository:
                     llm_model=project.llm_model,
                     llm_api_key_encrypted=project.llm_api_key_encrypted,
                     llm_api_key_credential_id=project.llm_api_key_credential_id,
+                    retrieval_strategy=project.retrieval_strategy,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -60,6 +61,7 @@ class SQLAlchemyProjectRepository:
                 model.llm_model = project.llm_model
                 model.llm_api_key_encrypted = project.llm_api_key_encrypted
                 model.llm_api_key_credential_id = project.llm_api_key_credential_id
+                model.retrieval_strategy = project.retrieval_strategy
             await session.commit()
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
@@ -87,6 +89,7 @@ class SQLAlchemyProjectRepository:
                 llm_model=model.llm_model,
                 llm_api_key_encrypted=model.llm_api_key_encrypted,
                 llm_api_key_credential_id=model.llm_api_key_credential_id,
+                retrieval_strategy=model.retrieval_strategy,
                 created_at=model.created_at,
             )
 
@@ -117,6 +120,7 @@ class SQLAlchemyProjectRepository:
                     llm_model=model.llm_model,
                     llm_api_key_encrypted=model.llm_api_key_encrypted,
                     llm_api_key_credential_id=model.llm_api_key_credential_id,
+                    retrieval_strategy=model.retrieval_strategy,
                     created_at=model.created_at,
                 )
                 for model in models

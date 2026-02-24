@@ -52,6 +52,7 @@ const SETTINGS_TABS = [
   "Answer generation",
 ] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
+type RetrievalStrategy = "vector" | "fulltext" | "hybrid";
 
 export default function ProjectSettingsPage() {
   const params = useParams<{ projectId: string }>();
@@ -83,6 +84,7 @@ export default function ProjectSettingsPage() {
   const [llmBackend, setLlmBackend] = useState<ProjectLLMBackend | "" | undefined>(undefined);
   const [llmModel, setLlmModel] = useState<string | null>(null);
   const [llmCredentialId, setLlmCredentialId] = useState<string | null>(null);
+  const [retrievalStrategy, setRetrievalStrategy] = useState<RetrievalStrategy>("hybrid");
 
   if (isLoading) {
     return (
@@ -608,12 +610,28 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Context retrieval" && (
-        <div className="max-w-3xl space-y-2 rounded-md border p-4">
+        <div className="max-w-3xl space-y-4 rounded-md border p-4">
           <p className="text-base font-semibold tracking-tight">Context retrieval</p>
           <p className="text-sm text-muted-foreground">
-            Configure retrieval strategy (vector, fulltext, hybrid) and ranking behavior in this
-            section.
+            Configure how chunks are selected before answer generation.
           </p>
+          <div className="space-y-2">
+            <Label htmlFor="retrievalStrategy">Search type</Label>
+            <select
+              id="retrievalStrategy"
+              value={retrievalStrategy}
+              onChange={(e) => setRetrievalStrategy(e.target.value as RetrievalStrategy)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="hybrid">Hybrid (recommended)</option>
+              <option value="vector">Vector</option>
+              <option value="fulltext">Fulltext</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              This selection is currently informational in settings and will be wired as a
+              project-level default when backend support is added.
+            </p>
+          </div>
         </div>
       )}
 
