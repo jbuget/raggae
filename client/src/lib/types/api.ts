@@ -231,7 +231,12 @@ export interface ModelCredentialResponse {
   updated_at: string;
 }
 
+export interface ModelEntry {
+  id: string;
+  label: string;
+}
+
 export interface ModelCatalogResponse {
-  embedding: Record<ProjectEmbeddingBackend, string[]>;
-  llm: Record<ProjectLLMBackend, string[]>;
+  embedding: Record<ProjectEmbeddingBackend, ModelEntry[]>;
+  llm: Record<ProjectLLMBackend, ModelEntry[]>;
 }

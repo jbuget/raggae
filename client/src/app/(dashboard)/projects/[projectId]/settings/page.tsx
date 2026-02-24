@@ -393,8 +393,8 @@ export default function ProjectSettingsPage() {
                 >
                   <option value="">Select a model</option>
                   {embeddingModelOptions.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
+                    <option key={model.id} value={model.id}>
+                      {model.label}
                     </option>
                   ))}
                 </select>
@@ -479,8 +479,8 @@ export default function ProjectSettingsPage() {
                 >
                   <option value="">Select a model</option>
                   {llmModelOptions.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
+                    <option key={model.id} value={model.id}>
+                      {model.label}
                     </option>
                   ))}
                 </select>
