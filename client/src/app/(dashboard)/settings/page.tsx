@@ -124,9 +124,15 @@ export default function UserSettingsPage() {
                       </span>
                       <p className="text-sm font-medium">{item.masked_key}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        item.is_active
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
                       {item.is_active ? "Active" : "Inactive"}
-                    </p>
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
