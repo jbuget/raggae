@@ -10,6 +10,8 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRerankerCandidateMultiplierError,
     InvalidProjectRetrievalMinScoreError,
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
@@ -152,6 +154,26 @@ class TestCreateProject:
         assert result.chat_history_window_size == 12
         assert result.chat_history_max_chars == 6000
 
+    async def test_create_project_with_reranker_settings(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        result = await use_case.execute(
+            user_id=uuid4(),
+            name="My Project",
+            description="A test project",
+            system_prompt="You are a helpful assistant",
+            reranking_enabled=True,
+            reranker_backend="cross_encoder",
+            reranker_model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+            reranker_candidate_multiplier=4,
+        )
+
+        assert result.reranking_enabled is True
+        assert result.reranker_backend == "cross_encoder"
+        assert result.reranker_model == "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        assert result.reranker_candidate_multiplier == 4
+
     async def test_create_project_with_invalid_retrieval_min_score_raises(
         self,
         use_case: CreateProject,
@@ -189,6 +211,32 @@ class TestCreateProject:
                 description="A test project",
                 system_prompt="You are a helpful assistant",
                 chat_history_max_chars=42,
+            )
+
+    async def test_create_project_with_invalid_reranker_backend_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectRerankerBackendError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="You are a helpful assistant",
+                reranker_backend="unknown",
+            )
+
+    async def test_create_project_with_invalid_reranker_multiplier_raises(
+        self,
+        use_case: CreateProject,
+    ) -> None:
+        with pytest.raises(InvalidProjectRerankerCandidateMultiplierError):
+            await use_case.execute(
+                user_id=uuid4(),
+                name="My Project",
+                description="A test project",
+                system_prompt="You are a helpful assistant",
+                reranker_candidate_multiplier=0,
             )
 
     async def test_create_project_with_too_long_system_prompt_raises(

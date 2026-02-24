@@ -64,4 +64,12 @@ class ProjectModel(Base):
     chat_history_max_chars: Mapped[int] = mapped_column(
         Integer(), nullable=False, default=4000, server_default="4000"
     )
+    reranking_enabled: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    reranker_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    reranker_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reranker_candidate_multiplier: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=3, server_default="3"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

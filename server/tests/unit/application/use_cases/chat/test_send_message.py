@@ -121,6 +121,8 @@ class TestSendMessage:
             offset=0,
             strategy="hybrid",
             min_score=0.3,
+            reranker_service=None,
+            reranker_candidate_multiplier=3,
             metadata_filters=None,
         )
         use_case._provider_api_key_resolver.resolve.assert_awaited_once_with(
@@ -171,6 +173,8 @@ class TestSendMessage:
             offset=0,
             strategy="fulltext",
             min_score=0.3,
+            reranker_service=None,
+            reranker_candidate_multiplier=3,
             metadata_filters=None,
         )
 
@@ -205,6 +209,8 @@ class TestSendMessage:
             offset=0,
             strategy="hybrid",
             min_score=0.3,
+            reranker_service=None,
+            reranker_candidate_multiplier=3,
             metadata_filters=None,
         )
 
@@ -464,6 +470,8 @@ class TestSendMessage:
             offset=0,
             strategy="fulltext",
             min_score=0.3,
+            reranker_service=None,
+            reranker_candidate_multiplier=3,
             metadata_filters={"source_type": "paragraph"},
         )
 
@@ -489,6 +497,8 @@ class TestSendMessage:
             offset=0,
             strategy="hybrid",
             min_score=0.3,
+            reranker_service=None,
+            reranker_candidate_multiplier=3,
             metadata_filters=None,
         )
 
@@ -628,6 +638,8 @@ class TestSendMessage:
             offset=0,
             strategy="hybrid",
             min_score=0.3,
+            reranker_service=None,
+            reranker_candidate_multiplier=3,
             metadata_filters=None,
         )
 

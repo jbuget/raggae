@@ -54,6 +54,8 @@ class QueryRelevantChunks:
         limit: int = 5,
         strategy: str = "hybrid",
         min_score: float | None = None,
+        reranker_service: RerankerService | None = None,
+        reranker_candidate_multiplier: int | None = None,
         metadata_filters: dict[str, object] | None = None,
         offset: int = 0,
     ) -> QueryRelevantChunksResultDTO:
@@ -70,9 +72,19 @@ class QueryRelevantChunks:
         query_embedding = (await embedding_service.embed_texts([query]))[0]
         strategy_used = _resolve_strategy(strategy, query)
         effective_min_score = self._min_score if min_score is None else min_score
+        effective_reranker_service = (
+            self._reranker_service if reranker_service is None else reranker_service
+        )
+        effective_reranker_candidate_multiplier = (
+            self._reranker_candidate_multiplier
+            if reranker_candidate_multiplier is None
+            else reranker_candidate_multiplier
+        )
 
         fetch_limit = (
-            limit * self._reranker_candidate_multiplier if self._reranker_service else limit
+            limit * effective_reranker_candidate_multiplier
+            if effective_reranker_service
+            else limit
         )
 
         chunks = await self._chunk_retrieval_service.retrieve_chunks(
@@ -86,8 +98,8 @@ class QueryRelevantChunks:
             metadata_filters=metadata_filters,
         )
 
-        if self._reranker_service is not None:
-            chunks = await self._reranker_service.rerank(query, chunks, top_k=limit)
+        if effective_reranker_service is not None:
+            chunks = await effective_reranker_service.rerank(query, chunks, top_k=limit)
         else:
             chunks = [chunk for chunk in chunks if chunk.score >= effective_min_score]
 

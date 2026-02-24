@@ -26,6 +26,9 @@ from raggae.application.interfaces.services.project_embedding_service_resolver i
 from raggae.application.interfaces.services.project_llm_service_resolver import (
     ProjectLLMServiceResolver,
 )
+from raggae.application.interfaces.services.project_reranker_service_resolver import (
+    ProjectRerankerServiceResolver,
+)
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
 )
@@ -59,6 +62,7 @@ __all__ = [
     "ProviderApiKeyValidator",
     "ProjectEmbeddingServiceResolver",
     "ProjectLLMServiceResolver",
+    "ProjectRerankerServiceResolver",
     "TextChunkerService",
     "TextSanitizerService",
     "TokenService",

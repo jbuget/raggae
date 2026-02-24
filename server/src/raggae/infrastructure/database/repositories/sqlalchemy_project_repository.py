@@ -43,6 +43,10 @@ class SQLAlchemyProjectRepository:
                     retrieval_min_score=project.retrieval_min_score,
                     chat_history_window_size=project.chat_history_window_size,
                     chat_history_max_chars=project.chat_history_max_chars,
+                    reranking_enabled=project.reranking_enabled,
+                    reranker_backend=project.reranker_backend,
+                    reranker_model=project.reranker_model,
+                    reranker_candidate_multiplier=project.reranker_candidate_multiplier,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -70,6 +74,10 @@ class SQLAlchemyProjectRepository:
                 model.retrieval_min_score = project.retrieval_min_score
                 model.chat_history_window_size = project.chat_history_window_size
                 model.chat_history_max_chars = project.chat_history_max_chars
+                model.reranking_enabled = project.reranking_enabled
+                model.reranker_backend = project.reranker_backend
+                model.reranker_model = project.reranker_model
+                model.reranker_candidate_multiplier = project.reranker_candidate_multiplier
             await session.commit()
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
@@ -102,6 +110,10 @@ class SQLAlchemyProjectRepository:
                 retrieval_min_score=model.retrieval_min_score,
                 chat_history_window_size=model.chat_history_window_size,
                 chat_history_max_chars=model.chat_history_max_chars,
+                reranking_enabled=model.reranking_enabled,
+                reranker_backend=model.reranker_backend,
+                reranker_model=model.reranker_model,
+                reranker_candidate_multiplier=model.reranker_candidate_multiplier,
                 created_at=model.created_at,
             )
 
@@ -137,6 +149,10 @@ class SQLAlchemyProjectRepository:
                     retrieval_min_score=model.retrieval_min_score,
                     chat_history_window_size=model.chat_history_window_size,
                     chat_history_max_chars=model.chat_history_max_chars,
+                    reranking_enabled=model.reranking_enabled,
+                    reranker_backend=model.reranker_backend,
+                    reranker_model=model.reranker_model,
+                    reranker_candidate_multiplier=model.reranker_candidate_multiplier,
                     created_at=model.created_at,
                 )
                 for model in models

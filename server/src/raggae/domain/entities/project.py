@@ -38,6 +38,10 @@ class Project:
     retrieval_min_score: float = 0.3
     chat_history_window_size: int = 8
     chat_history_max_chars: int = 4000
+    reranking_enabled: bool = False
+    reranker_backend: str | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int = 3
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""

@@ -8,6 +8,7 @@ from raggae.presentation.api.v1.endpoints.model_credentials import (
     router as model_credentials_router,
 )
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
+from raggae.presentation.api.dependencies import get_query_relevant_chunks_use_case
 
 app = FastAPI(
     title="Raggae",
@@ -21,6 +22,12 @@ app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(model_catalog_router, prefix="/api/v1")
 app.include_router(model_credentials_router, prefix="/api/v1")
+
+
+@app.on_event("startup")
+async def warmup_models() -> None:
+    """Warm up heavy retrieval dependencies (e.g. cross-encoder reranker)."""
+    get_query_relevant_chunks_use_case()
 
 
 @app.get("/health")

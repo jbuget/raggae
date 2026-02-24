@@ -5,15 +5,18 @@ from raggae.application.constants import (
     DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS,
     DEFAULT_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE,
+    DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     DEFAULT_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MAX_PROJECT_RETRIEVAL_MIN_SCORE,
+    MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
     MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MIN_PROJECT_RETRIEVAL_MIN_SCORE,
+    MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
 from raggae.application.dto.project_dto import ProjectDTO
@@ -32,6 +35,8 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRerankerCandidateMultiplierError,
     InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
@@ -44,6 +49,7 @@ from raggae.domain.value_objects.model_provider import ModelProvider
 _SUPPORTED_EMBEDDING_BACKENDS = {"openai", "gemini", "ollama", "inmemory"}
 _SUPPORTED_LLM_BACKENDS = {"openai", "gemini", "anthropic", "ollama", "inmemory"}
 _SUPPORTED_RETRIEVAL_STRATEGIES = {"vector", "fulltext", "hybrid"}
+_SUPPORTED_RERANKER_BACKENDS = {"none", "cross_encoder", "inmemory"}
 
 
 class CreateProject:
@@ -86,6 +92,10 @@ class CreateProject:
         retrieval_min_score: float | None = None,
         chat_history_window_size: int | None = None,
         chat_history_max_chars: int | None = None,
+        reranking_enabled: bool | None = None,
+        reranker_backend: str | None = None,
+        reranker_model: str | None = None,
+        reranker_candidate_multiplier: int | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -139,6 +149,20 @@ class CreateProject:
                 f"chat_history_max_chars must be between "
                 f"{MIN_PROJECT_CHAT_HISTORY_MAX_CHARS} and "
                 f"{MAX_PROJECT_CHAT_HISTORY_MAX_CHARS}"
+            )
+        if reranker_backend is not None and reranker_backend not in _SUPPORTED_RERANKER_BACKENDS:
+            raise InvalidProjectRerankerBackendError(
+                f"Unsupported reranker backend: {reranker_backend}"
+            )
+        if reranker_candidate_multiplier is not None and not (
+            MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
+            <= reranker_candidate_multiplier
+            <= MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
+        ):
+            raise InvalidProjectRerankerCandidateMultiplierError(
+                f"reranker_candidate_multiplier must be between "
+                f"{MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER} and "
+                f"{MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER}"
             )
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
@@ -213,6 +237,14 @@ class CreateProject:
                 chat_history_max_chars
                 if chat_history_max_chars is not None
                 else DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS
+            ),
+            reranking_enabled=reranking_enabled if reranking_enabled is not None else False,
+            reranker_backend=reranker_backend,
+            reranker_model=reranker_model,
+            reranker_candidate_multiplier=(
+                reranker_candidate_multiplier
+                if reranker_candidate_multiplier is not None
+                else DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
             ),
         )
 

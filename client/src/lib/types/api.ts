@@ -39,6 +39,7 @@ export type ProjectLLMBackend =
   | "ollama"
   | "inmemory";
 export type RetrievalStrategy = "vector" | "fulltext" | "hybrid";
+export type ProjectRerankerBackend = "none" | "cross_encoder" | "inmemory";
 
 export interface CreateProjectRequest {
   name: string;
@@ -59,6 +60,10 @@ export interface CreateProjectRequest {
   retrieval_min_score?: number | null;
   chat_history_window_size?: number | null;
   chat_history_max_chars?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
 }
 
 export interface UpdateProjectRequest {
@@ -80,6 +85,10 @@ export interface UpdateProjectRequest {
   retrieval_min_score?: number | null;
   chat_history_window_size?: number | null;
   chat_history_max_chars?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
 }
 
 export interface ProjectResponse {
@@ -108,6 +117,10 @@ export interface ProjectResponse {
   retrieval_min_score: number;
   chat_history_window_size: number;
   chat_history_max_chars: number;
+  reranking_enabled: boolean;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier: number;
 }
 
 export interface ReindexProjectResponse {
@@ -255,4 +268,5 @@ export interface ModelEntry {
 export interface ModelCatalogResponse {
   embedding: Record<ProjectEmbeddingBackend, ModelEntry[]>;
   llm: Record<ProjectLLMBackend, ModelEntry[]>;
+  reranker: Record<ProjectRerankerBackend, ModelEntry[]>;
 }

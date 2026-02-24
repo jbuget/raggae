@@ -38,6 +38,7 @@ import type {
   ModelProvider,
   ProjectEmbeddingBackend,
   ProjectLLMBackend,
+  ProjectRerankerBackend,
   RetrievalStrategy,
   UpdateProjectRequest,
 } from "@/lib/types/api";
@@ -89,6 +90,12 @@ export default function ProjectSettingsPage() {
   const [retrievalMinScore, setRetrievalMinScore] = useState<number | null>(null);
   const [chatHistoryWindowSize, setChatHistoryWindowSize] = useState<number | null>(null);
   const [chatHistoryMaxChars, setChatHistoryMaxChars] = useState<number | null>(null);
+  const [rerankingEnabled, setRerankingEnabled] = useState<boolean | null>(null);
+  const [rerankerBackend, setRerankerBackend] = useState<ProjectRerankerBackend | null>(null);
+  const [rerankerModel, setRerankerModel] = useState<string | null>(null);
+  const [rerankerCandidateMultiplier, setRerankerCandidateMultiplier] = useState<number | null>(
+    null,
+  );
 
   if (isLoading) {
     return (
@@ -128,6 +135,11 @@ export default function ProjectSettingsPage() {
     chatHistoryWindowSize ?? project.chat_history_window_size ?? 8;
   const effectiveChatHistoryMaxChars =
     chatHistoryMaxChars ?? project.chat_history_max_chars ?? 4000;
+  const effectiveRerankingEnabled = rerankingEnabled ?? project.reranking_enabled ?? false;
+  const effectiveRerankerBackend = rerankerBackend ?? project.reranker_backend ?? "none";
+  const effectiveRerankerModel = rerankerModel ?? project.reranker_model ?? "";
+  const effectiveRerankerCandidateMultiplier =
+    rerankerCandidateMultiplier ?? project.reranker_candidate_multiplier ?? 3;
   const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
@@ -146,6 +158,11 @@ export default function ProjectSettingsPage() {
     effectiveRetrievalMinScore !== (project.retrieval_min_score ?? 0.3) ||
     effectiveChatHistoryWindowSize !== (project.chat_history_window_size ?? 8) ||
     effectiveChatHistoryMaxChars !== (project.chat_history_max_chars ?? 4000) ||
+    effectiveRerankingEnabled !== (project.reranking_enabled ?? false) ||
+    effectiveRerankerBackend !== (project.reranker_backend ?? "none") ||
+    effectiveRerankerModel !== (project.reranker_model ?? "") ||
+    effectiveRerankerCandidateMultiplier !==
+      (project.reranker_candidate_multiplier ?? 3) ||
     effectiveEmbeddingCredentialId !== "" ||
     effectiveLlmCredentialId !== "";
   const isDisabled = !effectiveName.trim() || updateProject.isPending || !hasChanges;
@@ -173,6 +190,10 @@ export default function ProjectSettingsPage() {
     retrieval_min_score: effectiveRetrievalMinScore,
     chat_history_window_size: effectiveChatHistoryWindowSize,
     chat_history_max_chars: effectiveChatHistoryMaxChars,
+    reranking_enabled: effectiveRerankingEnabled,
+    reranker_backend: effectiveRerankerBackend,
+    reranker_model: effectiveRerankerModel || null,
+    reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
   };
 
   const credentialsByProvider = (credentials ?? [])
@@ -205,6 +226,8 @@ export default function ProjectSettingsPage() {
   const llmModelOptions = effectiveLlmBackend
     ? modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []
     : [];
+  const rerankerModelOptions =
+    modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
 
   function handleSave() {
     const parentChildChanged =
@@ -698,12 +721,86 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Context augmentation" && (
-        <div className="max-w-3xl space-y-2 rounded-md border p-4">
+        <div className="max-w-3xl space-y-4 rounded-md border p-4">
           <p className="text-base font-semibold tracking-tight">Context augmentation</p>
-          <p className="text-sm text-muted-foreground">
-            This section is reserved for future augmentation settings (query rewriting, reranking,
-            context windows, and hybrid retrieval policies).
-          </p>
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <Label htmlFor="rerankingEnabled">Enable reranking</Label>
+            <button
+              id="rerankingEnabled"
+              type="button"
+              role="switch"
+              aria-checked={effectiveRerankingEnabled}
+              onClick={() => setRerankingEnabled(!effectiveRerankingEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                effectiveRerankingEnabled ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-background transition-transform ${
+                  effectiveRerankingEnabled ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          {effectiveRerankingEnabled ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="rerankerBackend">Reranker backend</Label>
+                <select
+                  id="rerankerBackend"
+                  value={effectiveRerankerBackend}
+                  onChange={(e) => {
+                    setRerankerBackend(e.target.value as ProjectRerankerBackend);
+                    setRerankerModel("");
+                  }}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="none">None</option>
+                  <option value="cross_encoder">Cross-encoder</option>
+                  <option value="inmemory">InMemory</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rerankerModel">Reranker model</Label>
+                <select
+                  id="rerankerModel"
+                  value={effectiveRerankerModel}
+                  onChange={(e) => setRerankerModel(e.target.value)}
+                  disabled={effectiveRerankerBackend === "none"}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">
+                    {effectiveRerankerBackend === "none"
+                      ? "Select a reranker backend"
+                      : "Select a model"}
+                  </option>
+                  {rerankerModelOptions.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rerankerCandidateMultiplier">Candidate multiplier</Label>
+                <Input
+                  id="rerankerCandidateMultiplier"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={effectiveRerankerCandidateMultiplier}
+                  onChange={(e) => {
+                    const parsed = Number.parseInt(e.target.value, 10);
+                    if (Number.isNaN(parsed)) return;
+                    setRerankerCandidateMultiplier(Math.max(1, Math.min(10, parsed)));
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Number of candidates fetched before reranking = top-k * multiplier.
+                </p>
+              </div>
+            </>
+          ) : null}
         </div>
       )}
 

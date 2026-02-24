@@ -42,5 +42,13 @@ class InvalidProjectChatHistoryMaxCharsError(ValueError):
     """Raised when project chat history max chars is unsupported."""
 
 
+class InvalidProjectRerankerBackendError(ValueError):
+    """Raised when project reranker backend is unsupported."""
+
+
+class InvalidProjectRerankerCandidateMultiplierError(ValueError):
+    """Raised when project reranker candidate multiplier is unsupported."""
+
+
 class ProjectAPIKeyNotOwnedError(ValueError):
     """Raised when project API key is not registered for the current user."""

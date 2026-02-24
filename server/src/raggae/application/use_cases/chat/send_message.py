@@ -22,6 +22,9 @@ from raggae.application.interfaces.services.llm_service import LLMService
 from raggae.application.interfaces.services.project_llm_service_resolver import (
     ProjectLLMServiceResolver,
 )
+from raggae.application.interfaces.services.project_reranker_service_resolver import (
+    ProjectRerankerServiceResolver,
+)
 from raggae.application.interfaces.services.provider_api_key_resolver import (
     ProviderApiKeyResolver,
 )
@@ -54,6 +57,7 @@ class SendMessage:
         message_repository: MessageRepository,
         provider_api_key_resolver: ProviderApiKeyResolver | None = None,
         project_llm_service_resolver: ProjectLLMServiceResolver | None = None,
+        project_reranker_service_resolver: ProjectRerankerServiceResolver | None = None,
         llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
@@ -69,6 +73,7 @@ class SendMessage:
         self._message_repository = message_repository
         self._provider_api_key_resolver = provider_api_key_resolver
         self._project_llm_service_resolver = project_llm_service_resolver
+        self._project_reranker_service_resolver = project_reranker_service_resolver
         self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
@@ -97,6 +102,11 @@ class SendMessage:
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
         effective_retrieval_min_score = project.retrieval_min_score
+        effective_reranker_service = (
+            self._project_reranker_service_resolver.resolve(project)
+            if self._project_reranker_service_resolver is not None
+            else None
+        )
         effective_history_window_size = max(1, project.chat_history_window_size)
         effective_history_max_chars = max(128, project.chat_history_max_chars)
         effective_limit = self._resolve_effective_chunk_limit(
@@ -178,6 +188,8 @@ class SendMessage:
             offset=offset,
             strategy=effective_retrieval_strategy,
             min_score=effective_retrieval_min_score,
+            reranker_service=effective_reranker_service,
+            reranker_candidate_multiplier=project.reranker_candidate_multiplier,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(
@@ -299,6 +311,11 @@ class SendMessage:
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
         effective_retrieval_min_score = project.retrieval_min_score
+        effective_reranker_service = (
+            self._project_reranker_service_resolver.resolve(project)
+            if self._project_reranker_service_resolver is not None
+            else None
+        )
         effective_history_window_size = max(1, project.chat_history_window_size)
         effective_history_max_chars = max(128, project.chat_history_max_chars)
         effective_limit = self._resolve_effective_chunk_limit(
@@ -380,6 +397,8 @@ class SendMessage:
             offset=offset,
             strategy=effective_retrieval_strategy,
             min_score=effective_retrieval_min_score,
+            reranker_service=effective_reranker_service,
+            reranker_candidate_multiplier=project.reranker_candidate_multiplier,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(

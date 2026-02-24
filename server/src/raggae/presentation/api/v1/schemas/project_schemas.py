@@ -7,11 +7,13 @@ from pydantic import BaseModel, Field
 from raggae.application.constants import (
     MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+    MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
     MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+    MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
@@ -42,6 +44,14 @@ class CreateProjectRequest(BaseModel):
         default=None,
         ge=MIN_PROJECT_RETRIEVAL_MIN_SCORE,
         le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
+    )
+    reranking_enabled: bool | None = None
+    reranker_backend: Literal["none", "cross_encoder", "inmemory"] | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
+        le=MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     )
     chat_history_window_size: int | None = Field(
         default=None,
@@ -80,6 +90,14 @@ class UpdateProjectRequest(BaseModel):
         ge=MIN_PROJECT_RETRIEVAL_MIN_SCORE,
         le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     )
+    reranking_enabled: bool | None = None
+    reranker_backend: Literal["none", "cross_encoder", "inmemory"] | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int | None = Field(
+        default=None,
+        ge=MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
+        le=MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
+    )
     chat_history_window_size: int | None = Field(
         default=None,
         ge=MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
@@ -116,6 +134,10 @@ class ProjectResponse(BaseModel):
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
     retrieval_top_k: int
     retrieval_min_score: float
+    reranking_enabled: bool
+    reranker_backend: Literal["none", "cross_encoder", "inmemory"] | None
+    reranker_model: str | None
+    reranker_candidate_multiplier: int
     chat_history_window_size: int
     chat_history_max_chars: int
 

@@ -45,6 +45,9 @@ from raggae.application.interfaces.services.project_embedding_service_resolver i
 from raggae.application.interfaces.services.project_llm_service_resolver import (
     ProjectLLMServiceResolver,
 )
+from raggae.application.interfaces.services.project_reranker_service_resolver import (
+    ProjectRerankerServiceResolver,
+)
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
 )
@@ -215,6 +218,9 @@ from raggae.infrastructure.services.project_embedding_service_resolver import (
 )
 from raggae.infrastructure.services.project_llm_service_resolver import (
     ProjectLLMServiceResolver as RuntimeProjectLLMServiceResolver,
+)
+from raggae.infrastructure.services.project_reranker_service_resolver import (
+    ProjectRerankerServiceResolver as RuntimeProjectRerankerServiceResolver,
 )
 from raggae.infrastructure.services.semantic_text_chunker_service import (
     SemanticTextChunkerService,
@@ -423,6 +429,12 @@ if settings.reranker_backend == "cross_encoder":
     )
 else:
     _reranker_service = None
+_project_reranker_service_resolver: ProjectRerankerServiceResolver = (
+    RuntimeProjectRerankerServiceResolver(
+        settings=settings,
+        default_reranker_service=_reranker_service,
+    )
+)
 _conversation_title_generator: ConversationTitleGenerator = LLMConversationTitleGenerator(
     llm_service=_llm_service
 )
@@ -559,6 +571,7 @@ def get_send_message_use_case() -> SendMessage:
         message_repository=_message_repository,
         provider_api_key_resolver=_provider_api_key_resolver,
         project_llm_service_resolver=_project_llm_service_resolver,
+        project_reranker_service_resolver=_project_reranker_service_resolver,
         llm_provider=settings.llm_backend,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,

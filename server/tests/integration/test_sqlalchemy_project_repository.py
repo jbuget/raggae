@@ -62,6 +62,10 @@ class TestSQLAlchemyProjectRepository:
             retrieval_min_score=0.37,
             chat_history_window_size=10,
             chat_history_max_chars=5000,
+            reranking_enabled=True,
+            reranker_backend="cross_encoder",
+            reranker_model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+            reranker_candidate_multiplier=4,
         )
 
         # When
@@ -86,3 +90,7 @@ class TestSQLAlchemyProjectRepository:
         assert found.retrieval_min_score == 0.37
         assert found.chat_history_window_size == 10
         assert found.chat_history_max_chars == 5000
+        assert found.reranking_enabled is True
+        assert found.reranker_backend == "cross_encoder"
+        assert found.reranker_model == "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        assert found.reranker_candidate_multiplier == 4

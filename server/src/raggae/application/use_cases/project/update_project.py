@@ -4,11 +4,13 @@ from uuid import UUID
 from raggae.application.constants import (
     MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+    MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
     MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
+    MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
@@ -25,6 +27,8 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRerankerCandidateMultiplierError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRetrievalMinScoreError,
@@ -40,6 +44,7 @@ from raggae.domain.value_objects.model_provider import ModelProvider
 _SUPPORTED_EMBEDDING_BACKENDS = {"openai", "gemini", "ollama", "inmemory"}
 _SUPPORTED_LLM_BACKENDS = {"openai", "gemini", "anthropic", "ollama", "inmemory"}
 _SUPPORTED_RETRIEVAL_STRATEGIES = {"vector", "fulltext", "hybrid"}
+_SUPPORTED_RERANKER_BACKENDS = {"none", "cross_encoder", "inmemory"}
 
 
 class UpdateProject:
@@ -83,6 +88,10 @@ class UpdateProject:
         retrieval_min_score: float | None = None,
         chat_history_window_size: int | None = None,
         chat_history_max_chars: int | None = None,
+        reranking_enabled: bool | None = None,
+        reranker_backend: str | None = None,
+        reranker_model: str | None = None,
+        reranker_candidate_multiplier: int | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -140,6 +149,20 @@ class UpdateProject:
                 f"{MIN_PROJECT_CHAT_HISTORY_MAX_CHARS} and "
                 f"{MAX_PROJECT_CHAT_HISTORY_MAX_CHARS}"
             )
+        if reranker_backend is not None and reranker_backend not in _SUPPORTED_RERANKER_BACKENDS:
+            raise InvalidProjectRerankerBackendError(
+                f"Unsupported reranker backend: {reranker_backend}"
+            )
+        if reranker_candidate_multiplier is not None and not (
+            MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
+            <= reranker_candidate_multiplier
+            <= MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
+        ):
+            raise InvalidProjectRerankerCandidateMultiplierError(
+                f"reranker_candidate_multiplier must be between "
+                f"{MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER} and "
+                f"{MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER}"
+            )
         resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
             backend=(
@@ -195,6 +218,9 @@ class UpdateProject:
             provided_api_key=llm_api_key,
             backend=next_llm_backend,
         )
+        next_reranker_backend = (
+            project.reranker_backend if reranker_backend is None else reranker_backend
+        )
         updated_project = replace(
             project,
             name=name,
@@ -232,6 +258,16 @@ class UpdateProject:
                 project.chat_history_max_chars
                 if chat_history_max_chars is None
                 else chat_history_max_chars
+            ),
+            reranking_enabled=(
+                project.reranking_enabled if reranking_enabled is None else reranking_enabled
+            ),
+            reranker_backend=next_reranker_backend,
+            reranker_model=project.reranker_model if reranker_model is None else reranker_model,
+            reranker_candidate_multiplier=(
+                project.reranker_candidate_multiplier
+                if reranker_candidate_multiplier is None
+                else reranker_candidate_multiplier
             ),
         )
         await self._project_repository.save(updated_project)

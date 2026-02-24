@@ -11,6 +11,8 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRerankerCandidateMultiplierError,
     InvalidProjectRetrievalMinScoreError,
     ProjectAPIKeyNotOwnedError,
     ProjectNotFoundError,
@@ -274,6 +276,39 @@ class TestUpdateProject:
         assert result.chat_history_window_size == 16
         assert result.chat_history_max_chars == 5000
 
+    async def test_update_project_updates_reranker_settings_when_provided(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=project.user_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+            reranking_enabled=True,
+            reranker_backend="cross_encoder",
+            reranker_model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+            reranker_candidate_multiplier=5,
+        )
+
+        assert result.reranking_enabled is True
+        assert result.reranker_backend == "cross_encoder"
+        assert result.reranker_model == "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        assert result.reranker_candidate_multiplier == 5
+
     async def test_update_project_with_invalid_retrieval_min_score_raises_error(
         self,
         use_case: UpdateProject,
@@ -350,6 +385,58 @@ class TestUpdateProject:
                 description="New description",
                 system_prompt="New prompt",
                 chat_history_max_chars=64,
+            )
+
+    async def test_update_project_with_invalid_reranker_backend_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectRerankerBackendError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                reranker_backend="unsupported",
+            )
+
+    async def test_update_project_with_invalid_reranker_multiplier_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Old name",
+            description="Old description",
+            system_prompt="Old prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        with pytest.raises(InvalidProjectRerankerCandidateMultiplierError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+                reranker_candidate_multiplier=12,
             )
 
     async def test_update_project_with_too_long_system_prompt_raises_error(

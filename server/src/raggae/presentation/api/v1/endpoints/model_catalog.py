@@ -86,4 +86,25 @@ async def get_model_catalog(
                 ModelEntry(id="inmemory-chat-fast", label="InMemory Fast"),
             ],
         },
+        reranker={
+            "none": [],
+            "cross_encoder": [
+                ModelEntry(
+                    id="cross-encoder/ms-marco-MiniLM-L-6-v2",
+                    label="MS MARCO MiniLM L-6 v2",
+                ),
+                ModelEntry(
+                    id="cross-encoder/ms-marco-MiniLM-L-12-v2",
+                    label="MS MARCO MiniLM L-12 v2",
+                ),
+                ModelEntry(
+                    id="BAAI/bge-reranker-v2-m3",
+                    label="BGE Reranker v2 M3",
+                ),
+            ],
+            "inmemory": [
+                ModelEntry(id="inmemory-reranker-balanced", label="InMemory Balanced"),
+                ModelEntry(id="inmemory-reranker-fast", label="InMemory Fast"),
+            ],
+        },
     )

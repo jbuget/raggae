@@ -13,6 +13,8 @@ from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRerankerCandidateMultiplierError,
     InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
@@ -50,6 +52,7 @@ router = APIRouter(
 )
 
 ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
+ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory"]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -79,6 +82,10 @@ async def create_project(
             retrieval_min_score=data.retrieval_min_score,
             chat_history_window_size=data.chat_history_window_size,
             chat_history_max_chars=data.chat_history_max_chars,
+            reranking_enabled=data.reranking_enabled,
+            reranker_backend=data.reranker_backend,
+            reranker_model=data.reranker_model,
+            reranker_candidate_multiplier=data.reranker_candidate_multiplier,
         )
     except ProjectSystemPromptTooLongError as exc:
         raise HTTPException(
@@ -115,6 +122,14 @@ async def create_project(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from None
+    except (
+        InvalidProjectRerankerBackendError,
+        InvalidProjectRerankerCandidateMultiplierError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
@@ -141,6 +156,10 @@ async def create_project(
         retrieval_min_score=project_dto.retrieval_min_score,
         chat_history_window_size=project_dto.chat_history_window_size,
         chat_history_max_chars=project_dto.chat_history_max_chars,
+        reranking_enabled=project_dto.reranking_enabled,
+        reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
+        reranker_model=project_dto.reranker_model,
+        reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
     )
 
 
@@ -183,6 +202,10 @@ async def get_project(
         retrieval_min_score=project_dto.retrieval_min_score,
         chat_history_window_size=project_dto.chat_history_window_size,
         chat_history_max_chars=project_dto.chat_history_max_chars,
+        reranking_enabled=project_dto.reranking_enabled,
+        reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
+        reranker_model=project_dto.reranker_model,
+        reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
     )
 
 
@@ -219,6 +242,10 @@ async def list_projects(
             retrieval_min_score=p.retrieval_min_score,
             chat_history_window_size=p.chat_history_window_size,
             chat_history_max_chars=p.chat_history_max_chars,
+            reranking_enabled=p.reranking_enabled,
+            reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
+            reranker_model=p.reranker_model,
+            reranker_candidate_multiplier=p.reranker_candidate_multiplier,
         )
         for p in project_dtos
     ]
@@ -268,6 +295,10 @@ async def update_project(
             retrieval_min_score=data.retrieval_min_score,
             chat_history_window_size=data.chat_history_window_size,
             chat_history_max_chars=data.chat_history_max_chars,
+            reranking_enabled=data.reranking_enabled,
+            reranker_backend=data.reranker_backend,
+            reranker_model=data.reranker_model,
+            reranker_candidate_multiplier=data.reranker_candidate_multiplier,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -309,6 +340,14 @@ async def update_project(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from None
+    except (
+        InvalidProjectRerankerBackendError,
+        InvalidProjectRerankerCandidateMultiplierError,
+    ) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
@@ -335,6 +374,10 @@ async def update_project(
         retrieval_min_score=project_dto.retrieval_min_score,
         chat_history_window_size=project_dto.chat_history_window_size,
         chat_history_max_chars=project_dto.chat_history_max_chars,
+        reranking_enabled=project_dto.reranking_enabled,
+        reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
+        reranker_model=project_dto.reranker_model,
+        reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
     )
 
 

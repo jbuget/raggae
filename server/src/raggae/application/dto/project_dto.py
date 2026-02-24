@@ -35,6 +35,10 @@ class ProjectDTO:
     retrieval_min_score: float
     chat_history_window_size: int
     chat_history_max_chars: int
+    reranking_enabled: bool
+    reranker_backend: str | None
+    reranker_model: str | None
+    reranker_candidate_multiplier: int
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
@@ -72,4 +76,8 @@ class ProjectDTO:
             retrieval_min_score=project.retrieval_min_score,
             chat_history_window_size=project.chat_history_window_size,
             chat_history_max_chars=project.chat_history_max_chars,
+            reranking_enabled=project.reranking_enabled,
+            reranker_backend=project.reranker_backend,
+            reranker_model=project.reranker_model,
+            reranker_candidate_multiplier=project.reranker_candidate_multiplier,
         )
