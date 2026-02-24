@@ -15,11 +15,19 @@ import {
 } from "@/components/ui/dialog";
 import { getDocumentFileBlob } from "@/lib/api/documents";
 import { useAuth } from "@/lib/hooks/use-auth";
-import type { DocumentResponse } from "@/lib/types/api";
+import type {
+  ChunkingStrategy,
+  DocumentResponse,
+  ProjectEmbeddingBackend,
+} from "@/lib/types/api";
 import { formatDate, formatDateTime, formatFileSize } from "@/lib/utils/format";
 
 interface DocumentRowProps {
   document: DocumentResponse;
+  embeddingBackend?: ProjectEmbeddingBackend | null;
+  embeddingModel?: string | null;
+  chunkingStrategy: ChunkingStrategy;
+  parentChildChunking: boolean;
   onDelete: (id: string) => void;
   isDeleting: boolean;
   onReindex: (id: string) => void;
@@ -29,6 +37,10 @@ interface DocumentRowProps {
 
 export function DocumentRow({
   document,
+  embeddingBackend,
+  embeddingModel,
+  chunkingStrategy,
+  parentChildChunking,
   onDelete,
   isDeleting,
   onReindex,
@@ -52,6 +64,9 @@ export function DocumentRow({
         : document.status === "uploaded"
           ? "border-amber-200 bg-amber-100 text-amber-800"
           : "border-red-200 bg-red-100 text-red-800";
+  const embeddingBackendLabel = embeddingBackend ?? "default";
+  const embeddingModelLabel = embeddingModel?.trim() ? embeddingModel : "default";
+  const chunkingStrategyLabel = chunkingStrategy.replaceAll("_", " ");
 
   useEffect(() => {
     return () => {
@@ -110,6 +125,12 @@ export function DocumentRow({
           {document.status === "error" && document.error_message && (
             <span className="text-destructive">{document.error_message}</span>
           )}
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>Index date: {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "-"}</span>
+          <span>Embedding: {embeddingBackendLabel} / {embeddingModelLabel}</span>
+          <span>Chunking: {chunkingStrategyLabel}</span>
+          <span>Parent-child: {parentChildChunking ? "on" : "off"}</span>
         </div>
       </div>
 

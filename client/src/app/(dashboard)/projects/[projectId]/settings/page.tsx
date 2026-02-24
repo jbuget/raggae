@@ -389,6 +389,10 @@ export default function ProjectSettingsPage() {
                 <DocumentRow
                   key={doc.id}
                   document={doc}
+                  embeddingBackend={project.embedding_backend}
+                  embeddingModel={project.embedding_model}
+                  chunkingStrategy={project.chunking_strategy}
+                  parentChildChunking={project.parent_child_chunking}
                   onReindex={(id) => {
                     if (isProjectReindexing) return;
                     reindexDocument.mutate(id, {
