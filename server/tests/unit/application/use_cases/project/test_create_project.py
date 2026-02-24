@@ -16,6 +16,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
+from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
 
@@ -30,6 +31,10 @@ class TestCreateProject:
         return AsyncMock()
 
     @pytest.fixture
+    def mock_organization_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
     def mock_crypto_service(self) -> Mock:
         crypto = Mock()
         crypto.encrypt.side_effect = lambda value: f"enc:{value}"
@@ -41,11 +46,13 @@ class TestCreateProject:
     def use_case(
         self,
         mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
         mock_provider_credential_repository: AsyncMock,
         mock_crypto_service: Mock,
     ) -> CreateProject:
         return CreateProject(
             project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
             provider_credential_repository=mock_provider_credential_repository,
         ).with_crypto_service(mock_crypto_service)
 
@@ -278,6 +285,41 @@ class TestCreateProject:
                 system_prompt="ok",
                 llm_backend="unsupported",
             )
+
+    async def test_create_project_for_organization_requires_membership(
+        self,
+        use_case: CreateProject,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        mock_organization_member_repository.find_by_organization_and_user.return_value = None
+
+        with pytest.raises(OrganizationAccessDeniedError):
+            await use_case.execute(
+                user_id=uuid4(),
+                organization_id=uuid4(),
+                name="Org Project",
+                description="desc",
+                system_prompt="ok",
+            )
+
+    async def test_create_project_for_organization_when_member_succeeds(
+        self,
+        use_case: CreateProject,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        user_id = uuid4()
+        organization_id = uuid4()
+        mock_organization_member_repository.find_by_organization_and_user.return_value = object()
+
+        result = await use_case.execute(
+            user_id=user_id,
+            organization_id=organization_id,
+            name="Org Project",
+            description="desc",
+            system_prompt="ok",
+        )
+
+        assert result.organization_id == organization_id
 
     async def test_create_project_with_non_owned_api_key_raises(
         self,

@@ -22,6 +22,15 @@ class TestOrganizationEndpoints:
         token = login.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
+    async def _create_organization(self, client: AsyncClient, headers: dict[str, str]) -> str:
+        create = await client.post(
+            "/api/v1/organizations",
+            json={"name": "Acme Org", "description": "desc"},
+            headers=headers,
+        )
+        assert create.status_code == 201
+        return create.json()["id"]
+
     async def test_organization_crud_and_members_flow(self, client: AsyncClient) -> None:
         headers = await self._auth_headers(client)
 
@@ -70,3 +79,49 @@ class TestOrganizationEndpoints:
         )
         assert invitations.status_code == 200
         assert len(invitations.json()) == 1
+
+    async def test_organization_projects_listing(self, client: AsyncClient) -> None:
+        headers = await self._auth_headers(client)
+        organization_id = await self._create_organization(client, headers)
+
+        create_project = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "Org Project",
+                "description": "attached",
+                "organization_id": organization_id,
+            },
+            headers=headers,
+        )
+        assert create_project.status_code == 201
+        assert create_project.json()["organization_id"] == organization_id
+
+        projects = await client.get(
+            f"/api/v1/organizations/{organization_id}/projects",
+            headers=headers,
+        )
+        assert projects.status_code == 200
+        assert len(projects.json()) == 1
+        assert projects.json()[0]["name"] == "Org Project"
+
+    async def test_organization_projects_forbidden_for_non_member(self, client: AsyncClient) -> None:
+        owner_headers = await self._auth_headers(client)
+        organization_id = await self._create_organization(client, owner_headers)
+        other_headers = await self._auth_headers(client)
+
+        listing = await client.get(
+            f"/api/v1/organizations/{organization_id}/projects",
+            headers=other_headers,
+        )
+        assert listing.status_code == 403
+
+        create_project = await client.post(
+            "/api/v1/projects",
+            json={
+                "name": "Forbidden Org Project",
+                "description": "attached",
+                "organization_id": organization_id,
+            },
+            headers=other_headers,
+        )
+        assert create_project.status_code == 403
