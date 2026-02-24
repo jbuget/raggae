@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 from raggae.domain.exceptions.project_exceptions import (
@@ -20,6 +21,7 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestUpdateProject:
@@ -29,6 +31,10 @@ class TestUpdateProject:
 
     @pytest.fixture
     def mock_provider_credential_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_organization_member_repository(self) -> AsyncMock:
         return AsyncMock()
 
     @pytest.fixture
@@ -43,11 +49,13 @@ class TestUpdateProject:
     def use_case(
         self,
         mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
         mock_provider_credential_repository: AsyncMock,
         mock_crypto_service: Mock,
     ) -> UpdateProject:
         return UpdateProject(
             project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
             provider_credential_repository=mock_provider_credential_repository,
         ).with_crypto_service(mock_crypto_service)
 
@@ -127,6 +135,122 @@ class TestUpdateProject:
             await use_case.execute(
                 project_id=project.id,
                 user_id=uuid4(),
+                name="New name",
+                description="New description",
+                system_prompt="New prompt",
+            )
+
+    async def test_update_project_for_org_owner_is_allowed(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Owner name",
+            description="Owner description",
+            system_prompt="Owner prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.OWNER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=requester_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+        )
+
+        assert result.name == "New name"
+
+    async def test_update_project_for_org_maker_is_allowed(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Owner name",
+            description="Owner description",
+            system_prompt="Owner prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.MAKER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=requester_id,
+            name="New name",
+            description="New description",
+            system_prompt="New prompt",
+        )
+
+        assert result.name == "New name"
+
+    async def test_update_project_for_org_user_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Owner name",
+            description="Owner description",
+            system_prompt="Owner prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=requester_id,
                 name="New name",
                 description="New description",
                 system_prompt="New prompt",

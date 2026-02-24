@@ -4,8 +4,10 @@ from uuid import uuid4
 
 import pytest
 from raggae.application.use_cases.project.get_project import GetProject
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestGetProject:
@@ -14,8 +16,19 @@ class TestGetProject:
         return AsyncMock()
 
     @pytest.fixture
-    def use_case(self, mock_project_repository: AsyncMock) -> GetProject:
-        return GetProject(project_repository=mock_project_repository)
+    def mock_organization_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def use_case(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> GetProject:
+        return GetProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+        )
 
     async def test_get_project_success(
         self,
@@ -75,3 +88,101 @@ class TestGetProject:
         # When / Then
         with pytest.raises(ProjectNotFoundError):
             await use_case.execute(project_id=project.id, user_id=uuid4())
+
+    async def test_get_project_org_owner_can_access(
+        self,
+        use_case: GetProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Org project",
+            description="desc",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.OWNER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        result = await use_case.execute(project_id=project.id, user_id=requester_id)
+
+        assert result.id == project.id
+
+    async def test_get_project_org_maker_can_access(
+        self,
+        use_case: GetProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Org project",
+            description="desc",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.MAKER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        result = await use_case.execute(project_id=project.id, user_id=requester_id)
+
+        assert result.id == project.id
+
+    async def test_get_project_org_user_cannot_access(
+        self,
+        use_case: GetProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Org project",
+            description="desc",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project.id, user_id=requester_id)

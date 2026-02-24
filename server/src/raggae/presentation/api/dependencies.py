@@ -538,7 +538,10 @@ def get_create_project_use_case() -> CreateProject:
 
 
 def get_get_project_use_case() -> GetProject:
-    return GetProject(project_repository=_project_repository)
+    return GetProject(
+        project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
+    )
 
 
 def get_list_projects_use_case() -> ListProjects:
@@ -552,6 +555,7 @@ def get_delete_project_use_case() -> DeleteProject:
 def get_update_project_use_case() -> UpdateProject:
     return UpdateProject(
         project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
         provider_credential_repository=_provider_credential_repository,
     ).with_crypto_service(_provider_api_key_crypto_service)
 
