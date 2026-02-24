@@ -6,11 +6,17 @@ import pytest
 from raggae.application.use_cases.organization.accept_organization_invitation import (
     AcceptOrganizationInvitation,
 )
+from raggae.application.use_cases.organization.accept_user_organization_invitation import (
+    AcceptUserOrganizationInvitation,
+)
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
 )
 from raggae.application.use_cases.organization.list_organization_invitations import (
     ListOrganizationInvitations,
+)
+from raggae.application.use_cases.organization.list_user_pending_organization_invitations import (
+    ListUserPendingOrganizationInvitations,
 )
 from raggae.application.use_cases.organization.resend_organization_invitation import (
     ResendOrganizationInvitation,
@@ -37,6 +43,10 @@ from raggae.infrastructure.database.repositories.in_memory_organization_member_r
 from raggae.infrastructure.database.repositories.in_memory_organization_repository import (
     InMemoryOrganizationRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_user_repository import (
+    InMemoryUserRepository,
+)
+from raggae.domain.entities.user import User
 
 
 class TestOrganizationInvitationUseCases:
@@ -168,3 +178,101 @@ class TestOrganizationInvitationUseCases:
 
         with pytest.raises(OrganizationInvitationInvalidError):
             await use_case.execute(token_hash="expired-token", user_id=uuid4())
+
+    async def test_list_user_pending_invitations_returns_only_pending_for_user_email(
+        self,
+        setup_data,
+    ) -> None:
+        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        user_repo = InMemoryUserRepository()
+        user_id = uuid4()
+        now = datetime.now(UTC)
+        user = User(
+            id=user_id,
+            email="invitee@example.com",
+            hashed_password="hashed",
+            full_name="Invitee User",
+            is_active=True,
+            created_at=now,
+        )
+        await user_repo.save(user)
+        await invitation_repo.save(
+            OrganizationInvitation(
+                id=uuid4(),
+                organization_id=org.id,
+                email="invitee@example.com",
+                role=OrganizationMemberRole.MAKER,
+                status=OrganizationInvitationStatus.PENDING,
+                invited_by_user_id=owner.user_id,
+                token_hash="token-pending",
+                expires_at=now + timedelta(days=1),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await invitation_repo.save(
+            OrganizationInvitation(
+                id=uuid4(),
+                organization_id=org.id,
+                email="invitee@example.com",
+                role=OrganizationMemberRole.USER,
+                status=OrganizationInvitationStatus.ACCEPTED,
+                invited_by_user_id=owner.user_id,
+                token_hash="token-accepted",
+                expires_at=now + timedelta(days=1),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        use_case = ListUserPendingOrganizationInvitations(
+            user_repository=user_repo,
+            organization_repository=org_repo,
+            organization_invitation_repository=invitation_repo,
+        )
+
+        invitations = await use_case.execute(user_id=user_id)
+
+        assert len(invitations) == 1
+        assert invitations[0].organization_name == org.name
+        assert invitations[0].email == "invitee@example.com"
+
+    async def test_accept_user_invitation_by_id(self, setup_data) -> None:
+        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        user_repo = InMemoryUserRepository()
+        user_id = uuid4()
+        now = datetime.now(UTC)
+        user = User(
+            id=user_id,
+            email="invitee@example.com",
+            hashed_password="hashed",
+            full_name="Invitee User",
+            is_active=True,
+            created_at=now,
+        )
+        await user_repo.save(user)
+        invitation = OrganizationInvitation(
+            id=uuid4(),
+            organization_id=org.id,
+            email="invitee@example.com",
+            role=OrganizationMemberRole.USER,
+            status=OrganizationInvitationStatus.PENDING,
+            invited_by_user_id=owner.user_id,
+            token_hash="token-hash-id",
+            expires_at=now + timedelta(days=1),
+            created_at=now,
+            updated_at=now,
+        )
+        await invitation_repo.save(invitation)
+        use_case = AcceptUserOrganizationInvitation(
+            user_repository=user_repo,
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
+        )
+
+        accepted_member = await use_case.execute(invitation_id=invitation.id, user_id=user_id)
+        saved_invitation = await invitation_repo.find_by_id(invitation.id)
+
+        assert accepted_member.organization_id == org.id
+        assert saved_invitation is not None
+        assert saved_invitation.status == OrganizationInvitationStatus.ACCEPTED

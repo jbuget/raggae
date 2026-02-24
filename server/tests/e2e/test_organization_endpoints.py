@@ -31,6 +31,27 @@ class TestOrganizationEndpoints:
         assert create.status_code == 201
         return create.json()["id"]
 
+    async def _auth_headers_with_email(
+        self,
+        client: AsyncClient,
+    ) -> tuple[dict[str, str], str]:
+        unique = uuid4().hex
+        email = f"{unique}@example.com"
+        await client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": email,
+                "password": "SecurePass123!",
+                "full_name": "Org User",
+            },
+        )
+        login = await client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": "SecurePass123!"},
+        )
+        token = login.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}, email
+
     async def test_organization_crud_and_members_flow(self, client: AsyncClient) -> None:
         headers = await self._auth_headers(client)
 
@@ -125,3 +146,31 @@ class TestOrganizationEndpoints:
             headers=other_headers,
         )
         assert create_project.status_code == 403
+
+    async def test_user_can_list_and_accept_pending_invitations(self, client: AsyncClient) -> None:
+        owner_headers = await self._auth_headers(client)
+        invitee_headers, invitee_email = await self._auth_headers_with_email(client)
+        organization_id = await self._create_organization(client, owner_headers)
+
+        invite = await client.post(
+            f"/api/v1/organizations/{organization_id}/invitations",
+            json={"email": invitee_email, "role": "maker"},
+            headers=owner_headers,
+        )
+        assert invite.status_code == 200
+        invitation_id = invite.json()["id"]
+
+        pending = await client.get(
+            "/api/v1/organizations/invitations/pending",
+            headers=invitee_headers,
+        )
+        assert pending.status_code == 200
+        assert len(pending.json()) == 1
+        assert pending.json()[0]["id"] == invitation_id
+
+        accepted = await client.post(
+            f"/api/v1/organizations/invitations/{invitation_id}/accept",
+            headers=invitee_headers,
+        )
+        assert accepted.status_code == 200
+        assert accepted.json()["organization_id"] == organization_id

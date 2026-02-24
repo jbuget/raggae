@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from raggae.application.use_cases.organization.accept_organization_invitation import (
     AcceptOrganizationInvitation,
 )
+from raggae.application.use_cases.organization.accept_user_organization_invitation import (
+    AcceptUserOrganizationInvitation,
+)
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
 from raggae.application.use_cases.organization.get_organization import GetOrganization
@@ -16,6 +19,9 @@ from raggae.application.use_cases.organization.invite_organization_member import
 from raggae.application.use_cases.organization.leave_organization import LeaveOrganization
 from raggae.application.use_cases.organization.list_organization_invitations import (
     ListOrganizationInvitations,
+)
+from raggae.application.use_cases.organization.list_user_pending_organization_invitations import (
+    ListUserPendingOrganizationInvitations,
 )
 from raggae.application.use_cases.organization.list_organization_members import (
     ListOrganizationMembers,
@@ -45,6 +51,7 @@ from raggae.domain.exceptions.organization_exceptions import (
 )
 from raggae.presentation.api.dependencies import (
     get_accept_organization_invitation_use_case,
+    get_accept_user_organization_invitation_use_case,
     get_create_organization_use_case,
     get_current_user_id,
     get_delete_organization_use_case,
@@ -52,6 +59,7 @@ from raggae.presentation.api.dependencies import (
     get_invite_organization_member_use_case,
     get_leave_organization_use_case,
     get_list_organization_invitations_use_case,
+    get_list_user_pending_organization_invitations_use_case,
     get_list_organization_members_use_case,
     get_list_organization_projects_use_case,
     get_list_organizations_use_case,
@@ -68,6 +76,7 @@ from raggae.presentation.api.v1.schemas.organization_schemas import (
     OrganizationInvitationResponse,
     OrganizationMemberResponse,
     OrganizationResponse,
+    UserPendingOrganizationInvitationResponse,
     UpdateOrganizationMemberRoleRequest,
     UpdateOrganizationRequest,
 )
@@ -455,4 +464,46 @@ async def accept_organization_invitation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationInvitationInvalidError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from None
+    return OrganizationMemberResponse(**member.__dict__)
+
+
+@router.get("/invitations/pending", dependencies=[Depends(get_current_user_id)])
+async def list_user_pending_organization_invitations(
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[
+        ListUserPendingOrganizationInvitations,
+        Depends(get_list_user_pending_organization_invitations_use_case),
+    ],
+) -> list[UserPendingOrganizationInvitationResponse]:
+    invitations = await use_case.execute(user_id=user_id)
+    return [
+        UserPendingOrganizationInvitationResponse(**invitation.__dict__)
+        for invitation in invitations
+    ]
+
+
+@router.post(
+    "/invitations/{invitation_id}/accept",
+    dependencies=[Depends(get_current_user_id)],
+)
+async def accept_user_organization_invitation(
+    invitation_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[
+        AcceptUserOrganizationInvitation,
+        Depends(get_accept_user_organization_invitation_use_case),
+    ],
+) -> OrganizationMemberResponse:
+    try:
+        member = await use_case.execute(invitation_id=invitation_id, user_id=user_id)
+    except OrganizationNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found",
+        ) from None
+    except OrganizationInvitationInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from None
     return OrganizationMemberResponse(**member.__dict__)

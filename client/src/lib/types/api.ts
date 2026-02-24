@@ -195,6 +195,18 @@ export interface OrganizationInvitationResponse {
   updated_at: string;
 }
 
+export interface UserPendingOrganizationInvitationResponse {
+  id: string;
+  organization_id: string;
+  organization_name: string;
+  email: string;
+  role: OrganizationMemberRole;
+  invited_by_user_id: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AcceptOrganizationInvitationRequest {
   token: string;
 }

@@ -40,6 +40,15 @@ class InMemoryOrganizationInvitationRepository:
     async def find_by_organization_id(self, organization_id: UUID) -> list[OrganizationInvitation]:
         return [i for i in self._invitations.values() if i.organization_id == organization_id]
 
+    async def find_pending_by_email(self, email: str) -> list[OrganizationInvitation]:
+        normalized_email = email.strip().lower()
+        return [
+            invitation
+            for invitation in self._invitations.values()
+            if invitation.email.strip().lower() == normalized_email
+            and invitation.status == OrganizationInvitationStatus.PENDING
+        ]
+
     async def delete_by_organization_id(self, organization_id: UUID) -> None:
         invitation_ids = [
             invitation.id

@@ -86,6 +86,17 @@ class SQLAlchemyOrganizationInvitationRepository:
             )
             return [self._to_entity(model) for model in result.scalars().all()]
 
+    async def find_pending_by_email(self, email: str) -> list[OrganizationInvitation]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(OrganizationInvitationModel).where(
+                    OrganizationInvitationModel.email == email.strip().lower(),
+                    OrganizationInvitationModel.status
+                    == OrganizationInvitationStatus.PENDING.value,
+                )
+            )
+            return [self._to_entity(model) for model in result.scalars().all()]
+
     async def delete_by_organization_id(self, organization_id: UUID) -> None:
         async with self._session_factory() as session:
             await session.execute(

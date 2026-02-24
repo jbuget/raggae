@@ -4,6 +4,7 @@ import type {
   InviteOrganizationMemberRequest,
   OrganizationInvitationResponse,
   OrganizationMemberResponse,
+  UserPendingOrganizationInvitationResponse,
   ProjectResponse,
   OrganizationResponse,
   UpdateOrganizationMemberRoleRequest,
@@ -168,4 +169,26 @@ export function acceptOrganizationInvitation(
     body: JSON.stringify(data),
     token,
   });
+}
+
+export function listUserPendingOrganizationInvitations(
+  token: string,
+): Promise<UserPendingOrganizationInvitationResponse[]> {
+  return apiFetch<UserPendingOrganizationInvitationResponse[]>(
+    "/organizations/invitations/pending",
+    { token },
+  );
+}
+
+export function acceptUserOrganizationInvitation(
+  token: string,
+  invitationId: string,
+): Promise<OrganizationMemberResponse> {
+  return apiFetch<OrganizationMemberResponse>(
+    `/organizations/invitations/${invitationId}/accept`,
+    {
+      method: "POST",
+      token,
+    },
+  );
 }

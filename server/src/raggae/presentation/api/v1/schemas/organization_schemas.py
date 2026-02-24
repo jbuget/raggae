@@ -65,5 +65,17 @@ class OrganizationInvitationResponse(BaseModel):
     updated_at: datetime
 
 
+class UserPendingOrganizationInvitationResponse(BaseModel):
+    id: UUID
+    organization_id: UUID
+    organization_name: str
+    email: str
+    role: OrganizationMemberRole
+    invited_by_user_id: UUID
+    expires_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
 class AcceptOrganizationInvitationRequest(BaseModel):
     token: str = Field(min_length=8, max_length=255)

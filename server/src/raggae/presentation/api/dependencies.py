@@ -99,6 +99,9 @@ from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.organization.accept_organization_invitation import (
     AcceptOrganizationInvitation,
 )
+from raggae.application.use_cases.organization.accept_user_organization_invitation import (
+    AcceptUserOrganizationInvitation,
+)
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
 from raggae.application.use_cases.organization.get_organization import GetOrganization
@@ -108,6 +111,9 @@ from raggae.application.use_cases.organization.invite_organization_member import
 from raggae.application.use_cases.organization.leave_organization import LeaveOrganization
 from raggae.application.use_cases.organization.list_organization_invitations import (
     ListOrganizationInvitations,
+)
+from raggae.application.use_cases.organization.list_user_pending_organization_invitations import (
+    ListUserPendingOrganizationInvitations,
 )
 from raggae.application.use_cases.organization.list_organization_members import (
     ListOrganizationMembers,
@@ -826,6 +832,25 @@ def get_revoke_organization_invitation_use_case() -> RevokeOrganizationInvitatio
 
 def get_accept_organization_invitation_use_case() -> AcceptOrganizationInvitation:
     return AcceptOrganizationInvitation(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_list_user_pending_organization_invitations_use_case() -> (
+    ListUserPendingOrganizationInvitations
+):
+    return ListUserPendingOrganizationInvitations(
+        user_repository=_user_repository,
+        organization_repository=_organization_repository,
+        organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_accept_user_organization_invitation_use_case() -> AcceptUserOrganizationInvitation:
+    return AcceptUserOrganizationInvitation(
+        user_repository=_user_repository,
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         organization_invitation_repository=_organization_invitation_repository,
