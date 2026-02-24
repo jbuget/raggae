@@ -40,6 +40,12 @@ export type ProjectLLMBackend =
   | "inmemory";
 export type RetrievalStrategy = "vector" | "fulltext" | "hybrid";
 export type ProjectRerankerBackend = "none" | "cross_encoder" | "inmemory";
+export type OrganizationMemberRole = "owner" | "maker" | "user";
+export type OrganizationInvitationStatus =
+  | "pending"
+  | "accepted"
+  | "revoked"
+  | "expired";
 
 export interface CreateProjectRequest {
   name: string;
@@ -128,6 +134,62 @@ export interface ReindexProjectResponse {
   total_documents: number;
   indexed_documents: number;
   failed_documents: number;
+}
+
+// Organizations
+export interface CreateOrganizationRequest {
+  name: string;
+  description?: string | null;
+  logo_url?: string | null;
+}
+
+export interface UpdateOrganizationRequest {
+  name: string;
+  description?: string | null;
+  logo_url?: string | null;
+}
+
+export interface OrganizationResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  created_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationMemberResponse {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: OrganizationMemberRole;
+  joined_at: string;
+}
+
+export interface UpdateOrganizationMemberRoleRequest {
+  role: OrganizationMemberRole;
+}
+
+export interface InviteOrganizationMemberRequest {
+  email: string;
+  role: OrganizationMemberRole;
+}
+
+export interface OrganizationInvitationResponse {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: OrganizationMemberRole;
+  status: OrganizationInvitationStatus;
+  invited_by_user_id: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AcceptOrganizationInvitationRequest {
+  token: string;
 }
 
 // Documents
