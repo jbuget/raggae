@@ -25,6 +25,7 @@ export function ProjectList() {
   const { data: projects, isLoading, error } = useProjects();
   const createProject = useCreateProject();
   const shouldOpenFromQuery = searchParams.get("create") === "1";
+  const organizationIdFromQuery = searchParams.get("organizationId");
   const [createOpen, setCreateOpen] = useState(shouldOpenFromQuery);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -85,7 +86,11 @@ export function ProjectList() {
                 onClick={() => {
                   if (!name.trim()) return;
                   createProject.mutate(
-                    { name: name.trim(), description },
+                    {
+                      name: name.trim(),
+                      description,
+                      organization_id: organizationIdFromQuery || null,
+                    },
                     {
                       onSuccess: (project) => {
                         toast.success("Project created");

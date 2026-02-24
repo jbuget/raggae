@@ -49,6 +49,7 @@ export type OrganizationInvitationStatus =
 
 export interface CreateProjectRequest {
   name: string;
+  organization_id?: string | null;
   description?: string;
   system_prompt?: string;
   chunking_strategy?: ChunkingStrategy;
@@ -100,6 +101,7 @@ export interface UpdateProjectRequest {
 export interface ProjectResponse {
   id: string;
   user_id: string;
+  organization_id?: string | null;
   name: string;
   description: string;
   system_prompt: string;

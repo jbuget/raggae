@@ -4,6 +4,7 @@ import type {
   InviteOrganizationMemberRequest,
   OrganizationInvitationResponse,
   OrganizationMemberResponse,
+  ProjectResponse,
   OrganizationResponse,
   UpdateOrganizationMemberRoleRequest,
   UpdateOrganizationRequest,
@@ -57,6 +58,16 @@ export function listOrganizationMembers(
 ): Promise<OrganizationMemberResponse[]> {
   return apiFetch<OrganizationMemberResponse[]>(
     `/organizations/${organizationId}/members`,
+    { token },
+  );
+}
+
+export function listOrganizationProjects(
+  token: string,
+  organizationId: string,
+): Promise<ProjectResponse[]> {
+  return apiFetch<ProjectResponse[]>(
+    `/organizations/${organizationId}/projects`,
     { token },
   );
 }

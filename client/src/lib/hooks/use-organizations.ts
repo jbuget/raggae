@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createOrganization,
+  listOrganizationProjects,
   listOrganizations,
 } from "@/lib/api/organizations";
 import type { CreateOrganizationRequest } from "@/lib/types/api";
@@ -25,5 +26,14 @@ export function useCreateOrganization() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
+  });
+}
+
+export function useOrganizationProjects(organizationId: string) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["organization-projects", organizationId],
+    queryFn: () => listOrganizationProjects(token!, organizationId),
+    enabled: !!token && !!organizationId,
   });
 }
