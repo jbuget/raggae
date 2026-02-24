@@ -1,9 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,38 +34,26 @@ export default function UserSettingsPage() {
   const createCredential = useCreateModelCredential();
   const activateCredential = useActivateModelCredential();
   const deleteCredential = useDeleteModelCredential();
-  const [draftValues, setDraftValues] = useState<Record<ModelProvider, string>>({
-    openai: "",
-    gemini: "",
-    anthropic: "",
-  });
 
-  const credentialsByProvider = useMemo(() => {
-    const grouped: Record<ModelProvider, typeof credentials> = {
-      openai: [],
-      gemini: [],
-      anthropic: [],
-    };
-    for (const item of credentials ?? []) {
-      grouped[item.provider].push(item);
-    }
-    return grouped;
-  }, [credentials]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalProvider, setModalProvider] = useState<ModelProvider>("openai");
+  const [modalApiKey, setModalApiKey] = useState("");
 
-  function setDraft(provider: ModelProvider, value: string) {
-    setDraftValues((prev) => ({ ...prev, [provider]: value }));
+  function handleModalOpenChange(open: boolean) {
+    setModalOpen(open);
+    if (!open) setModalApiKey("");
   }
 
-  function handleSave(provider: ModelProvider) {
-    const apiKey = draftValues[provider].trim();
+  function handleSave() {
+    const apiKey = modalApiKey.trim();
     if (!apiKey) return;
-
     createCredential.mutate(
-      { provider, api_key: apiKey },
+      { provider: modalProvider, api_key: apiKey },
       {
         onSuccess: () => {
-          toast.success(`${provider} API key saved`);
-          setDraft(provider, "");
+          toast.success(`${modalProvider} API key saved`);
+          setModalOpen(false);
+          setModalApiKey("");
         },
         onError: (error) => {
           toast.error((error as Error).message || "Failed to save API key");
@@ -80,94 +76,140 @@ export default function UserSettingsPage() {
     });
   }
 
+  const providerPlaceholder =
+    PROVIDERS.find((p) => p.value === modalProvider)?.placeholder ?? "";
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">User Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Configure your provider API keys for OpenAI, Gemini, and Anthropic.
+          Manage your AI provider API keys.
         </p>
       </div>
 
-      {PROVIDERS.map((provider) => (
-        <Card key={provider.value} className="space-y-4 p-5">
+      <Card className="space-y-4 p-5">
+        <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-lg font-medium">{provider.label}</h2>
+            <h2 className="text-lg font-medium">AI provider API keys</h2>
             <p className="text-sm text-muted-foreground">
-              Add a key and choose which one is active for this provider.
+              Add keys for OpenAI, Gemini, or Anthropic. Only one key per provider can be active at a time.
             </p>
           </div>
+          <Button
+            type="button"
+            className="shrink-0 cursor-pointer"
+            onClick={() => setModalOpen(true)}
+          >
+            Add a key
+          </Button>
+        </div>
 
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+        {isLoading ? (
+          <Skeleton className="h-14 w-full" />
+        ) : credentials?.length ? (
+          <div className="space-y-2">
+            {credentials.map((item) => {
+              const providerLabel =
+                PROVIDERS.find((p) => p.value === item.provider)?.label ?? item.provider;
+              return (
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
+                        {providerLabel}
+                      </span>
+                      <p className="text-sm font-medium">{item.masked_key}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {item.is_active ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      disabled={item.is_active || activateCredential.isPending}
+                      onClick={() => handleActivate(item.id)}
+                    >
+                      Activate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="cursor-pointer"
+                      disabled={deleteCredential.isPending}
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No API key saved yet.</p>
+        )}
+      </Card>
+
+      <Dialog open={modalOpen} onOpenChange={handleModalOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add an API key</DialogTitle>
+            <DialogDescription>
+              Select a provider then paste your API key.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor={`api-key-${provider.value}`}>API key</Label>
+              <Label htmlFor="modal-provider">Provider</Label>
+              <select
+                id="modal-provider"
+                value={modalProvider}
+                onChange={(e) => setModalProvider(e.target.value as ModelProvider)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                {PROVIDERS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="modal-api-key">API key</Label>
               <Input
-                id={`api-key-${provider.value}`}
+                id="modal-api-key"
                 type="password"
-                value={draftValues[provider.value]}
-                onChange={(event) => setDraft(provider.value, event.target.value)}
-                placeholder={provider.placeholder}
+                placeholder={providerPlaceholder}
+                value={modalApiKey}
+                onChange={(e) => setModalApiKey(e.target.value)}
                 autoComplete="off"
               />
             </div>
+          </div>
+
+          <DialogFooter showCloseButton>
             <Button
               type="button"
               className="cursor-pointer"
-              onClick={() => handleSave(provider.value)}
-              disabled={!draftValues[provider.value].trim() || createCredential.isPending}
+              disabled={!modalApiKey.trim() || createCredential.isPending}
+              onClick={handleSave}
             >
               Save key
             </Button>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Existing keys</p>
-            {isLoading ? (
-              <Skeleton className="h-14 w-full" />
-            ) : credentialsByProvider[provider.value]?.length ? (
-              <div className="space-y-2">
-                {credentialsByProvider[provider.value].map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{item.masked_key}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.is_active ? "Active" : "Inactive"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="cursor-pointer"
-                        disabled={item.is_active || activateCredential.isPending}
-                        onClick={() => handleActivate(item.id)}
-                      >
-                        Activate
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="cursor-pointer"
-                        disabled={deleteCredential.isPending}
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No key saved for {provider.label}.</p>
-            )}
-          </div>
-        </Card>
-      ))}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
