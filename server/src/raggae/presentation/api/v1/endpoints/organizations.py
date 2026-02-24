@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from uuid import UUID
 
@@ -68,6 +69,7 @@ from raggae.presentation.api.v1.schemas.organization_schemas import (
 )
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_user_id)])
@@ -81,6 +83,10 @@ async def create_organization(
         name=data.name,
         description=data.description,
         logo_url=data.logo_url,
+    )
+    logger.info(
+        "organization_created",
+        extra={"organization_id": str(organization.id), "user_id": str(user_id)},
     )
     return OrganizationResponse(**organization.__dict__)
 
@@ -128,6 +134,10 @@ async def update_organization(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_updated",
+        extra={"organization_id": str(organization_id), "user_id": str(user_id)},
+    )
     return OrganizationResponse(**organization.__dict__)
 
 
@@ -143,6 +153,10 @@ async def delete_organization(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_deleted",
+        extra={"organization_id": str(organization_id), "user_id": str(user_id)},
+    )
 
 
 @router.get("/{organization_id}/members", dependencies=[Depends(get_current_user_id)])
@@ -183,6 +197,14 @@ async def update_organization_member_role(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_member_role_updated",
+        extra={
+            "organization_id": str(organization_id),
+            "member_id": str(member_id),
+            "user_id": str(user_id),
+        },
+    )
     return OrganizationMemberResponse(**member.__dict__)
 
 
@@ -209,6 +231,14 @@ async def remove_organization_member(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_member_removed",
+        extra={
+            "organization_id": str(organization_id),
+            "member_id": str(member_id),
+            "user_id": str(user_id),
+        },
+    )
 
 
 @router.post("/{organization_id}/leave", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(get_current_user_id)])
@@ -225,6 +255,10 @@ async def leave_organization(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_member_left",
+        extra={"organization_id": str(organization_id), "user_id": str(user_id)},
+    )
 
 
 @router.post("/{organization_id}/invitations", dependencies=[Depends(get_current_user_id)])
@@ -247,6 +281,14 @@ async def invite_organization_member(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_invitation_created",
+        extra={
+            "organization_id": str(organization_id),
+            "invitation_id": str(invitation.id),
+            "user_id": str(user_id),
+        },
+    )
     return OrganizationInvitationResponse(**invitation.__dict__)
 
 
@@ -294,6 +336,14 @@ async def resend_organization_invitation(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_invitation_resent",
+        extra={
+            "organization_id": str(organization_id),
+            "invitation_id": str(invitation_id),
+            "user_id": str(user_id),
+        },
+    )
     return OrganizationInvitationResponse(**invitation.__dict__)
 
 
@@ -321,6 +371,14 @@ async def revoke_organization_invitation(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_invitation_revoked",
+        extra={
+            "organization_id": str(organization_id),
+            "invitation_id": str(invitation_id),
+            "user_id": str(user_id),
+        },
+    )
     return OrganizationInvitationResponse(**invitation.__dict__)
 
 
