@@ -112,6 +112,9 @@ from raggae.application.use_cases.organization.list_organization_invitations imp
 from raggae.application.use_cases.organization.list_organization_members import (
     ListOrganizationMembers,
 )
+from raggae.application.use_cases.organization.list_organization_projects import (
+    ListOrganizationProjects,
+)
 from raggae.application.use_cases.organization.list_organizations import ListOrganizations
 from raggae.application.use_cases.organization.remove_organization_member import (
     RemoveOrganizationMember,
@@ -529,6 +532,7 @@ def get_login_user_use_case() -> LoginUser:
 def get_create_project_use_case() -> CreateProject:
     return CreateProject(
         project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
         provider_credential_repository=_provider_credential_repository,
     ).with_crypto_service(_provider_api_key_crypto_service)
 
@@ -751,6 +755,14 @@ def get_list_organization_members_use_case() -> ListOrganizationMembers:
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         user_repository=_user_repository,
+    )
+
+
+def get_list_organization_projects_use_case() -> ListOrganizationProjects:
+    return ListOrganizationProjects(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        project_repository=_project_repository,
     )
 
 

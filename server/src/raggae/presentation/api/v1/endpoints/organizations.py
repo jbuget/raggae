@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -19,6 +19,9 @@ from raggae.application.use_cases.organization.list_organization_invitations imp
 )
 from raggae.application.use_cases.organization.list_organization_members import (
     ListOrganizationMembers,
+)
+from raggae.application.use_cases.organization.list_organization_projects import (
+    ListOrganizationProjects,
 )
 from raggae.application.use_cases.organization.list_organizations import ListOrganizations
 from raggae.application.use_cases.organization.remove_organization_member import (
@@ -50,6 +53,7 @@ from raggae.presentation.api.dependencies import (
     get_leave_organization_use_case,
     get_list_organization_invitations_use_case,
     get_list_organization_members_use_case,
+    get_list_organization_projects_use_case,
     get_list_organizations_use_case,
     get_remove_organization_member_use_case,
     get_resend_organization_invitation_use_case,
@@ -67,9 +71,13 @@ from raggae.presentation.api.v1.schemas.organization_schemas import (
     UpdateOrganizationMemberRoleRequest,
     UpdateOrganizationRequest,
 )
+from raggae.presentation.api.v1.schemas.project_schemas import ProjectResponse
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 logger = logging.getLogger(__name__)
+
+ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
+ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory"]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_user_id)])
@@ -174,6 +182,57 @@ async def list_organization_members(
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     return [OrganizationMemberResponse(**member.__dict__) for member in members]
+
+
+@router.get("/{organization_id}/projects", dependencies=[Depends(get_current_user_id)])
+async def list_organization_projects(
+    organization_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[
+        ListOrganizationProjects, Depends(get_list_organization_projects_use_case)
+    ],
+) -> list[ProjectResponse]:
+    try:
+        projects = await use_case.execute(organization_id=organization_id, user_id=user_id)
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    return [
+        ProjectResponse(
+            id=p.id,
+            user_id=p.user_id,
+            organization_id=p.organization_id,
+            name=p.name,
+            description=p.description,
+            system_prompt=p.system_prompt,
+            is_published=p.is_published,
+            created_at=p.created_at,
+            chunking_strategy=p.chunking_strategy,
+            parent_child_chunking=p.parent_child_chunking,
+            reindex_status=p.reindex_status,
+            reindex_progress=p.reindex_progress,
+            reindex_total=p.reindex_total,
+            embedding_backend=p.embedding_backend,
+            embedding_model=p.embedding_model,
+            embedding_api_key_masked=p.embedding_api_key_masked,
+            embedding_api_key_credential_id=p.embedding_api_key_credential_id,
+            llm_backend=p.llm_backend,
+            llm_model=p.llm_model,
+            llm_api_key_masked=p.llm_api_key_masked,
+            llm_api_key_credential_id=p.llm_api_key_credential_id,
+            retrieval_strategy=cast(ProjectRetrievalStrategy, p.retrieval_strategy),
+            retrieval_top_k=p.retrieval_top_k,
+            retrieval_min_score=p.retrieval_min_score,
+            chat_history_window_size=p.chat_history_window_size,
+            chat_history_max_chars=p.chat_history_max_chars,
+            reranking_enabled=p.reranking_enabled,
+            reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
+            reranker_model=p.reranker_model,
+            reranker_candidate_multiplier=p.reranker_candidate_multiplier,
+        )
+        for p in projects
+    ]
 
 
 @router.patch("/{organization_id}/members/{member_id}", dependencies=[Depends(get_current_user_id)])

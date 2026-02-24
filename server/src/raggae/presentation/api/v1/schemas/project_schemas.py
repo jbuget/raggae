@@ -22,6 +22,7 @@ from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 class CreateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1)
+    organization_id: UUID | None = None
     description: str = ""
     system_prompt: str = Field(default="", max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
     chunking_strategy: ChunkingStrategy | None = None
@@ -113,6 +114,7 @@ class UpdateProjectRequest(BaseModel):
 class ProjectResponse(BaseModel):
     id: UUID
     user_id: UUID
+    organization_id: UUID | None
     name: str
     description: str
     system_prompt: str

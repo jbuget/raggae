@@ -12,6 +12,7 @@ class ProjectDTO:
 
     id: UUID
     user_id: UUID
+    organization_id: UUID | None
     name: str
     description: str
     system_prompt: str
@@ -53,6 +54,7 @@ class ProjectDTO:
         return cls(
             id=project.id,
             user_id=project.user_id,
+            organization_id=project.organization_id,
             name=project.name,
             description=project.description,
             system_prompt=project.system_prompt,

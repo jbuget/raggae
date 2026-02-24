@@ -21,6 +21,7 @@ class SQLAlchemyProjectRepository:
                 model = ProjectModel(
                     id=project.id,
                     user_id=project.user_id,
+                    organization_id=project.organization_id,
                     name=project.name,
                     description=project.description,
                     system_prompt=project.system_prompt,
@@ -52,6 +53,7 @@ class SQLAlchemyProjectRepository:
                 session.add(model)
             else:
                 model.user_id = project.user_id
+                model.organization_id = project.organization_id
                 model.name = project.name
                 model.description = project.description
                 model.system_prompt = project.system_prompt
@@ -88,6 +90,7 @@ class SQLAlchemyProjectRepository:
             return Project(
                 id=model.id,
                 user_id=model.user_id,
+                organization_id=model.organization_id,
                 name=model.name,
                 description=model.description,
                 system_prompt=model.system_prompt,
@@ -127,6 +130,49 @@ class SQLAlchemyProjectRepository:
                 Project(
                     id=model.id,
                     user_id=model.user_id,
+                    organization_id=model.organization_id,
+                    name=model.name,
+                    description=model.description,
+                    system_prompt=model.system_prompt,
+                    is_published=model.is_published,
+                    chunking_strategy=ChunkingStrategy(model.chunking_strategy),
+                    parent_child_chunking=model.parent_child_chunking,
+                    reindex_status=model.reindex_status,
+                    reindex_progress=model.reindex_progress,
+                    reindex_total=model.reindex_total,
+                    embedding_backend=model.embedding_backend,
+                    embedding_model=model.embedding_model,
+                    embedding_api_key_encrypted=model.embedding_api_key_encrypted,
+                    embedding_api_key_credential_id=model.embedding_api_key_credential_id,
+                    llm_backend=model.llm_backend,
+                    llm_model=model.llm_model,
+                    llm_api_key_encrypted=model.llm_api_key_encrypted,
+                    llm_api_key_credential_id=model.llm_api_key_credential_id,
+                    retrieval_strategy=model.retrieval_strategy,
+                    retrieval_top_k=model.retrieval_top_k,
+                    retrieval_min_score=model.retrieval_min_score,
+                    chat_history_window_size=model.chat_history_window_size,
+                    chat_history_max_chars=model.chat_history_max_chars,
+                    reranking_enabled=model.reranking_enabled,
+                    reranker_backend=model.reranker_backend,
+                    reranker_model=model.reranker_model,
+                    reranker_candidate_multiplier=model.reranker_candidate_multiplier,
+                    created_at=model.created_at,
+                )
+                for model in models
+            ]
+
+    async def find_by_organization_id(self, organization_id: UUID) -> list[Project]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(ProjectModel).where(ProjectModel.organization_id == organization_id)
+            )
+            models = result.scalars().all()
+            return [
+                Project(
+                    id=model.id,
+                    user_id=model.user_id,
+                    organization_id=model.organization_id,
                     name=model.name,
                     description=model.description,
                     system_prompt=model.system_prompt,

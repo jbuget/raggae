@@ -23,6 +23,9 @@ from raggae.application.dto.project_dto import ProjectDTO
 from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
 )
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
+)
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
 )
@@ -43,6 +46,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
+from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
 
@@ -58,9 +62,11 @@ class CreateProject:
     def __init__(
         self,
         project_repository: ProjectRepository,
+        organization_member_repository: OrganizationMemberRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
+        self._organization_member_repository = organization_member_repository
         self._provider_credential_repository = provider_credential_repository
         self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
 
@@ -96,6 +102,7 @@ class CreateProject:
         reranker_backend: str | None = None,
         reranker_model: str | None = None,
         reranker_candidate_multiplier: int | None = None,
+        organization_id: UUID | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -203,9 +210,19 @@ class CreateProject:
             if llm_api_key_credential_id is not None and resolved_llm_api_key is not None
             else None
         )
+        if organization_id is not None:
+            if self._organization_member_repository is None:
+                raise OrganizationAccessDeniedError("Organization repository is not configured")
+            member = await self._organization_member_repository.find_by_organization_and_user(
+                organization_id=organization_id,
+                user_id=user_id,
+            )
+            if member is None:
+                raise OrganizationAccessDeniedError("User is not a member of this organization")
         project = Project(
             id=uuid4(),
             user_id=user_id,
+            organization_id=organization_id,
             name=name,
             description=description,
             system_prompt=system_prompt,

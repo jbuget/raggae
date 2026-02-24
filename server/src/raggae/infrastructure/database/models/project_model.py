@@ -18,6 +18,12 @@ class ProjectModel(Base):
         index=True,
         nullable=False,
     )
+    organization_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text(), nullable=False, default="")
     system_prompt: Mapped[str] = mapped_column(Text(), nullable=False, default="")

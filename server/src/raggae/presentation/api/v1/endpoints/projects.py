@@ -23,6 +23,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectReindexInProgressError,
     ProjectSystemPromptTooLongError,
 )
+from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.presentation.api.dependencies import (
     get_create_project_use_case,
     get_current_user_id,
@@ -64,6 +65,7 @@ async def create_project(
     try:
         project_dto = await use_case.execute(
             user_id=user_id,
+            organization_id=data.organization_id,
             name=data.name,
             description=data.description,
             system_prompt=data.system_prompt,
@@ -130,9 +132,15 @@ async def create_project(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from None
+    except OrganizationAccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from None
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
+        organization_id=project_dto.organization_id,
         name=project_dto.name,
         description=project_dto.description,
         system_prompt=project_dto.system_prompt,
@@ -179,6 +187,7 @@ async def get_project(
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
+        organization_id=project_dto.organization_id,
         name=project_dto.name,
         description=project_dto.description,
         system_prompt=project_dto.system_prompt,
@@ -219,6 +228,7 @@ async def list_projects(
         ProjectResponse(
             id=p.id,
             user_id=p.user_id,
+            organization_id=p.organization_id,
             name=p.name,
             description=p.description,
             system_prompt=p.system_prompt,
@@ -351,6 +361,7 @@ async def update_project(
     return ProjectResponse(
         id=project_dto.id,
         user_id=project_dto.user_id,
+        organization_id=project_dto.organization_id,
         name=project_dto.name,
         description=project_dto.description,
         system_prompt=project_dto.system_prompt,
