@@ -39,7 +39,7 @@ class SaveProviderApiKey:
             encrypted_api_key=self._provider_api_key_crypto_service.encrypt(api_key),
             key_fingerprint=self._provider_api_key_crypto_service.fingerprint(api_key),
             key_suffix=api_key[-4:],
-            is_active=True,
+            is_active=False,
             created_at=now,
             updated_at=now,
         )
@@ -49,7 +49,7 @@ class SaveProviderApiKey:
             id=credential.id,
             provider=credential.provider.value,
             masked_key=credential.masked_key,
-            is_active=credential.is_active,
+            is_active=True,
             created_at=credential.created_at,
             updated_at=credential.updated_at,
         )
