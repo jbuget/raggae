@@ -13,6 +13,8 @@ class OrganizationMemberDTO:
     id: UUID
     organization_id: UUID
     user_id: UUID
+    user_first_name: str | None
+    user_last_name: str | None
     role: OrganizationMemberRole
     joined_at: datetime
 
@@ -22,6 +24,8 @@ class OrganizationMemberDTO:
             id=member.id,
             organization_id=member.organization_id,
             user_id=member.user_id,
+            user_first_name=None,
+            user_last_name=None,
             role=member.role,
             joined_at=member.joined_at,
         )

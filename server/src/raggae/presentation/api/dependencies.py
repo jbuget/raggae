@@ -750,6 +750,7 @@ def get_list_organization_members_use_case() -> ListOrganizationMembers:
     return ListOrganizationMembers(
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
+        user_repository=_user_repository,
     )
 
 
