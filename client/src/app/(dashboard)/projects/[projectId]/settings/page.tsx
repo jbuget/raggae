@@ -44,9 +44,11 @@ import type {
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
 const SETTINGS_TABS = [
   "General",
-  "Knowledge",
-  "Pipeline",
-  "Danger zone",
+  "Document ingestion",
+  "Knowledge indexing",
+  "Context retrieval",
+  "Context augmentation",
+  "Answer generation",
 ] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
 
@@ -83,7 +85,7 @@ export default function ProjectSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="w-full space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -194,19 +196,34 @@ export default function ProjectSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div className="flex flex-wrap gap-2">
-        {SETTINGS_TABS.map((tab) => (
-          <Button
-            key={tab}
-            type="button"
-            variant={activeTab === tab ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </Button>
-        ))}
+    <div className="w-full space-y-8">
+      <div>
+        <div
+          role="tablist"
+          aria-label="Project settings sections"
+          className="flex flex-wrap items-end gap-4 border-b"
+        >
+          {SETTINGS_TABS.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={[
+                  "cursor-pointer border-b-2 px-1 py-3 text-sm whitespace-nowrap transition-colors",
+                  isActive
+                    ? "border-primary text-foreground font-medium"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {isProjectReindexing && (
@@ -217,7 +234,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "General" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Name *</Label>
           <Input
@@ -237,29 +254,60 @@ export default function ProjectSettingsPage() {
             rows={3}
           />
         </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="systemPrompt">System Prompt</Label>
-            <span className={`text-xs ${nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"}`}>
-              {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
-            </span>
-          </div>
-          <Textarea
-            id="systemPrompt"
-            value={effectiveSystemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            placeholder="Instructions for the AI assistant..."
-            rows={16}
-            maxLength={MAX_SYSTEM_PROMPT_LENGTH}
-          />
-          <p className="text-muted-foreground text-xs">
-            Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+        <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
+          {updateProject.isPending ? "Saving..." : "Save changes"}
+        </Button>
+        <div className="space-y-3 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">Delete project</p>
+          <p className="text-sm text-muted-foreground">
+            This action is irreversible and removes project settings, conversations, and documents.
           </p>
+          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <DialogTrigger asChild>
+              <Button variant="destructive" className="cursor-pointer">
+                Delete Project
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Project</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete &quot;{project.name}&quot;? This
+                  action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => setDeleteOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="cursor-pointer"
+                  disabled={deleteProject.isPending}
+                  onClick={() => {
+                    deleteProject.mutate(project.id, {
+                      onSuccess: () => {
+                        toast.success("Project deleted");
+                        router.push("/projects");
+                      },
+                      onError: () => toast.error("Failed to delete project"),
+                    });
+                  }}
+                >
+                  {deleteProject.isPending ? "Deleting..." : "Delete"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       )}
 
-      {activeTab === "Knowledge" && (
+      {activeTab === "Document ingestion" && (
         <div className="space-y-4">
         <p className="text-muted-foreground text-sm">
           La base documentaire du projet est configuree via les options d&apos;indexation.
@@ -317,10 +365,9 @@ export default function ProjectSettingsPage() {
       </div>
       )}
 
-      {activeTab === "Pipeline" && (
+      {activeTab === "Knowledge indexing" && (
         <div className="space-y-4">
-        <div className="space-y-2">
-          <p className="text-base font-semibold tracking-tight">Knowledge ingestion</p>
+          <p className="text-base font-semibold tracking-tight">Chunking and hierarchy</p>
         <div className="space-y-2">
           <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
           <select
@@ -356,12 +403,36 @@ export default function ProjectSettingsPage() {
             mais la pertinence est souvent meilleure avec `Semantic`.
           </p>
         ) : null}
-        </div>
-
         <hr className="border-border" />
+        <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
+          {updateProject.isPending ? "Saving..." : "Save changes"}
+        </Button>
+        <div className="space-y-3 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">Reindex all documents</p>
+          <p className="text-sm text-muted-foreground">
+            Reindexing recomputes chunks and embeddings for all project documents and can take time.
+          </p>
+          <Button
+            className="cursor-pointer"
+            disabled={reindexProject.isPending || isProjectReindexing}
+            onClick={() => {
+              reindexProject.mutate(undefined, {
+                onSuccess: (result) =>
+                  toast.success(
+                    `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
+                  ),
+                onError: () => toast.error("Failed to reindex project"),
+              });
+            }}
+          >
+            {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+          </Button>
+        </div>
+      </div>
+      )}
 
-        <div className="space-y-2">
-          <p className="text-base font-semibold tracking-tight">Chunks retrieval</p>
+      {activeTab === "Context retrieval" && (
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="embeddingBackend">Embedding backend</Label>
             <select
@@ -383,22 +454,6 @@ export default function ProjectSettingsPage() {
           </div>
           {effectiveEmbeddingBackend ? (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="embeddingModel">Embedding model</Label>
-                <select
-                  id="embeddingModel"
-                  value={effectiveEmbeddingModel}
-                  onChange={(e) => setEmbeddingModel(e.target.value)}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="">Select a model</option>
-                  {embeddingModelOptions.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="embeddingCredentialId">Embedding API key</Label>
                 {project.embedding_api_key_masked ? (
@@ -439,14 +494,39 @@ export default function ProjectSettingsPage() {
                   </p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="embeddingModel">Embedding model</Label>
+                <select
+                  id="embeddingModel"
+                  value={effectiveEmbeddingModel}
+                  onChange={(e) => setEmbeddingModel(e.target.value)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">Select a model</option>
+                  {embeddingModelOptions.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </>
           ) : null}
         </div>
+      )}
 
-        <hr className="border-border" />
+      {activeTab === "Context augmentation" && (
+        <div className="space-y-2 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">Context augmentation</p>
+          <p className="text-sm text-muted-foreground">
+            This section is reserved for future augmentation settings (query rewriting, reranking,
+            context windows, and hybrid retrieval policies).
+          </p>
+        </div>
+      )}
 
-        <div className="space-y-2">
-          <p className="text-base font-semibold tracking-tight">Answer generation</p>
+      {activeTab === "Answer generation" && (
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="llmBackend">LLM backend</Label>
             <select
@@ -469,22 +549,6 @@ export default function ProjectSettingsPage() {
           </div>
           {effectiveLlmBackend ? (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="llmModel">LLM model</Label>
-                <select
-                  id="llmModel"
-                  value={effectiveLlmModel}
-                  onChange={(e) => setLlmModel(e.target.value)}
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                >
-                  <option value="">Select a model</option>
-                  {llmModelOptions.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="llmCredentialId">LLM API key</Label>
                 {project.llm_api_key_masked ? (
@@ -525,82 +589,54 @@ export default function ProjectSettingsPage() {
                   </p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="llmModel">LLM model</Label>
+                <select
+                  id="llmModel"
+                  value={effectiveLlmModel}
+                  onChange={(e) => setLlmModel(e.target.value)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">Select a model</option>
+                  {llmModelOptions.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </>
           ) : null}
+          <hr className="border-border" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="systemPrompt">System Prompt</Label>
+              <span
+                className={`text-xs ${nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"}`}
+              >
+                {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
+              </span>
+            </div>
+            <Textarea
+              id="systemPrompt"
+              value={effectiveSystemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              placeholder="Instructions for the AI assistant..."
+              rows={16}
+              maxLength={MAX_SYSTEM_PROMPT_LENGTH}
+            />
+            <p className="text-muted-foreground text-xs">
+              Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+            </p>
+          </div>
         </div>
-      </div>
       )}
 
-      {activeTab !== "Knowledge" && activeTab !== "Danger zone" ? (
+      {activeTab !== "Document ingestion" && activeTab !== "General" && activeTab !== "Knowledge indexing" ? (
         <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
           {updateProject.isPending ? "Saving..." : "Save changes"}
         </Button>
       ) : null}
-
-      {activeTab === "Pipeline" ? (
-        <>
-          <hr className="border-border" />
-          <Button
-            className="cursor-pointer"
-            disabled={reindexProject.isPending || isProjectReindexing}
-            onClick={() => {
-              reindexProject.mutate(undefined, {
-                onSuccess: (result) =>
-                  toast.success(
-                    `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
-                  ),
-                onError: () => toast.error("Failed to reindex project"),
-              });
-            }}
-          >
-            {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
-          </Button>
-        </>
-      ) : null}
-
-      {activeTab === "Danger zone" && (
-        <div className="space-y-4">
-        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive" className="cursor-pointer">Delete Project</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Project</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete &quot;{project.name}&quot;? This
-                action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => setDeleteOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                className="cursor-pointer"
-                disabled={deleteProject.isPending}
-                onClick={() => {
-                  deleteProject.mutate(project.id, {
-                    onSuccess: () => {
-                      toast.success("Project deleted");
-                      router.push("/projects");
-                    },
-                    onError: () => toast.error("Failed to delete project"),
-                  });
-                }}
-              >
-                {deleteProject.isPending ? "Deleting..." : "Delete"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      )}
 
       <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
         <DialogContent>
