@@ -20,5 +20,11 @@ class InMemoryOrganizationRepository:
             org for org in self._organizations.values() if org.created_by_user_id == user_id
         ]
 
+    async def find_by_slug(self, slug: str) -> Organization | None:
+        for organization in self._organizations.values():
+            if organization.slug == slug:
+                return organization
+        return None
+
     async def delete(self, organization_id: UUID) -> None:
         self._organizations.pop(organization_id, None)

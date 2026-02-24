@@ -51,6 +51,16 @@ class SQLAlchemyOrganizationRepository:
             )
             return [self._to_entity(model) for model in result.scalars().all()]
 
+    async def find_by_slug(self, slug: str) -> Organization | None:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(OrganizationModel).where(OrganizationModel.slug == slug)
+            )
+            model = result.scalar_one_or_none()
+            if model is None:
+                return None
+            return self._to_entity(model)
+
     async def delete(self, organization_id: UUID) -> None:
         async with self._session_factory() as session:
             await session.execute(delete(OrganizationModel).where(OrganizationModel.id == organization_id))

@@ -47,6 +47,63 @@ class TestOrganizationUseCases:
         assert len(members) == 1
         assert members[0].user_id == user_id
         assert members[0].role == OrganizationMemberRole.OWNER
+        assert created.slug is not None
+        assert len(created.slug.split("-")) == 2
+
+    async def test_create_organization_keeps_provided_slug(
+        self,
+        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+    ) -> None:
+        org_repo, member_repo = repositories
+        user_id = uuid4()
+        use_case = CreateOrganization(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+        )
+
+        created = await use_case.execute(user_id=user_id, name="Acme", slug="acme-team")
+
+        assert created.slug == "acme-team"
+
+    async def test_create_organization_generates_another_slug_on_collision(
+        self,
+        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        org_repo, member_repo = repositories
+        user_id = uuid4()
+        now = datetime.now(UTC)
+        existing = Organization(
+            id=uuid4(),
+            name="Existing",
+            slug="agile-atelier",
+            description=None,
+            logo_url=None,
+            created_by_user_id=user_id,
+            created_at=now,
+            updated_at=now,
+        )
+        await org_repo.save(existing)
+
+        choices = iter(["agile", "atelier", "brave", "bastion"])
+
+        def fake_choice(_: list[str]) -> str:
+            return next(choices)
+
+        monkeypatch.setattr(
+            "raggae.application.use_cases.organization.create_organization.random.choice",
+            fake_choice,
+        )
+
+        use_case = CreateOrganization(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+        )
+
+        created = await use_case.execute(user_id=uuid4(), name="Acme")
+
+        assert created.slug is not None
+        assert created.slug != "agile-atelier"
 
     async def test_get_and_list_organizations(
         self,
