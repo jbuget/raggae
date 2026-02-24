@@ -31,6 +31,18 @@ def _reset_repositories() -> None:
         dependencies._message_repository._messages.clear()
     if hasattr(dependencies._provider_credential_repository, "_credentials"):
         dependencies._provider_credential_repository._credentials.clear()
+    if hasattr(dependencies, "_organization_repository") and hasattr(
+        dependencies._organization_repository, "_organizations"
+    ):
+        dependencies._organization_repository._organizations.clear()
+    if hasattr(dependencies, "_organization_member_repository") and hasattr(
+        dependencies._organization_member_repository, "_members"
+    ):
+        dependencies._organization_member_repository._members.clear()
+    if hasattr(dependencies, "_organization_invitation_repository") and hasattr(
+        dependencies._organization_invitation_repository, "_invitations"
+    ):
+        dependencies._organization_invitation_repository._invitations.clear()
 
 
 @pytest.fixture

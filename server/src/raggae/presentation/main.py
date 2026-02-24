@@ -10,6 +10,7 @@ from raggae.presentation.api.v1.endpoints.model_catalog import router as model_c
 from raggae.presentation.api.v1.endpoints.model_credentials import (
     router as model_credentials_router,
 )
+from raggae.presentation.api.v1.endpoints.organizations import router as organizations_router
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
 from raggae.presentation.api.dependencies import get_query_relevant_chunks_use_case
 
@@ -29,6 +30,7 @@ app = FastAPI(
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
+app.include_router(organizations_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(model_catalog_router, prefix="/api/v1")

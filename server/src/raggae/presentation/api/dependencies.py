@@ -14,6 +14,15 @@ from raggae.application.interfaces.repositories.document_repository import (
     DocumentRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.repositories.organization_invitation_repository import (
+    OrganizationInvitationRepository,
+)
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
+)
+from raggae.application.interfaces.repositories.organization_repository import (
+    OrganizationRepository,
+)
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
@@ -87,6 +96,36 @@ from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.application.use_cases.organization.accept_organization_invitation import (
+    AcceptOrganizationInvitation,
+)
+from raggae.application.use_cases.organization.create_organization import CreateOrganization
+from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
+from raggae.application.use_cases.organization.get_organization import GetOrganization
+from raggae.application.use_cases.organization.invite_organization_member import (
+    InviteOrganizationMember,
+)
+from raggae.application.use_cases.organization.leave_organization import LeaveOrganization
+from raggae.application.use_cases.organization.list_organization_invitations import (
+    ListOrganizationInvitations,
+)
+from raggae.application.use_cases.organization.list_organization_members import (
+    ListOrganizationMembers,
+)
+from raggae.application.use_cases.organization.list_organizations import ListOrganizations
+from raggae.application.use_cases.organization.remove_organization_member import (
+    RemoveOrganizationMember,
+)
+from raggae.application.use_cases.organization.resend_organization_invitation import (
+    ResendOrganizationInvitation,
+)
+from raggae.application.use_cases.organization.revoke_organization_invitation import (
+    RevokeOrganizationInvitation,
+)
+from raggae.application.use_cases.organization.update_organization import UpdateOrganization
+from raggae.application.use_cases.organization.update_organization_member_role import (
+    UpdateOrganizationMemberRole,
+)
 from raggae.application.use_cases.provider_credentials.activate_provider_api_key import (
     ActivateProviderApiKey,
 )
@@ -120,6 +159,15 @@ from raggae.infrastructure.database.repositories.in_memory_document_repository i
 from raggae.infrastructure.database.repositories.in_memory_message_repository import (
     InMemoryMessageRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_organization_invitation_repository import (
+    InMemoryOrganizationInvitationRepository,
+)
+from raggae.infrastructure.database.repositories.in_memory_organization_member_repository import (
+    InMemoryOrganizationMemberRepository,
+)
+from raggae.infrastructure.database.repositories.in_memory_organization_repository import (
+    InMemoryOrganizationRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
@@ -140,6 +188,15 @@ from raggae.infrastructure.database.repositories.sqlalchemy_document_repository 
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_message_repository import (
     SQLAlchemyMessageRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_organization_invitation_repository import (
+    SQLAlchemyOrganizationInvitationRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_organization_member_repository import (
+    SQLAlchemyOrganizationMemberRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_organization_repository import (
+    SQLAlchemyOrganizationRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
@@ -285,6 +342,15 @@ if settings.persistence_backend == "postgres":
     _provider_credential_repository: ProviderCredentialRepository = (
         SQLAlchemyProviderCredentialRepository(session_factory=SessionFactory)
     )
+    _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
+        session_factory=SessionFactory
+    )
+    _organization_member_repository: OrganizationMemberRepository = (
+        SQLAlchemyOrganizationMemberRepository(session_factory=SessionFactory)
+    )
+    _organization_invitation_repository: OrganizationInvitationRepository = (
+        SQLAlchemyOrganizationInvitationRepository(session_factory=SessionFactory)
+    )
     _chunk_retrieval_service: ChunkRetrievalService = SQLAlchemyChunkRetrievalService(
         session_factory=SessionFactory,
         vector_weight=settings.retrieval_vector_weight,
@@ -300,6 +366,9 @@ else:
     _conversation_repository = InMemoryConversationRepository()
     _message_repository = InMemoryMessageRepository()
     _provider_credential_repository = InMemoryProviderCredentialRepository()
+    _organization_repository = InMemoryOrganizationRepository()
+    _organization_member_repository = InMemoryOrganizationMemberRepository()
+    _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
     _chunk_retrieval_service = InMemoryChunkRetrievalService(
         document_repository=_document_repository,
         document_chunk_repository=_document_chunk_repository,
@@ -642,6 +711,106 @@ def get_update_conversation_use_case() -> UpdateConversation:
     return UpdateConversation(
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
+    )
+
+
+def get_create_organization_use_case() -> CreateOrganization:
+    return CreateOrganization(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_get_organization_use_case() -> GetOrganization:
+    return GetOrganization(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_list_organizations_use_case() -> ListOrganizations:
+    return ListOrganizations(organization_repository=_organization_repository)
+
+
+def get_update_organization_use_case() -> UpdateOrganization:
+    return UpdateOrganization(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_delete_organization_use_case() -> DeleteOrganization:
+    return DeleteOrganization(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_list_organization_members_use_case() -> ListOrganizationMembers:
+    return ListOrganizationMembers(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_update_organization_member_role_use_case() -> UpdateOrganizationMemberRole:
+    return UpdateOrganizationMemberRole(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_remove_organization_member_use_case() -> RemoveOrganizationMember:
+    return RemoveOrganizationMember(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_leave_organization_use_case() -> LeaveOrganization:
+    return LeaveOrganization(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_invite_organization_member_use_case() -> InviteOrganizationMember:
+    return InviteOrganizationMember(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_list_organization_invitations_use_case() -> ListOrganizationInvitations:
+    return ListOrganizationInvitations(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_resend_organization_invitation_use_case() -> ResendOrganizationInvitation:
+    return ResendOrganizationInvitation(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_revoke_organization_invitation_use_case() -> RevokeOrganizationInvitation:
+    return RevokeOrganizationInvitation(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_accept_organization_invitation_use_case() -> AcceptOrganizationInvitation:
+    return AcceptOrganizationInvitation(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
     )
 
 
