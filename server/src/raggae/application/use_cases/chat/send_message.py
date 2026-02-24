@@ -104,7 +104,8 @@ class SendMessage:
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
         current_user_message_id: UUID | None = None
-        if is_new_conversation:
+        conversation: Conversation | None
+        if conversation_id is None:
             conversation, skip_user_message_save = await self._get_or_create_pending_conversation(
                 project_id=project_id,
                 user_id=user_id,
@@ -119,6 +120,10 @@ class SendMessage:
                 or conversation.user_id != user_id
             ):
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
+        if conversation is None:
+            raise ConversationNotFoundError(
+                f"Conversation {conversation_id} not found"
+            )
         if not skip_user_message_save:
             current_user_message_id = uuid4()
             await self._message_repository.save(
@@ -294,7 +299,8 @@ class SendMessage:
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
         current_user_message_id: UUID | None = None
-        if is_new_conversation:
+        conversation: Conversation | None
+        if conversation_id is None:
             conversation, skip_user_message_save = await self._get_or_create_pending_conversation(
                 project_id=project_id,
                 user_id=user_id,
@@ -309,6 +315,10 @@ class SendMessage:
                 or conversation.user_id != user_id
             ):
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
+        if conversation is None:
+            raise ConversationNotFoundError(
+                f"Conversation {conversation_id} not found"
+            )
         if not skip_user_message_save:
             current_user_message_id = uuid4()
             await self._message_repository.save(

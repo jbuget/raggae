@@ -1,5 +1,17 @@
 import re
 from collections import Counter
+from typing import Protocol, cast
+
+
+class _KeyBERTModel(Protocol):
+    def extract_keywords(
+        self,
+        docs: str,
+        *,
+        keyphrase_ngram_range: tuple[int, int],
+        stop_words: str,
+        top_n: int,
+    ) -> list[tuple[str, float]]: ...
 
 
 class KeybertKeywordExtractor:
@@ -7,7 +19,7 @@ class KeybertKeywordExtractor:
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
         self._model_name = model_name
-        self._model: object | None = None
+        self._model: _KeyBERTModel | None = None
 
     async def extract_keywords(self, text: str, max_keywords: int = 10) -> list[str]:
         normalized = text.strip()
@@ -32,14 +44,14 @@ class KeybertKeywordExtractor:
 
         return self._extract_with_tfidf(normalized, max_keywords)
 
-    def _get_model(self) -> object | None:
+    def _get_model(self) -> _KeyBERTModel | None:
         if self._model is not None:
             return self._model
         try:
             from keybert import KeyBERT
         except ModuleNotFoundError:
             return None
-        self._model = KeyBERT(model=self._model_name)
+        self._model = cast(_KeyBERTModel, KeyBERT(model=self._model_name))
         return self._model
 
     def _extract_with_tfidf(self, text: str, max_keywords: int) -> list[str]:

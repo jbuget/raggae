@@ -1,5 +1,4 @@
 import pytest
-
 from raggae.domain.exceptions.validation_errors import InvalidModelProviderError
 from raggae.domain.value_objects.model_provider import ModelProvider
 

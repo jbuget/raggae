@@ -2,7 +2,7 @@ import json
 import logging
 from collections.abc import AsyncIterator
 from time import perf_counter
-from typing import Annotated
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -50,6 +50,8 @@ router = APIRouter(
     dependencies=[Depends(get_current_user_id)],
 )
 logger = logging.getLogger(__name__)
+
+RetrievalStrategyUsed = Literal["vector", "fulltext", "hybrid"]
 
 
 @router.post("/messages")
@@ -115,7 +117,9 @@ async def send_message(
         conversation_id=response.conversation_id,
         message=response.message,
         answer=response.answer,
-        retrieval_strategy_used=response.retrieval_strategy_used,
+        retrieval_strategy_used=cast(
+            RetrievalStrategyUsed, response.retrieval_strategy_used
+        ),
         retrieval_execution_time_ms=response.retrieval_execution_time_ms,
         history_messages_used=response.history_messages_used,
         chunks_used=response.chunks_used,

@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
-
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
 from raggae.infrastructure.services.ollama_embedding_service import OllamaEmbeddingService
 

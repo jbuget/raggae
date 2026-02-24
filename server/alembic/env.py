@@ -24,6 +24,23 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
+_MANAGED_RAW_SQL_INDEXES = {
+    "ix_conversations_project_user_created_at_desc",
+    "ix_document_chunks_content_fts",
+    "ix_document_chunks_content_trgm",
+    "ix_document_chunks_embedding_hnsw",
+    "ix_document_chunks_metadata_json",
+    "ix_messages_conversation_created_at",
+}
+
+
+def include_object(object_, name, type_, reflected, compare_to):  # type: ignore[no-untyped-def]
+    # These indexes are managed by explicit SQL migrations (op.execute) and are
+    # intentionally absent from SQLAlchemy metadata.
+    if type_ == "index" and name in _MANAGED_RAW_SQL_INDEXES and reflected and compare_to is None:
+        return False
+    return True
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
@@ -31,6 +48,7 @@ def run_migrations_offline() -> None:
     context.configure(
         url=url,
         target_metadata=target_metadata,
+        include_object=include_object,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -40,7 +58,11 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()

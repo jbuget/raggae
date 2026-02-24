@@ -1,5 +1,4 @@
 import pytest
-
 from raggae.domain.value_objects.document_status import DocumentStatus
 
 

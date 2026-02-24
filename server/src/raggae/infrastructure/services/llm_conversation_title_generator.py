@@ -14,9 +14,7 @@ class LLMConversationTitleGenerator(ConversationTitleGenerator):
         prompt = (
             "Generate a short conversation title (max 8 words). "
             "Return only the title, no punctuation at the end."
+            f"\n\nUser message: {user_message}"
+            f"\nAssistant answer: {assistant_answer}"
         )
-        context = [
-            f"User message: {user_message}",
-            f"Assistant answer: {assistant_answer}",
-        ]
-        return await self._llm_service.generate_answer(query=prompt, context_chunks=context)
+        return await self._llm_service.generate_answer(prompt)

@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import (
     ProjectAlreadyPublishedError,

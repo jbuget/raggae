@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
 
 

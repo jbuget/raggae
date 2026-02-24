@@ -1,5 +1,4 @@
 import pytest
-
 from raggae.domain.exceptions.validation_errors import InvalidEmailError
 from raggae.domain.value_objects.email import Email
 

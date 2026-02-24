@@ -1,3 +1,6 @@
+from typing import cast
+
+
 class LangdetectLanguageDetector:
     """Language detector based on langdetect with conservative guards."""
 
@@ -16,6 +19,6 @@ class LangdetectLanguageDetector:
             return None
 
         try:
-            return detect(normalized)
+            return cast(str, detect(normalized))
         except LangDetectException:
             return None

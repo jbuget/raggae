@@ -1,5 +1,4 @@
 import pytest
-
 from raggae.domain.exceptions.validation_errors import InvalidProviderApiKeyError
 from raggae.domain.value_objects.model_provider import ModelProvider
 from raggae.infrastructure.services.simple_provider_api_key_validator import (

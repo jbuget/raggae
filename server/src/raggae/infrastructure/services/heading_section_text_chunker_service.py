@@ -1,5 +1,6 @@
 import re
 
+from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.application.interfaces.services.text_chunker_service import TextChunkerService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
@@ -16,7 +17,7 @@ class HeadingSectionTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.HEADING_SECTION,
-        embedding_service=None,
+        embedding_service: EmbeddingService | None = None,
     ) -> list[str]:
         del embedding_service
         del strategy

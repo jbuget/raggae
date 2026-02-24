@@ -1,7 +1,12 @@
 import asyncio
 from dataclasses import replace
+from typing import Protocol, cast
 
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
+
+
+class _CrossEncoderModel(Protocol):
+    def predict(self, sentences: list[tuple[str, str]]) -> object: ...
 
 
 class CrossEncoderRerankerService:
@@ -13,13 +18,13 @@ class CrossEncoderRerankerService:
 
     def __init__(self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2") -> None:
         self._model_name = model_name
-        self._model: object | None = None
+        self._model: _CrossEncoderModel | None = None
 
-    def _get_model(self) -> object:
+    def _get_model(self) -> _CrossEncoderModel:
         if self._model is None:
             from sentence_transformers import CrossEncoder
 
-            self._model = CrossEncoder(self._model_name)
+            self._model = cast(_CrossEncoderModel, CrossEncoder(self._model_name))
         return self._model
 
     def _predict_sync(
@@ -27,7 +32,8 @@ class CrossEncoderRerankerService:
     ) -> list[RetrievedChunkDTO]:
         model = self._get_model()
         pairs = [(query, chunk.content) for chunk in chunks]
-        scores: list[float] = model.predict(pairs).tolist()  # type: ignore[union-attr]
+        raw_scores = model.predict(pairs)
+        scores = [float(score) for score in cast(list[float], raw_scores)]
         scored_chunks = [
             replace(chunk, score=float(score)) for chunk, score in zip(chunks, scores, strict=True)
         ]

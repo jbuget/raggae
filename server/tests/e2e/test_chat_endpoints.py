@@ -2,7 +2,6 @@ import json
 from uuid import uuid4
 
 from httpx import AsyncClient
-
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 

@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-
 from raggae.application.services.document_indexing_service import DocumentIndexingService
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.upload_document import UploadDocument

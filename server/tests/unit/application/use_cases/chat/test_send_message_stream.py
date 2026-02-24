@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
-
 from raggae.application.dto.chat_stream_event import ChatStreamDone, ChatStreamToken
 from raggae.application.dto.query_relevant_chunks_result_dto import (
     QueryRelevantChunksResultDTO,

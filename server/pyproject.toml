@@ -67,6 +67,26 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 
+[[tool.mypy.overrides]]
+module = [
+    "minio",
+    "langdetect",
+    "langdetect.*",
+    "keybert",
+    "sklearn",
+    "sklearn.*",
+    "openai",
+    "pypdf",
+    "docx",
+    "sentence_transformers",
+    "sentence_transformers.*",
+    "pgvector",
+    "pgvector.*",
+    "jose",
+    "jose.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

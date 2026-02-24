@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from raggae.application.use_cases.provider_credentials.deactivate_provider_api_key import (
     DeactivateProviderApiKey,
 )

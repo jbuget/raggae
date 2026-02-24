@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,7 +12,12 @@ class UserModelProviderCredentialModel(Base):
     __tablename__ = "user_model_provider_credentials"
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
-    user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False, index=True)
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     provider: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     encrypted_api_key: Mapped[str] = mapped_column(Text(), nullable=False)
     key_fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)

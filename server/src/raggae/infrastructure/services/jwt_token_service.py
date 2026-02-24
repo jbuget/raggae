@@ -1,3 +1,4 @@
+from typing import Any, cast
 from uuid import UUID
 
 from jose import JWTError, jwt
@@ -12,11 +13,14 @@ class JwtTokenService:
 
     def create_access_token(self, user_id: UUID) -> str:
         payload = {"sub": str(user_id)}
-        return jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
+        return cast(str, jwt.encode(payload, self._secret_key, algorithm=self._algorithm))
 
     def verify_token(self, token: str) -> UUID | None:
         try:
-            payload = jwt.decode(token, self._secret_key, algorithms=[self._algorithm])
+            payload = cast(
+                dict[str, Any],
+                jwt.decode(token, self._secret_key, algorithms=[self._algorithm]),
+            )
             sub = payload.get("sub")
             if sub is None:
                 return None

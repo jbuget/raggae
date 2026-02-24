@@ -2,8 +2,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
 from raggae.domain.entities.user import User
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 from raggae.domain.value_objects.model_provider import ModelProvider
@@ -14,6 +12,7 @@ from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
 )
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class TestSQLAlchemyProviderCredentialRepository:

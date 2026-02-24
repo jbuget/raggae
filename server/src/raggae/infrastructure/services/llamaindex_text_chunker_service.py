@@ -2,6 +2,7 @@ import importlib
 from collections.abc import Callable
 from typing import Protocol, cast
 
+from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
@@ -35,7 +36,7 @@ class LlamaIndexTextChunkerService:
         self,
         text: str,
         strategy: ChunkingStrategy = ChunkingStrategy.FIXED_WINDOW,
-        embedding_service=None,
+        embedding_service: EmbeddingService | None = None,
     ) -> list[str]:
         del embedding_service
         del strategy

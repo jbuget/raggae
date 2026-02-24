@@ -1,5 +1,4 @@
 import pytest
-
 from raggae.infrastructure.services.in_memory_file_storage_service import (
     InMemoryFileStorageService,
 )

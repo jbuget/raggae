@@ -2,8 +2,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.infrastructure.database.models import Base
@@ -16,6 +14,7 @@ from raggae.infrastructure.database.repositories.sqlalchemy_document_repository 
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class TestSQLAlchemyChunkRetrievalService:

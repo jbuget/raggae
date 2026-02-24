@@ -1,7 +1,6 @@
 """Tests for _resolve_strategy across all three copies."""
 
 import pytest
-
 from raggae.application.use_cases.chat.query_relevant_chunks import (
     _resolve_strategy as resolve_strategy_use_case,
 )

@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from raggae.application.dto.document_structure_analysis_dto import DocumentStructureAnalysisDTO
 from raggae.application.interfaces.services.file_metadata_extractor import FileMetadata
 from raggae.application.services.document_indexing_service import DocumentIndexingService

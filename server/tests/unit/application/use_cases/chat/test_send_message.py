@@ -3,7 +3,6 @@ from unittest.mock import ANY, AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
-
 from raggae.application.dto.query_relevant_chunks_result_dto import (
     QueryRelevantChunksResultDTO,
 )

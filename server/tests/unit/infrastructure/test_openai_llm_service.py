@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 

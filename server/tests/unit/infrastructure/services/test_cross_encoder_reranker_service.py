@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import numpy as np
 import pytest
-
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.infrastructure.services.cross_encoder_reranker_service import (
     CrossEncoderRerankerService,

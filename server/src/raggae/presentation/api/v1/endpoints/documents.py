@@ -36,6 +36,8 @@ from raggae.presentation.api.v1.schemas.document_schemas import (
     DocumentChunkResponse,
     DocumentChunksResponse,
     DocumentResponse,
+    UploadDocumentsCreatedResponse,
+    UploadDocumentsErrorResponse,
     UploadDocumentsResponse,
 )
 
@@ -116,19 +118,19 @@ async def upload_document(
         succeeded=result.succeeded,
         failed=result.failed,
         created=[
-            {
-                "original_filename": item.original_filename,
-                "stored_filename": item.stored_filename,
-                "document_id": item.document_id,
-            }
+            UploadDocumentsCreatedResponse(
+                original_filename=item.original_filename,
+                stored_filename=item.stored_filename,
+                document_id=item.document_id,
+            )
             for item in result.created
         ],
         errors=[
-            {
-                "filename": error.filename,
-                "code": error.code,
-                "message": error.message,
-            }
+            UploadDocumentsErrorResponse(
+                filename=error.filename,
+                code=error.code,
+                message=error.message,
+            )
             for error in result.errors
         ],
     )

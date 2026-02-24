@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-
 from raggae.domain.entities.user import User
 from raggae.domain.exceptions.user_exceptions import UserAlreadyInactiveError
 

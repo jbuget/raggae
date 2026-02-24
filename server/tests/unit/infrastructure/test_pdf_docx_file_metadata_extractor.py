@@ -5,7 +5,6 @@ from io import BytesIO
 
 import pytest
 from docx import Document as DocxDocument
-
 from raggae.application.interfaces.services.file_metadata_extractor import FileMetadata
 from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
     PdfDocxFileMetadataExtractor,
