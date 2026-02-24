@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentRow } from "@/components/documents/document-row";
 import { DocumentUpload } from "@/components/documents/document-upload";
@@ -283,7 +284,7 @@ export default function ProjectSettingsPage() {
 
       {activeTab === "General" && (
         <div className="max-w-3xl space-y-6">
-          <div className="space-y-6 rounded-md border p-4">
+          <div className="space-y-6 rounded-md">
             <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input
@@ -423,8 +424,8 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Knowledge indexing" && (
-        <div className="max-w-3xl space-y-4 rounded-md border p-4">
-          <p className="text-base font-semibold tracking-tight">Chunking and hierarchy</p>
+        <div className="max-w-3xl space-y-4 rounded-md">
+          <p className="text-base font-semibold tracking-tight">Knowledge indexing</p>
           <div className="space-y-2">
             <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
             <select
@@ -441,23 +442,21 @@ export default function ProjectSettingsPage() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <input
+            <Switch
               id="parentChildChunking"
-              type="checkbox"
               checked={effectiveParentChildChunking}
-              onChange={(e) => setParentChildChunking(e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={setParentChildChunking}
             />
             <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
           </div>
-          <p className="text-muted-foreground text-sm">
-            Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
-            `Semantic`.
+          <p className="text-xs text-muted-foreground">
+            Recommendation: parent-child chunking usually performs better with the `Semantic`
+            strategy.
           </p>
           {isSemanticRecommended ? (
-            <p className="text-sm text-amber-700">
-              Le mode parent-child est actif avec une strategie non `Semantic`. Cela fonctionne,
-              mais la pertinence est souvent meilleure avec `Semantic`.
+            <p className="text-xs text-amber-700">
+              Parent-child chunking is enabled with a non-`Semantic` strategy. It works, but
+              relevance is often better with `Semantic`.
             </p>
           ) : null}
           <hr className="border-border" />
@@ -490,7 +489,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Models" && (
-        <div className="max-w-3xl space-y-4 rounded-md border p-4">
+        <div className="max-w-3xl space-y-4 rounded-md">
           <p className="text-base font-semibold tracking-tight">Embedding model</p>
           <p className="text-sm text-muted-foreground">
             Used to convert your documents and user queries into vectors for semantic retrieval.
@@ -665,7 +664,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Context retrieval" && (
-        <div className="max-w-3xl space-y-4 rounded-md border p-4">
+        <div className="max-w-3xl space-y-4 rounded-md">
           <p className="text-base font-semibold tracking-tight">Context retrieval</p>
           <p className="text-sm text-muted-foreground">
             Configure how chunks are selected before answer generation.
@@ -725,7 +724,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Context augmentation" && (
-        <div className="max-w-3xl space-y-4 rounded-md border p-4">
+        <div className="max-w-3xl space-y-4 rounded-md">
           <p className="text-base font-semibold tracking-tight">Context augmentation</p>
           <div className="flex items-center justify-between rounded-md border p-3">
             <Label htmlFor="rerankingEnabled">Enable reranking</Label>

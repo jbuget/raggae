@@ -134,11 +134,11 @@ export function DocumentRow({
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="inline-flex overflow-hidden rounded-md border divide-x">
         <Button
           variant="ghost"
           size="icon-sm"
-          className="cursor-pointer"
+          className="cursor-pointer rounded-none border-0"
           onClick={handlePreviewOpen}
           aria-label="Preview document"
           title="Preview"
@@ -148,7 +148,7 @@ export function DocumentRow({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="cursor-pointer"
+          className="cursor-pointer rounded-none border-0"
           disabled={isReindexing || disableReindex}
           onClick={() => onReindex(document.id)}
           aria-label={isReindexing ? "Reindexing document" : "Reindex document"}
@@ -162,7 +162,7 @@ export function DocumentRow({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="cursor-pointer text-destructive"
+            className="cursor-pointer rounded-none border-0 text-destructive"
             aria-label="Delete document"
             title="Delete"
           >
