@@ -4,6 +4,12 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.organization import Organization
+from raggae.infrastructure.database.models.organization_invitation_model import (
+    OrganizationInvitationModel,
+)
+from raggae.infrastructure.database.models.organization_member_model import (
+    OrganizationMemberModel,
+)
 from raggae.infrastructure.database.models.organization_model import OrganizationModel
 
 
@@ -63,7 +69,19 @@ class SQLAlchemyOrganizationRepository:
 
     async def delete(self, organization_id: UUID) -> None:
         async with self._session_factory() as session:
-            await session.execute(delete(OrganizationModel).where(OrganizationModel.id == organization_id))
+            await session.execute(
+                delete(OrganizationMemberModel).where(
+                    OrganizationMemberModel.organization_id == organization_id
+                )
+            )
+            await session.execute(
+                delete(OrganizationInvitationModel).where(
+                    OrganizationInvitationModel.organization_id == organization_id
+                )
+            )
+            await session.execute(
+                delete(OrganizationModel).where(OrganizationModel.id == organization_id)
+            )
             await session.commit()
 
     @staticmethod

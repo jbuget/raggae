@@ -3,6 +3,9 @@ from uuid import UUID
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
+from raggae.application.interfaces.repositories.organization_invitation_repository import (
+    OrganizationInvitationRepository,
+)
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
 )
@@ -20,9 +23,11 @@ class DeleteOrganization:
         self,
         organization_repository: OrganizationRepository,
         organization_member_repository: OrganizationMemberRepository,
+        organization_invitation_repository: OrganizationInvitationRepository,
     ) -> None:
         self._organization_repository = organization_repository
         self._organization_member_repository = organization_member_repository
+        self._organization_invitation_repository = organization_invitation_repository
 
     async def execute(self, organization_id: UUID, user_id: UUID) -> None:
         organization = await self._organization_repository.find_by_id(organization_id)
@@ -41,4 +46,5 @@ class DeleteOrganization:
         )
         for org_member in members:
             await self._organization_member_repository.delete(org_member.id)
+        await self._organization_invitation_repository.delete_by_organization_id(organization_id)
         await self._organization_repository.delete(organization_id)

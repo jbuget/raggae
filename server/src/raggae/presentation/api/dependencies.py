@@ -747,6 +747,7 @@ def get_delete_organization_use_case() -> DeleteOrganization:
     return DeleteOrganization(
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
+        organization_invitation_repository=_organization_invitation_repository,
     )
 
 

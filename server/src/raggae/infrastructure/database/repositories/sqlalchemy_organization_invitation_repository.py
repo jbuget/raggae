@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.organization_invitation import OrganizationInvitation
@@ -85,6 +85,15 @@ class SQLAlchemyOrganizationInvitationRepository:
                 )
             )
             return [self._to_entity(model) for model in result.scalars().all()]
+
+    async def delete_by_organization_id(self, organization_id: UUID) -> None:
+        async with self._session_factory() as session:
+            await session.execute(
+                delete(OrganizationInvitationModel).where(
+                    OrganizationInvitationModel.organization_id == organization_id
+                )
+            )
+            await session.commit()
 
     @staticmethod
     def _to_entity(model: OrganizationInvitationModel) -> OrganizationInvitation:

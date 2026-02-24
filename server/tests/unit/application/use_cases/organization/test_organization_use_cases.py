@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -9,12 +9,19 @@ from raggae.application.use_cases.organization.get_organization import GetOrgani
 from raggae.application.use_cases.organization.list_organizations import ListOrganizations
 from raggae.application.use_cases.organization.update_organization import UpdateOrganization
 from raggae.domain.entities.organization import Organization
+from raggae.domain.entities.organization_invitation import OrganizationInvitation
 from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+from raggae.domain.value_objects.organization_invitation_status import (
+    OrganizationInvitationStatus,
+)
+from raggae.infrastructure.database.repositories.in_memory_organization_invitation_repository import (
+    InMemoryOrganizationInvitationRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_organization_member_repository import (
     InMemoryOrganizationMemberRepository,
 )
@@ -26,15 +33,25 @@ from raggae.infrastructure.database.repositories.in_memory_organization_reposito
 class TestOrganizationUseCases:
     @pytest.fixture
     def repositories(self) -> tuple[
-        InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository
+        InMemoryOrganizationRepository,
+        InMemoryOrganizationMemberRepository,
+        InMemoryOrganizationInvitationRepository,
     ]:
-        return InMemoryOrganizationRepository(), InMemoryOrganizationMemberRepository()
+        return (
+            InMemoryOrganizationRepository(),
+            InMemoryOrganizationMemberRepository(),
+            InMemoryOrganizationInvitationRepository(),
+        )
 
     async def test_create_organization_bootstraps_owner(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, _ = repositories
         user_id = uuid4()
         use_case = CreateOrganization(
             organization_repository=org_repo,
@@ -52,9 +69,13 @@ class TestOrganizationUseCases:
 
     async def test_create_organization_keeps_provided_slug(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, _ = repositories
         user_id = uuid4()
         use_case = CreateOrganization(
             organization_repository=org_repo,
@@ -67,10 +88,14 @@ class TestOrganizationUseCases:
 
     async def test_create_organization_generates_another_slug_on_collision(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, _ = repositories
         user_id = uuid4()
         now = datetime.now(UTC)
         existing = Organization(
@@ -107,9 +132,13 @@ class TestOrganizationUseCases:
 
     async def test_get_and_list_organizations(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, _ = repositories
         user_id = uuid4()
         now = datetime.now(UTC)
         organization = Organization(
@@ -147,9 +176,13 @@ class TestOrganizationUseCases:
 
     async def test_update_organization_owner_only(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, _ = repositories
         owner_id = uuid4()
         other_user_id = uuid4()
         now = datetime.now(UTC)
@@ -202,9 +235,13 @@ class TestOrganizationUseCases:
 
     async def test_delete_organization_owner_only(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, invitation_repo = repositories
         owner_id = uuid4()
         now = datetime.now(UTC)
         organization = Organization(
@@ -227,20 +264,39 @@ class TestOrganizationUseCases:
                 joined_at=now,
             )
         )
+        invitation = OrganizationInvitation(
+            id=uuid4(),
+            organization_id=organization.id,
+            email="invitee@example.com",
+            role=OrganizationMemberRole.USER,
+            status=OrganizationInvitationStatus.PENDING,
+            invited_by_user_id=owner_id,
+            token_hash="tok",
+            expires_at=now + timedelta(days=7),
+            created_at=now,
+            updated_at=now,
+        )
+        await invitation_repo.save(invitation)
 
         use_case = DeleteOrganization(
             organization_repository=org_repo,
             organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
         )
         await use_case.execute(organization_id=organization.id, user_id=owner_id)
         assert await org_repo.find_by_id(organization.id) is None
         assert await member_repo.find_by_organization_id(organization.id) == []
+        assert await invitation_repo.find_by_organization_id(organization.id) == []
 
     async def test_get_organization_errors(
         self,
-        repositories: tuple[InMemoryOrganizationRepository, InMemoryOrganizationMemberRepository],
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
     ) -> None:
-        org_repo, member_repo = repositories
+        org_repo, member_repo, _ = repositories
         use_case = GetOrganization(
             organization_repository=org_repo,
             organization_member_repository=member_repo,

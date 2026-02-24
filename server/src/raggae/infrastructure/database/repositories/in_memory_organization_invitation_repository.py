@@ -39,3 +39,12 @@ class InMemoryOrganizationInvitationRepository:
 
     async def find_by_organization_id(self, organization_id: UUID) -> list[OrganizationInvitation]:
         return [i for i in self._invitations.values() if i.organization_id == organization_id]
+
+    async def delete_by_organization_id(self, organization_id: UUID) -> None:
+        invitation_ids = [
+            invitation.id
+            for invitation in self._invitations.values()
+            if invitation.organization_id == organization_id
+        ]
+        for invitation_id in invitation_ids:
+            self._invitations.pop(invitation_id, None)
