@@ -44,6 +44,7 @@ import type {
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
 const SETTINGS_TABS = [
   "General",
+  "Models",
   "Document ingestion",
   "Knowledge indexing",
   "Context retrieval",
@@ -234,7 +235,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "General" && (
-        <div className="space-y-6">
+        <div className="max-w-3xl space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Name *</Label>
           <Input
@@ -308,7 +309,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Document ingestion" && (
-        <div className="space-y-4">
+        <div className="max-w-4xl space-y-4">
         <p className="text-muted-foreground text-sm">
           La base documentaire du projet est configuree via les options d&apos;indexation.
         </p>
@@ -366,7 +367,7 @@ export default function ProjectSettingsPage() {
       )}
 
       {activeTab === "Knowledge indexing" && (
-        <div className="space-y-4">
+        <div className="max-w-3xl space-y-4">
           <p className="text-base font-semibold tracking-tight">Chunking and hierarchy</p>
         <div className="space-y-2">
           <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
@@ -431,8 +432,13 @@ export default function ProjectSettingsPage() {
       </div>
       )}
 
-      {activeTab === "Context retrieval" && (
-        <div className="space-y-4">
+      {activeTab === "Models" && (
+        <div className="max-w-3xl space-y-4">
+          <p className="text-base font-semibold tracking-tight">Embedding model</p>
+          <p className="text-sm text-muted-foreground">
+            Used to convert your documents and user queries into vectors for semantic retrieval.
+            Changing it usually requires reindexing documents.
+          </p>
           <div className="space-y-2">
             <Label htmlFor="embeddingBackend">Embedding backend</Label>
             <select
@@ -512,21 +518,12 @@ export default function ProjectSettingsPage() {
               </div>
             </>
           ) : null}
-        </div>
-      )}
-
-      {activeTab === "Context augmentation" && (
-        <div className="space-y-2 rounded-md border p-4">
-          <p className="text-base font-semibold tracking-tight">Context augmentation</p>
+          <hr className="border-border" />
+          <p className="text-base font-semibold tracking-tight">RAG / LLM model</p>
           <p className="text-sm text-muted-foreground">
-            This section is reserved for future augmentation settings (query rewriting, reranking,
-            context windows, and hybrid retrieval policies).
+            Used to generate final answers from retrieved context and conversation history. Choose
+            it based on quality, speed, and cost.
           </p>
-        </div>
-      )}
-
-      {activeTab === "Answer generation" && (
-        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="llmBackend">LLM backend</Label>
             <select
@@ -607,7 +604,31 @@ export default function ProjectSettingsPage() {
               </div>
             </>
           ) : null}
-          <hr className="border-border" />
+        </div>
+      )}
+
+      {activeTab === "Context retrieval" && (
+        <div className="max-w-3xl space-y-2 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">Context retrieval</p>
+          <p className="text-sm text-muted-foreground">
+            Configure retrieval strategy (vector, fulltext, hybrid) and ranking behavior in this
+            section.
+          </p>
+        </div>
+      )}
+
+      {activeTab === "Context augmentation" && (
+        <div className="max-w-3xl space-y-2 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">Context augmentation</p>
+          <p className="text-sm text-muted-foreground">
+            This section is reserved for future augmentation settings (query rewriting, reranking,
+            context windows, and hybrid retrieval policies).
+          </p>
+        </div>
+      )}
+
+      {activeTab === "Answer generation" && (
+        <div className="max-w-3xl space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="systemPrompt">System Prompt</Label>
