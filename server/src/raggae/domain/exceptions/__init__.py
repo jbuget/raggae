@@ -15,7 +15,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
 )
 from raggae.domain.exceptions.provider_credential_exceptions import (
-    MultipleActiveProviderCredentialsError,
+    DuplicateProviderCredentialError,
     ProviderCredentialNotFoundError,
 )
 from raggae.domain.exceptions.user_exceptions import (
@@ -37,7 +37,7 @@ __all__ = [
     "DocumentExtractionError",
     "EmbeddingGenerationError",
     "LLMGenerationError",
-    "MultipleActiveProviderCredentialsError",
+    "DuplicateProviderCredentialError",
     "ProviderCredentialNotFoundError",
     "InvalidCredentialsError",
     "InvalidDocumentTypeError",

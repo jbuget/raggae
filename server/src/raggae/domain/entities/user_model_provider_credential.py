@@ -2,9 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from raggae.domain.exceptions.provider_credential_exceptions import (
-    MultipleActiveProviderCredentialsError,
-)
 from raggae.domain.value_objects.model_provider import ModelProvider
 
 
@@ -25,11 +22,3 @@ class UserModelProviderCredential:
     @property
     def masked_key(self) -> str:
         return f"...{self.key_suffix}"
-
-    @staticmethod
-    def validate_single_active_for_user_and_provider(
-        credentials: list["UserModelProviderCredential"],
-    ) -> None:
-        active_count = sum(1 for credential in credentials if credential.is_active)
-        if active_count > 1:
-            raise MultipleActiveProviderCredentialsError()

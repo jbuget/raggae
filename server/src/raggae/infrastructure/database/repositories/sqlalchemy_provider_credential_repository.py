@@ -74,14 +74,6 @@ class SQLAlchemyProviderCredentialRepository:
 
             await session.execute(
                 update(UserModelProviderCredentialModel)
-                .where(
-                    UserModelProviderCredentialModel.user_id == user_id,
-                    UserModelProviderCredentialModel.provider == target.provider,
-                )
-                .values(is_active=False)
-            )
-            await session.execute(
-                update(UserModelProviderCredentialModel)
                 .where(UserModelProviderCredentialModel.id == credential_id)
                 .values(is_active=True)
             )

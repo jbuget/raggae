@@ -48,17 +48,16 @@ class SaveProviderApiKey:
             encrypted_api_key=self._provider_api_key_crypto_service.encrypt(api_key),
             key_fingerprint=fingerprint,
             key_suffix=api_key[-4:],
-            is_active=False,
+            is_active=True,
             created_at=now,
             updated_at=now,
         )
         await self._provider_credential_repository.save(credential)
-        await self._provider_credential_repository.set_active(credential.id, user_id)
         return ProviderCredentialDTO(
             id=credential.id,
             provider=credential.provider.value,
             masked_key=credential.masked_key,
-            is_active=True,
+            is_active=credential.is_active,
             created_at=credential.created_at,
             updated_at=credential.updated_at,
         )

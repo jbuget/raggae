@@ -37,11 +37,6 @@ class InMemoryProviderCredentialRepository:
         if target is None or target.user_id != user_id:
             return
 
-        provider = target.provider
-        for existing_id, existing in self._credentials.items():
-            if existing.user_id == user_id and existing.provider == provider:
-                self._credentials[existing_id] = replace(existing, is_active=False)
-
         self._credentials[credential_id] = replace(target, is_active=True)
 
     async def delete(self, credential_id: UUID, user_id: UUID) -> None:

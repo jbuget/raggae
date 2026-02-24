@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Index, String, Text, text
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -10,15 +10,6 @@ from raggae.infrastructure.database.models.base import Base
 
 class UserModelProviderCredentialModel(Base):
     __tablename__ = "user_model_provider_credentials"
-    __table_args__ = (
-        Index(
-            "uq_user_provider_active_credential",
-            "user_id",
-            "provider",
-            unique=True,
-            postgresql_where=text("is_active = true"),
-        ),
-    )
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False, index=True)

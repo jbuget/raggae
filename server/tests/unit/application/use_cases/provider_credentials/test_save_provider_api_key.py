@@ -36,9 +36,9 @@ class TestSaveProviderApiKey:
         assert result.is_active is True
         validator.validate.assert_called_once()
         repository.save.assert_awaited_once()
-        repository.set_active.assert_awaited_once_with(result.id, user_id)
+        repository.set_active.assert_not_awaited()
 
-    async def test_save_provider_api_key_credential_saved_inactive_before_activation(self) -> None:
+    async def test_save_provider_api_key_credential_saved_active_directly(self) -> None:
         # Given
         user_id = uuid4()
         saved_credentials: list = []
@@ -61,20 +61,20 @@ class TestSaveProviderApiKey:
         # When
         result = await use_case.execute(user_id=user_id, provider="gemini", api_key="AIzatest1234")
 
-        # Then — la credential est d'abord insérée inactive pour éviter le conflit
-        # d'unicité sur (user_id, provider, is_active=True), puis activée via set_active
+        # Then — la credential est directement insérée active (plus de contrainte d'unicité)
         assert len(saved_credentials) == 1
-        assert saved_credentials[0].is_active is False
-        repository.set_active.assert_awaited_once_with(result.id, user_id)
+        assert saved_credentials[0].is_active is True
+        repository.set_active.assert_not_awaited()
         assert result.is_active is True
 
     async def test_save_provider_api_key_duplicate_fingerprint_raises_error(self) -> None:
         # Given — an existing credential with the same fingerprint
+        from datetime import UTC, datetime
+
         from raggae.domain.entities.user_model_provider_credential import (
             UserModelProviderCredential,
         )
         from raggae.domain.value_objects.model_provider import ModelProvider
-        from datetime import UTC, datetime
 
         user_id = uuid4()
         existing = UserModelProviderCredential(
