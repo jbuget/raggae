@@ -77,8 +77,4 @@ class ProjectEmbeddingServiceResolver:
     def _resolve_default_model(self, backend: str) -> str:
         if backend == self._settings.default_embedding_provider:
             return self._settings.default_embedding_model
-        if backend == "gemini":
-            return self._settings.gemini_embedding_model
-        if backend == "ollama":
-            return self._settings.ollama_embedding_model
-        return "text-embedding-3-small"
+        return ""

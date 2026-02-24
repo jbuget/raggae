@@ -71,7 +71,7 @@ class ReindexProject:
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 indexed_documents += 1
-            except (DocumentExtractionError, EmbeddingGenerationError, Exception) as exc:
+            except (DocumentExtractionError, EmbeddingGenerationError, FileNotFoundError) as exc:
                 document = document.transition_to(DocumentStatus.ERROR, error_message=str(exc))
                 failed_documents += 1
 

@@ -71,7 +71,7 @@ class ReindexDocument:
                 embedding_service=embedding_service,
             )
             document = document.transition_to(DocumentStatus.INDEXED)
-        except (DocumentExtractionError, EmbeddingGenerationError, Exception) as exc:
+        except (DocumentExtractionError, EmbeddingGenerationError, FileNotFoundError) as exc:
             document = document.transition_to(DocumentStatus.ERROR, error_message=str(exc))
 
         await self._document_repository.save(document)

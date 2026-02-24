@@ -85,34 +85,11 @@ class DocumentIndexingService:
         embedding_service: EmbeddingService | None = None,
     ) -> Document:
         effective_embedding_service = embedding_service or self._embedding_service
-        extracted_text = await self._document_text_extractor.extract_text(
-            file_name=document.file_name,
-            content=file_content,
-            content_type=document.content_type,
-        )
-
-        document = await self._enrich_document_metadata(
+        document, sanitized_text, strategy = await self._prepare_document_for_chunking(
             document=document,
-            extracted_text=extracted_text,
+            project=project,
             file_content=file_content,
         )
-        sanitized_text = await self._text_sanitizer_service.sanitize_text(extracted_text)
-        document = await self._enrich_document_keywords(
-            document=document,
-            sanitized_text=sanitized_text,
-        )
-
-        strategy = project.chunking_strategy
-        if strategy == ChunkingStrategy.AUTO:
-            analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
-            strategy = self._chunking_strategy_selector.select(
-                has_headings=analysis.has_headings,
-                paragraph_count=analysis.paragraph_count,
-                average_paragraph_length=analysis.average_paragraph_length,
-            )
-
-        document = replace(document, processing_strategy=strategy)
-
         chunks = await self._text_chunker_service.chunk_text(
             sanitized_text,
             strategy=strategy,
@@ -125,8 +102,7 @@ class DocumentIndexingService:
             if isinstance(splitter_name, str):
                 llamaindex_splitter = splitter_name
 
-        await self._document_chunk_repository.delete_by_document_id(document.id)
-
+        document_chunks: list[DocumentChunk] = []
         if chunks:
             use_parent_child = (
                 project.parent_child_chunking and self._parent_child_chunking_service is not None
@@ -148,11 +124,42 @@ class DocumentIndexingService:
                     llamaindex_splitter=llamaindex_splitter,
                     embedding_service=effective_embedding_service,
                 )
-
-            if document_chunks:
-                await self._document_chunk_repository.save_many(document_chunks)
+        await self._document_chunk_repository.replace_document_chunks(document.id, document_chunks)
 
         return document
+
+    async def _prepare_document_for_chunking(
+        self,
+        document: Document,
+        project: Project,
+        file_content: bytes,
+    ) -> tuple[Document, str, ChunkingStrategy]:
+        extracted_text = await self._document_text_extractor.extract_text(
+            file_name=document.file_name,
+            content=file_content,
+            content_type=document.content_type,
+        )
+        document = await self._enrich_document_metadata(
+            document=document,
+            extracted_text=extracted_text,
+            file_content=file_content,
+        )
+        sanitized_text = await self._text_sanitizer_service.sanitize_text(extracted_text)
+        document = await self._enrich_document_keywords(
+            document=document,
+            sanitized_text=sanitized_text,
+        )
+
+        strategy = project.chunking_strategy
+        if strategy == ChunkingStrategy.AUTO:
+            analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
+            strategy = self._chunking_strategy_selector.select(
+                has_headings=analysis.has_headings,
+                paragraph_count=analysis.paragraph_count,
+                average_paragraph_length=analysis.average_paragraph_length,
+            )
+
+        return replace(document, processing_strategy=strategy), sanitized_text, strategy
 
     async def _build_standard_chunks(
         self,
@@ -197,11 +204,12 @@ class DocumentIndexingService:
         embedding_service: EmbeddingService,
     ) -> list[DocumentChunk]:
         assert self._parent_child_chunking_service is not None
-        cleaned_chunks = [
-            self._build_chunk_payload(c)["content"]
-            for c in chunks
-            if str(self._build_chunk_payload(c)["content"]).strip()
-        ]
+        cleaned_chunks: list[str] = []
+        for chunk in chunks:
+            payload = self._build_chunk_payload(chunk)
+            content = str(payload["content"])
+            if content.strip():
+                cleaned_chunks.append(content)
         if not cleaned_chunks:
             return []
 

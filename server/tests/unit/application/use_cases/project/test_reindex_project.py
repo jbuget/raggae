@@ -202,3 +202,25 @@ class TestReindexProject:
         resolver.resolve.assert_called_once()
         kwargs = indexing_service.run_pipeline.await_args.kwargs
         assert kwargs["embedding_service"] is embedding_service
+
+    async def test_reindex_project_unexpected_exception_is_not_swallowed(
+        self, project_id, user_id, project, document
+    ) -> None:
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = project
+        document_repository = AsyncMock()
+        document_repository.find_by_project_id.return_value = [document]
+        file_storage_service = AsyncMock()
+        file_storage_service.download_file.return_value = (b"hello", "text/plain")
+        indexing_service = AsyncMock()
+        indexing_service.run_pipeline.side_effect = RuntimeError("unexpected")
+
+        use_case = ReindexProject(
+            project_repository=project_repository,
+            document_repository=document_repository,
+            file_storage_service=file_storage_service,
+            document_indexing_service=indexing_service,
+        )
+
+        with pytest.raises(RuntimeError, match="unexpected"):
+            await use_case.execute(project_id=project_id, user_id=user_id)

@@ -138,9 +138,9 @@ class TestDocumentIndexingService:
             embedding_service=mock_embedding_service,
         )
         mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
-        mock_document_chunk_repository.delete_by_document_id.assert_called_once_with(document.id)
-        mock_document_chunk_repository.save_many.assert_called_once()
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        mock_document_chunk_repository.replace_document_chunks.assert_called_once()
+        assert mock_document_chunk_repository.replace_document_chunks.call_args.args[0] == document.id
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert len(saved_chunks) == 2
         assert saved_chunks[0].content == "hello world"
         assert saved_chunks[1].content == "from raggae"
@@ -181,7 +181,7 @@ class TestDocumentIndexingService:
             strategy=ChunkingStrategy.PARAGRAPH,
             embedding_service=mock_embedding_service,
         )
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert saved_chunks[0].metadata_json["chunker_backend"] == "llamaindex"
         assert saved_chunks[0].metadata_json["llamaindex_splitter"] == "sentence"
         assert result.processing_strategy == ChunkingStrategy.PARAGRAPH
@@ -213,8 +213,9 @@ class TestDocumentIndexingService:
 
         # Then
         mock_embedding_service.embed_texts.assert_not_called()
-        mock_document_chunk_repository.save_many.assert_not_called()
-        mock_document_chunk_repository.delete_by_document_id.assert_called_once_with(document.id)
+        mock_document_chunk_repository.replace_document_chunks.assert_called_once_with(
+            document.id, []
+        )
         assert result.processing_strategy is not None
 
     async def test_run_pipeline_metadata_fields(
@@ -242,7 +243,7 @@ class TestDocumentIndexingService:
         await service.run_pipeline(document, project, b"hello world from raggae")
 
         # Then
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         metadata = saved_chunks[0].metadata_json
         assert metadata["metadata_version"] == 1
         assert metadata["processing_strategy"] == "paragraph"
@@ -298,7 +299,7 @@ class TestDocumentIndexingService:
         mock_embedding_service.embed_texts.assert_called_once_with(
             ["Décision A", "Suite \nDécision B"]
         )
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert saved_chunks[0].content == "Décision A"
         assert saved_chunks[0].metadata_json["pages"] == [1]
         assert saved_chunks[0].metadata_json["page_start"] == 1
@@ -390,7 +391,7 @@ class TestDocumentIndexingService:
         assert result.title is None
         assert result.authors is None
         assert result.document_date is None
-        mock_document_chunk_repository.save_many.assert_called_once()
+        mock_document_chunk_repository.replace_document_chunks.assert_called_once()
 
     async def test_run_pipeline_uses_project_chunking_strategy_when_not_auto(
         self,
@@ -472,8 +473,8 @@ class TestDocumentIndexingService:
         await service.run_pipeline(document, project_pc, b"hello world from raggae")
 
         # Then
-        mock_document_chunk_repository.save_many.assert_called_once()
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        mock_document_chunk_repository.replace_document_chunks.assert_called_once()
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
 
         parent_chunks = [c for c in saved_chunks if c.chunk_level == ChunkLevel.PARENT]
         child_chunks = [c for c in saved_chunks if c.chunk_level == ChunkLevel.CHILD]
@@ -509,5 +510,5 @@ class TestDocumentIndexingService:
         await service.run_pipeline(document, project, b"hello world from raggae")
 
         # Then — all chunks are STANDARD
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert all(c.chunk_level == ChunkLevel.STANDARD for c in saved_chunks)

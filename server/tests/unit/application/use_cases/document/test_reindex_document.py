@@ -396,3 +396,34 @@ class TestReindexDocument:
                 document_id=document_id,
                 user_id=user_id,
             )
+
+    async def test_reindex_document_unexpected_exception_is_not_swallowed(
+        self,
+        user_id,
+        project_id,
+        document_id,
+        project,
+        document,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        mock_project_repository.find_by_id.return_value = project
+        mock_document_repository.find_by_id.return_value = document
+        mock_document_indexing_service.run_pipeline.side_effect = RuntimeError("unexpected")
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+        )
+
+        # When / Then
+        with pytest.raises(RuntimeError, match="unexpected"):
+            await use_case.execute(
+                project_id=project_id,
+                document_id=document_id,
+                user_id=user_id,
+            )

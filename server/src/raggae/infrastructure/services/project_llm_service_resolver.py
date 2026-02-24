@@ -70,8 +70,4 @@ class ProjectLLMServiceResolver:
     def _resolve_default_model(self, backend: str) -> str:
         if backend == self._settings.default_llm_provider:
             return self._settings.default_llm_model
-        if backend == "gemini":
-            return self._settings.gemini_llm_model
-        if backend == "ollama":
-            return self._settings.ollama_llm_model
-        return "gpt-4o-mini"
+        return ""

@@ -159,8 +159,8 @@ class TestUploadDocumentProcessing:
             embedding_service=ANY,
         )
         mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
-        mock_document_chunk_repository.save_many.assert_called_once()
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        mock_document_chunk_repository.replace_document_chunks.assert_called_once()
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert saved_chunks[0].metadata_json is not None
         assert saved_chunks[0].metadata_json["metadata_version"] == 1
         assert saved_chunks[0].metadata_json["processing_strategy"] == "paragraph"
@@ -217,7 +217,7 @@ class TestUploadDocumentProcessing:
         )
 
         # Then
-        mock_document_chunk_repository.save_many.assert_not_called()
+        mock_document_chunk_repository.replace_document_chunks.assert_not_called()
         mock_document_text_extractor.extract_text.assert_not_called()
         mock_text_sanitizer_service.sanitize_text.assert_not_called()
         mock_document_structure_analyzer.analyze_text.assert_not_called()
@@ -325,7 +325,7 @@ class TestUploadDocumentProcessing:
         )
 
         # Then
-        mock_document_chunk_repository.save_many.assert_not_called()
+        mock_document_chunk_repository.replace_document_chunks.assert_not_called()
         mock_document_text_extractor.extract_text.assert_not_called()
         mock_text_sanitizer_service.sanitize_text.assert_not_called()
         mock_document_structure_analyzer.analyze_text.assert_not_called()
@@ -386,7 +386,7 @@ class TestUploadDocumentProcessing:
             strategy=ChunkingStrategy.PARAGRAPH,
             embedding_service=ANY,
         )
-        saved_chunks = mock_document_chunk_repository.save_many.call_args.args[0]
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert saved_chunks[0].metadata_json is not None
         assert saved_chunks[0].metadata_json["processing_strategy"] == "paragraph"
         assert saved_chunks[0].metadata_json["source_type"] == "paragraph"

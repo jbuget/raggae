@@ -72,3 +72,50 @@ class TestSQLAlchemyDocumentChunkRepository:
         await repository.delete_by_document_id(document_id)
         found_after_delete = await repository.find_by_document_id(document_id)
         assert found_after_delete == []
+
+    @pytest.mark.integration
+    async def test_integration_replace_document_chunks(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        repository = SQLAlchemyDocumentChunkRepository(session_factory=session_factory)
+        document_id = uuid4()
+        initial = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=document_id,
+                chunk_index=0,
+                content="old chunk",
+                embedding=[0.1] * 1536,
+                created_at=datetime.now(UTC),
+                metadata_json={"metadata_version": 1, "source_type": "paragraph"},
+            )
+        ]
+        replacement = [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=document_id,
+                chunk_index=0,
+                content="new chunk 1",
+                embedding=[0.2] * 1536,
+                created_at=datetime.now(UTC),
+                metadata_json={"metadata_version": 1, "source_type": "paragraph"},
+            ),
+            DocumentChunk(
+                id=uuid4(),
+                document_id=document_id,
+                chunk_index=1,
+                content="new chunk 2",
+                embedding=[0.3] * 1536,
+                created_at=datetime.now(UTC),
+                metadata_json={"metadata_version": 1, "source_type": "paragraph"},
+            ),
+        ]
+
+        await repository.save_many(initial)
+        await repository.replace_document_chunks(document_id, replacement)
+
+        found = await repository.find_by_document_id(document_id)
+        assert len(found) == 2
+        assert found[0].content == "new chunk 1"
+        assert found[1].content == "new chunk 2"
