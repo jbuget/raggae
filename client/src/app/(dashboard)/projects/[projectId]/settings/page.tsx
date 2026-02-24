@@ -250,204 +250,210 @@ export default function ProjectSettingsPage() {
 
       {activeTab === "General" && (
         <div className="max-w-3xl space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name *</Label>
-          <Input
-            id="name"
-            value={effectiveName}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="My project"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={effectiveDescription}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="What is this project about?"
-            rows={3}
-          />
-        </div>
-        <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
-          {updateProject.isPending ? "Saving..." : "Save changes"}
-        </Button>
-        <div className="space-y-3 rounded-md border p-4">
-          <p className="text-base font-semibold tracking-tight">Delete project</p>
-          <p className="text-sm text-muted-foreground">
-            This action is irreversible and removes project settings, conversations, and documents.
-          </p>
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive" className="cursor-pointer">
-                Delete Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Project</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete &quot;{project.name}&quot;? This
-                  action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  className="cursor-pointer"
-                  onClick={() => setDeleteOpen(false)}
-                >
-                  Cancel
+          <div className="space-y-6 rounded-md border p-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={effectiveName}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="My project"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={effectiveDescription}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What is this project about?"
+                rows={3}
+              />
+            </div>
+          </div>
+          <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
+            {updateProject.isPending ? "Saving..." : "Save changes"}
+          </Button>
+          <div className="space-y-3 rounded-md border p-4">
+            <p className="text-base font-semibold tracking-tight">Delete project</p>
+            <p className="text-sm text-muted-foreground">
+              This action is irreversible and removes project settings, conversations, and
+              documents.
+            </p>
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="cursor-pointer">
+                  Delete Project
                 </Button>
-                <Button
-                  variant="destructive"
-                  className="cursor-pointer"
-                  disabled={deleteProject.isPending}
-                  onClick={() => {
-                    deleteProject.mutate(project.id, {
-                      onSuccess: () => {
-                        toast.success("Project deleted");
-                        router.push("/projects");
-                      },
-                      onError: () => toast.error("Failed to delete project"),
-                    });
-                  }}
-                >
-                  {deleteProject.isPending ? "Deleting..." : "Delete"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Project</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete &quot;{project.name}&quot;? This action cannot
+                    be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => setDeleteOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="cursor-pointer"
+                    disabled={deleteProject.isPending}
+                    onClick={() => {
+                      deleteProject.mutate(project.id, {
+                        onSuccess: () => {
+                          toast.success("Project deleted");
+                          router.push("/projects");
+                        },
+                        onError: () => toast.error("Failed to delete project"),
+                      });
+                    }}
+                  >
+                    {deleteProject.isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </div>
       )}
 
       {activeTab === "Document ingestion" && (
         <div className="max-w-4xl space-y-4">
-        <p className="text-muted-foreground text-sm">
-          La base documentaire du projet est configuree via les options d&apos;indexation.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {indexedCount} indexed / {totalCount} total
-        </p>
-        <DocumentUpload
-          onUpload={(files) => {
-            uploadDocument.mutate(files, {
-              onSuccess: (result) =>
-                toast.success(`${result.succeeded} uploaded, ${result.failed} failed`),
-              onError: () => toast.error("Failed to upload document"),
-            });
-          }}
-          isUploading={uploadDocument.isPending}
-          disabled={isProjectReindexing}
-        />
-        {isDocumentsLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-16" />
-            ))}
-          </div>
-        ) : documents && documents.length > 0 ? (
-          <div className="space-y-3">
-            {documents.map((doc) => (
-              <DocumentRow
-                key={doc.id}
-                document={doc}
-                onReindex={(id) => {
-                  if (isProjectReindexing) return;
-                  reindexDocument.mutate(id, {
-                    onSuccess: () => toast.success("Document reindexed"),
-                    onError: () => toast.error("Failed to reindex document"),
-                  });
-                }}
-                reindexingId={reindexDocument.isPending ? (reindexDocument.variables ?? null) : null}
-                disableReindex={isProjectReindexing}
-                onDelete={(id) => {
-                  deleteDocument.mutate(id, {
-                    onSuccess: () => toast.success("Document deleted"),
-                    onError: () => toast.error("Failed to delete document"),
-                  });
-                }}
-                isDeleting={deleteDocument.isPending}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No documents yet. Upload your first document in this section.
+          <p className="text-muted-foreground text-sm">
+            La base documentaire du projet est configuree via les options d&apos;indexation.
           </p>
-        )}
-      </div>
+          <p className="text-sm text-muted-foreground">
+            {indexedCount} indexed / {totalCount} total
+          </p>
+          <DocumentUpload
+            onUpload={(files) => {
+              uploadDocument.mutate(files, {
+                onSuccess: (result) =>
+                  toast.success(`${result.succeeded} uploaded, ${result.failed} failed`),
+                onError: () => toast.error("Failed to upload document"),
+              });
+            }}
+            isUploading={uploadDocument.isPending}
+            disabled={isProjectReindexing}
+          />
+          {isDocumentsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-16" />
+              ))}
+            </div>
+          ) : documents && documents.length > 0 ? (
+            <div className="space-y-3">
+              {documents.map((doc) => (
+                <DocumentRow
+                  key={doc.id}
+                  document={doc}
+                  onReindex={(id) => {
+                    if (isProjectReindexing) return;
+                    reindexDocument.mutate(id, {
+                      onSuccess: () => toast.success("Document reindexed"),
+                      onError: () => toast.error("Failed to reindex document"),
+                    });
+                  }}
+                  reindexingId={
+                    reindexDocument.isPending ? (reindexDocument.variables ?? null) : null
+                  }
+                  disableReindex={isProjectReindexing}
+                  onDelete={(id) => {
+                    deleteDocument.mutate(id, {
+                      onSuccess: () => toast.success("Document deleted"),
+                      onError: () => toast.error("Failed to delete document"),
+                    });
+                  }}
+                  isDeleting={deleteDocument.isPending}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No documents yet. Upload your first document in this section.
+            </p>
+          )}
+        </div>
       )}
 
       {activeTab === "Knowledge indexing" && (
-        <div className="max-w-3xl space-y-4">
+        <div className="max-w-3xl space-y-4 rounded-md border p-4">
           <p className="text-base font-semibold tracking-tight">Chunking and hierarchy</p>
-        <div className="space-y-2">
-          <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
-          <select
-            id="chunkingStrategy"
-            value={effectiveChunkingStrategy}
-            onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="auto">Auto</option>
-            <option value="fixed_window">Fixed window</option>
-            <option value="paragraph">Paragraph</option>
-            <option value="heading_section">Heading section</option>
-            <option value="semantic">Semantic</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            id="parentChildChunking"
-            type="checkbox"
-            checked={effectiveParentChildChunking}
-            onChange={(e) => setParentChildChunking(e.target.checked)}
-            className="h-4 w-4"
-          />
-          <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
-          `Semantic`.
-        </p>
-        {isSemanticRecommended ? (
-          <p className="text-sm text-amber-700">
-            Le mode parent-child est actif avec une strategie non `Semantic`. Cela fonctionne,
-            mais la pertinence est souvent meilleure avec `Semantic`.
+          <div className="space-y-2">
+            <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
+            <select
+              id="chunkingStrategy"
+              value={effectiveChunkingStrategy}
+              onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="auto">Auto</option>
+              <option value="fixed_window">Fixed window</option>
+              <option value="paragraph">Paragraph</option>
+              <option value="heading_section">Heading section</option>
+              <option value="semantic">Semantic</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="parentChildChunking"
+              type="checkbox"
+              checked={effectiveParentChildChunking}
+              onChange={(e) => setParentChildChunking(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
+            `Semantic`.
           </p>
-        ) : null}
-        <hr className="border-border" />
-        <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
-          {updateProject.isPending ? "Saving..." : "Save changes"}
-        </Button>
-        <div className="space-y-3 rounded-md border p-4">
-          <p className="text-base font-semibold tracking-tight">Reindex all documents</p>
-          <p className="text-sm text-muted-foreground">
-            Reindexing recomputes chunks and embeddings for all project documents and can take time.
-          </p>
-          <Button
-            className="cursor-pointer"
-            disabled={reindexProject.isPending || isProjectReindexing}
-            onClick={() => {
-              reindexProject.mutate(undefined, {
-                onSuccess: (result) =>
-                  toast.success(
-                    `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
-                  ),
-                onError: () => toast.error("Failed to reindex project"),
-              });
-            }}
-          >
-            {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+          {isSemanticRecommended ? (
+            <p className="text-sm text-amber-700">
+              Le mode parent-child est actif avec une strategie non `Semantic`. Cela fonctionne,
+              mais la pertinence est souvent meilleure avec `Semantic`.
+            </p>
+          ) : null}
+          <hr className="border-border" />
+          <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
+            {updateProject.isPending ? "Saving..." : "Save changes"}
           </Button>
+          <div className="space-y-3 rounded-md border p-4">
+            <p className="text-base font-semibold tracking-tight">Reindex all documents</p>
+            <p className="text-sm text-muted-foreground">
+              Reindexing recomputes chunks and embeddings for all project documents and can take
+              time.
+            </p>
+            <Button
+              className="cursor-pointer"
+              disabled={reindexProject.isPending || isProjectReindexing}
+              onClick={() => {
+                reindexProject.mutate(undefined, {
+                  onSuccess: (result) =>
+                    toast.success(
+                      `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
+                    ),
+                  onError: () => toast.error("Failed to reindex project"),
+                });
+              }}
+            >
+              {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+            </Button>
+          </div>
         </div>
-      </div>
       )}
 
       {activeTab === "Models" && (
-        <div className="max-w-3xl space-y-4">
+        <div className="max-w-3xl space-y-4 rounded-md border p-4">
           <p className="text-base font-semibold tracking-tight">Embedding model</p>
           <p className="text-sm text-muted-foreground">
             Used to convert your documents and user queries into vectors for semantic retrieval.
