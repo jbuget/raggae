@@ -40,6 +40,7 @@ export function useCreateProject() {
     mutationFn: (data: CreateProjectRequest) => createProject(token!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-projects"] });
     },
   });
 }
