@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { listOrganizationProjects } from "@/lib/api/organizations";
+import { listOrganizationMembers, listOrganizationProjects } from "@/lib/api/organizations";
 import { useOrganizations } from "@/lib/hooks/use-organizations";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const { data: organizations } = useOrganizations();
   const sortedOrganizations = [...(organizations ?? [])].sort((a, b) =>
@@ -43,6 +43,24 @@ export function Sidebar() {
       organization.id,
       organizationProjectsQueries[index]?.data ?? [],
     ]),
+  );
+  const organizationMembersQueries = useQueries({
+    queries: sortedOrganizations.map((organization) => ({
+      queryKey: ["organization-members", organization.id],
+      queryFn: () => listOrganizationMembers(token!, organization.id),
+      enabled: !!token && !!user?.id,
+    })),
+  });
+  const editableOrganizationIds = new Set(
+    sortedOrganizations
+      .filter((_, index) => {
+        const members = organizationMembersQueries[index]?.data ?? [];
+        const currentUserMember = members.find((member) => member.user_id === user?.id);
+        return (
+          currentUserMember?.role === "owner" || currentUserMember?.role === "maker"
+        );
+      })
+      .map((organization) => organization.id),
   );
   const gitBranch = process.env.NEXT_PUBLIC_APP_GIT_BRANCH ?? "unknown";
   const gitCommit = process.env.NEXT_PUBLIC_APP_GIT_COMMIT ?? "unknown";
@@ -193,9 +211,11 @@ export function Sidebar() {
                       <DropdownMenuItem asChild className="cursor-pointer">
                         <Link href={`/projects/${project.id}/chat`}>Chat</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link href={`/projects/${project.id}/settings`}>Settings</Link>
-                      </DropdownMenuItem>
+                      {editableOrganizationIds.has(organization.id) && (
+                        <DropdownMenuItem asChild className="cursor-pointer">
+                          <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

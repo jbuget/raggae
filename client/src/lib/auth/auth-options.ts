@@ -27,9 +27,16 @@ export const authOptions: NextAuthOptions = {
           if (!response.ok) return null;
 
           const tokenResponse = await response.json();
+          const payload = JSON.parse(
+            Buffer.from(
+              tokenResponse.access_token.split(".")[1],
+              "base64url",
+            ).toString("utf8"),
+          ) as { sub?: string };
+          const userId = payload.sub ?? credentials.email;
 
           return {
-            id: credentials.email,
+            id: userId,
             email: credentials.email,
             accessToken: tokenResponse.access_token,
           };
@@ -44,6 +51,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.accessToken = (user as unknown as { accessToken: string }).accessToken;
         token.email = user.email;
+        token.userId = user.id;
       }
       return token;
     },
@@ -51,6 +59,7 @@ export const authOptions: NextAuthOptions = {
       session.accessToken = token.accessToken as string;
       if (session.user) {
         session.user.email = token.email as string;
+        session.user.id = token.userId as string;
       }
       return session;
     },
