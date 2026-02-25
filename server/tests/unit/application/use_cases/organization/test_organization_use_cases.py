@@ -166,13 +166,59 @@ class TestOrganizationUseCases:
             organization_repository=org_repo,
             organization_member_repository=member_repo,
         )
-        list_use_case = ListOrganizations(organization_repository=org_repo)
+        list_use_case = ListOrganizations(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+        )
 
         found = await get_use_case.execute(organization_id=organization.id, user_id=user_id)
         listed = await list_use_case.execute(user_id=user_id)
 
         assert found.id == organization.id
         assert len(listed) == 1
+
+    async def test_list_organizations_includes_member_organizations(
+        self,
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
+    ) -> None:
+        org_repo, member_repo, _ = repositories
+        owner_id = uuid4()
+        member_user_id = uuid4()
+        now = datetime.now(UTC)
+        organization = Organization(
+            id=uuid4(),
+            name="Acme",
+            slug=None,
+            description=None,
+            logo_url=None,
+            created_by_user_id=owner_id,
+            created_at=now,
+            updated_at=now,
+        )
+        await org_repo.save(organization)
+        await member_repo.save(
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization.id,
+                user_id=member_user_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=now,
+            )
+        )
+
+        list_use_case = ListOrganizations(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+        )
+
+        listed = await list_use_case.execute(user_id=member_user_id)
+
+        assert len(listed) == 1
+        assert listed[0].id == organization.id
 
     async def test_update_organization_owner_only(
         self,

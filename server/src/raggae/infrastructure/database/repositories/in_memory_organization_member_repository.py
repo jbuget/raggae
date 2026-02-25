@@ -18,6 +18,9 @@ class InMemoryOrganizationMemberRepository:
     async def find_by_organization_id(self, organization_id: UUID) -> list[OrganizationMember]:
         return [m for m in self._members.values() if m.organization_id == organization_id]
 
+    async def find_by_user_id(self, user_id: UUID) -> list[OrganizationMember]:
+        return [m for m in self._members.values() if m.user_id == user_id]
+
     async def find_by_organization_and_user(
         self, organization_id: UUID, user_id: UUID
     ) -> OrganizationMember | None:

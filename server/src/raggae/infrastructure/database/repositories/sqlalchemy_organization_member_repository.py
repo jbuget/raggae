@@ -46,6 +46,13 @@ class SQLAlchemyOrganizationMemberRepository:
             )
             return [self._to_entity(model) for model in result.scalars().all()]
 
+    async def find_by_user_id(self, user_id: UUID) -> list[OrganizationMember]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(OrganizationMemberModel).where(OrganizationMemberModel.user_id == user_id)
+            )
+            return [self._to_entity(model) for model in result.scalars().all()]
+
     async def find_by_organization_and_user(
         self, organization_id: UUID, user_id: UUID
     ) -> OrganizationMember | None:

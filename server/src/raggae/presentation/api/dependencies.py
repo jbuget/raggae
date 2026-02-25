@@ -743,7 +743,10 @@ def get_get_organization_use_case() -> GetOrganization:
 
 
 def get_list_organizations_use_case() -> ListOrganizations:
-    return ListOrganizations(organization_repository=_organization_repository)
+    return ListOrganizations(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+    )
 
 
 def get_update_organization_use_case() -> UpdateOrganization:

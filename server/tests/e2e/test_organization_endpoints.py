@@ -174,3 +174,17 @@ class TestOrganizationEndpoints:
         )
         assert accepted.status_code == 200
         assert accepted.json()["organization_id"] == organization_id
+
+        members = await client.get(
+            f"/api/v1/organizations/{organization_id}/members",
+            headers=owner_headers,
+        )
+        assert members.status_code == 200
+        assert len(members.json()) == 2
+
+        invitee_organizations = await client.get(
+            "/api/v1/organizations",
+            headers=invitee_headers,
+        )
+        assert invitee_organizations.status_code == 200
+        assert any(org["id"] == organization_id for org in invitee_organizations.json())
