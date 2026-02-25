@@ -162,14 +162,16 @@ export function Sidebar() {
               >
                 {organization.name}
               </p>
-              <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-                <Link
-                  href={`/projects?create=1&organizationId=${organization.id}`}
-                  aria-label={`Create project in ${organization.name}`}
-                >
-                  <Plus className="h-4 w-4" />
-                </Link>
-              </Button>
+              {editableOrganizationIds.has(organization.id) && (
+                <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                  <Link
+                    href={`/projects?create=1&organizationId=${organization.id}`}
+                    aria-label={`Create project in ${organization.name}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
             </div>
             {(organizationProjectsMap.get(organization.id) ?? []).length === 0 ? (
               <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>

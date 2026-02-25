@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useQueries } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,12 +17,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { listOrganizationMembers } from "@/lib/api/organizations";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { useCreateOrganization, useOrganizations } from "@/lib/hooks/use-organizations";
 
 export function OrganizationList() {
+  const { token, user } = useAuth();
   const { data, isLoading, error } = useOrganizations();
   const sortedOrganizations = [...(data ?? [])].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
+  const organizationMembersQueries = useQueries({
+    queries: sortedOrganizations.map((organization) => ({
+      queryKey: ["organization-members", organization.id],
+      queryFn: () => listOrganizationMembers(token!, organization.id),
+      enabled: !!token && !!user?.id,
+    })),
+  });
+  const ownerOrganizationIds = new Set(
+    sortedOrganizations
+      .filter((organization, index) => {
+        const members = organizationMembersQueries[index]?.data ?? [];
+        const currentUserMember = members.find((member) => member.user_id === user?.id);
+        return currentUserMember?.role === "owner";
+      })
+      .map((organization) => organization.id),
   );
   const createOrganization = useCreateOrganization();
   const [open, setOpen] = useState(false);
@@ -114,9 +134,11 @@ export function OrganizationList() {
               <p className="text-sm text-muted-foreground">
                 {organization.description ?? "No description"}
               </p>
-              <Button asChild variant="outline" size="sm" className="mt-3">
-                <Link href={`/organizations/${organization.id}`}>Manage</Link>
-              </Button>
+              {ownerOrganizationIds.has(organization.id) && (
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <Link href={`/organizations/${organization.id}`}>Manage</Link>
+                </Button>
+              )}
             </div>
           ))}
         </div>

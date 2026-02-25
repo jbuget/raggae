@@ -7,7 +7,7 @@ import { useQueries } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { listOrganizationProjects } from "@/lib/api/organizations";
+import { listOrganizationMembers, listOrganizationProjects } from "@/lib/api/organizations";
 import { useOrganizations } from "@/lib/hooks/use-organizations";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ const navItems = [
 
 export function MobileSidebar() {
   const pathname = usePathname();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const { data: organizations } = useOrganizations();
   const sortedOrganizations = [...(organizations ?? [])].sort((a, b) =>
@@ -37,6 +37,24 @@ export function MobileSidebar() {
       organization.id,
       organizationProjectsQueries[index]?.data ?? [],
     ]),
+  );
+  const organizationMembersQueries = useQueries({
+    queries: sortedOrganizations.map((organization) => ({
+      queryKey: ["organization-members", organization.id],
+      queryFn: () => listOrganizationMembers(token!, organization.id),
+      enabled: !!token && !!user?.id,
+    })),
+  });
+  const editableOrganizationIds = new Set(
+    sortedOrganizations
+      .filter((_, index) => {
+        const members = organizationMembersQueries[index]?.data ?? [];
+        const currentUserMember = members.find((member) => member.user_id === user?.id);
+        return (
+          currentUserMember?.role === "owner" || currentUserMember?.role === "maker"
+        );
+      })
+      .map((organization) => organization.id),
   );
 
   return (
@@ -106,14 +124,16 @@ export function MobileSidebar() {
               >
                 {organization.name}
               </p>
-              <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-                <Link
-                  href={`/projects?create=1&organizationId=${organization.id}`}
-                  aria-label={`Create project in ${organization.name}`}
-                >
-                  <Plus className="h-4 w-4" />
-                </Link>
-              </Button>
+              {editableOrganizationIds.has(organization.id) && (
+                <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                  <Link
+                    href={`/projects?create=1&organizationId=${organization.id}`}
+                    aria-label={`Create project in ${organization.name}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Link>
+                </Button>
+              )}
             </div>
             {(organizationProjectsMap.get(organization.id) ?? []).length === 0 ? (
               <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>
