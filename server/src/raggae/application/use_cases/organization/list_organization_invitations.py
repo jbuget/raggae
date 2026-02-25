@@ -14,6 +14,9 @@ from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
 )
+from raggae.domain.value_objects.organization_invitation_status import (
+    OrganizationInvitationStatus,
+)
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
@@ -47,4 +50,8 @@ class ListOrganizationInvitations:
         invitations = await self._organization_invitation_repository.find_by_organization_id(
             organization_id
         )
-        return [OrganizationInvitationDTO.from_entity(invitation) for invitation in invitations]
+        return [
+            OrganizationInvitationDTO.from_entity(invitation)
+            for invitation in invitations
+            if invitation.status == OrganizationInvitationStatus.PENDING
+        ]

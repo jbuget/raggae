@@ -152,45 +152,49 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-2">
-            {invitations?.map((invitation) => (
-              <div
-                key={invitation.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
-              >
-                <div className="text-sm">
-                  <p className="font-medium">{invitation.email}</p>
-                  <p className="text-muted-foreground">
-                    {invitation.role} - {invitation.status}
-                  </p>
+            {!invitations || invitations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending invitations.</p>
+            ) : (
+              invitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                >
+                  <div className="text-sm">
+                    <p className="font-medium">{invitation.email}</p>
+                    <p className="text-muted-foreground">
+                      {invitation.role} - {invitation.status}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        resendInvitation.mutate(invitation.id, {
+                          onSuccess: () => toast.success("Invitation resent"),
+                          onError: () => toast.error("Failed to resend invitation"),
+                        })
+                      }
+                      disabled={resendInvitation.isPending}
+                    >
+                      Resend
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        revokeInvitation.mutate(invitation.id, {
+                          onSuccess: () => toast.success("Invitation revoked"),
+                          onError: () => toast.error("Failed to revoke invitation"),
+                        })
+                      }
+                      disabled={revokeInvitation.isPending}
+                    >
+                      Revoke
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      resendInvitation.mutate(invitation.id, {
-                        onSuccess: () => toast.success("Invitation resent"),
-                        onError: () => toast.error("Failed to resend invitation"),
-                      })
-                    }
-                    disabled={resendInvitation.isPending}
-                  >
-                    Resend
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      revokeInvitation.mutate(invitation.id, {
-                        onSuccess: () => toast.success("Invitation revoked"),
-                        onError: () => toast.error("Failed to revoke invitation"),
-                      })
-                    }
-                    disabled={revokeInvitation.isPending}
-                  >
-                    Revoke
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
       </div>

@@ -276,3 +276,50 @@ class TestOrganizationInvitationUseCases:
         assert accepted_member.organization_id == org.id
         assert saved_invitation is not None
         assert saved_invitation.status == OrganizationInvitationStatus.ACCEPTED
+
+    async def test_list_organization_invitations_returns_only_pending(
+        self, setup_data
+    ) -> None:
+        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        now = datetime.now(UTC)
+        await invitation_repo.save(
+            OrganizationInvitation(
+                id=uuid4(),
+                organization_id=org.id,
+                email="pending@example.com",
+                role=OrganizationMemberRole.USER,
+                status=OrganizationInvitationStatus.PENDING,
+                invited_by_user_id=owner.user_id,
+                token_hash="pending-token",
+                expires_at=now + timedelta(days=1),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await invitation_repo.save(
+            OrganizationInvitation(
+                id=uuid4(),
+                organization_id=org.id,
+                email="accepted@example.com",
+                role=OrganizationMemberRole.USER,
+                status=OrganizationInvitationStatus.ACCEPTED,
+                invited_by_user_id=owner.user_id,
+                token_hash="accepted-token",
+                expires_at=now + timedelta(days=1),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        use_case = ListOrganizationInvitations(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
+        )
+
+        invitations = await use_case.execute(
+            organization_id=org.id,
+            requester_user_id=owner.user_id,
+        )
+
+        assert len(invitations) == 1
+        assert invitations[0].email == "pending@example.com"
