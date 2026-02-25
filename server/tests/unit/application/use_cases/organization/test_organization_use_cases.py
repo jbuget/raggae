@@ -349,3 +349,52 @@ class TestOrganizationUseCases:
         )
         with pytest.raises(OrganizationNotFoundError):
             await use_case.execute(organization_id=uuid4(), user_id=uuid4())
+
+    async def test_get_organization_non_owner_member_raises_access_denied(
+        self,
+        repositories: tuple[
+            InMemoryOrganizationRepository,
+            InMemoryOrganizationMemberRepository,
+            InMemoryOrganizationInvitationRepository,
+        ],
+    ) -> None:
+        org_repo, member_repo, _ = repositories
+        owner_id = uuid4()
+        maker_id = uuid4()
+        now = datetime.now(UTC)
+        organization = Organization(
+            id=uuid4(),
+            name="Acme",
+            slug=None,
+            description=None,
+            logo_url=None,
+            created_by_user_id=owner_id,
+            created_at=now,
+            updated_at=now,
+        )
+        await org_repo.save(organization)
+        await member_repo.save(
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization.id,
+                user_id=owner_id,
+                role=OrganizationMemberRole.OWNER,
+                joined_at=now,
+            )
+        )
+        await member_repo.save(
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization.id,
+                user_id=maker_id,
+                role=OrganizationMemberRole.MAKER,
+                joined_at=now,
+            )
+        )
+        use_case = GetOrganization(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+        )
+
+        with pytest.raises(OrganizationAccessDeniedError):
+            await use_case.execute(organization_id=organization.id, user_id=maker_id)

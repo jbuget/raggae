@@ -11,10 +11,11 @@ from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
 )
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class GetOrganization:
-    """Use Case: Get organization details for a member."""
+    """Use Case: Get organization details for an owner."""
 
     def __init__(
         self,
@@ -32,7 +33,7 @@ class GetOrganization:
             organization_id=organization_id,
             user_id=user_id,
         )
-        if member is None:
+        if member is None or member.role != OrganizationMemberRole.OWNER:
             raise OrganizationAccessDeniedError(
                 f"User {user_id} cannot access organization {organization_id}"
             )
