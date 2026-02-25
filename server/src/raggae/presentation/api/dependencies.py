@@ -155,6 +155,8 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
 )
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
+from raggae.application.use_cases.user.get_current_user import GetCurrentUser
+from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.infrastructure.config.settings import settings
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
     InMemoryConversationRepository,
@@ -533,6 +535,14 @@ def get_login_user_use_case() -> LoginUser:
         password_hasher=_password_hasher,
         token_service=_token_service,
     )
+
+
+def get_current_user_use_case() -> GetCurrentUser:
+    return GetCurrentUser(user_repository=_user_repository)
+
+
+def get_update_user_full_name_use_case() -> UpdateUserFullName:
+    return UpdateUserFullName(user_repository=_user_repository)
 
 
 def get_create_project_use_case() -> CreateProject:

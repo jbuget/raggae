@@ -18,6 +18,10 @@ export interface UserResponse {
   created_at: string;
 }
 
+export interface UpdateUserFullNameRequest {
+  full_name: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   token_type: string;

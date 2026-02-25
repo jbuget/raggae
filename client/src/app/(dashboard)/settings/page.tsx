@@ -23,6 +23,7 @@ import {
   useDeleteModelCredential,
   useModelCredentials,
 } from "@/lib/hooks/use-model-credentials";
+import { useCurrentUserProfile, useUpdateUserFullName } from "@/lib/hooks/use-user-profile";
 import type { ModelProvider } from "@/lib/types/api";
 
 const PROVIDERS: Array<{ value: ModelProvider; label: string; placeholder: string }> = [
@@ -32,6 +33,8 @@ const PROVIDERS: Array<{ value: ModelProvider; label: string; placeholder: strin
 ];
 
 export default function UserSettingsPage() {
+  const { data: userProfile, isLoading: userLoading } = useCurrentUserProfile();
+  const updateUserFullName = useUpdateUserFullName();
   const { data: credentials, isLoading } = useModelCredentials();
   const createCredential = useCreateModelCredential();
   const activateCredential = useActivateModelCredential();
@@ -41,6 +44,7 @@ export default function UserSettingsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalProvider, setModalProvider] = useState<ModelProvider>("openai");
   const [modalApiKey, setModalApiKey] = useState("");
+  const [fullName, setFullName] = useState("");
 
   function handleModalOpenChange(open: boolean) {
     setModalOpen(open);
@@ -89,6 +93,8 @@ export default function UserSettingsPage() {
   const providerPlaceholder =
     PROVIDERS.find((p) => p.value === modalProvider)?.placeholder ?? "";
 
+  const effectiveFullName = fullName || userProfile?.full_name || "";
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
       <div>
@@ -97,6 +103,50 @@ export default function UserSettingsPage() {
           Manage your AI provider API keys.
         </p>
       </div>
+
+      <Card className="space-y-4 p-5">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium">Profile</h2>
+          <p className="text-sm text-muted-foreground">
+            Update your account display name.
+          </p>
+        </div>
+        {userLoading ? (
+          <Skeleton className="h-10 w-full" />
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="user-email">Email</Label>
+              <Input id="user-email" value={userProfile?.email ?? ""} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-full-name">Full name</Label>
+              <Input
+                id="user-full-name"
+                value={effectiveFullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your full name"
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={() =>
+                updateUserFullName.mutate(effectiveFullName.trim(), {
+                  onSuccess: () => {
+                    toast.success("Profile updated");
+                    setFullName("");
+                  },
+                  onError: (error) =>
+                    toast.error((error as Error).message || "Failed to update profile"),
+                })
+              }
+              disabled={!effectiveFullName.trim() || updateUserFullName.isPending}
+            >
+              {updateUserFullName.isPending ? "Saving..." : "Save profile"}
+            </Button>
+          </div>
+        )}
+      </Card>
 
       <Card className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">

@@ -15,6 +15,10 @@ class LoginUserRequest(BaseModel):
     password: str
 
 
+class UpdateUserFullNameRequest(BaseModel):
+    full_name: str = Field(..., min_length=1)
+
+
 class UserResponse(BaseModel):
     id: UUID
     email: str
