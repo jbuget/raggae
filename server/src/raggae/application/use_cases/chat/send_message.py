@@ -39,7 +39,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
-from raggae.infrastructure.services.prompt_builder import build_rag_prompt
+from raggae.infrastructure.services.enhanced_prompt_builder import build_enhanced_rag_prompt
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
 
@@ -234,9 +234,11 @@ class SendMessage:
             history_window_size=effective_history_window_size,
             history_max_chars=effective_history_max_chars,
         )
-        prompt = build_rag_prompt(
+        prompt = build_enhanced_rag_prompt(
             query=message,
             context_chunks=[chunk.content for chunk in relevant_chunks],
+            source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
+            relevance_scores=[chunk.score for chunk in relevant_chunks],
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
@@ -443,9 +445,11 @@ class SendMessage:
             history_window_size=effective_history_window_size,
             history_max_chars=effective_history_max_chars,
         )
-        prompt = build_rag_prompt(
+        prompt = build_enhanced_rag_prompt(
             query=message,
             context_chunks=[chunk.content for chunk in relevant_chunks],
+            source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
+            relevance_scores=[chunk.score for chunk in relevant_chunks],
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
