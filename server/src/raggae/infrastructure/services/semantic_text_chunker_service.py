@@ -16,11 +16,13 @@ class SemanticTextChunkerService:
         chunk_size: int,
         chunk_overlap: int,
         similarity_threshold: float = 0.65,
+        min_chunk_size: int = 50,
     ) -> None:
         self._embedding_service = embedding_service
         self._chunk_size = max(1, chunk_size)
         self._chunk_overlap = max(0, min(chunk_overlap, self._chunk_size - 1))
         self._similarity_threshold = min(max(similarity_threshold, 0.0), 1.0)
+        self._min_chunk_size = max(0, min(min_chunk_size, self._chunk_size // 2))
 
     async def chunk_text(
         self,
@@ -67,7 +69,34 @@ class SemanticTextChunkerService:
         if current_sentences:
             chunks.extend(self._split_large_chunk(" ".join(current_sentences)))
 
-        return [chunk for chunk in chunks if chunk.strip()]
+        filtered = [chunk for chunk in chunks if chunk.strip()]
+        return self._merge_small_chunks(filtered)
+
+    def _merge_small_chunks(self, chunks: list[str]) -> list[str]:
+        """Merge chunks smaller than min_chunk_size into neighbours without exceeding chunk_size."""
+        if self._min_chunk_size <= 0 or len(chunks) <= 1:
+            return chunks
+
+        merged: list[str] = []
+        for chunk in chunks:
+            if merged and len(chunk) < self._min_chunk_size:
+                candidate = f"{merged[-1]} {chunk}"
+                if len(candidate) <= self._chunk_size:
+                    merged[-1] = candidate
+                else:
+                    merged.append(chunk)
+            elif not merged and len(chunk) < self._min_chunk_size:
+                merged.append(chunk)
+            else:
+                if merged and len(merged[-1]) < self._min_chunk_size:
+                    candidate = f"{merged[-1]} {chunk}"
+                    if len(candidate) <= self._chunk_size:
+                        merged[-1] = candidate
+                    else:
+                        merged.append(chunk)
+                else:
+                    merged.append(chunk)
+        return [c for c in merged if c.strip()]
 
     def _split_large_chunk(self, chunk: str) -> list[str]:
         normalized = chunk.strip()
