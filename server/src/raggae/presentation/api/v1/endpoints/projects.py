@@ -8,8 +8,11 @@ from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
+from raggae.application.use_cases.project.publish_project import PublishProject
 from raggae.application.use_cases.project.reindex_project import ReindexProject
+from raggae.application.use_cases.project.unpublish_project import UnpublishProject
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
@@ -18,20 +21,23 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
+    ProjectAlreadyPublishedError,
     ProjectAPIKeyNotOwnedError,
     ProjectNotFoundError,
+    ProjectNotPublishedError,
     ProjectReindexInProgressError,
     ProjectSystemPromptTooLongError,
 )
-from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.presentation.api.dependencies import (
     get_create_project_use_case,
     get_current_user_id,
     get_delete_project_use_case,
     get_get_project_use_case,
     get_list_projects_use_case,
+    get_publish_project_use_case,
     get_query_relevant_chunks_use_case,
     get_reindex_project_use_case,
+    get_unpublish_project_use_case,
     get_update_project_use_case,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import (
@@ -454,4 +460,108 @@ async def reindex_project(
         total_documents=result.total_documents,
         indexed_documents=result.indexed_documents,
         failed_documents=result.failed_documents,
+    )
+
+
+@router.post("/{project_id}/publish", status_code=status.HTTP_200_OK)
+async def publish_project(
+    project_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[PublishProject, Depends(get_publish_project_use_case)],
+) -> ProjectResponse:
+    try:
+        project_dto = await use_case.execute(project_id=project_id, user_id=user_id)
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+    except ProjectAlreadyPublishedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project is already published",
+        ) from None
+    return ProjectResponse(
+        id=project_dto.id,
+        user_id=project_dto.user_id,
+        organization_id=project_dto.organization_id,
+        name=project_dto.name,
+        description=project_dto.description,
+        system_prompt=project_dto.system_prompt,
+        is_published=project_dto.is_published,
+        created_at=project_dto.created_at,
+        chunking_strategy=project_dto.chunking_strategy,
+        parent_child_chunking=project_dto.parent_child_chunking,
+        reindex_status=project_dto.reindex_status,
+        reindex_progress=project_dto.reindex_progress,
+        reindex_total=project_dto.reindex_total,
+        embedding_backend=project_dto.embedding_backend,
+        embedding_model=project_dto.embedding_model,
+        embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        embedding_api_key_credential_id=project_dto.embedding_api_key_credential_id,
+        llm_backend=project_dto.llm_backend,
+        llm_model=project_dto.llm_model,
+        llm_api_key_masked=project_dto.llm_api_key_masked,
+        llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
+        retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
+        retrieval_top_k=project_dto.retrieval_top_k,
+        retrieval_min_score=project_dto.retrieval_min_score,
+        chat_history_window_size=project_dto.chat_history_window_size,
+        chat_history_max_chars=project_dto.chat_history_max_chars,
+        reranking_enabled=project_dto.reranking_enabled,
+        reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
+        reranker_model=project_dto.reranker_model,
+        reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+    )
+
+
+@router.post("/{project_id}/unpublish", status_code=status.HTTP_200_OK)
+async def unpublish_project(
+    project_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[UnpublishProject, Depends(get_unpublish_project_use_case)],
+) -> ProjectResponse:
+    try:
+        project_dto = await use_case.execute(project_id=project_id, user_id=user_id)
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from None
+    except ProjectNotPublishedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project is not published",
+        ) from None
+    return ProjectResponse(
+        id=project_dto.id,
+        user_id=project_dto.user_id,
+        organization_id=project_dto.organization_id,
+        name=project_dto.name,
+        description=project_dto.description,
+        system_prompt=project_dto.system_prompt,
+        is_published=project_dto.is_published,
+        created_at=project_dto.created_at,
+        chunking_strategy=project_dto.chunking_strategy,
+        parent_child_chunking=project_dto.parent_child_chunking,
+        reindex_status=project_dto.reindex_status,
+        reindex_progress=project_dto.reindex_progress,
+        reindex_total=project_dto.reindex_total,
+        embedding_backend=project_dto.embedding_backend,
+        embedding_model=project_dto.embedding_model,
+        embedding_api_key_masked=project_dto.embedding_api_key_masked,
+        embedding_api_key_credential_id=project_dto.embedding_api_key_credential_id,
+        llm_backend=project_dto.llm_backend,
+        llm_model=project_dto.llm_model,
+        llm_api_key_masked=project_dto.llm_api_key_masked,
+        llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
+        retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
+        retrieval_top_k=project_dto.retrieval_top_k,
+        retrieval_min_score=project_dto.retrieval_min_score,
+        chat_history_window_size=project_dto.chat_history_window_size,
+        chat_history_max_chars=project_dto.chat_history_max_chars,
+        reranking_enabled=project_dto.reranking_enabled,
+        reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
+        reranker_model=project_dto.reranker_model,
+        reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
     )

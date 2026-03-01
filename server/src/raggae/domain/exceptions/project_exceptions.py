@@ -2,6 +2,10 @@ class ProjectAlreadyPublishedError(Exception):
     """Raised when trying to publish an already published project."""
 
 
+class ProjectNotPublishedError(Exception):
+    """Raised when trying to unpublish a project that is not published."""
+
+
 class ProjectNotFoundError(Exception):
     """Raised when a project cannot be found."""
 
@@ -20,6 +24,14 @@ class InvalidProjectEmbeddingBackendError(ValueError):
 
 class InvalidProjectLLMBackendError(ValueError):
     """Raised when project LLM backend is unsupported."""
+
+
+class InvalidProjectLLMModelError(ValueError):
+    """Raised when project LLM model is not in the allowed list for its backend."""
+
+
+class InvalidProjectEmbeddingModelError(ValueError):
+    """Raised when project embedding model is not in the allowed list for its backend."""
 
 
 class InvalidProjectRetrievalStrategyError(ValueError):

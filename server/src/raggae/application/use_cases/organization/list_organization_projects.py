@@ -12,6 +12,7 @@ from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
 )
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class ListOrganizationProjects:
@@ -40,4 +41,6 @@ class ListOrganizationProjects:
                 f"User {user_id} cannot access organization projects for {organization_id}"
             )
         projects = await self._project_repository.find_by_organization_id(organization_id)
+        if member.role == OrganizationMemberRole.USER:
+            projects = [p for p in projects if p.is_published]
         return [ProjectDTO.from_entity(project) for project in projects]

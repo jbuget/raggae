@@ -6,6 +6,7 @@ import pytest
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import (
     ProjectAlreadyPublishedError,
+    ProjectNotPublishedError,
     ProjectReindexInProgressError,
 )
 
@@ -139,6 +140,67 @@ class TestProject:
 
         with pytest.raises(ProjectReindexInProgressError):
             project.start_reindex(total_documents=1)
+
+    def test_unpublish_published_project(self) -> None:
+        # Given
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Test",
+            description="",
+            system_prompt="prompt",
+            is_published=True,
+            created_at=datetime.now(UTC),
+        )
+
+        # When
+        unpublished = project.unpublish()
+
+        # Then
+        assert unpublished.is_published is False
+        assert unpublished.id == project.id
+
+    def test_unpublish_not_published_project_raises_error(self) -> None:
+        # Given
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Test",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotPublishedError):
+            project.unpublish()
+
+    def test_unpublish_preserves_other_fields(self) -> None:
+        # Given
+        project_id = uuid4()
+        user_id = uuid4()
+        now = datetime.now(UTC)
+        project = Project(
+            id=project_id,
+            user_id=user_id,
+            name="My Project",
+            description="A description",
+            system_prompt="prompt",
+            is_published=True,
+            created_at=now,
+        )
+
+        # When
+        unpublished = project.unpublish()
+
+        # Then
+        assert unpublished.id == project_id
+        assert unpublished.user_id == user_id
+        assert unpublished.name == "My Project"
+        assert unpublished.description == "A description"
+        assert unpublished.system_prompt == "prompt"
+        assert unpublished.created_at == now
 
     def test_advance_and_finish_reindex(self) -> None:
         project = Project(

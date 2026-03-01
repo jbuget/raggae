@@ -121,7 +121,7 @@ class TestProjectEndpoints:
                 "description": "A test project",
                 "system_prompt": "You are a helpful assistant",
                 "llm_backend": "openai",
-                "llm_model": "gpt-4o-mini",
+                "llm_model": "gpt-4.1-mini",
                 "llm_api_key": "sk-not-owned-1234",
             },
             headers=headers,
@@ -152,7 +152,7 @@ class TestProjectEndpoints:
                 "description": "A test project",
                 "system_prompt": "You are a helpful assistant",
                 "llm_backend": "openai",
-                "llm_model": "gpt-4o-mini",
+                "llm_model": "gpt-4.1-mini",
                 "llm_api_key": "sk-owned-1234",
             },
             headers=headers,
@@ -162,7 +162,7 @@ class TestProjectEndpoints:
         assert response.status_code == 201
         data = response.json()
         assert data["llm_backend"] == "openai"
-        assert data["llm_model"] == "gpt-4o-mini"
+        assert data["llm_model"] == "gpt-4.1-mini"
         assert data["llm_api_key_masked"] is not None
         assert data["llm_api_key_credential_id"] is None
 
@@ -187,7 +187,7 @@ class TestProjectEndpoints:
                 "description": "A test project",
                 "system_prompt": "You are a helpful assistant",
                 "llm_backend": "openai",
-                "llm_model": "gpt-4o-mini",
+                "llm_model": "gpt-4.1-mini",
                 "llm_api_key_credential_id": credential_id,
             },
             headers=headers,
@@ -197,7 +197,7 @@ class TestProjectEndpoints:
         assert response.status_code == 201
         data = response.json()
         assert data["llm_backend"] == "openai"
-        assert data["llm_model"] == "gpt-4o-mini"
+        assert data["llm_model"] == "gpt-4.1-mini"
         assert data["llm_api_key_masked"] is not None
 
     async def test_create_project_with_embedding_api_key_credential_id_returns_201(
@@ -221,7 +221,7 @@ class TestProjectEndpoints:
                 "description": "A test project",
                 "system_prompt": "You are a helpful assistant",
                 "embedding_backend": "gemini",
-                "embedding_model": "text-embedding-004",
+                "embedding_model": "gemini-embedding-001",
                 "embedding_api_key_credential_id": credential_id,
             },
             headers=headers,
@@ -231,7 +231,7 @@ class TestProjectEndpoints:
         assert response.status_code == 201
         data = response.json()
         assert data["embedding_backend"] == "gemini"
-        assert data["embedding_model"] == "text-embedding-004"
+        assert data["embedding_model"] == "gemini-embedding-001"
         assert data["embedding_api_key_masked"] is not None
 
     async def test_create_project_with_llm_api_key_and_credential_id_returns_422(
@@ -255,7 +255,7 @@ class TestProjectEndpoints:
                 "description": "A test project",
                 "system_prompt": "You are a helpful assistant",
                 "llm_backend": "openai",
-                "llm_model": "gpt-4o-mini",
+                "llm_model": "gpt-4.1-mini",
                 "llm_api_key": "sk-owned-by-id-5678",
                 "llm_api_key_credential_id": credential_id,
             },
@@ -535,7 +535,7 @@ class TestProjectEndpoints:
                 "description": "Updated description",
                 "system_prompt": "Updated prompt",
                 "llm_backend": "openai",
-                "llm_model": "gpt-4o-mini",
+                "llm_model": "gpt-4.1-mini",
                 "llm_api_key_credential_id": credential_id,
             },
             headers=headers,
@@ -572,7 +572,7 @@ class TestProjectEndpoints:
                 "description": "Updated description",
                 "system_prompt": "Updated prompt",
                 "embedding_backend": "gemini",
-                "embedding_model": "text-embedding-004",
+                "embedding_model": "gemini-embedding-001",
                 "embedding_api_key_credential_id": credential_id,
             },
             headers=headers,
@@ -609,7 +609,7 @@ class TestProjectEndpoints:
                 "description": "Updated description",
                 "system_prompt": "Updated prompt",
                 "embedding_backend": "gemini",
-                "embedding_model": "text-embedding-004",
+                "embedding_model": "gemini-embedding-001",
                 "embedding_api_key": "AIza-update-by-id-5678",
                 "embedding_api_key_credential_id": credential_id,
             },

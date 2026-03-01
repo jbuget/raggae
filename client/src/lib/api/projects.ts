@@ -59,3 +59,23 @@ export function reindexProject(
     token,
   });
 }
+
+export function publishProject(
+  token: string,
+  projectId: string,
+): Promise<ProjectResponse> {
+  return apiFetch<ProjectResponse>(`/projects/${projectId}/publish`, {
+    method: "POST",
+    token,
+  });
+}
+
+export function unpublishProject(
+  token: string,
+  projectId: string,
+): Promise<ProjectResponse> {
+  return apiFetch<ProjectResponse>(`/projects/${projectId}/unpublish`, {
+    method: "POST",
+    token,
+  });
+}
