@@ -44,6 +44,8 @@ class Project:
     reranker_model: str | None = None
     reranker_candidate_multiplier: int = 3
     organization_id: UUID | None = None
+    org_embedding_api_key_credential_id: UUID | None = None
+    org_llm_api_key_credential_id: UUID | None = None
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""
