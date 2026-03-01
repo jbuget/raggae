@@ -48,8 +48,8 @@ const MAX_SYSTEM_PROMPT_LENGTH = 8000;
 const SETTINGS_TABS = [
   "General",
   "Models",
-  "Document ingestion",
   "Knowledge indexing",
+  "Document ingestion",
   "Context retrieval",
   "Context augmentation",
   "Answer generation",
