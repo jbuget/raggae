@@ -320,12 +320,16 @@ def _build_embedding_service() -> EmbeddingService:
         from raggae.infrastructure.services.ollama_embedding_service import (
             OllamaEmbeddingService,
         )
+        from raggae.infrastructure.services.contextual_embedding_service import (
+            ContextualEmbeddingService,
+        )
 
-        return OllamaEmbeddingService(
+        ollama_service = OllamaEmbeddingService(
             base_url=settings.ollama_base_url,
             model=settings.ollama_embedding_model,
             expected_dimension=settings.embedding_dimension,
         )
+        return ContextualEmbeddingService(delegate=ollama_service)
     if settings.default_embedding_provider == "gemini":
         return GeminiEmbeddingService(
             api_key=settings.default_embedding_api_key,
@@ -511,6 +515,12 @@ if settings.reranker_backend == "cross_encoder":
     _reranker_service: RerankerService | None = CrossEncoderRerankerService(
         model_name=settings.reranker_model
     )
+elif settings.reranker_backend == "mmr":
+    from raggae.infrastructure.services.mmr_diversity_reranker_service import (
+        MmrDiversityRerankerService,
+    )
+
+    _reranker_service = MmrDiversityRerankerService(lambda_param=0.85)
 else:
     _reranker_service = None
 _project_reranker_service_resolver: ProjectRerankerServiceResolver = (

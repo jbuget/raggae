@@ -1,10 +1,10 @@
 import re
-from math import sqrt
 
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.infrastructure.services.math_utils import cosine_similarity as _cosine_similarity
 
-_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n{2,}")
 
 
 class SemanticTextChunkerService:
@@ -16,11 +16,13 @@ class SemanticTextChunkerService:
         chunk_size: int,
         chunk_overlap: int,
         similarity_threshold: float = 0.65,
+        min_chunk_size: int = 50,
     ) -> None:
         self._embedding_service = embedding_service
         self._chunk_size = max(1, chunk_size)
         self._chunk_overlap = max(0, min(chunk_overlap, self._chunk_size - 1))
         self._similarity_threshold = min(max(similarity_threshold, 0.0), 1.0)
+        self._min_chunk_size = max(0, min(min_chunk_size, self._chunk_size // 2))
 
     async def chunk_text(
         self,
@@ -67,7 +69,28 @@ class SemanticTextChunkerService:
         if current_sentences:
             chunks.extend(self._split_large_chunk(" ".join(current_sentences)))
 
-        return [chunk for chunk in chunks if chunk.strip()]
+        filtered = [chunk for chunk in chunks if chunk.strip()]
+        return self._merge_small_chunks(filtered)
+
+    def _merge_small_chunks(self, chunks: list[str]) -> list[str]:
+        """Merge chunks smaller than min_chunk_size into the previous chunk.
+
+        Uses a single forward pass: each chunk is either appended to the
+        previous one (when either side is too small and the result fits) or
+        starts a new entry.
+        """
+        if self._min_chunk_size <= 0 or len(chunks) <= 1:
+            return chunks
+
+        merged: list[str] = []
+        for chunk in chunks:
+            if merged and (len(chunk) < self._min_chunk_size or len(merged[-1]) < self._min_chunk_size):
+                candidate = f"{merged[-1]} {chunk}"
+                if len(candidate) <= self._chunk_size:
+                    merged[-1] = candidate
+                    continue
+            merged.append(chunk)
+        return [c for c in merged if c.strip()]
 
     def _split_large_chunk(self, chunk: str) -> list[str]:
         normalized = chunk.strip()
@@ -89,12 +112,3 @@ class SemanticTextChunkerService:
         return parts
 
 
-def _cosine_similarity(left: list[float], right: list[float]) -> float:
-    if not left or not right or len(left) != len(right):
-        return 0.0
-    dot = sum(a * b for a, b in zip(left, right, strict=False))
-    left_norm = sqrt(sum(value * value for value in left))
-    right_norm = sqrt(sum(value * value for value in right))
-    if left_norm == 0.0 or right_norm == 0.0:
-        return 0.0
-    return dot / (left_norm * right_norm)

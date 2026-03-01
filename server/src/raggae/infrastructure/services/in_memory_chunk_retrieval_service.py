@@ -1,4 +1,3 @@
-from math import sqrt
 from uuid import UUID
 
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
@@ -7,6 +6,7 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
 from raggae.domain.value_objects.chunk_level import ChunkLevel
+from raggae.infrastructure.services.math_utils import cosine_similarity as _cosine_similarity
 
 
 class InMemoryChunkRetrievalService:
@@ -81,16 +81,6 @@ class InMemoryChunkRetrievalService:
         return self._vector_weight, self._fulltext_weight
 
 
-def _cosine_similarity(left: list[float], right: list[float]) -> float:
-    if not left or not right or len(left) != len(right):
-        return 0.0
-
-    dot_product = sum(a * b for a, b in zip(left, right, strict=False))
-    left_norm = sqrt(sum(value * value for value in left))
-    right_norm = sqrt(sum(value * value for value in right))
-    if left_norm == 0.0 or right_norm == 0.0:
-        return 0.0
-    return dot_product / (left_norm * right_norm)
 
 
 def _tokenize(text: str) -> set[str]:
@@ -98,13 +88,42 @@ def _tokenize(text: str) -> set[str]:
 
 
 def _lexical_overlap_score(query_terms: set[str], content: str) -> float:
+    """BM25-inspired lexical scoring.
+
+    Uses term frequency saturation and document length normalisation
+    instead of simple overlap ratio.
+    """
     if not query_terms:
         return 0.0
-    content_terms = _tokenize(content)
-    if not content_terms:
+    content_tokens = content.lower().split()
+    if not content_tokens:
         return 0.0
-    overlap = len(query_terms.intersection(content_terms))
-    return overlap / len(query_terms)
+
+    # Build term frequency map
+    tf_map: dict[str, int] = {}
+    for token in content_tokens:
+        t = token.strip()
+        if t:
+            tf_map[t] = tf_map.get(t, 0) + 1
+
+    doc_len = len(content_tokens)
+    # BM25 parameters
+    k1 = 1.2
+    b = 0.75
+    avg_dl = 200.0  # assumed average document length for normalisation
+
+    score = 0.0
+    for term in query_terms:
+        tf = tf_map.get(term, 0)
+        if tf == 0:
+            continue
+        # BM25 TF saturation + length normalisation
+        numerator = tf * (k1 + 1)
+        denominator = tf + k1 * (1 - b + b * doc_len / avg_dl)
+        score += numerator / denominator
+
+    # Normalise by number of query terms to keep in [0, ~1] range
+    return score / len(query_terms) if query_terms else 0.0
 
 
 def _resolve_strategy(strategy: str, query_text: str) -> str:

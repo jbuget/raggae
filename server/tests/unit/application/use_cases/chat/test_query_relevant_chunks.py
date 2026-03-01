@@ -321,7 +321,12 @@ class TestQueryRelevantChunks:
         assert call_kwargs["limit"] == 6  # 2 * 3
 
         # reranker called with original limit as top_k
-        mock_reranker.rerank.assert_awaited_once_with("test query", raw_chunks, top_k=2)
+        mock_reranker.rerank.assert_awaited_once()
+        rerank_call = mock_reranker.rerank.call_args
+        assert rerank_call.args[0] == "test query"
+        assert rerank_call.args[1] == raw_chunks
+        assert rerank_call.kwargs["top_k"] == 2
+        assert rerank_call.kwargs["query_embedding"] is not None
 
         # result contains reranked chunks
         assert len(result.chunks) == 2

@@ -52,7 +52,7 @@ from raggae.domain.value_objects.organization_member_role import OrganizationMem
 _SUPPORTED_EMBEDDING_BACKENDS = {"openai", "gemini", "ollama", "inmemory"}
 _SUPPORTED_LLM_BACKENDS = {"openai", "gemini", "anthropic", "ollama", "inmemory"}
 _SUPPORTED_RETRIEVAL_STRATEGIES = {"vector", "fulltext", "hybrid"}
-_SUPPORTED_RERANKER_BACKENDS = {"none", "cross_encoder", "inmemory"}
+_SUPPORTED_RERANKER_BACKENDS = {"none", "cross_encoder", "inmemory", "mmr"}
 
 
 class UpdateProject:

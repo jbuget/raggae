@@ -43,7 +43,7 @@ export type ProjectLLMBackend =
   | "ollama"
   | "inmemory";
 export type RetrievalStrategy = "vector" | "fulltext" | "hybrid";
-export type ProjectRerankerBackend = "none" | "cross_encoder" | "inmemory";
+export type ProjectRerankerBackend = "none" | "cross_encoder" | "inmemory" | "mmr";
 export type OrganizationMemberRole = "owner" | "maker" | "user";
 export type OrganizationInvitationStatus =
   | "pending"

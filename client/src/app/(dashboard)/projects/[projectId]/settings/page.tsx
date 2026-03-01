@@ -911,6 +911,7 @@ export default function ProjectSettingsPage() {
                   <option value="none">None</option>
                   <option value="cross_encoder">Cross-encoder</option>
                   <option value="inmemory">InMemory</option>
+                  <option value="mmr">MMR Diversity</option>
                 </select>
               </div>
               <div className="space-y-2">

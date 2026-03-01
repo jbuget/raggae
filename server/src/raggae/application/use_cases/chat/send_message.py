@@ -242,6 +242,8 @@ class SendMessage:
         prompt = build_rag_prompt(
             query=message,
             context_chunks=[chunk.content for chunk in relevant_chunks],
+            source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
+            relevance_scores=[chunk.score for chunk in relevant_chunks],
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
@@ -450,6 +452,8 @@ class SendMessage:
         prompt = build_rag_prompt(
             query=message,
             context_chunks=[chunk.content for chunk in relevant_chunks],
+            source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
+            relevance_scores=[chunk.score for chunk in relevant_chunks],
             project_system_prompt=project_system_prompt,
             conversation_history=conversation_history,
         )
