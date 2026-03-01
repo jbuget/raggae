@@ -15,7 +15,7 @@ from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.infrastructure.services.contextual_embedding_service import (
     ContextualEmbeddingService,
 )
-from raggae.infrastructure.services.enhanced_prompt_builder import (
+from raggae.infrastructure.services.prompt_builder import (
     build_rag_prompt,
 )
 from raggae.infrastructure.services.in_memory_embedding_service import InMemoryEmbeddingService

@@ -244,7 +244,7 @@ async def rerank(
 | Composant | Interface | Implémentations |
 |-----------|-----------|-----------------|
 | Re-ranking | `RerankerService` | `CrossEncoderRerankerService`, `InMemoryRerankerService`, `MmrDiversityRerankerService` |
-| Assemblage prompt | `build_rag_prompt()` | `infrastructure/services/enhanced_prompt_builder.py` |
+| Assemblage prompt | `build_rag_prompt()` | `infrastructure/services/prompt_builder.py` |
 
 ### Sécurité
 

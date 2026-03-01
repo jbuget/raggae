@@ -39,7 +39,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
-from raggae.infrastructure.services.enhanced_prompt_builder import build_rag_prompt
+from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
 
