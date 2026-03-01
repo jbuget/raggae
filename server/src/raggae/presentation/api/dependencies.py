@@ -723,6 +723,7 @@ def get_list_conversation_messages_use_case() -> ListConversationMessages:
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -738,6 +739,7 @@ def get_delete_conversation_use_case() -> DeleteConversation:
     return DeleteConversation(
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -746,6 +748,7 @@ def get_get_conversation_use_case() -> GetConversation:
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
         message_repository=_message_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -753,6 +756,7 @@ def get_update_conversation_use_case() -> UpdateConversation:
     return UpdateConversation(
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
