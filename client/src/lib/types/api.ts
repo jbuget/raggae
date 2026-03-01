@@ -345,6 +345,16 @@ export interface ModelCredentialResponse {
   updated_at: string;
 }
 
+export interface OrgModelCredentialResponse {
+  id: string;
+  organization_id: string;
+  provider: ModelProvider;
+  masked_key: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ModelEntry {
   id: string;
   label: string;

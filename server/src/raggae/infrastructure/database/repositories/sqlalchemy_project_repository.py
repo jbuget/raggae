@@ -48,6 +48,8 @@ class SQLAlchemyProjectRepository:
                     reranker_backend=project.reranker_backend,
                     reranker_model=project.reranker_model,
                     reranker_candidate_multiplier=project.reranker_candidate_multiplier,
+                    org_embedding_api_key_credential_id=project.org_embedding_api_key_credential_id,
+                    org_llm_api_key_credential_id=project.org_llm_api_key_credential_id,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -71,6 +73,10 @@ class SQLAlchemyProjectRepository:
                 model.llm_model = project.llm_model
                 model.llm_api_key_encrypted = project.llm_api_key_encrypted
                 model.llm_api_key_credential_id = project.llm_api_key_credential_id
+                model.org_embedding_api_key_credential_id = (
+                    project.org_embedding_api_key_credential_id
+                )
+                model.org_llm_api_key_credential_id = project.org_llm_api_key_credential_id
                 model.retrieval_strategy = project.retrieval_strategy
                 model.retrieval_top_k = project.retrieval_top_k
                 model.retrieval_min_score = project.retrieval_min_score
@@ -117,6 +123,8 @@ class SQLAlchemyProjectRepository:
                 reranker_backend=model.reranker_backend,
                 reranker_model=model.reranker_model,
                 reranker_candidate_multiplier=model.reranker_candidate_multiplier,
+                org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
+                org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
                 created_at=model.created_at,
             )
 
@@ -157,6 +165,8 @@ class SQLAlchemyProjectRepository:
                     reranker_backend=model.reranker_backend,
                     reranker_model=model.reranker_model,
                     reranker_candidate_multiplier=model.reranker_candidate_multiplier,
+                    org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
+                    org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
                     created_at=model.created_at,
                 )
                 for model in models
@@ -199,6 +209,8 @@ class SQLAlchemyProjectRepository:
                     reranker_backend=model.reranker_backend,
                     reranker_model=model.reranker_model,
                     reranker_candidate_multiplier=model.reranker_candidate_multiplier,
+                    org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
+                    org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
                     created_at=model.created_at,
                 )
                 for model in models

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { OrgCredentialsPanel } from "@/components/organizations/org-credentials-panel";
 import { OrganizationMembersPanel } from "@/components/organizations/organization-members-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,9 @@ import {
   useUpdateOrganization,
 } from "@/lib/hooks/use-organization";
 
+const ORG_SETTINGS_TABS = ["General", "Members", "API Keys"] as const;
+type OrgSettingsTab = (typeof ORG_SETTINGS_TABS)[number];
+
 type OrganizationSettingsProps = {
   organizationId: string;
 };
@@ -33,6 +37,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
   const { data, isLoading, error } = useOrganization(organizationId);
   const deleteOrganization = useDeleteOrganization(organizationId);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<OrgSettingsTab>("General");
 
   if (isLoading) {
     return (
@@ -54,59 +59,88 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
         <p className="text-sm text-muted-foreground">Manage organization profile and access.</p>
       </div>
 
-      <OrganizationProfileForm
-        key={`${data.id}-${data.updated_at}`}
-        organizationId={organizationId}
-        initialName={data.name}
-        initialSlug={data.slug}
-        initialDescription={data.description}
-        initialLogoUrl={data.logo_url}
-      />
-
-      <div className="rounded-lg border border-destructive/40 p-5 space-y-3">
-        <p className="text-sm font-medium text-destructive">Danger zone</p>
-        <p className="text-sm text-muted-foreground">
-          Delete this organization and all related data.
-        </p>
-        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive" disabled={deleteOrganization.isPending}>
-              Delete organization
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete organization</DialogTitle>
-              <DialogDescription>
-                This action is irreversible. All organization data will be permanently deleted.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() =>
-                  deleteOrganization.mutate(undefined, {
-                    onSuccess: () => {
-                      toast.success("Organization deleted");
-                      setDeleteOpen(false);
-                      router.push("/organizations");
-                    },
-                    onError: () => toast.error("Failed to delete organization"),
-                  })
-                }
-                disabled={deleteOrganization.isPending}
-              >
-                {deleteOrganization.isPending ? "Deleting..." : "Confirm delete"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      <div className="flex border-b">
+        {ORG_SETTINGS_TABS.map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={[
+                "cursor-pointer border-b-2 px-1 py-3 text-sm whitespace-nowrap transition-colors mr-4",
+                isActive
+                  ? "border-primary text-foreground font-medium"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
-      <OrganizationMembersPanel organizationId={organizationId} />
+      {activeTab === "General" && (
+        <div className="space-y-6">
+          <OrganizationProfileForm
+            key={`${data.id}-${data.updated_at}`}
+            organizationId={organizationId}
+            initialName={data.name}
+            initialSlug={data.slug}
+            initialDescription={data.description}
+            initialLogoUrl={data.logo_url}
+          />
+
+          <div className="rounded-lg border border-destructive/40 p-5 space-y-3">
+            <p className="text-sm font-medium text-destructive">Danger zone</p>
+            <p className="text-sm text-muted-foreground">
+              Delete this organization and all related data.
+            </p>
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" disabled={deleteOrganization.isPending}>
+                  Delete organization
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete organization</DialogTitle>
+                  <DialogDescription>
+                    This action is irreversible. All organization data will be permanently deleted.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() =>
+                      deleteOrganization.mutate(undefined, {
+                        onSuccess: () => {
+                          toast.success("Organization deleted");
+                          setDeleteOpen(false);
+                          router.push("/organizations");
+                        },
+                        onError: () => toast.error("Failed to delete organization"),
+                      })
+                    }
+                    disabled={deleteOrganization.isPending}
+                  >
+                    {deleteOrganization.isPending ? "Deleting..." : "Confirm delete"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "API Keys" && <OrgCredentialsPanel organizationId={organizationId} />}
+
+      {activeTab === "Members" && <OrganizationMembersPanel organizationId={organizationId} />}
     </div>
   );
 }

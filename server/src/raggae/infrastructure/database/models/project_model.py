@@ -78,4 +78,14 @@ class ProjectModel(Base):
     reranker_candidate_multiplier: Mapped[int] = mapped_column(
         Integer(), nullable=False, default=3, server_default="3"
     )
+    org_embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("org_model_provider_credentials.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    org_llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("org_model_provider_credentials.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

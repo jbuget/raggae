@@ -60,7 +60,9 @@ class TestUpdateConversationOrgAccess:
         use_case = UpdateConversation(
             project_repository=project_repo,
             conversation_repository=conversation_repo,
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.OWNER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.OWNER
+            ),
         )
 
         # When
@@ -85,7 +87,9 @@ class TestUpdateConversationOrgAccess:
         use_case = UpdateConversation(
             project_repository=project_repo,
             conversation_repository=conversation_repo,
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.MAKER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.MAKER
+            ),
         )
 
         # When
@@ -110,7 +114,9 @@ class TestUpdateConversationOrgAccess:
         use_case = UpdateConversation(
             project_repository=project_repo,
             conversation_repository=conversation_repo,
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.USER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.USER
+            ),
         )
 
         # When
@@ -133,7 +139,9 @@ class TestUpdateConversationOrgAccess:
         use_case = UpdateConversation(
             project_repository=project_repo,
             conversation_repository=AsyncMock(),
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.USER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.USER
+            ),
         )
 
         # When / Then

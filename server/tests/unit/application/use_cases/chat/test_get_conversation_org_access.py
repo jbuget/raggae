@@ -64,7 +64,9 @@ class TestGetConversationOrgAccess:
             project_repository=project_repo,
             conversation_repository=conversation_repo,
             message_repository=message_repo,
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.OWNER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.OWNER
+            ),
         )
 
         # When
@@ -93,7 +95,9 @@ class TestGetConversationOrgAccess:
             project_repository=project_repo,
             conversation_repository=conversation_repo,
             message_repository=message_repo,
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.MAKER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.MAKER
+            ),
         )
 
         # When
@@ -131,7 +135,9 @@ class TestGetConversationOrgAccess:
             project_repository=project_repo,
             conversation_repository=conversation_repo,
             message_repository=message_repo,
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.USER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.USER
+            ),
         )
 
         # When
@@ -154,7 +160,9 @@ class TestGetConversationOrgAccess:
             project_repository=project_repo,
             conversation_repository=AsyncMock(),
             message_repository=AsyncMock(),
-            organization_member_repository=_make_org_member_repo(org_id, user_id, OrganizationMemberRole.USER),
+            organization_member_repository=_make_org_member_repo(
+                org_id, user_id, OrganizationMemberRole.USER
+            ),
         )
 
         # When / Then

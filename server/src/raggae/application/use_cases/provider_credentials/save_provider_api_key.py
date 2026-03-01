@@ -40,10 +40,6 @@ class SaveProviderApiKey:
         )
         if any(c.key_fingerprint == fingerprint for c in existing):
             raise DuplicateProviderCredentialError()
-        for credential in existing:
-            await self._provider_credential_repository.set_inactive(
-                credential_id=credential.id, user_id=user_id
-            )
         now = datetime.now(UTC)
         credential = UserModelProviderCredential(
             id=uuid4(),
