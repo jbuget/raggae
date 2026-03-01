@@ -4,6 +4,9 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
 )
 from raggae.domain.entities.project import Project
 from raggae.infrastructure.config.settings import Settings
+from raggae.infrastructure.services.contextual_embedding_service import (
+    ContextualEmbeddingService,
+)
 from raggae.infrastructure.services.gemini_embedding_service import GeminiEmbeddingService
 from raggae.infrastructure.services.in_memory_embedding_service import InMemoryEmbeddingService
 from raggae.infrastructure.services.ollama_embedding_service import OllamaEmbeddingService
@@ -52,11 +55,12 @@ class ProjectEmbeddingServiceResolver:
 
         if backend == "ollama":
             model = project.embedding_model or self._resolve_default_model(backend)
-            return OllamaEmbeddingService(
+            ollama_service = OllamaEmbeddingService(
                 base_url=self._settings.ollama_base_url,
                 model=model,
                 expected_dimension=self._settings.embedding_dimension,
             )
+            return ContextualEmbeddingService(delegate=ollama_service)
 
         return (
             self._default_embedding_service

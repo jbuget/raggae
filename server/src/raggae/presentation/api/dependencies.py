@@ -318,12 +318,16 @@ def _build_embedding_service() -> EmbeddingService:
         from raggae.infrastructure.services.ollama_embedding_service import (
             OllamaEmbeddingService,
         )
+        from raggae.infrastructure.services.contextual_embedding_service import (
+            ContextualEmbeddingService,
+        )
 
-        return OllamaEmbeddingService(
+        ollama_service = OllamaEmbeddingService(
             base_url=settings.ollama_base_url,
             model=settings.ollama_embedding_model,
             expected_dimension=settings.embedding_dimension,
         )
+        return ContextualEmbeddingService(delegate=ollama_service)
     if settings.default_embedding_provider == "gemini":
         return GeminiEmbeddingService(
             api_key=settings.default_embedding_api_key,
