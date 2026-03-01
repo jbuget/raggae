@@ -1,16 +1,13 @@
 """Enhanced RAG prompt builder with source attribution and structured context.
 
-Improves over the basic prompt_builder by:
-- Adding source file attribution to each context excerpt
-- Numbering excerpts with metadata
-- Structuring the prompt with clear sections
-- Including relevance scores when available
+Provides source file attribution, numbered excerpts with metadata,
+structured sections, and relevance scores.
 """
 
 from __future__ import annotations
 
 
-def build_enhanced_rag_prompt(
+def build_rag_prompt(
     query: str,
     context_chunks: list[str],
     source_filenames: list[str] | None = None,
