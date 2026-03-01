@@ -90,12 +90,6 @@ from raggae.application.use_cases.document.list_document_chunks import ListDocum
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.reindex_document import ReindexDocument
 from raggae.application.use_cases.document.upload_document import UploadDocument
-from raggae.application.use_cases.project.create_project import CreateProject
-from raggae.application.use_cases.project.delete_project import DeleteProject
-from raggae.application.use_cases.project.get_project import GetProject
-from raggae.application.use_cases.project.list_projects import ListProjects
-from raggae.application.use_cases.project.reindex_project import ReindexProject
-from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.organization.accept_organization_invitation import (
     AcceptOrganizationInvitation,
 )
@@ -112,9 +106,6 @@ from raggae.application.use_cases.organization.leave_organization import LeaveOr
 from raggae.application.use_cases.organization.list_organization_invitations import (
     ListOrganizationInvitations,
 )
-from raggae.application.use_cases.organization.list_user_pending_organization_invitations import (
-    ListUserPendingOrganizationInvitations,
-)
 from raggae.application.use_cases.organization.list_organization_members import (
     ListOrganizationMembers,
 )
@@ -122,6 +113,9 @@ from raggae.application.use_cases.organization.list_organization_projects import
     ListOrganizationProjects,
 )
 from raggae.application.use_cases.organization.list_organizations import ListOrganizations
+from raggae.application.use_cases.organization.list_user_pending_organization_invitations import (
+    ListUserPendingOrganizationInvitations,
+)
 from raggae.application.use_cases.organization.remove_organization_member import (
     RemoveOrganizationMember,
 )
@@ -135,6 +129,14 @@ from raggae.application.use_cases.organization.update_organization import Update
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
 )
+from raggae.application.use_cases.project.create_project import CreateProject
+from raggae.application.use_cases.project.delete_project import DeleteProject
+from raggae.application.use_cases.project.get_project import GetProject
+from raggae.application.use_cases.project.list_projects import ListProjects
+from raggae.application.use_cases.project.publish_project import PublishProject
+from raggae.application.use_cases.project.reindex_project import ReindexProject
+from raggae.application.use_cases.project.unpublish_project import UnpublishProject
+from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.provider_credentials.activate_provider_api_key import (
     ActivateProviderApiKey,
 )
@@ -153,9 +155,9 @@ from raggae.application.use_cases.provider_credentials.list_provider_api_keys im
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
+from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
-from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.infrastructure.config.settings import settings
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
@@ -576,6 +578,20 @@ def get_update_project_use_case() -> UpdateProject:
     ).with_crypto_service(_provider_api_key_crypto_service)
 
 
+def get_publish_project_use_case() -> PublishProject:
+    return PublishProject(
+        project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_unpublish_project_use_case() -> UnpublishProject:
+    return UnpublishProject(
+        project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
 def get_reindex_project_use_case() -> ReindexProject:
     return ReindexProject(
         project_repository=_project_repository,
@@ -667,6 +683,7 @@ def get_send_message_use_case() -> SendMessage:
         provider_api_key_resolver=_provider_api_key_resolver,
         project_llm_service_resolver=_project_llm_service_resolver,
         project_reranker_service_resolver=_project_reranker_service_resolver,
+        organization_member_repository=_organization_member_repository,
         llm_provider=settings.default_llm_provider,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,
@@ -713,6 +730,7 @@ def get_list_conversations_use_case() -> ListConversations:
     return ListConversations(
         project_repository=_project_repository,
         conversation_repository=_conversation_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
