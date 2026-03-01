@@ -142,9 +142,7 @@ class SendMessage:
             ):
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
         if conversation is None:
-            raise ConversationNotFoundError(
-                f"Conversation {conversation_id} not found"
-            )
+            raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
         if not skip_user_message_save:
             current_user_message_id = uuid4()
             await self._message_repository.save(
@@ -352,9 +350,7 @@ class SendMessage:
             ):
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
         if conversation is None:
-            raise ConversationNotFoundError(
-                f"Conversation {conversation_id} not found"
-            )
+            raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
         if not skip_user_message_save:
             current_user_message_id = uuid4()
             await self._message_repository.save(
@@ -485,10 +481,10 @@ class SendMessage:
             else:
                 source_documents = self._extract_source_documents(relevant_chunks)
                 reliability_percent = self._compute_reliability_percent(relevant_chunks)
-        except LLMGenerationError:
+        except LLMGenerationError as exc:
             accumulated_answer = (
                 "I found relevant context but could not generate an answer right now. "
-                "Please try again in a few seconds."
+                f"Provider error: {exc}"
             )
             source_documents = []
             reliability_percent = 0
@@ -662,9 +658,7 @@ class SendMessage:
                 continue
             label = "User" if message.role == "user" else "Assistant"
             history.append(f"{label}: {message.content}")
-        return self._truncate_history_by_chars(
-            history[-history_window_size :], history_max_chars
-        )
+        return self._truncate_history_by_chars(history[-history_window_size:], history_max_chars)
 
     def _truncate_history_by_chars(self, history: list[str], history_max_chars: int) -> list[str]:
         total_chars = sum(len(item) for item in history)
