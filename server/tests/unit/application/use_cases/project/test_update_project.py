@@ -11,7 +11,9 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
     InvalidProjectEmbeddingBackendError,
+    InvalidProjectEmbeddingModelError,
     InvalidProjectLLMBackendError,
+    InvalidProjectLLMModelError,
     InvalidProjectRerankerBackendError,
     InvalidProjectRerankerCandidateMultiplierError,
     InvalidProjectRetrievalMinScoreError,
@@ -745,3 +747,154 @@ class TestUpdateProject:
 
         assert result.llm_backend == "openai"
         assert result.llm_api_key_credential_id == credential_id
+
+    async def test_update_project_with_invalid_llm_model_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When / Then
+        with pytest.raises(InvalidProjectLLMModelError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="My project",
+                description="",
+                system_prompt="",
+                llm_backend="gemini",
+                llm_model="gemini-3-pro",
+            )
+
+    async def test_update_project_with_valid_llm_model_succeeds(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=project.user_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            llm_backend="gemini",
+            llm_model="gemini-3-flash-preview",
+        )
+
+        # Then
+        assert result.llm_model == "gemini-3-flash-preview"
+
+    async def test_update_project_with_empty_llm_model_skips_validation(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When — empty model means "use default", no validation
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=project.user_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            llm_backend="gemini",
+            llm_model="",
+        )
+
+        # Then
+        assert result.llm_model == ""
+
+    async def test_update_project_ollama_llm_model_skips_validation(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given — Ollama allows arbitrary model names (user-installed)
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=project.user_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            llm_backend="ollama",
+            llm_model="any-custom-model:latest",
+        )
+
+        # Then
+        assert result.llm_model == "any-custom-model:latest"
+
+    async def test_update_project_with_invalid_embedding_model_raises_error(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When / Then
+        with pytest.raises(InvalidProjectEmbeddingModelError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=project.user_id,
+                name="My project",
+                description="",
+                system_prompt="",
+                embedding_backend="openai",
+                embedding_model="text-embedding-99-ultra",
+            )

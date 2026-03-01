@@ -26,6 +26,14 @@ class InvalidProjectLLMBackendError(ValueError):
     """Raised when project LLM backend is unsupported."""
 
 
+class InvalidProjectLLMModelError(ValueError):
+    """Raised when project LLM model is not in the allowed list for its backend."""
+
+
+class InvalidProjectEmbeddingModelError(ValueError):
+    """Raised when project embedding model is not in the allowed list for its backend."""
+
+
 class InvalidProjectRetrievalStrategyError(ValueError):
     """Raised when project retrieval strategy is unsupported."""
 

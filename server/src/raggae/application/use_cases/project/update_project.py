@@ -2,6 +2,8 @@ from dataclasses import replace
 from uuid import UUID
 
 from raggae.application.constants import (
+    ALLOWED_EMBEDDING_MODELS,
+    ALLOWED_LLM_MODELS,
     MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
     MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
@@ -30,10 +32,12 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
+    InvalidProjectEmbeddingBackendError,
+    InvalidProjectEmbeddingModelError,
+    InvalidProjectLLMBackendError,
+    InvalidProjectLLMModelError,
     InvalidProjectRerankerBackendError,
     InvalidProjectRerankerCandidateMultiplierError,
-    InvalidProjectEmbeddingBackendError,
-    InvalidProjectLLMBackendError,
     InvalidProjectRetrievalMinScoreError,
     InvalidProjectRetrievalStrategyError,
     InvalidProjectRetrievalTopKError,
@@ -124,6 +128,25 @@ class UpdateProject:
             )
         if llm_backend is not None and llm_backend not in _SUPPORTED_LLM_BACKENDS:
             raise InvalidProjectLLMBackendError(f"Unsupported llm backend: {llm_backend}")
+        if llm_model is not None and llm_model.strip() != "":
+            effective_llm_backend = llm_backend if llm_backend is not None else project.llm_backend
+            allowed_llm_models = ALLOWED_LLM_MODELS.get(effective_llm_backend or "")
+            if allowed_llm_models is not None and llm_model.strip() not in allowed_llm_models:
+                raise InvalidProjectLLMModelError(f"Unsupported llm model: {llm_model}")
+        if embedding_model is not None and embedding_model.strip() != "":
+            effective_embedding_backend = (
+                embedding_backend if embedding_backend is not None else project.embedding_backend
+            )
+            allowed_embedding_models = ALLOWED_EMBEDDING_MODELS.get(
+                effective_embedding_backend or ""
+            )
+            if (
+                allowed_embedding_models is not None
+                and embedding_model.strip() not in allowed_embedding_models
+            ):
+                raise InvalidProjectEmbeddingModelError(
+                    f"Unsupported embedding model: {embedding_model}"
+                )
         if (
             retrieval_strategy is not None
             and retrieval_strategy not in _SUPPORTED_RETRIEVAL_STRATEGIES
@@ -263,9 +286,7 @@ class UpdateProject:
             ),
             retrieval_top_k=project.retrieval_top_k if retrieval_top_k is None else retrieval_top_k,
             retrieval_min_score=(
-                project.retrieval_min_score
-                if retrieval_min_score is None
-                else retrieval_min_score
+                project.retrieval_min_score if retrieval_min_score is None else retrieval_min_score
             ),
             chat_history_window_size=(
                 project.chat_history_window_size
@@ -350,8 +371,7 @@ class UpdateProject:
             return api_key
         if api_key is not None and api_key.strip() != "":
             raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key and "
-                f"{config_type}_api_key_credential_id cannot both be set"
+                f"{config_type}_api_key and {config_type}_api_key_credential_id cannot both be set"
             )
         if backend is None:
             raise ProjectAPIKeyNotOwnedError(
