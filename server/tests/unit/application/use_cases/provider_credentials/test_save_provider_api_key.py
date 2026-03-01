@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
@@ -101,6 +102,45 @@ class TestSaveProviderApiKey:
         # When / Then
         with pytest.raises(DuplicateProviderCredentialError):
             await use_case.execute(user_id=user_id, provider="gemini", api_key="AIzatest1234")
+
+    async def test_save_provider_api_key_does_not_deactivate_existing_credentials(self) -> None:
+        # Given — une credential active existante pour le même provider
+        from datetime import UTC, datetime
+
+        from raggae.domain.entities.user_model_provider_credential import (
+            UserModelProviderCredential,
+        )
+        from raggae.domain.value_objects.model_provider import ModelProvider
+
+        user_id = uuid4()
+        existing = UserModelProviderCredential(
+            id=uuid4(),
+            user_id=user_id,
+            provider=ModelProvider("openai"),
+            encrypted_api_key="enc",
+            key_fingerprint="other-fingerprint",
+            key_suffix="1111",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        repository = AsyncMock()
+        repository.list_by_user_id_and_provider = AsyncMock(return_value=[existing])
+        crypto_service = Mock()
+        crypto_service.fingerprint.return_value = "new-fingerprint"
+        crypto_service.encrypt.return_value = "encrypted"
+        use_case = SaveProviderApiKey(
+            provider_credential_repository=repository,
+            provider_api_key_validator=Mock(),
+            provider_api_key_crypto_service=crypto_service,
+        )
+
+        # When
+        await use_case.execute(user_id=user_id, provider="openai", api_key="sk-test-xxxx")
+
+        # Then — les credentials existantes ne sont PAS désactivées
+        repository.set_inactive.assert_not_awaited()
+        repository.save.assert_awaited_once()
 
     async def test_save_provider_api_key_invalid_provider_raises_error(self) -> None:
         # Given
