@@ -13,6 +13,9 @@ from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
+)
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.chat_security_policy import ChatSecurityPolicy
 from raggae.application.interfaces.services.conversation_title_generator import (
@@ -39,6 +42,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
@@ -58,6 +62,7 @@ class SendMessage:
         provider_api_key_resolver: ProviderApiKeyResolver | None = None,
         project_llm_service_resolver: ProjectLLMServiceResolver | None = None,
         project_reranker_service_resolver: ProjectRerankerServiceResolver | None = None,
+        organization_member_repository: OrganizationMemberRepository | None = None,
         llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
@@ -74,6 +79,7 @@ class SendMessage:
         self._provider_api_key_resolver = provider_api_key_resolver
         self._project_llm_service_resolver = project_llm_service_resolver
         self._project_reranker_service_resolver = project_reranker_service_resolver
+        self._organization_member_repository = organization_member_repository
         self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
@@ -98,6 +104,7 @@ class SendMessage:
         project = await self._project_repository.find_by_id(project_id)
         if project is None:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        await self._check_project_access(project, user_id)
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
@@ -307,6 +314,7 @@ class SendMessage:
         project = await self._project_repository.find_by_id(project_id)
         if project is None:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        await self._check_project_access(project, user_id)
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         effective_retrieval_strategy = project.retrieval_strategy
@@ -667,5 +675,21 @@ class SendMessage:
             removed = trimmed.pop(0)
             total_chars -= len(removed)
         return trimmed
+
+    async def _check_project_access(self, project: Project, user_id: UUID) -> None:
+        if project.user_id == user_id:
+            return
+        if project.organization_id is None or self._organization_member_repository is None:
+            raise ProjectNotFoundError(f"Project {project.id} not found")
+        member = await self._organization_member_repository.find_by_organization_and_user(
+            organization_id=project.organization_id,
+            user_id=user_id,
+        )
+        if member is None:
+            raise ProjectNotFoundError(f"Project {project.id} not found")
+        if member.role in {OrganizationMemberRole.OWNER, OrganizationMemberRole.MAKER}:
+            return
+        if not project.is_published:
+            raise ProjectNotFoundError(f"Project {project.id} not found")
 
     _MAX_CONVERSATION_TITLE_LENGTH = 80
