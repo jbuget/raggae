@@ -139,7 +139,9 @@ class TestDocumentIndexingService:
         )
         mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
         mock_document_chunk_repository.replace_document_chunks.assert_called_once()
-        assert mock_document_chunk_repository.replace_document_chunks.call_args.args[0] == document.id
+        assert (
+            mock_document_chunk_repository.replace_document_chunks.call_args.args[0] == document.id
+        )
         saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert len(saved_chunks) == 2
         assert saved_chunks[0].content == "hello world"

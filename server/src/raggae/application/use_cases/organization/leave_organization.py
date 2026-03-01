@@ -36,6 +36,8 @@ class LeaveOrganization:
             raise OrganizationAccessDeniedError(
                 f"User {user_id} is not a member of organization {organization_id}"
             )
-        members = await self._organization_member_repository.find_by_organization_id(organization_id)
+        members = await self._organization_member_repository.find_by_organization_id(
+            organization_id
+        )
         Organization.ensure_can_leave(leaving_member=member, members=members)
         await self._organization_member_repository.delete(member.id)

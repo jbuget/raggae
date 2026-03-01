@@ -16,9 +16,7 @@ class InMemoryOrganizationRepository:
         return self._organizations.get(organization_id)
 
     async def find_by_user_id(self, user_id: UUID) -> list[Organization]:
-        return [
-            org for org in self._organizations.values() if org.created_by_user_id == user_id
-        ]
+        return [org for org in self._organizations.values() if org.created_by_user_id == user_id]
 
     async def find_by_slug(self, slug: str) -> Organization | None:
         for organization in self._organizations.values():

@@ -94,7 +94,9 @@ class TestSQLAlchemyOrganizationRepositories:
         invited_user_id = await self._create_user(session_factory, "member@example.com")
         org_repo = SQLAlchemyOrganizationRepository(session_factory=session_factory)
         member_repo = SQLAlchemyOrganizationMemberRepository(session_factory=session_factory)
-        invitation_repo = SQLAlchemyOrganizationInvitationRepository(session_factory=session_factory)
+        invitation_repo = SQLAlchemyOrganizationInvitationRepository(
+            session_factory=session_factory
+        )
         now = datetime.now(UTC)
 
         organization = Organization(

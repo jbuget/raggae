@@ -41,9 +41,7 @@ class AcceptOrganizationInvitation:
 
         organization = await self._organization_repository.find_by_id(invitation.organization_id)
         if organization is None:
-            raise OrganizationNotFoundError(
-                f"Organization {invitation.organization_id} not found"
-            )
+            raise OrganizationNotFoundError(f"Organization {invitation.organization_id} not found")
 
         now = datetime.now(UTC)
         if invitation.status != OrganizationInvitationStatus.PENDING:

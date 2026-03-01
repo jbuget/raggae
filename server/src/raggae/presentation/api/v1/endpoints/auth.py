@@ -101,9 +101,7 @@ async def get_current_user(
 async def update_user_full_name(
     data: UpdateUserFullNameRequest,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        UpdateUserFullName, Depends(get_update_user_full_name_use_case)
-    ],
+    use_case: Annotated[UpdateUserFullName, Depends(get_update_user_full_name_use_case)],
 ) -> UserResponse:
     try:
         user_dto = await use_case.execute(user_id=user_id, full_name=data.full_name)

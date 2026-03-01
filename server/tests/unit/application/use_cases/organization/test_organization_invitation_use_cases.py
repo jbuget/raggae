@@ -109,7 +109,9 @@ class TestOrganizationInvitationUseCases:
             email="user@example.com",
             role=OrganizationMemberRole.MAKER,
         )
-        listed = await list_use_case.execute(organization_id=org.id, requester_user_id=owner.user_id)
+        listed = await list_use_case.execute(
+            organization_id=org.id, requester_user_id=owner.user_id
+        )
         renewed = await resend.execute(
             organization_id=org.id,
             requester_user_id=owner.user_id,
@@ -277,9 +279,7 @@ class TestOrganizationInvitationUseCases:
         assert saved_invitation is not None
         assert saved_invitation.status == OrganizationInvitationStatus.ACCEPTED
 
-    async def test_list_organization_invitations_returns_only_pending(
-        self, setup_data
-    ) -> None:
+    async def test_list_organization_invitations_returns_only_pending(self, setup_data) -> None:
         org_repo, member_repo, invitation_repo, org, owner = setup_data
         now = datetime.now(UTC)
         await invitation_repo.save(

@@ -116,9 +116,7 @@ class SQLAlchemyDocumentChunkRepository:
             )
             await session.commit()
 
-    async def replace_document_chunks(
-        self, document_id: UUID, chunks: list[DocumentChunk]
-    ) -> None:
+    async def replace_document_chunks(self, document_id: UUID, chunks: list[DocumentChunk]) -> None:
         async with self._session_factory() as session:
             await session.execute(
                 delete(DocumentChunkModel).where(DocumentChunkModel.document_id == document_id)

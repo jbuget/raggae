@@ -16,9 +16,7 @@ class Settings(BaseSettings):
     default_llm_provider: str = Field(default="inmemory", alias="DEFAULT_LLM_PROVIDER")
     default_llm_api_key: str = Field(default="", alias="DEFAULT_LLM_API_KEY")
     default_llm_model: str = Field(default="", alias="DEFAULT_LLM_MODEL")
-    default_embedding_provider: str = Field(
-        default="inmemory", alias="DEFAULT_EMBEDDING_PROVIDER"
-    )
+    default_embedding_provider: str = Field(default="inmemory", alias="DEFAULT_EMBEDDING_PROVIDER")
     default_embedding_api_key: str = Field(default="", alias="DEFAULT_EMBEDDING_API_KEY")
     default_embedding_model: str = Field(default="", alias="DEFAULT_EMBEDDING_MODEL")
     credentials_encryption_key: str = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
