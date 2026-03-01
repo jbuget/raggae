@@ -86,7 +86,7 @@ router = APIRouter(prefix="/organizations", tags=["organizations"])
 logger = logging.getLogger(__name__)
 
 ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
-ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory"]
+ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory", "mmr"]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_user_id)])

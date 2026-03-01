@@ -513,6 +513,12 @@ if settings.reranker_backend == "cross_encoder":
     _reranker_service: RerankerService | None = CrossEncoderRerankerService(
         model_name=settings.reranker_model
     )
+elif settings.reranker_backend == "mmr":
+    from raggae.infrastructure.services.mmr_diversity_reranker_service import (
+        MmrDiversityRerankerService,
+    )
+
+    _reranker_service = MmrDiversityRerankerService(lambda_param=0.85)
 else:
     _reranker_service = None
 _project_reranker_service_resolver: ProjectRerankerServiceResolver = (

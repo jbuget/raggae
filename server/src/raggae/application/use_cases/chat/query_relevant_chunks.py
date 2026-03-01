@@ -99,7 +99,9 @@ class QueryRelevantChunks:
         )
 
         if effective_reranker_service is not None:
-            chunks = await effective_reranker_service.rerank(query, chunks, top_k=limit)
+            chunks = await effective_reranker_service.rerank(
+                query, chunks, top_k=limit, query_embedding=query_embedding,
+            )
         else:
             chunks = [chunk for chunk in chunks if chunk.score >= effective_min_score]
 

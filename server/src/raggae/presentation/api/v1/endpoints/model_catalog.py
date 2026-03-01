@@ -106,5 +106,8 @@ async def get_model_catalog(
                 ModelEntry(id="inmemory-reranker-balanced", label="InMemory Balanced"),
                 ModelEntry(id="inmemory-reranker-fast", label="InMemory Fast"),
             ],
+            "mmr": [
+                ModelEntry(id="mmr-diversity-default", label="MMR Diversity (λ=0.85)"),
+            ],
         },
     )
