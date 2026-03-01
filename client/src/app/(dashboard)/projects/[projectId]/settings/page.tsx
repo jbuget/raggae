@@ -36,6 +36,7 @@ import {
 } from "@/lib/hooks/use-projects";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
+import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
 import type {
   ChunkingStrategy,
   ModelProvider,
@@ -66,7 +67,9 @@ export default function ProjectSettingsPage() {
   const { data: documents, isLoading: isDocumentsLoading } = useDocuments(params.projectId);
   const { data: modelCatalog } = useModelCatalog();
   const updateProject = useUpdateProject(params.projectId);
-  const { data: credentials } = useModelCredentials();
+  const { data: userCredentials } = useModelCredentials();
+  const { data: orgCredentials } = useOrgModelCredentials(project?.organization_id);
+  const credentials = project?.organization_id ? orgCredentials : userCredentials;
   const reindexProject = useReindexProject(params.projectId);
   const publishProject = usePublishProject(params.projectId);
   const unpublishProject = useUnpublishProject(params.projectId);

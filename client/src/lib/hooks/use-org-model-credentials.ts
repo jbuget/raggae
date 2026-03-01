@@ -11,13 +11,13 @@ import {
 import type { SaveModelCredentialRequest } from "@/lib/types/api";
 import { useAuth } from "./use-auth";
 
-export function useOrgModelCredentials(organizationId: string) {
+export function useOrgModelCredentials(organizationId: string | null | undefined) {
   const { token } = useAuth();
 
   return useQuery({
     queryKey: ["org-model-credentials", organizationId],
-    queryFn: () => listOrgModelCredentials(token!, organizationId),
-    enabled: !!token,
+    queryFn: () => listOrgModelCredentials(token!, organizationId!),
+    enabled: !!token && !!organizationId,
   });
 }
 
