@@ -209,9 +209,22 @@ def context_redundancy(embeddings: list[list[float]]) -> float:
 # Fixtures
 # ---------------------------------------------------------------------------
 
+_has_test_pdfs = DOCS_DIR.is_dir() and bool(list(DOCS_DIR.glob("*.pdf")))
+
+
 @pytest.fixture(scope="session")
 def pdf_texts() -> dict[str, str]:
-    """Extract text from all test PDFs (session-scoped for performance)."""
+    """Extract text from all test PDFs (session-scoped for performance).
+
+    Skips the entire benchmark session when ``tests/docs/`` is missing or
+    contains no PDF files.
+    """
+    if not _has_test_pdfs:
+        pytest.skip(
+            f"Benchmark test PDFs not found in {DOCS_DIR}. "
+            "Place PDF files in server/tests/docs/ to enable benchmarks."
+        )
+
     from raggae.infrastructure.services.multiformat_document_text_extractor import (
         MultiFormatDocumentTextExtractor,
     )
