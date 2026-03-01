@@ -18,11 +18,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.drop_index(
-        "uq_user_provider_active_credential",
-        table_name="user_model_provider_credentials",
-        postgresql_where=sa.text("is_active = true"),
-    )
+    # Index already dropped in migration 20260224_24 — no-op
+    pass
 
 
 def downgrade() -> None:
