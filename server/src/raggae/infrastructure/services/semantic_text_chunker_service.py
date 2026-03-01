@@ -73,29 +73,23 @@ class SemanticTextChunkerService:
         return self._merge_small_chunks(filtered)
 
     def _merge_small_chunks(self, chunks: list[str]) -> list[str]:
-        """Merge chunks smaller than min_chunk_size into neighbours without exceeding chunk_size."""
+        """Merge chunks smaller than min_chunk_size into the previous chunk.
+
+        Uses a single forward pass: each chunk is either appended to the
+        previous one (when either side is too small and the result fits) or
+        starts a new entry.
+        """
         if self._min_chunk_size <= 0 or len(chunks) <= 1:
             return chunks
 
         merged: list[str] = []
         for chunk in chunks:
-            if merged and len(chunk) < self._min_chunk_size:
+            if merged and (len(chunk) < self._min_chunk_size or len(merged[-1]) < self._min_chunk_size):
                 candidate = f"{merged[-1]} {chunk}"
                 if len(candidate) <= self._chunk_size:
                     merged[-1] = candidate
-                else:
-                    merged.append(chunk)
-            elif not merged and len(chunk) < self._min_chunk_size:
-                merged.append(chunk)
-            else:
-                if merged and len(merged[-1]) < self._min_chunk_size:
-                    candidate = f"{merged[-1]} {chunk}"
-                    if len(candidate) <= self._chunk_size:
-                        merged[-1] = candidate
-                    else:
-                        merged.append(chunk)
-                else:
-                    merged.append(chunk)
+                    continue
+            merged.append(chunk)
         return [c for c in merged if c.strip()]
 
     def _split_large_chunk(self, chunk: str) -> list[str]:
@@ -118,12 +112,3 @@ class SemanticTextChunkerService:
         return parts
 
 
-def _cosine_similarity(left: list[float], right: list[float]) -> float:
-    if not left or not right or len(left) != len(right):
-        return 0.0
-    dot = sum(a * b for a, b in zip(left, right, strict=False))
-    left_norm = sqrt(sum(value * value for value in left))
-    right_norm = sqrt(sum(value * value for value in right))
-    if left_norm == 0.0 or right_norm == 0.0:
-        return 0.0
-    return dot / (left_norm * right_norm)
