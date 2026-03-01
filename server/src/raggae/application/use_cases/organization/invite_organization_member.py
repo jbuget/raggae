@@ -45,11 +45,15 @@ class InviteOrganizationMember:
         email: str,
         role: OrganizationMemberRole,
     ) -> OrganizationInvitationDTO:
-        await self._assert_owner(organization_id=organization_id, requester_user_id=requester_user_id)
+        await self._assert_owner(
+            organization_id=organization_id, requester_user_id=requester_user_id
+        )
         normalized_email = email.strip().lower()
-        pending = await self._organization_invitation_repository.find_pending_by_organization_and_email(
-            organization_id=organization_id,
-            email=normalized_email,
+        pending = (
+            await self._organization_invitation_repository.find_pending_by_organization_and_email(
+                organization_id=organization_id,
+                email=normalized_email,
+            )
         )
         if pending is not None:
             raise OrganizationInvitationInvalidError(

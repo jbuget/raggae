@@ -320,8 +320,7 @@ class CreateProject:
             return api_key
         if api_key is not None and api_key.strip() != "":
             raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key and "
-                f"{config_type}_api_key_credential_id cannot both be set"
+                f"{config_type}_api_key and {config_type}_api_key_credential_id cannot both be set"
             )
         if backend is None:
             raise ProjectAPIKeyNotOwnedError(

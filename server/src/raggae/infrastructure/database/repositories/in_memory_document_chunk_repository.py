@@ -35,8 +35,6 @@ class InMemoryDocumentChunkRepository:
         for chunk_id in chunk_ids:
             self._chunks.pop(chunk_id, None)
 
-    async def replace_document_chunks(
-        self, document_id: UUID, chunks: list[DocumentChunk]
-    ) -> None:
+    async def replace_document_chunks(self, document_id: UUID, chunks: list[DocumentChunk]) -> None:
         await self.delete_by_document_id(document_id)
         await self.save_many(chunks)

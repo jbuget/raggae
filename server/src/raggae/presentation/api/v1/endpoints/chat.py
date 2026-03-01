@@ -115,9 +115,7 @@ async def send_message(
         conversation_id=response.conversation_id,
         message=response.message,
         answer=response.answer,
-        retrieval_strategy_used=cast(
-            RetrievalStrategyUsed, response.retrieval_strategy_used
-        ),
+        retrieval_strategy_used=cast(RetrievalStrategyUsed, response.retrieval_strategy_used),
         retrieval_execution_time_ms=response.retrieval_execution_time_ms,
         history_messages_used=response.history_messages_used,
         chunks_used=response.chunks_used,

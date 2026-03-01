@@ -39,7 +39,9 @@ class ListOrganizationMembers:
             raise OrganizationAccessDeniedError(
                 f"User {user_id} cannot access organization members for {organization_id}"
             )
-        members = await self._organization_member_repository.find_by_organization_id(organization_id)
+        members = await self._organization_member_repository.find_by_organization_id(
+            organization_id
+        )
         results: list[OrganizationMemberDTO] = []
         for member in members:
             dto = OrganizationMemberDTO.from_entity(member)

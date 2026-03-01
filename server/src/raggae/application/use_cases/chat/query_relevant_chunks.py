@@ -82,9 +82,7 @@ class QueryRelevantChunks:
         )
 
         fetch_limit = (
-            limit * effective_reranker_candidate_multiplier
-            if effective_reranker_service
-            else limit
+            limit * effective_reranker_candidate_multiplier if effective_reranker_service else limit
         )
 
         chunks = await self._chunk_retrieval_service.retrieve_chunks(

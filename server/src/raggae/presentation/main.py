@@ -21,6 +21,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     get_query_relevant_chunks_use_case()
     yield
 
+
 app = FastAPI(
     title="Raggae",
     description="RAG Generator Agent Expert",
@@ -35,6 +36,7 @@ app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(model_catalog_router, prefix="/api/v1")
 app.include_router(model_credentials_router, prefix="/api/v1")
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:

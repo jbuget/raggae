@@ -49,7 +49,9 @@ class UpdateOrganizationMemberRole:
         if target is None or target.organization_id != organization_id:
             raise OrganizationNotFoundError(f"Member {member_id} not found in organization")
 
-        members = await self._organization_member_repository.find_by_organization_id(organization_id)
+        members = await self._organization_member_repository.find_by_organization_id(
+            organization_id
+        )
         Organization.ensure_can_change_role(target_member=target, next_role=role, members=members)
         updated = target.with_role(role)
         await self._organization_member_repository.save(updated)

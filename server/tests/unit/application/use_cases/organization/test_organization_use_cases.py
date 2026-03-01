@@ -32,7 +32,9 @@ from raggae.infrastructure.database.repositories.in_memory_organization_reposito
 
 class TestOrganizationUseCases:
     @pytest.fixture
-    def repositories(self) -> tuple[
+    def repositories(
+        self,
+    ) -> tuple[
         InMemoryOrganizationRepository,
         InMemoryOrganizationMemberRepository,
         InMemoryOrganizationInvitationRepository,
