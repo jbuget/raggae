@@ -43,7 +43,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectReindexInProgressError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
-from raggae.infrastructure.services.enhanced_prompt_builder import build_rag_prompt
+from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
 

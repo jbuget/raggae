@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
-from raggae.infrastructure.services.enhanced_prompt_builder import (
+from raggae.infrastructure.services.prompt_builder import (
     build_rag_prompt,
 )
 from raggae.infrastructure.services.in_memory_embedding_service import InMemoryEmbeddingService
