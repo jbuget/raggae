@@ -5,6 +5,9 @@ from raggae.infrastructure.services.cross_encoder_reranker_service import (
     CrossEncoderRerankerService,
 )
 from raggae.infrastructure.services.in_memory_reranker_service import InMemoryRerankerService
+from raggae.infrastructure.services.mmr_diversity_reranker_service import (
+    MmrDiversityRerankerService,
+)
 
 
 class ProjectRerankerServiceResolver:
@@ -32,4 +35,6 @@ class ProjectRerankerServiceResolver:
             return CrossEncoderRerankerService(model_name=model)
         if backend == "inmemory":
             return InMemoryRerankerService()
+        if backend == "mmr":
+            return MmrDiversityRerankerService(lambda_param=0.85)
         return self._default_reranker_service

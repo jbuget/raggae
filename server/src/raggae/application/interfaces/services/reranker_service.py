@@ -7,5 +7,9 @@ class RerankerService(Protocol):
     """Interface for reranking retrieved chunks by semantic relevance."""
 
     async def rerank(
-        self, query: str, chunks: list[RetrievedChunkDTO], top_k: int
+        self,
+        query: str,
+        chunks: list[RetrievedChunkDTO],
+        top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[RetrievedChunkDTO]: ...

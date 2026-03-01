@@ -7,7 +7,11 @@ class InMemoryRerankerService:
     """Fake reranker for tests: scores by word overlap between query and chunk content."""
 
     async def rerank(
-        self, query: str, chunks: list[RetrievedChunkDTO], top_k: int
+        self,
+        query: str,
+        chunks: list[RetrievedChunkDTO],
+        top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[RetrievedChunkDTO]:
         query_words = set(query.lower().split())
         scored = []
