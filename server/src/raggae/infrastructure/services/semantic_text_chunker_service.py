@@ -1,10 +1,10 @@
 import re
-from math import sqrt
 
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.infrastructure.services.math_utils import cosine_similarity as _cosine_similarity
 
-_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n{2,}")
 
 
 class SemanticTextChunkerService:
