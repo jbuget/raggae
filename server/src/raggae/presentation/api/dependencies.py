@@ -14,6 +14,9 @@ from raggae.application.interfaces.repositories.document_repository import (
     DocumentRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.repositories.org_provider_credential_repository import (
+    OrgProviderCredentialRepository,
+)
 from raggae.application.interfaces.repositories.organization_invitation_repository import (
     OrganizationInvitationRepository,
 )
@@ -90,6 +93,21 @@ from raggae.application.use_cases.document.list_document_chunks import ListDocum
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.application.use_cases.document.reindex_document import ReindexDocument
 from raggae.application.use_cases.document.upload_document import UploadDocument
+from raggae.application.use_cases.org_credentials.activate_org_provider_api_key import (
+    ActivateOrgProviderApiKey,
+)
+from raggae.application.use_cases.org_credentials.deactivate_org_provider_api_key import (
+    DeactivateOrgProviderApiKey,
+)
+from raggae.application.use_cases.org_credentials.delete_org_provider_api_key import (
+    DeleteOrgProviderApiKey,
+)
+from raggae.application.use_cases.org_credentials.list_org_provider_api_keys import (
+    ListOrgProviderApiKeys,
+)
+from raggae.application.use_cases.org_credentials.save_org_provider_api_key import (
+    SaveOrgProviderApiKey,
+)
 from raggae.application.use_cases.organization.accept_organization_invitation import (
     AcceptOrganizationInvitation,
 )
@@ -172,6 +190,9 @@ from raggae.infrastructure.database.repositories.in_memory_document_repository i
 from raggae.infrastructure.database.repositories.in_memory_message_repository import (
     InMemoryMessageRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_org_provider_credential_repository import (
+    InMemoryOrgProviderCredentialRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_organization_invitation_repository import (
     InMemoryOrganizationInvitationRepository,
 )
@@ -201,6 +222,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_document_repository 
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_message_repository import (
     SQLAlchemyMessageRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_org_provider_credential_repository import (
+    SQLAlchemyOrgProviderCredentialRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_invitation_repository import (
     SQLAlchemyOrganizationInvitationRepository,
@@ -355,6 +379,9 @@ if settings.persistence_backend == "postgres":
     _provider_credential_repository: ProviderCredentialRepository = (
         SQLAlchemyProviderCredentialRepository(session_factory=SessionFactory)
     )
+    _org_credential_repository: OrgProviderCredentialRepository = (
+        SQLAlchemyOrgProviderCredentialRepository(session_factory=SessionFactory)
+    )
     _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
         session_factory=SessionFactory
     )
@@ -379,6 +406,7 @@ else:
     _conversation_repository = InMemoryConversationRepository()
     _message_repository = InMemoryMessageRepository()
     _provider_credential_repository = InMemoryProviderCredentialRepository()
+    _org_credential_repository = InMemoryOrgProviderCredentialRepository()
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
     _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
@@ -889,6 +917,45 @@ def get_accept_user_organization_invitation_use_case() -> AcceptUserOrganization
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         organization_invitation_repository=_organization_invitation_repository,
+    )
+
+
+def get_save_org_provider_api_key_use_case() -> SaveOrgProviderApiKey:
+    return SaveOrgProviderApiKey(
+        org_credential_repository=_org_credential_repository,
+        organization_member_repository=_organization_member_repository,
+        provider_api_key_validator=_provider_api_key_validator,
+        provider_api_key_crypto_service=_provider_api_key_crypto_service,
+    )
+
+
+def get_list_org_provider_api_keys_use_case() -> ListOrgProviderApiKeys:
+    return ListOrgProviderApiKeys(
+        org_credential_repository=_org_credential_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_activate_org_provider_api_key_use_case() -> ActivateOrgProviderApiKey:
+    return ActivateOrgProviderApiKey(
+        org_credential_repository=_org_credential_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_deactivate_org_provider_api_key_use_case() -> DeactivateOrgProviderApiKey:
+    return DeactivateOrgProviderApiKey(
+        org_credential_repository=_org_credential_repository,
+        organization_member_repository=_organization_member_repository,
+        project_repository=_project_repository,
+    )
+
+
+def get_delete_org_provider_api_key_use_case() -> DeleteOrgProviderApiKey:
+    return DeleteOrgProviderApiKey(
+        org_credential_repository=_org_credential_repository,
+        organization_member_repository=_organization_member_repository,
+        project_repository=_project_repository,
     )
 
 
