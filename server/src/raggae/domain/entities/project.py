@@ -4,6 +4,7 @@ from uuid import UUID
 
 from raggae.domain.exceptions.project_exceptions import (
     ProjectAlreadyPublishedError,
+    ProjectNotPublishedError,
     ProjectReindexInProgressError,
 )
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
@@ -49,6 +50,12 @@ class Project:
         if self.is_published:
             raise ProjectAlreadyPublishedError()
         return replace(self, is_published=True)
+
+    def unpublish(self) -> "Project":
+        """Unpublish the project. Raises if not published."""
+        if not self.is_published:
+            raise ProjectNotPublishedError()
+        return replace(self, is_published=False)
 
     def update_prompt(self, new_prompt: str) -> "Project":
         """Return a new Project with an updated system prompt."""

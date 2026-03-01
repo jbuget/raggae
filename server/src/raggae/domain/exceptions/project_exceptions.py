@@ -2,6 +2,10 @@ class ProjectAlreadyPublishedError(Exception):
     """Raised when trying to publish an already published project."""
 
 
+class ProjectNotPublishedError(Exception):
+    """Raised when trying to unpublish a project that is not published."""
+
+
 class ProjectNotFoundError(Exception):
     """Raised when a project cannot be found."""
 
