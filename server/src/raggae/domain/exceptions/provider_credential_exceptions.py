@@ -8,3 +8,15 @@ class DuplicateProviderCredentialError(ValueError):
 
 class CredentialInUseError(ValueError):
     """Raised when a credential cannot be deactivated because a project is using it."""
+
+
+class OrgCredentialNotFoundError(ValueError):
+    """Raised when an org provider credential does not exist."""
+
+
+class OrgDuplicateCredentialError(ValueError):
+    """Raised when a credential with the same API key already exists for an org and provider."""
+
+
+class OrgCredentialInUseError(ValueError):
+    """Raised when an org credential cannot be deactivated because a project is using it."""
