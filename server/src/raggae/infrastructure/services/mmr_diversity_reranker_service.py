@@ -7,9 +7,9 @@ reducing redundancy in the context window.
 from __future__ import annotations
 
 from dataclasses import replace
-from math import sqrt
 
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
+from raggae.infrastructure.services.math_utils import cosine_similarity as _cosine_sim
 
 
 class MmrDiversityRerankerService:
@@ -31,8 +31,8 @@ class MmrDiversityRerankerService:
         query: str,
         chunks: list[RetrievedChunkDTO],
         top_k: int,
-        chunk_embeddings: list[list[float]] | None = None,
         query_embedding: list[float] | None = None,
+        chunk_embeddings: list[list[float]] | None = None,
     ) -> list[RetrievedChunkDTO]:
         """Rerank chunks using MMR for diversity.
 
@@ -141,15 +141,6 @@ class MmrDiversityRerankerService:
         return [replace(chunks[i], score=chunks[i].score) for i in selected]
 
 
-def _cosine_sim(a: list[float], b: list[float]) -> float:
-    if not a or not b or len(a) != len(b):
-        return 0.0
-    dot = sum(x * y for x, y in zip(a, b))
-    na = sqrt(sum(x * x for x in a))
-    nb = sqrt(sum(y * y for y in b))
-    if na == 0.0 or nb == 0.0:
-        return 0.0
-    return dot / (na * nb)
 
 
 def _word_overlap(a: str, b: str) -> float:
