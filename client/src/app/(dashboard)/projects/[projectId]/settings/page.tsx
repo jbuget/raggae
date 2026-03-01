@@ -29,7 +29,9 @@ import {
 import {
   useDeleteProject,
   useProject,
+  usePublishProject,
   useReindexProject,
+  useUnpublishProject,
   useUpdateProject,
 } from "@/lib/hooks/use-projects";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
@@ -47,6 +49,7 @@ import type {
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
 const SETTINGS_TABS = [
   "General",
+  "Publication",
   "Models",
   "Knowledge indexing",
   "Document ingestion",
@@ -65,11 +68,15 @@ export default function ProjectSettingsPage() {
   const updateProject = useUpdateProject(params.projectId);
   const { data: credentials } = useModelCredentials();
   const reindexProject = useReindexProject(params.projectId);
+  const publishProject = usePublishProject(params.projectId);
+  const unpublishProject = useUnpublishProject(params.projectId);
   const uploadDocument = useUploadDocument(params.projectId);
   const reindexDocument = useReindexDocument(params.projectId);
   const deleteDocument = useDeleteDocument(params.projectId);
   const deleteProject = useDeleteProject();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [reindexWarningOpen, setReindexWarningOpen] = useState(false);
   const [pendingData, setPendingData] = useState<UpdateProjectRequest | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>("General");
@@ -355,6 +362,149 @@ export default function ProjectSettingsPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Publication" && (
+        <div className="max-w-3xl space-y-6">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-muted-foreground">Status</span>
+            {project.is_published ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                Published
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                Unpublished
+              </span>
+            )}
+          </div>
+
+          {project.is_published && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Public URL</p>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                <code className="flex-1 truncate text-xs text-muted-foreground">
+                  {typeof window !== "undefined" ? window.location.origin : ""}/chat/{project.id}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-7 cursor-pointer px-2 text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/chat/${project.id}`,
+                    );
+                    toast.success("URL copied to clipboard");
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Note: the public chat page is not yet available.
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-3 rounded-md border p-4">
+            {project.is_published ? (
+              <>
+                <p className="text-base font-semibold tracking-tight">Unpublish this project</p>
+                <p className="text-sm text-muted-foreground">
+                  The project will no longer be accessible publicly.
+                </p>
+                <Dialog open={unpublishOpen} onOpenChange={setUnpublishOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="cursor-pointer">
+                      Unpublish project
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Unpublish project</DialogTitle>
+                      <DialogDescription>
+                        This project will no longer be accessible publicly. You can re-publish it
+                        at any time.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={() => setUnpublishOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="cursor-pointer"
+                        disabled={unpublishProject.isPending}
+                        onClick={() => {
+                          unpublishProject.mutate(undefined, {
+                            onSuccess: () => {
+                              toast.success("Project unpublished");
+                              setUnpublishOpen(false);
+                            },
+                            onError: () => toast.error("Failed to unpublish project"),
+                          });
+                        }}
+                      >
+                        {unpublishProject.isPending ? "Unpublishing..." : "Confirm"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-semibold tracking-tight">Publish this project</p>
+                <p className="text-sm text-muted-foreground">
+                  Make this project accessible to anyone with the URL. Users will be able to chat
+                  with it without signing in.
+                </p>
+                <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="cursor-pointer">Publish project</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Publish project</DialogTitle>
+                      <DialogDescription>
+                        This project will be accessible to anyone with its public URL. Are you
+                        sure you want to make it public?
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer"
+                        onClick={() => setPublishOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="cursor-pointer"
+                        disabled={publishProject.isPending}
+                        onClick={() => {
+                          publishProject.mutate(undefined, {
+                            onSuccess: () => {
+                              toast.success("Project published");
+                              setPublishOpen(false);
+                            },
+                            onError: () => toast.error("Failed to publish project"),
+                          });
+                        }}
+                      >
+                        {publishProject.isPending ? "Publishing..." : "Confirm"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -869,7 +1019,7 @@ export default function ProjectSettingsPage() {
         </div>
       )}
 
-      {activeTab !== "Document ingestion" && activeTab !== "General" && activeTab !== "Knowledge indexing" ? (
+      {activeTab !== "Document ingestion" && activeTab !== "General" && activeTab !== "Knowledge indexing" && activeTab !== "Publication" ? (
         <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
           {updateProject.isPending ? "Saving..." : "Save changes"}
         </Button>

@@ -6,7 +6,9 @@ import {
   deleteProject,
   getProject,
   listProjects,
+  publishProject,
   reindexProject,
+  unpublishProject,
   updateProject,
 } from "@/lib/api/projects";
 import type { CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/api";
@@ -81,6 +83,32 @@ export function useReindexProject(projectId: string) {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
+    },
+  });
+}
+
+export function usePublishProject(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => publishProject(token!, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+    },
+  });
+}
+
+export function useUnpublishProject(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => unpublishProject(token!, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
     },
   });
 }
