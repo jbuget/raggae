@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
 from raggae.infrastructure.services.gemini_embedding_service import GeminiEmbeddingService
 

@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from raggae.infrastructure.services.minio_file_storage_service import MinioFileStorageService
 
 

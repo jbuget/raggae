@@ -4,6 +4,7 @@ from io import BytesIO
 
 import pytest
 from docx import Document as DocxDocument
+
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
 from raggae.infrastructure.services.multiformat_document_text_extractor import (
     MultiFormatDocumentTextExtractor,

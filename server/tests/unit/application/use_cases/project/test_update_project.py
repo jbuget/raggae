@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project

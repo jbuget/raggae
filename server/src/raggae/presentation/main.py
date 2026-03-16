@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from raggae.presentation.api.dependencies import get_query_relevant_chunks_use_case
 from raggae.presentation.api.v1.endpoints.auth import router as auth_router
 from raggae.presentation.api.v1.endpoints.chat import router as chat_router
 from raggae.presentation.api.v1.endpoints.documents import router as documents_router
@@ -15,7 +16,6 @@ from raggae.presentation.api.v1.endpoints.org_model_credentials import (
 )
 from raggae.presentation.api.v1.endpoints.organizations import router as organizations_router
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
-from raggae.presentation.api.dependencies import get_query_relevant_chunks_use_case
 
 
 @asynccontextmanager

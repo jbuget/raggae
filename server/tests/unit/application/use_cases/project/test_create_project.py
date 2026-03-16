@@ -3,8 +3,10 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
+from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
@@ -16,7 +18,6 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
-from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
 

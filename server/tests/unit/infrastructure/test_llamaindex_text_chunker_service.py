@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+
 from raggae.infrastructure.services.llamaindex_text_chunker_service import (
     LlamaIndexTextChunkerService,
 )

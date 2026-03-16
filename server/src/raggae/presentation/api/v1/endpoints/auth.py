@@ -3,9 +3,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
-from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.domain.exceptions.user_exceptions import (
     InvalidCredentialsError,

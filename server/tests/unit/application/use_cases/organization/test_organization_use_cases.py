@@ -15,10 +15,10 @@ from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
 )
-from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.domain.value_objects.organization_invitation_status import (
     OrganizationInvitationStatus,
 )
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.infrastructure.database.repositories.in_memory_organization_invitation_repository import (
     InMemoryOrganizationInvitationRepository,
 )
