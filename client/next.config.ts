@@ -19,7 +19,10 @@ const gitCommit =
   process.env.GIT_COMMIT ??
   readGitValue("git rev-parse HEAD");
 
+const apiBaseUrl = process.env.NEXT_API_URL ?? "http://localhost:8000";
+
 const nextConfig: NextConfig = {
+  output: "standalone",
   env: {
     NEXT_PUBLIC_APP_GIT_BRANCH: gitBranch,
     NEXT_PUBLIC_APP_GIT_COMMIT: gitCommit,
@@ -28,7 +31,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "http://localhost:8000/api/v1/:path*",
+        destination: `${apiBaseUrl}/api/v1/:path*`,
       },
     ];
   },
