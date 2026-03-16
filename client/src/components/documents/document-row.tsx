@@ -219,18 +219,18 @@ export function DocumentRow({
             {!previewLoading && !previewError && previewUrl && previewType === "application/pdf" && (
               <iframe src={previewUrl} title={document.file_name} className="h-[84vh] w-full rounded-md border" />
             )}
-            {!previewLoading && !previewError && previewUrl && previewType.startsWith("image/") && (
+            {!previewLoading && !previewError && previewUrl && previewType?.startsWith("image/") && (
               <img src={previewUrl} alt={document.file_name} className="mx-auto max-h-[84vh] object-contain" />
             )}
-            {!previewLoading && !previewError && previewUrl && previewType.startsWith("text/") && (
+            {!previewLoading && !previewError && previewUrl && previewType?.startsWith("text/") && (
               <iframe src={previewUrl} title={document.file_name} className="h-[84vh] w-full rounded-md border bg-background" />
             )}
             {!previewLoading &&
               !previewError &&
               previewUrl &&
-              !previewType.startsWith("image/") &&
+              !previewType?.startsWith("image/") &&
               previewType !== "application/pdf" &&
-              !previewType.startsWith("text/") && (
+              !previewType?.startsWith("text/") && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
                     Preview is not available for this file type.

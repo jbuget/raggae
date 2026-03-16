@@ -242,7 +242,7 @@ export default function ProjectSettingsPage() {
 
   function handleSave() {
     const parentChildChanged =
-      effectiveParentChildChunking !== project.parent_child_chunking;
+      effectiveParentChildChunking !== project?.parent_child_chunking;
     if (parentChildChanged) {
       setPendingData(payload);
       setReindexWarningOpen(true);
