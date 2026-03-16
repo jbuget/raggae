@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 import random
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.application.dto.organization_dto import OrganizationDTO

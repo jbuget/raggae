@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.use_cases.chat.get_conversation import GetConversation
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message

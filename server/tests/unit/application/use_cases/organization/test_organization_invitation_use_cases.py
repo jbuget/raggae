@@ -27,6 +27,7 @@ from raggae.application.use_cases.organization.revoke_organization_invitation im
 from raggae.domain.entities.organization import Organization
 from raggae.domain.entities.organization_invitation import OrganizationInvitation
 from raggae.domain.entities.organization_member import OrganizationMember
+from raggae.domain.entities.user import User
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationInvitationInvalidError,
 )
@@ -46,7 +47,6 @@ from raggae.infrastructure.database.repositories.in_memory_organization_reposito
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
 )
-from raggae.domain.entities.user import User
 
 
 class TestOrganizationInvitationUseCases:

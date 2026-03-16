@@ -16,9 +16,6 @@ from raggae.domain.exceptions.organization_exceptions import (
     OrganizationInvitationInvalidError,
     OrganizationNotFoundError,
 )
-from raggae.domain.value_objects.organization_invitation_status import (
-    OrganizationInvitationStatus,
-)
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 

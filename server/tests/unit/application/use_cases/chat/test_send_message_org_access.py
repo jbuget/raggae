@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.dto.query_relevant_chunks_result_dto import QueryRelevantChunksResultDTO
 from raggae.application.use_cases.chat.send_message import SendMessage
 from raggae.domain.entities.conversation import Conversation

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
+
 from raggae.application.use_cases.document.reindex_document import ReindexDocument
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project

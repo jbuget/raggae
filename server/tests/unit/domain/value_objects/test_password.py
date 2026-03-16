@@ -1,4 +1,5 @@
 import pytest
+
 from raggae.domain.exceptions.validation_errors import WeakPasswordError
 from raggae.domain.value_objects.password import Password
 

@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbeddingService
 
 

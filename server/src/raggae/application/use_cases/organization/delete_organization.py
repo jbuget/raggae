@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from raggae.application.interfaces.repositories.organization_member_repository import (
-    OrganizationMemberRepository,
-)
 from raggae.application.interfaces.repositories.organization_invitation_repository import (
     OrganizationInvitationRepository,
+)
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,

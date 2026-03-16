@@ -1,4 +1,5 @@
 import pytest
+
 from raggae.domain.value_objects.chunk_level import ChunkLevel
 
 

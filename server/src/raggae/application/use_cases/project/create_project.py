@@ -4,27 +4,27 @@ from uuid import UUID, uuid4
 from raggae.application.constants import (
     DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS,
     DEFAULT_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
-    DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE,
     DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
+    DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE,
     DEFAULT_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
-    MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
+    MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     MAX_PROJECT_RETRIEVAL_TOP_K,
     MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
     MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
     MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
-    MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
+    MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
 from raggae.application.dto.project_dto import ProjectDTO
-from raggae.application.interfaces.repositories.project_repository import (
-    ProjectRepository,
-)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
+)
+from raggae.application.interfaces.repositories.project_repository import (
+    ProjectRepository,
 )
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
@@ -33,10 +33,11 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
     ProviderApiKeyCryptoService,
 )
 from raggae.domain.entities.project import Project
+from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.exceptions.project_exceptions import (
-    InvalidProjectEmbeddingBackendError,
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
+    InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRerankerBackendError,
     InvalidProjectRerankerCandidateMultiplierError,
@@ -46,7 +47,6 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
-from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
 

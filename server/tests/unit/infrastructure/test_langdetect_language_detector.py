@@ -2,6 +2,7 @@ import sys
 import types
 
 import pytest
+
 from raggae.infrastructure.services.langdetect_language_detector import (
     LangdetectLanguageDetector,
 )

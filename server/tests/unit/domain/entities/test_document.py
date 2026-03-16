@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+
 from raggae.domain.entities.document import Document
 from raggae.domain.exceptions.document_exceptions import (
     InvalidDocumentStatusTransitionError,
