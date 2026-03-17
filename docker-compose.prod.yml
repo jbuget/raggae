@@ -29,7 +29,7 @@ services:
       timeout: 5s
       retries: 5
 
-  server:
+  raggae-server:
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -63,17 +63,17 @@ services:
       minio:
         condition: service_healthy
 
-  client:
+  raggae-client:
     build:
       context: ./client
       dockerfile: Dockerfile
       args:
-        NEXT_API_URL: http://server:8000
+        NEXT_API_URL: http://raggae-server:8000
     restart: unless-stopped
     ports:
       - "${CLIENT_PORT:-3000}:3000"
     depends_on:
-      - server
+      - raggae-server
 
 volumes:
   postgres_data:
