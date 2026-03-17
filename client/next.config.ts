@@ -19,25 +19,11 @@ const gitCommit =
   process.env.GIT_COMMIT ??
   readGitValue("git rev-parse HEAD");
 
-const apiBaseUrl = process.env.NEXT_API_URL ?? "http://localhost:8000";
-
 const nextConfig: NextConfig = {
   output: "standalone",
   env: {
     NEXT_PUBLIC_APP_GIT_BRANCH: gitBranch,
     NEXT_PUBLIC_APP_GIT_COMMIT: gitCommit,
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `${apiBaseUrl}/api/v1/:path*`,
-      },
-    ];
-  },
-  experimental: {
-    proxyTimeout: 120_000,
-    proxyClientMaxBodySize: "100mb",
   },
 };
 
