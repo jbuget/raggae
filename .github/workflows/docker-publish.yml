@@ -100,4 +100,4 @@ jobs:
           cache-from: type=gha,scope=client
           cache-to: type=gha,mode=max,scope=client
           build-args: |
-            NEXT_API_URL=http://server:8000
+            NEXT_API_URL=http://raggae-server:8000
