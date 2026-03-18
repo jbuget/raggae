@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useUpdateUserLocale } from "@/lib/hooks/use-user-profile";
-import { useAuth } from "@/lib/hooks/use-auth";
 import type { UpdateUserLocaleRequest } from "@/lib/types/api";
 
 const LOCALE_FLAGS: Record<UpdateUserLocaleRequest["locale"], { flag: string; short: string }> = {
@@ -27,7 +26,6 @@ function setLocaleCookie(locale: string) {
 export function LocaleSelector() {
   const currentLocale = useLocale();
   const t = useTranslations("layout.localeSelector");
-  const { isAuthenticated } = useAuth();
   const updateLocale = useUpdateUserLocale();
 
   const current = LOCALE_FLAGS[currentLocale as UpdateUserLocaleRequest["locale"]] ?? LOCALE_FLAGS.en;
@@ -36,15 +34,10 @@ export function LocaleSelector() {
     if (locale === currentLocale) return;
 
     setLocaleCookie(locale);
-
-    if (isAuthenticated) {
-      updateLocale.mutate(
-        { locale },
-        { onSettled: () => window.location.reload() },
-      );
-    } else {
-      window.location.reload();
-    }
+    updateLocale.mutate(
+      { locale },
+      { onSettled: () => window.location.reload() },
+    );
   }
 
   return (
