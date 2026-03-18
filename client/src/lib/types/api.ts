@@ -120,10 +120,12 @@ export interface ProjectResponse {
   embedding_model?: string | null;
   embedding_api_key_masked?: string | null;
   embedding_api_key_credential_id?: string | null;
+  org_embedding_api_key_credential_id?: string | null;
   llm_backend?: ProjectLLMBackend | null;
   llm_model?: string | null;
   llm_api_key_masked?: string | null;
   llm_api_key_credential_id?: string | null;
+  org_llm_api_key_credential_id?: string | null;
   retrieval_strategy: RetrievalStrategy;
   retrieval_top_k: number;
   retrieval_min_score: number;

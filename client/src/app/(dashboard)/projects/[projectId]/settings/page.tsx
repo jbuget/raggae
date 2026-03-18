@@ -132,12 +132,18 @@ export default function ProjectSettingsPage() {
   const effectiveEmbeddingModel =
     effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? ""));
   const effectiveLlmModel = effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? ""));
+  const storedEmbeddingCredentialId = project.organization_id
+    ? (project.org_embedding_api_key_credential_id ?? "")
+    : (project.embedding_api_key_credential_id ?? "");
+  const storedLlmCredentialId = project.organization_id
+    ? (project.org_llm_api_key_credential_id ?? "")
+    : (project.llm_api_key_credential_id ?? "");
   const effectiveEmbeddingCredentialId =
     effectiveEmbeddingBackend === ""
       ? ""
-      : (embeddingCredentialId ?? (project.embedding_api_key_credential_id ?? ""));
+      : (embeddingCredentialId ?? storedEmbeddingCredentialId);
   const effectiveLlmCredentialId =
-    effectiveLlmBackend === "" ? "" : (llmCredentialId ?? (project.llm_api_key_credential_id ?? ""));
+    effectiveLlmBackend === "" ? "" : (llmCredentialId ?? storedLlmCredentialId);
   const effectiveRetrievalStrategy =
     retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
   const effectiveRetrievalTopK = retrievalTopK ?? project.retrieval_top_k ?? 8;

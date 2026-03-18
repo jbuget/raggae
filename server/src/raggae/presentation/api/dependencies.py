@@ -599,11 +599,15 @@ def get_delete_project_use_case() -> DeleteProject:
 
 
 def get_update_project_use_case() -> UpdateProject:
-    return UpdateProject(
-        project_repository=_project_repository,
-        organization_member_repository=_organization_member_repository,
-        provider_credential_repository=_provider_credential_repository,
-    ).with_crypto_service(_provider_api_key_crypto_service)
+    return (
+        UpdateProject(
+            project_repository=_project_repository,
+            organization_member_repository=_organization_member_repository,
+            provider_credential_repository=_provider_credential_repository,
+            org_provider_credential_repository=_org_credential_repository,
+        )
+        .with_crypto_service(_provider_api_key_crypto_service)
+    )
 
 
 def get_publish_project_use_case() -> PublishProject:

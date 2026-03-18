@@ -17,6 +17,9 @@ from raggae.application.constants import (
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
 from raggae.application.dto.project_dto import ProjectDTO
+from raggae.application.interfaces.repositories.org_provider_credential_repository import (
+    OrgProviderCredentialRepository,
+)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
@@ -63,10 +66,12 @@ class UpdateProject:
         project_repository: ProjectRepository,
         organization_member_repository: OrganizationMemberRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
+        org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._organization_member_repository = organization_member_repository
         self._provider_credential_repository = provider_credential_repository
+        self._org_provider_credential_repository = org_provider_credential_repository
         self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
 
     def with_crypto_service(
@@ -74,6 +79,13 @@ class UpdateProject:
         provider_api_key_crypto_service: ProviderApiKeyCryptoService,
     ) -> "UpdateProject":
         self._provider_api_key_crypto_service = provider_api_key_crypto_service
+        return self
+
+    def with_org_credential_repository(
+        self,
+        org_provider_credential_repository: OrgProviderCredentialRepository,
+    ) -> "UpdateProject":
+        self._org_provider_credential_repository = org_provider_credential_repository
         return self
 
     async def execute(
@@ -204,36 +216,46 @@ class UpdateProject:
                 f"{MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER} and "
                 f"{MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER}"
             )
-        resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
-            user_id=user_id,
-            backend=(
-                embedding_backend if embedding_backend is not None else project.embedding_backend
-            ),
-            api_key=embedding_api_key,
-            api_key_credential_id=embedding_api_key_credential_id,
-            config_type="embedding",
+        resolved_embedding_api_key, embedding_is_org = (
+            await self._resolve_api_key_from_credential_id(
+                user_id=user_id,
+                organization_id=project.organization_id,
+                backend=(
+                    embedding_backend
+                    if embedding_backend is not None
+                    else project.embedding_backend
+                ),
+                api_key=embedding_api_key,
+                api_key_credential_id=embedding_api_key_credential_id,
+                config_type="embedding",
+            )
         )
-        resolved_llm_api_key = await self._resolve_api_key_from_credential_id(
+        resolved_llm_api_key, llm_is_org = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
+            organization_id=project.organization_id,
             backend=llm_backend if llm_backend is not None else project.llm_backend,
             api_key=llm_api_key,
             api_key_credential_id=llm_api_key_credential_id,
             config_type="llm",
         )
-        await self._validate_api_key_belongs_to_user(
-            user_id=user_id,
-            backend=(
-                embedding_backend if embedding_backend is not None else project.embedding_backend
-            ),
-            api_key=resolved_embedding_api_key,
-            config_type="embedding",
-        )
-        await self._validate_api_key_belongs_to_user(
-            user_id=user_id,
-            backend=llm_backend if llm_backend is not None else project.llm_backend,
-            api_key=resolved_llm_api_key,
-            config_type="llm",
-        )
+        if not embedding_is_org:
+            await self._validate_api_key_belongs_to_user(
+                user_id=user_id,
+                backend=(
+                    embedding_backend
+                    if embedding_backend is not None
+                    else project.embedding_backend
+                ),
+                api_key=resolved_embedding_api_key,
+                config_type="embedding",
+            )
+        if not llm_is_org:
+            await self._validate_api_key_belongs_to_user(
+                user_id=user_id,
+                backend=llm_backend if llm_backend is not None else project.llm_backend,
+                api_key=resolved_llm_api_key,
+                config_type="llm",
+            )
 
         encrypted_embedding_api_key = self._resolve_encrypted_api_key(
             current_value=project.embedding_api_key_encrypted,
@@ -247,17 +269,25 @@ class UpdateProject:
             project.embedding_backend if embedding_backend is None else embedding_backend
         )
         next_llm_backend = project.llm_backend if llm_backend is None else llm_backend
-        next_embedding_api_key_credential_id = self._resolve_next_credential_id(
-            current_value=project.embedding_api_key_credential_id,
-            provided_credential_id=embedding_api_key_credential_id,
-            provided_api_key=embedding_api_key,
-            backend=next_embedding_backend,
+        next_embedding_api_key_credential_id, next_org_embedding_api_key_credential_id = (
+            self._resolve_next_credential_ids(
+                current_user_credential_id=project.embedding_api_key_credential_id,
+                current_org_credential_id=project.org_embedding_api_key_credential_id,
+                provided_credential_id=embedding_api_key_credential_id,
+                provided_api_key=embedding_api_key,
+                backend=next_embedding_backend,
+                is_org=embedding_is_org,
+            )
         )
-        next_llm_api_key_credential_id = self._resolve_next_credential_id(
-            current_value=project.llm_api_key_credential_id,
-            provided_credential_id=llm_api_key_credential_id,
-            provided_api_key=llm_api_key,
-            backend=next_llm_backend,
+        next_llm_api_key_credential_id, next_org_llm_api_key_credential_id = (
+            self._resolve_next_credential_ids(
+                current_user_credential_id=project.llm_api_key_credential_id,
+                current_org_credential_id=project.org_llm_api_key_credential_id,
+                provided_credential_id=llm_api_key_credential_id,
+                provided_api_key=llm_api_key,
+                backend=next_llm_backend,
+                is_org=llm_is_org,
+            )
         )
         next_reranker_backend = (
             project.reranker_backend if reranker_backend is None else reranker_backend
@@ -277,10 +307,12 @@ class UpdateProject:
             embedding_model=project.embedding_model if embedding_model is None else embedding_model,
             embedding_api_key_encrypted=encrypted_embedding_api_key,
             embedding_api_key_credential_id=next_embedding_api_key_credential_id,
+            org_embedding_api_key_credential_id=next_org_embedding_api_key_credential_id,
             llm_backend=next_llm_backend,
             llm_model=project.llm_model if llm_model is None else llm_model,
             llm_api_key_encrypted=encrypted_llm_api_key,
             llm_api_key_credential_id=next_llm_api_key_credential_id,
+            org_llm_api_key_credential_id=next_org_llm_api_key_credential_id,
             retrieval_strategy=(
                 project.retrieval_strategy if retrieval_strategy is None else retrieval_strategy
             ),
@@ -362,13 +394,15 @@ class UpdateProject:
     async def _resolve_api_key_from_credential_id(
         self,
         user_id: UUID,
+        organization_id: UUID | None,
         backend: str | None,
         api_key: str | None,
         api_key_credential_id: UUID | None,
         config_type: str,
-    ) -> str | None:
+    ) -> tuple[str | None, bool]:
+        """Resolve API key from credential ID. Returns (api_key, is_org_credential)."""
         if api_key_credential_id is None:
-            return api_key
+            return api_key, False
         if api_key is not None and api_key.strip() != "":
             raise ProjectAPIKeyNotOwnedError(
                 f"{config_type}_api_key and {config_type}_api_key_credential_id cannot both be set"
@@ -382,32 +416,60 @@ class UpdateProject:
             raise ProjectAPIKeyNotOwnedError(
                 f"{config_type}_api_key_credential_id cannot be used with backend '{backend}'"
             )
-        if self._provider_credential_repository is None:
-            raise ProjectAPIKeyNotOwnedError("Provider credential repository is not configured")
         if self._provider_api_key_crypto_service is None:
             raise ProjectAPIKeyNotOwnedError("Provider crypto service is not configured")
-        credentials = await self._provider_credential_repository.list_by_user_id_and_provider(
-            user_id=user_id,
-            provider=ModelProvider(backend),
-        )
-        matching = next((cred for cred in credentials if cred.id == api_key_credential_id), None)
-        if matching is None:
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key_credential_id is not registered for this user and backend"
+        # Try user-level credentials first
+        if self._provider_credential_repository is not None:
+            user_credentials = (
+                await self._provider_credential_repository.list_by_user_id_and_provider(
+                    user_id=user_id,
+                    provider=ModelProvider(backend),
+                )
             )
-        return self._provider_api_key_crypto_service.decrypt(matching.encrypted_api_key)
+            matching_user = next(
+                (cred for cred in user_credentials if cred.id == api_key_credential_id), None
+            )
+            if matching_user is not None:
+                return (
+                    self._provider_api_key_crypto_service.decrypt(matching_user.encrypted_api_key),
+                    False,
+                )
+        # Try org-level credentials when project belongs to an org
+        if organization_id is not None and self._org_provider_credential_repository is not None:
+            org_credentials = (
+                await self._org_provider_credential_repository.list_by_org_id_and_provider(
+                    organization_id=organization_id,
+                    provider=ModelProvider(backend),
+                )
+            )
+            matching_org = next(
+                (cred for cred in org_credentials if cred.id == api_key_credential_id), None
+            )
+            if matching_org is not None:
+                return (
+                    self._provider_api_key_crypto_service.decrypt(matching_org.encrypted_api_key),
+                    True,
+                )
+        raise ProjectAPIKeyNotOwnedError(
+            f"{config_type}_api_key_credential_id is not registered for this user or organization"
+        )
 
-    def _resolve_next_credential_id(
+    def _resolve_next_credential_ids(
         self,
-        current_value: UUID | None,
+        current_user_credential_id: UUID | None,
+        current_org_credential_id: UUID | None,
         provided_credential_id: UUID | None,
         provided_api_key: str | None,
         backend: str | None,
-    ) -> UUID | None:
+        is_org: bool,
+    ) -> tuple[UUID | None, UUID | None]:
+        """Return (next_user_credential_id, next_org_credential_id)."""
         if backend not in {"openai", "gemini", "anthropic"}:
-            return None
+            return None, None
         if provided_credential_id is not None:
-            return provided_credential_id
-        if provided_api_key is None:
-            return current_value
-        return None
+            if is_org:
+                return None, provided_credential_id
+            return provided_credential_id, None
+        if provided_api_key is not None:
+            return None, None
+        return current_user_credential_id, current_org_credential_id
