@@ -27,10 +27,12 @@ class ProjectDTO:
     embedding_model: str | None
     embedding_api_key_masked: str | None
     embedding_api_key_credential_id: UUID | None
+    org_embedding_api_key_credential_id: UUID | None
     llm_backend: str | None
     llm_model: str | None
     llm_api_key_masked: str | None
     llm_api_key_credential_id: UUID | None
+    org_llm_api_key_credential_id: UUID | None
     retrieval_strategy: str
     retrieval_top_k: int
     retrieval_min_score: float
@@ -69,10 +71,12 @@ class ProjectDTO:
             embedding_model=project.embedding_model,
             embedding_api_key_masked=embedding_masked,
             embedding_api_key_credential_id=project.embedding_api_key_credential_id,
+            org_embedding_api_key_credential_id=project.org_embedding_api_key_credential_id,
             llm_backend=project.llm_backend,
             llm_model=project.llm_model,
             llm_api_key_masked=llm_masked,
             llm_api_key_credential_id=project.llm_api_key_credential_id,
+            org_llm_api_key_credential_id=project.org_llm_api_key_credential_id,
             retrieval_strategy=project.retrieval_strategy,
             retrieval_top_k=project.retrieval_top_k,
             retrieval_min_score=project.retrieval_min_score,

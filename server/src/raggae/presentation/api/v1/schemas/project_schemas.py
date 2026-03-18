@@ -129,10 +129,12 @@ class ProjectResponse(BaseModel):
     embedding_model: str | None
     embedding_api_key_masked: str | None
     embedding_api_key_credential_id: UUID | None
+    org_embedding_api_key_credential_id: UUID | None
     llm_backend: str | None
     llm_model: str | None
     llm_api_key_masked: str | None
     llm_api_key_credential_id: UUID | None
+    org_llm_api_key_credential_id: UUID | None
     retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
     retrieval_top_k: int
     retrieval_min_score: float

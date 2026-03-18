@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.domain.entities.org_model_provider_credential import OrgModelProviderCredential
 from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
@@ -38,6 +39,10 @@ class TestUpdateProject:
 
     @pytest.fixture
     def mock_organization_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_org_credential_repository(self) -> AsyncMock:
         return AsyncMock()
 
     @pytest.fixture
@@ -898,4 +903,187 @@ class TestUpdateProject:
                 system_prompt="",
                 embedding_backend="openai",
                 embedding_model="text-embedding-99-ultra",
+            )
+
+    async def test_update_project_with_org_embedding_credential_stores_as_org_credential(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+        mock_org_credential_repository: AsyncMock,
+        mock_crypto_service: Mock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        user_id = uuid4()
+        org_cred_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=user_id,
+            organization_id=organization_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=user_id,
+                role=OrganizationMemberRole.OWNER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+        org_credential = OrgModelProviderCredential(
+            id=org_cred_id,
+            organization_id=organization_id,
+            provider=ModelProvider("openai"),
+            encrypted_api_key="enc:sk-org-key",
+            key_fingerprint="fp:sk-org-key",
+            key_suffix="key",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        mock_org_credential_repository.list_by_org_id_and_provider.return_value = [org_credential]
+        use_case = UpdateProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+        ).with_crypto_service(mock_crypto_service).with_org_credential_repository(
+            mock_org_credential_repository
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=user_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            embedding_backend="openai",
+            embedding_api_key_credential_id=org_cred_id,
+        )
+
+        # Then
+        assert result.org_embedding_api_key_credential_id == org_cred_id
+        assert result.embedding_api_key_credential_id is None
+
+    async def test_update_project_with_org_llm_credential_stores_as_org_credential(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+        mock_org_credential_repository: AsyncMock,
+        mock_crypto_service: Mock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        user_id = uuid4()
+        org_cred_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=user_id,
+            organization_id=organization_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=user_id,
+                role=OrganizationMemberRole.OWNER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+        org_credential = OrgModelProviderCredential(
+            id=org_cred_id,
+            organization_id=organization_id,
+            provider=ModelProvider("openai"),
+            encrypted_api_key="enc:sk-org-key",
+            key_fingerprint="fp:sk-org-key",
+            key_suffix="key",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        mock_org_credential_repository.list_by_org_id_and_provider.return_value = [org_credential]
+        use_case = UpdateProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+        ).with_crypto_service(mock_crypto_service).with_org_credential_repository(
+            mock_org_credential_repository
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project.id,
+            user_id=user_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            llm_backend="openai",
+            llm_api_key_credential_id=org_cred_id,
+        )
+
+        # Then
+        assert result.org_llm_api_key_credential_id == org_cred_id
+        assert result.llm_api_key_credential_id is None
+
+    async def test_update_project_with_unknown_credential_raises_error(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+        mock_provider_credential_repository: AsyncMock,
+        mock_org_credential_repository: AsyncMock,
+        mock_crypto_service: Mock,
+    ) -> None:
+        # Given — credential_id not found in user or org credentials
+        organization_id = uuid4()
+        user_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=user_id,
+            organization_id=organization_id,
+            name="My project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=user_id,
+                role=OrganizationMemberRole.OWNER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = []
+        mock_org_credential_repository.list_by_org_id_and_provider.return_value = []
+        use_case = UpdateProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+            provider_credential_repository=mock_provider_credential_repository,
+        ).with_crypto_service(mock_crypto_service).with_org_credential_repository(
+            mock_org_credential_repository
+        )
+
+        # When / Then
+        with pytest.raises(ProjectAPIKeyNotOwnedError):
+            await use_case.execute(
+                project_id=project.id,
+                user_id=user_id,
+                name="My project",
+                description="",
+                system_prompt="",
+                embedding_backend="openai",
+                embedding_api_key_credential_id=uuid4(),
             )
