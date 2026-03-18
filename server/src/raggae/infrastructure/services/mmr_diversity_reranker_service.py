@@ -44,9 +44,7 @@ class MmrDiversityRerankerService:
             return []
 
         if chunk_embeddings is not None and query_embedding is not None:
-            return self._mmr_with_embeddings(
-                chunks, chunk_embeddings, query_embedding, top_k
-            )
+            return self._mmr_with_embeddings(chunks, chunk_embeddings, query_embedding, top_k)
         return self._mmr_lexical(chunks, query, top_k)
 
     def _mmr_with_embeddings(
@@ -82,9 +80,7 @@ class MmrDiversityRerankerService:
 
                 # Max similarity to already selected
                 if selected:
-                    max_sim = max(
-                        _cosine_sim(embeddings[idx], embeddings[s]) for s in selected
-                    )
+                    max_sim = max(_cosine_sim(embeddings[idx], embeddings[s]) for s in selected)
                 else:
                     max_sim = 0.0
 
@@ -98,9 +94,7 @@ class MmrDiversityRerankerService:
                 selected.append(best_idx)
                 remaining.remove(best_idx)
 
-        return [
-            replace(chunks[i], score=relevance[i]) for i in selected
-        ]
+        return [replace(chunks[i], score=relevance[i]) for i in selected]
 
     def _mmr_lexical(
         self,
@@ -123,8 +117,7 @@ class MmrDiversityRerankerService:
 
                 if selected:
                     max_sim = max(
-                        _word_overlap(chunks[idx].content, chunks[s].content)
-                        for s in selected
+                        _word_overlap(chunks[idx].content, chunks[s].content) for s in selected
                     )
                 else:
                     max_sim = 0.0
@@ -141,8 +134,6 @@ class MmrDiversityRerankerService:
         return [replace(chunks[i], score=chunks[i].score) for i in selected]
 
 
-
-
 def _word_overlap(a: str, b: str) -> float:
     wa = set(a.lower().split())
     wb = set(b.lower().split())
@@ -150,6 +141,3 @@ def _word_overlap(a: str, b: str) -> float:
     if not union:
         return 0.0
     return len(wa & wb) / len(union)
-
-
-

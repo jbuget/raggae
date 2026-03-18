@@ -76,4 +76,3 @@ def build_rag_prompt(
         "Answer the above question using the context provided. "
         "Cite your sources."
     )
-

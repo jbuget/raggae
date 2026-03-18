@@ -5,15 +5,78 @@ from math import log, sqrt
 _WORD_RE = re.compile(r"[a-zA-ZÀ-ÿ0-9]+")
 
 # Common French + English stop words to ignore
-_STOP_WORDS = frozenset({
-    "le", "la", "les", "de", "du", "des", "un", "une", "et", "en", "est",
-    "que", "qui", "dans", "pour", "par", "sur", "au", "aux", "ce", "se",
-    "son", "sa", "ses", "il", "elle", "on", "nous", "vous", "ils", "ne",
-    "pas", "plus", "avec", "ou", "mais", "sont", "être", "avoir", "fait",
-    "the", "a", "an", "and", "or", "of", "to", "in", "is", "it", "for",
-    "at", "by", "this", "that", "with", "from", "as", "be", "not",
-    "d", "l", "s", "n", "qu", "c", "j", "m",
-})
+_STOP_WORDS = frozenset(
+    {
+        "le",
+        "la",
+        "les",
+        "de",
+        "du",
+        "des",
+        "un",
+        "une",
+        "et",
+        "en",
+        "est",
+        "que",
+        "qui",
+        "dans",
+        "pour",
+        "par",
+        "sur",
+        "au",
+        "aux",
+        "ce",
+        "se",
+        "son",
+        "sa",
+        "ses",
+        "il",
+        "elle",
+        "on",
+        "nous",
+        "vous",
+        "ils",
+        "ne",
+        "pas",
+        "plus",
+        "avec",
+        "ou",
+        "mais",
+        "sont",
+        "être",
+        "avoir",
+        "fait",
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "of",
+        "to",
+        "in",
+        "is",
+        "it",
+        "for",
+        "at",
+        "by",
+        "this",
+        "that",
+        "with",
+        "from",
+        "as",
+        "be",
+        "not",
+        "d",
+        "l",
+        "s",
+        "n",
+        "qu",
+        "c",
+        "j",
+        "m",
+    }
+)
 
 
 class InMemoryEmbeddingService:
@@ -51,7 +114,9 @@ class InMemoryEmbeddingService:
             # Hash word to a dimension bucket (deterministic)
             bucket = int(hashlib.md5(word.encode("utf-8")).hexdigest(), 16) % self._dimension
             # Alternate sign based on a second hash to reduce collisions
-            sign = 1.0 if (int(hashlib.sha1(word.encode("utf-8")).hexdigest(), 16) % 2) == 0 else -1.0
+            sign = (
+                1.0 if (int(hashlib.sha1(word.encode("utf-8")).hexdigest(), 16) % 2) == 0 else -1.0
+            )
             vector[bucket] += sign * tf
 
         # L2 normalize

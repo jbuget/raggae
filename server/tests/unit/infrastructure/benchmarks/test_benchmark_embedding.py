@@ -98,9 +98,7 @@ class TestBenchmarkEmbedding:
     """Compare Plain embedding (baseline) vs Contextual embedding (optimized)."""
 
     @pytest.mark.asyncio
-    async def test_plain_vs_contextual_embedding(
-        self, sanitized_texts: dict[str, str]
-    ) -> None:
+    async def test_plain_vs_contextual_embedding(self, sanitized_texts: dict[str, str]) -> None:
         assert sanitized_texts, "No test documents found"
 
         # --- Chunk all docs ---
@@ -143,8 +141,7 @@ class TestBenchmarkEmbedding:
 
             # Relevant chunk indices
             relevant_indices = {
-                str(i) for i, src in enumerate(chunk_sources)
-                if _doc_matches(src, expected_kw)
+                str(i) for i, src in enumerate(chunk_sources) if _doc_matches(src, expected_kw)
             }
 
             # Baseline retrieval
@@ -159,8 +156,7 @@ class TestBenchmarkEmbedding:
             # Optimized retrieval
             q_emb_ctx = await ctx_emb.embed_query(query)
             ctx_scores = [
-                (str(i), cosine_similarity(q_emb_ctx, emb))
-                for i, emb in enumerate(ctx_embeddings)
+                (str(i), cosine_similarity(q_emb_ctx, emb)) for i, emb in enumerate(ctx_embeddings)
             ]
             ctx_scores.sort(key=lambda x: x[1], reverse=True)
             ctx_retrieved = [s[0] for s in ctx_scores]
@@ -179,5 +175,3 @@ class TestBenchmarkEmbedding:
         filepath = write_benchmark_csv("embedding_plain_vs_contextual.csv", rows)
         assert filepath.exists()
         assert len(rows) > 0
-
-

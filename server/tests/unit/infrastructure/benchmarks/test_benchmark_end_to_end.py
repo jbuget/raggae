@@ -6,7 +6,8 @@ into a full pipeline comparison.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -15,15 +16,15 @@ from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.infrastructure.services.contextual_embedding_service import (
     ContextualEmbeddingService,
 )
-from raggae.infrastructure.services.prompt_builder import (
-    build_rag_prompt,
-)
 from raggae.infrastructure.services.in_memory_embedding_service import InMemoryEmbeddingService
 from raggae.infrastructure.services.mmr_diversity_reranker_service import (
     MmrDiversityRerankerService,
 )
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
+)
+from raggae.infrastructure.services.prompt_builder import (
+    build_rag_prompt,
 )
 from raggae.infrastructure.services.simple_text_chunker_service import (
     SimpleTextChunkerService,
@@ -79,20 +80,51 @@ def _build_baseline_rag_prompt(
         '"""'
     )
 
+
 QUERIES: list[dict[str, Any]] = [
-    {"query": "Quelles sont les conditions pour bénéficier du télétravail ?", "expected_doc": "Charte télétravail"},
-    {"query": "Qui peut bénéficier du télétravail dans l'entreprise ?", "expected_doc": "Charte télétravail"},
-    {"query": "Quelles sont les obligations de l'employeur en matière de télétravail ?", "expected_doc": "Charte télétravail"},
+    {
+        "query": "Quelles sont les conditions pour bénéficier du télétravail ?",
+        "expected_doc": "Charte télétravail",
+    },
+    {
+        "query": "Qui peut bénéficier du télétravail dans l'entreprise ?",
+        "expected_doc": "Charte télétravail",
+    },
+    {
+        "query": "Quelles sont les obligations de l'employeur en matière de télétravail ?",
+        "expected_doc": "Charte télétravail",
+    },
     {"query": "Comment signaler un cas de harcèlement au travail ?", "expected_doc": "harcèlement"},
-    {"query": "Quelles sont les sanctions prévues en cas de harcèlement ?", "expected_doc": "harcèlement"},
-    {"query": "Quelle est la définition du harcèlement moral et sexuel ?", "expected_doc": "harcèlement"},
-    {"query": "Quelles sont les règles d'utilisation des systèmes d'information ?", "expected_doc": "systèmes d'information"},
-    {"query": "Quelles sont les obligations en matière de sécurité informatique ?", "expected_doc": "systèmes d'information"},
-    {"query": "Que se passe-t-il en cas de non-respect de la charte informatique ?", "expected_doc": "systèmes d'information"},
-    {"query": "Comment se passe l'intégration d'un nouveau collaborateur ?", "expected_doc": "LIVRET"},
+    {
+        "query": "Quelles sont les sanctions prévues en cas de harcèlement ?",
+        "expected_doc": "harcèlement",
+    },
+    {
+        "query": "Quelle est la définition du harcèlement moral et sexuel ?",
+        "expected_doc": "harcèlement",
+    },
+    {
+        "query": "Quelles sont les règles d'utilisation des systèmes d'information ?",
+        "expected_doc": "systèmes d'information",
+    },
+    {
+        "query": "Quelles sont les obligations en matière de sécurité informatique ?",
+        "expected_doc": "systèmes d'information",
+    },
+    {
+        "query": "Que se passe-t-il en cas de non-respect de la charte informatique ?",
+        "expected_doc": "systèmes d'information",
+    },
+    {
+        "query": "Comment se passe l'intégration d'un nouveau collaborateur ?",
+        "expected_doc": "LIVRET",
+    },
     {"query": "Quels sont les avantages offerts aux salariés ?", "expected_doc": "LIVRET"},
     {"query": "Quelle est l'organisation de la société ?", "expected_doc": "LIVRET"},
-    {"query": "Quelles sont les bonnes pratiques pour les photos ?", "expected_doc": "Bonne-pratique"},
+    {
+        "query": "Quelles sont les bonnes pratiques pour les photos ?",
+        "expected_doc": "Bonne-pratique",
+    },
 ]
 
 
@@ -145,7 +177,7 @@ async def _run_pipeline(
         # Hybrid retrieval
         query_terms = set(query.lower().split())
         scored: list[tuple[int, float]] = []
-        for i, (text, emb) in enumerate(zip(chunk_texts, chunk_embeddings)):
+        for i, (text, emb) in enumerate(zip(chunk_texts, chunk_embeddings, strict=True)):
             vec_score = cosine_similarity(q_emb, emb)
             content_terms = set(text.lower().split())
             lex_score = len(query_terms & content_terms) / max(len(query_terms), 1)
@@ -167,8 +199,11 @@ async def _run_pipeline(
             ]
             candidate_embs = [chunk_embeddings[idx] for idx, _ in candidates]
             mmr_results = await mmr_reranker.rerank(
-                query=query, chunks=candidate_dtos, top_k=TOP_K,
-                chunk_embeddings=candidate_embs, query_embedding=q_emb,
+                query=query,
+                chunks=candidate_dtos,
+                top_k=TOP_K,
+                chunk_embeddings=candidate_embs,
+                query_embedding=q_emb,
             )
             top_indices = [dto.chunk_index for dto in mmr_results if dto.chunk_index is not None]
         else:
@@ -181,13 +216,13 @@ async def _run_pipeline(
 
         # --- 4. Build prompt ---
         if use_enhanced_prompt:
-            prompt = build_rag_prompt(
+            build_rag_prompt(
                 query=query,
                 context_chunks=retrieved_chunks,
                 source_filenames=retrieved_sources,
             )
         else:
-            prompt = _build_baseline_rag_prompt(query=query, context_chunks=retrieved_chunks)
+            _build_baseline_rag_prompt(query=query, context_chunks=retrieved_chunks)
 
         # --- Compute all metrics ---
         # Find the doc for chunk_coherence (use the expected doc)
@@ -203,7 +238,8 @@ async def _run_pipeline(
             "mrr": mrr(retrieved_ids, relevant_ids),
             "ndcg@5": ndcg_at_k(retrieved_ids, relevant_ids, TOP_K),
             "ctx_diversity": context_diversity(retrieved_embs) if retrieved_embs else 0.0,
-            "ctx_relevance": sum(1 for r in retrieved_ids if r in relevant_ids) / max(len(retrieved_ids), 1),
+            "ctx_relevance": sum(1 for r in retrieved_ids if r in relevant_ids)
+            / max(len(retrieved_ids), 1),
             "ctx_redundancy": context_redundancy(retrieved_embs) if retrieved_embs else 0.0,
         }
         results_per_query.append(metrics)
@@ -216,9 +252,7 @@ class TestBenchmarkEndToEnd:
     """Compare full Baseline pipeline vs full Optimized pipeline."""
 
     @pytest.mark.asyncio
-    async def test_end_to_end_baseline_vs_optimized(
-        self, sanitized_texts: dict[str, str]
-    ) -> None:
+    async def test_end_to_end_baseline_vs_optimized(self, sanitized_texts: dict[str, str]) -> None:
         assert sanitized_texts, "No test documents found"
 
         # --- Baseline pipeline ---
@@ -274,25 +308,20 @@ class TestBenchmarkEndToEnd:
             ("ctx_redundancy", False),  # lower is better
         ]
 
-        for base_m, opt_m in zip(baseline_results, optimized_results):
+        for base_m, opt_m in zip(baseline_results, optimized_results, strict=True):
             label = base_m["label"]
             for metric_name, higher_is_better in metric_keys:
-                rows.append(make_row(
-                    benchmark_name,
-                    label,
-                    metric_name,
-                    base_m[metric_name],
-                    opt_m[metric_name],
-                    higher_is_better=higher_is_better,
-                ))
+                rows.append(
+                    make_row(
+                        benchmark_name,
+                        label,
+                        metric_name,
+                        base_m[metric_name],
+                        opt_m[metric_name],
+                        higher_is_better=higher_is_better,
+                    )
+                )
 
         filepath = write_benchmark_csv("end_to_end_pipeline.csv", rows)
         assert filepath.exists()
         assert len(rows) > 0
-
-
-
-
-
-
-

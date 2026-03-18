@@ -47,7 +47,7 @@ class CreateProjectRequest(BaseModel):
         le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     )
     reranking_enabled: bool | None = None
-    reranker_backend: Literal["none", "cross_encoder", "inmemory"] | None = None
+    reranker_backend: Literal["none", "cross_encoder", "inmemory", "mmr"] | None = None
     reranker_model: str | None = None
     reranker_candidate_multiplier: int | None = Field(
         default=None,
@@ -92,7 +92,7 @@ class UpdateProjectRequest(BaseModel):
         le=MAX_PROJECT_RETRIEVAL_MIN_SCORE,
     )
     reranking_enabled: bool | None = None
-    reranker_backend: Literal["none", "cross_encoder", "inmemory"] | None = None
+    reranker_backend: Literal["none", "cross_encoder", "inmemory", "mmr"] | None = None
     reranker_model: str | None = None
     reranker_candidate_multiplier: int | None = Field(
         default=None,
@@ -139,7 +139,7 @@ class ProjectResponse(BaseModel):
     retrieval_top_k: int
     retrieval_min_score: float
     reranking_enabled: bool
-    reranker_backend: Literal["none", "cross_encoder", "inmemory"] | None
+    reranker_backend: Literal["none", "cross_encoder", "inmemory", "mmr"] | None
     reranker_model: str | None
     reranker_candidate_multiplier: int
     chat_history_window_size: int

@@ -77,9 +77,7 @@ class TestBenchmarkChunkingFixedVsSemantic:
     """Compare Fixed Window (baseline) vs Semantic chunking (optimized)."""
 
     @pytest.mark.asyncio
-    async def test_fixed_vs_semantic_all_docs(
-        self, sanitized_texts: dict[str, str]
-    ) -> None:
+    async def test_fixed_vs_semantic_all_docs(self, sanitized_texts: dict[str, str]) -> None:
         assert sanitized_texts, "No test documents found"
 
         rows: list[dict] = []
@@ -100,21 +98,37 @@ class TestBenchmarkChunkingFixedVsSemantic:
             std_base = chunk_size_std(baseline_chunks)
             std_opt = chunk_size_std(optimized_chunks)
             rows.append(
-                make_row(benchmark_name, label, "chunk_size_std", std_base, std_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name,
+                    label,
+                    "chunk_size_std",
+                    std_base,
+                    std_opt,
+                    higher_is_better=False,
+                )
             )
 
             # empty_chunks – lower is better
             ec_base = float(empty_chunk_count(baseline_chunks))
             ec_opt = float(empty_chunk_count(optimized_chunks))
             rows.append(
-                make_row(benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False
+                )
             )
 
             # single_word_chunks – lower is better
             sw_base = float(single_word_chunk_count(baseline_chunks))
             sw_opt = float(single_word_chunk_count(optimized_chunks))
             rows.append(
-                make_row(benchmark_name, label, "single_word_chunks", sw_base, sw_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name,
+                    label,
+                    "single_word_chunks",
+                    sw_base,
+                    sw_opt,
+                    higher_is_better=False,
+                )
             )
 
             # information_density – higher is better
@@ -132,9 +146,7 @@ class TestBenchmarkChunkingFixedVsParagraph:
     """Compare Fixed Window (baseline) vs Paragraph chunking (optimized)."""
 
     @pytest.mark.asyncio
-    async def test_fixed_vs_paragraph_all_docs(
-        self, sanitized_texts: dict[str, str]
-    ) -> None:
+    async def test_fixed_vs_paragraph_all_docs(self, sanitized_texts: dict[str, str]) -> None:
         assert sanitized_texts, "No test documents found"
 
         rows: list[dict] = []
@@ -153,19 +165,35 @@ class TestBenchmarkChunkingFixedVsParagraph:
             std_base = chunk_size_std(baseline_chunks)
             std_opt = chunk_size_std(optimized_chunks)
             rows.append(
-                make_row(benchmark_name, label, "chunk_size_std", std_base, std_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name,
+                    label,
+                    "chunk_size_std",
+                    std_base,
+                    std_opt,
+                    higher_is_better=False,
+                )
             )
 
             ec_base = float(empty_chunk_count(baseline_chunks))
             ec_opt = float(empty_chunk_count(optimized_chunks))
             rows.append(
-                make_row(benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False
+                )
             )
 
             sw_base = float(single_word_chunk_count(baseline_chunks))
             sw_opt = float(single_word_chunk_count(optimized_chunks))
             rows.append(
-                make_row(benchmark_name, label, "single_word_chunks", sw_base, sw_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name,
+                    label,
+                    "single_word_chunks",
+                    sw_base,
+                    sw_opt,
+                    higher_is_better=False,
+                )
             )
 
             id_base = information_density(baseline_chunks)
@@ -175,5 +203,3 @@ class TestBenchmarkChunkingFixedVsParagraph:
         filepath = write_benchmark_csv("chunking_fixed_vs_paragraph.csv", rows)
         assert filepath.exists()
         assert len(rows) > 0
-
-

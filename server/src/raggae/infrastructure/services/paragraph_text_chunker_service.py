@@ -105,4 +105,3 @@ class ParagraphTextChunkerService:
                 else:
                     merged.append(chunk)
         return [c for c in merged if c.strip()]
-

@@ -81,8 +81,6 @@ class InMemoryChunkRetrievalService:
         return self._vector_weight, self._fulltext_weight
 
 
-
-
 def _tokenize(text: str) -> set[str]:
     return {part.strip().lower() for part in text.split() if part.strip()}
 

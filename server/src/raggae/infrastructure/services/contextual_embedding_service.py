@@ -36,4 +36,3 @@ class ContextualEmbeddingService:
         prefixed = f"{self._query_prefix}{query}"
         results = await self._delegate.embed_texts([prefixed])
         return results[0]
-

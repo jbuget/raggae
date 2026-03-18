@@ -18,4 +18,3 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
     if left_norm == 0.0 or right_norm == 0.0:
         return 0.0
     return dot_product / (left_norm * right_norm)
-

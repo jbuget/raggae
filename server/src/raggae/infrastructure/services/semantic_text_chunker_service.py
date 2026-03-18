@@ -84,7 +84,9 @@ class SemanticTextChunkerService:
 
         merged: list[str] = []
         for chunk in chunks:
-            if merged and (len(chunk) < self._min_chunk_size or len(merged[-1]) < self._min_chunk_size):
+            if merged and (
+                len(chunk) < self._min_chunk_size or len(merged[-1]) < self._min_chunk_size
+            ):
                 candidate = f"{merged[-1]} {chunk}"
                 if len(candidate) <= self._chunk_size:
                     merged[-1] = candidate
@@ -110,5 +112,3 @@ class SemanticTextChunkerService:
             if start == end:
                 break
         return parts
-
-

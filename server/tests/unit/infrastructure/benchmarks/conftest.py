@@ -7,7 +7,6 @@ CSV files in ``server/benchmark_results/``.
 from __future__ import annotations
 
 import csv
-import os
 import re
 import statistics
 from math import log2, sqrt
@@ -29,6 +28,7 @@ BENCHMARK_OUTPUT_DIR = SERVER_DIR / "benchmark_results"
 # ---------------------------------------------------------------------------
 # CSV writer
 # ---------------------------------------------------------------------------
+
 
 def write_benchmark_csv(
     filename: str,
@@ -55,7 +55,9 @@ def write_benchmark_csv(
         wins_opt = sum(1 for r in rows if r["Winner"] == "optimized")
         wins_base = sum(1 for r in rows if r["Winner"] == "baseline")
         ties = sum(1 for r in rows if r["Winner"] == "tie")
-        fh.write(f"\nSUMMARY;Optimized wins: {wins_opt};Baseline wins: {wins_base};Ties: {ties};;\n")
+        fh.write(
+            f"\nSUMMARY;Optimized wins: {wins_opt};Baseline wins: {wins_base};Ties: {ties};;\n"
+        )
 
     return filepath
 
@@ -142,6 +144,7 @@ def information_density(chunks: list[str]) -> float:
 # Retrieval metrics
 # ---------------------------------------------------------------------------
 
+
 def precision_at_k(retrieved_ids: list[str], relevant_ids: set[str], k: int = 5) -> float:
     top_k = retrieved_ids[:k]
     if not top_k:
@@ -179,7 +182,7 @@ def ndcg_at_k(retrieved_ids: list[str], relevant_ids: set[str], k: int = 5) -> f
 def cosine_similarity(a: list[float], b: list[float]) -> float:
     if not a or not b or len(a) != len(b):
         return 0.0
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
     na = sqrt(sum(x * x for x in a))
     nb = sqrt(sum(y * y for y in b))
     if na == 0.0 or nb == 0.0:
@@ -225,10 +228,11 @@ def pdf_texts() -> dict[str, str]:
             "Place PDF files in server/tests/docs/ to enable benchmarks."
         )
 
+    import asyncio
+
     from raggae.infrastructure.services.multiformat_document_text_extractor import (
         MultiFormatDocumentTextExtractor,
     )
-    import asyncio
 
     extractor = MultiFormatDocumentTextExtractor()
     texts: dict[str, str] = {}
@@ -246,10 +250,11 @@ def pdf_texts() -> dict[str, str]:
 @pytest.fixture(scope="session")
 def sanitized_texts(pdf_texts: dict[str, str]) -> dict[str, str]:
     """Sanitize extracted texts."""
+    import asyncio
+
     from raggae.infrastructure.services.simple_text_sanitizer_service import (
         SimpleTextSanitizerService,
     )
-    import asyncio
 
     sanitizer = SimpleTextSanitizerService()
     result: dict[str, str] = {}
@@ -260,5 +265,3 @@ def sanitized_texts(pdf_texts: dict[str, str]) -> dict[str, str]:
 
     asyncio.run(_sanitize_all())
     return result
-
-

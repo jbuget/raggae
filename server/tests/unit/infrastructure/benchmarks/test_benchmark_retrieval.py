@@ -35,18 +35,48 @@ CHUNK_SIZE = 500
 TOP_K = 5
 
 QUERIES: list[dict[str, Any]] = [
-    {"query": "Quelles sont les conditions pour bénéficier du télétravail ?", "expected_doc": "Charte télétravail"},
-    {"query": "Qui peut bénéficier du télétravail dans l'entreprise ?", "expected_doc": "Charte télétravail"},
-    {"query": "Quelles sont les obligations de l'employeur en matière de télétravail ?", "expected_doc": "Charte télétravail"},
+    {
+        "query": "Quelles sont les conditions pour bénéficier du télétravail ?",
+        "expected_doc": "Charte télétravail",
+    },
+    {
+        "query": "Qui peut bénéficier du télétravail dans l'entreprise ?",
+        "expected_doc": "Charte télétravail",
+    },
+    {
+        "query": "Quelles sont les obligations de l'employeur en matière de télétravail ?",
+        "expected_doc": "Charte télétravail",
+    },
     {"query": "Comment signaler un cas de harcèlement au travail ?", "expected_doc": "harcèlement"},
-    {"query": "Quelles sont les sanctions prévues en cas de harcèlement ?", "expected_doc": "harcèlement"},
-    {"query": "Quelle est la définition du harcèlement moral et sexuel ?", "expected_doc": "harcèlement"},
-    {"query": "Quelles sont les règles d'utilisation des systèmes d'information ?", "expected_doc": "systèmes d'information"},
-    {"query": "Quelles sont les obligations en matière de sécurité informatique ?", "expected_doc": "systèmes d'information"},
-    {"query": "Que se passe-t-il en cas de non-respect de la charte informatique ?", "expected_doc": "systèmes d'information"},
-    {"query": "Comment se passe l'intégration d'un nouveau collaborateur ?", "expected_doc": "LIVRET"},
+    {
+        "query": "Quelles sont les sanctions prévues en cas de harcèlement ?",
+        "expected_doc": "harcèlement",
+    },
+    {
+        "query": "Quelle est la définition du harcèlement moral et sexuel ?",
+        "expected_doc": "harcèlement",
+    },
+    {
+        "query": "Quelles sont les règles d'utilisation des systèmes d'information ?",
+        "expected_doc": "systèmes d'information",
+    },
+    {
+        "query": "Quelles sont les obligations en matière de sécurité informatique ?",
+        "expected_doc": "systèmes d'information",
+    },
+    {
+        "query": "Que se passe-t-il en cas de non-respect de la charte informatique ?",
+        "expected_doc": "systèmes d'information",
+    },
+    {
+        "query": "Comment se passe l'intégration d'un nouveau collaborateur ?",
+        "expected_doc": "LIVRET",
+    },
     {"query": "Quels sont les avantages offerts aux salariés ?", "expected_doc": "LIVRET"},
-    {"query": "Quelles sont les bonnes pratiques pour les photos ?", "expected_doc": "Bonne-pratique"},
+    {
+        "query": "Quelles sont les bonnes pratiques pour les photos ?",
+        "expected_doc": "Bonne-pratique",
+    },
 ]
 
 
@@ -95,7 +125,7 @@ def _hybrid_retrieve(
     query_terms = set(query_text.lower().split())
     scored: list[tuple[str, float, int]] = []
 
-    for i, (text, cid, emb) in enumerate(zip(chunk_texts, chunk_ids, embeddings)):
+    for i, (text, cid, emb) in enumerate(zip(chunk_texts, chunk_ids, embeddings, strict=True)):
         vec_score = cosine_similarity(query_embedding, emb)
         content_terms = set(text.lower().split())
         lex_score = len(query_terms & content_terms) / max(len(query_terms), 1)
@@ -116,9 +146,7 @@ class TestBenchmarkRetrieval:
     """Compare Hybrid retrieval (baseline) vs Hybrid + MMR diversity (optimized)."""
 
     @pytest.mark.asyncio
-    async def test_hybrid_vs_mmr_diversity(
-        self, sanitized_texts: dict[str, str]
-    ) -> None:
+    async def test_hybrid_vs_mmr_diversity(self, sanitized_texts: dict[str, str]) -> None:
         assert sanitized_texts, "No test documents found"
 
         embedding_svc = InMemoryEmbeddingService(dimension=32)
@@ -136,16 +164,13 @@ class TestBenchmarkRetrieval:
             label = query[:30]
 
             relevant_ids = {
-                cid for cid, src in zip(chunk_ids, chunk_sources)
-                if _doc_matches(src, expected_kw)
+                cid for cid, src in zip(chunk_ids, chunk_sources, strict=True) if _doc_matches(src, expected_kw)
             }
 
             q_emb = (await embedding_svc.embed_texts([query]))[0]
 
             # --- Baseline: standard hybrid ---
-            baseline_results = _hybrid_retrieve(
-                q_emb, query, chunk_texts, chunk_ids, embeddings
-            )
+            baseline_results = _hybrid_retrieve(q_emb, query, chunk_texts, chunk_ids, embeddings)
             base_retrieved = [r[0] for r in baseline_results]
             base_embs = [embeddings[r[2]] for r in baseline_results]
 
@@ -202,20 +227,28 @@ class TestBenchmarkRetrieval:
             rows.append(make_row(benchmark_name, label, "ctx_diversity", d_base, d_opt))
 
             # ctx_relevance_density
-            rel_base = sum(1 for r in base_retrieved if r in relevant_ids) / max(len(base_retrieved), 1)
-            rel_opt = sum(1 for r in opt_retrieved if r in relevant_ids) / max(len(opt_retrieved), 1)
+            rel_base = sum(1 for r in base_retrieved if r in relevant_ids) / max(
+                len(base_retrieved), 1
+            )
+            rel_opt = sum(1 for r in opt_retrieved if r in relevant_ids) / max(
+                len(opt_retrieved), 1
+            )
             rows.append(make_row(benchmark_name, label, "ctx_relevance_density", rel_base, rel_opt))
 
             # ctx_redundancy
             red_base = context_redundancy(base_embs) if base_embs else 0.0
             red_opt = context_redundancy(opt_embs) if opt_embs else 0.0
             rows.append(
-                make_row(benchmark_name, label, "ctx_redundancy", red_base, red_opt, higher_is_better=False)
+                make_row(
+                    benchmark_name,
+                    label,
+                    "ctx_redundancy",
+                    red_base,
+                    red_opt,
+                    higher_is_better=False,
+                )
             )
 
         filepath = write_benchmark_csv("retrieval_hybrid_vs_diversity.csv", rows)
         assert filepath.exists()
         assert len(rows) > 0
-
-
-
