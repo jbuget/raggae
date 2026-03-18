@@ -7,27 +7,42 @@ from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
+from raggae.application.use_cases.user.update_user_locale import UpdateUserLocale
 from raggae.domain.exceptions.user_exceptions import (
     InvalidCredentialsError,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from raggae.domain.value_objects.locale import Locale
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_current_user_use_case,
     get_login_user_use_case,
     get_register_user_use_case,
     get_update_user_full_name_use_case,
+    get_update_user_locale_use_case,
 )
 from raggae.presentation.api.v1.schemas.auth_schemas import (
     LoginUserRequest,
     RegisterUserRequest,
     TokenResponse,
     UpdateUserFullNameRequest,
+    UpdateUserLocaleRequest,
     UserResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _user_response(user_dto) -> UserResponse:  # type: ignore[no-untyped-def]
+    return UserResponse(
+        id=user_dto.id,
+        email=user_dto.email,
+        full_name=user_dto.full_name,
+        is_active=user_dto.is_active,
+        created_at=user_dto.created_at,
+        locale=str(user_dto.locale),
+    )
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -46,13 +61,7 @@ async def register(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e),
         ) from None
-    return UserResponse(
-        id=user_dto.id,
-        email=user_dto.email,
-        full_name=user_dto.full_name,
-        is_active=user_dto.is_active,
-        created_at=user_dto.created_at,
-    )
+    return _user_response(user_dto)
 
 
 @router.post("/login")
@@ -88,13 +97,7 @@ async def get_current_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         ) from None
-    return UserResponse(
-        id=user_dto.id,
-        email=user_dto.email,
-        full_name=user_dto.full_name,
-        is_active=user_dto.is_active,
-        created_at=user_dto.created_at,
-    )
+    return _user_response(user_dto)
 
 
 @router.patch("/me/full-name", dependencies=[Depends(get_current_user_id)])
@@ -110,10 +113,20 @@ async def update_user_full_name(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         ) from None
-    return UserResponse(
-        id=user_dto.id,
-        email=user_dto.email,
-        full_name=user_dto.full_name,
-        is_active=user_dto.is_active,
-        created_at=user_dto.created_at,
-    )
+    return _user_response(user_dto)
+
+
+@router.patch("/me/locale", dependencies=[Depends(get_current_user_id)])
+async def update_user_locale(
+    data: UpdateUserLocaleRequest,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[UpdateUserLocale, Depends(get_update_user_locale_use_case)],
+) -> UserResponse:
+    try:
+        user_dto = await use_case.execute(user_id=user_id, locale=Locale(data.locale))
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    return _user_response(user_dto)
