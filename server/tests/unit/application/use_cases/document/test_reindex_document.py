@@ -7,6 +7,7 @@ import pytest
 
 from raggae.application.use_cases.document.reindex_document import ReindexDocument
 from raggae.domain.entities.document import Document
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import DocumentNotFoundError
 from raggae.domain.exceptions.project_exceptions import (
@@ -15,6 +16,7 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.document_status import DocumentStatus
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestReindexDocument:
@@ -427,4 +429,99 @@ class TestReindexDocument:
                 project_id=project_id,
                 document_id=document_id,
                 user_id=user_id,
+            )
+
+    async def test_reindex_document_org_maker_can_reindex(
+        self,
+        project_id,
+        document_id,
+        document,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        org_project = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = org_project
+        mock_document_repository.find_by_id.return_value = document
+        processing_document = replace(document, status=DocumentStatus.PROCESSING)
+        mock_document_indexing_service.run_pipeline.return_value = processing_document
+        mock_org_member_repo = AsyncMock()
+        mock_org_member_repo.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.MAKER,
+            joined_at=datetime.now(UTC),
+        )
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+            organization_member_repository=mock_org_member_repo,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id, document_id=document_id, user_id=requester_id
+        )
+
+        # Then
+        assert result.id == document_id
+
+    async def test_reindex_document_org_user_cannot_reindex(
+        self,
+        project_id,
+        document_id,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_document_indexing_service: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_org_member_repo = AsyncMock()
+        mock_org_member_repo.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
+        )
+        use_case = ReindexDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            document_indexing_service=mock_document_indexing_service,
+            organization_member_repository=mock_org_member_repo,
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(
+                project_id=project_id, document_id=document_id, user_id=requester_id
             )

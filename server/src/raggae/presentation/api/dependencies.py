@@ -654,6 +654,7 @@ def get_upload_document_use_case() -> UploadDocument:
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
         max_documents_per_project=settings.max_documents_per_project,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -664,6 +665,7 @@ def get_reindex_document_use_case() -> ReindexDocument:
         file_storage_service=_file_storage_service,
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -671,6 +673,7 @@ def get_list_project_documents_use_case() -> ListProjectDocuments:
     return ListProjectDocuments(
         document_repository=_document_repository,
         project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -679,6 +682,7 @@ def get_list_document_chunks_use_case() -> ListDocumentChunks:
         document_repository=_document_repository,
         document_chunk_repository=_document_chunk_repository,
         project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -688,6 +692,7 @@ def get_delete_document_use_case() -> DeleteDocument:
         document_chunk_repository=_document_chunk_repository,
         project_repository=_project_repository,
         file_storage_service=_file_storage_service,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -696,6 +701,7 @@ def get_get_document_file_use_case() -> GetDocumentFile:
         document_repository=_document_repository,
         project_repository=_project_repository,
         file_storage_service=_file_storage_service,
+        organization_member_repository=_organization_member_repository,
     )
 
 

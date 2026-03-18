@@ -6,8 +6,10 @@ import pytest
 
 from raggae.application.use_cases.document.list_project_documents import ListProjectDocuments
 from raggae.domain.entities.document import Document
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestListProjectDocuments:
@@ -20,14 +22,20 @@ class TestListProjectDocuments:
         return AsyncMock()
 
     @pytest.fixture
+    def mock_organization_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
     def use_case(
         self,
         mock_document_repository: AsyncMock,
         mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
     ) -> ListProjectDocuments:
         return ListProjectDocuments(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
         )
 
     async def test_list_project_documents_success(
@@ -71,6 +79,7 @@ class TestListProjectDocuments:
         self,
         use_case: ListProjectDocuments,
         mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
     ) -> None:
         # Given
         project_id = uuid4()
@@ -83,7 +92,80 @@ class TestListProjectDocuments:
             is_published=False,
             created_at=datetime.now(UTC),
         )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = None
 
         # When / Then
         with pytest.raises(ProjectNotFoundError):
             await use_case.execute(project_id=project_id, user_id=uuid4())
+
+    async def test_list_project_documents_org_maker_can_access(
+        self,
+        use_case: ListProjectDocuments,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.MAKER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+        mock_document_repository.find_by_project_id.return_value = []
+
+        # When
+        result = await use_case.execute(project_id=project_id, user_id=requester_id)
+
+        # Then
+        assert result == []
+
+    async def test_list_project_documents_org_user_cannot_access(
+        self,
+        use_case: ListProjectDocuments,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project_id, user_id=requester_id)
