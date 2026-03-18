@@ -259,7 +259,7 @@ export default function UserSettingsPage() {
                       disabled={deleteCredential.isPending}
                       onClick={() => handleDelete(item.id)}
                     >
-                      Delete
+                      {tCommon("delete")}
                     </Button>
                   </div>
                 </div>

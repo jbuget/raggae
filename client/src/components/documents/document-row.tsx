@@ -49,6 +49,7 @@ export function DocumentRow({
   disableReindex = false,
 }: DocumentRowProps) {
   const t = useTranslations("documents.row");
+  const tStatus = useTranslations("documents.status");
   const tCommon = useTranslations("common");
   const { token } = useAuth();
   const isReindexing = reindexingId === document.id;
@@ -58,7 +59,7 @@ export function DocumentRow({
   const [previewType, setPreviewType] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const statusLabel = document.status.charAt(0).toUpperCase() + document.status.slice(1);
+  const statusLabel = tStatus(document.status as "indexed" | "processing" | "uploaded" | "pending" | "error");
   const statusClassName =
     document.status === "indexed"
       ? "border-emerald-200 bg-emerald-100 text-emerald-800"
@@ -92,7 +93,7 @@ export function DocumentRow({
       setPreviewUrl(URL.createObjectURL(blob));
       setPreviewType(blob.type || "application/octet-stream");
     } catch {
-      setPreviewError("Unable to load preview for this document.");
+      setPreviewError(t("unableToLoadPreview"));
     } finally {
       setPreviewLoading(false);
     }
@@ -111,7 +112,7 @@ export function DocumentRow({
           </Badge>
           {document.status === "indexed" && document.last_indexed_at ? (
             <Badge variant="outline" className="px-1.5 py-0 text-[10px] leading-4">
-              Indexed {formatDateTime(document.last_indexed_at)}
+              {t("indexedAt", { date: formatDateTime(document.last_indexed_at) })}
             </Badge>
           ) : null}
         </div>
@@ -176,7 +177,7 @@ export function DocumentRow({
           <DialogHeader>
             <DialogTitle>{t("deleteDocumentTitle")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{document.file_name}&quot;?
+              {t("deleteConfirm", { name: document.file_name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -95,6 +95,14 @@
       "providerLabel": "Fournisseur",
       "apiKeyLabel": "Clé API",
       "saveKey": "Enregistrer la clé",
+      "saveKeySuccess": "Clé API enregistrée pour {provider}.",
+      "saveKeyError": "Impossible d'enregistrer la clé API.",
+      "activateSuccess": "Clé API activée.",
+      "activateError": "Impossible d'activer la clé API.",
+      "deactivateSuccess": "Clé API désactivée.",
+      "deactivateError": "Impossible de désactiver la clé API.",
+      "deleteSuccess": "Clé API supprimée.",
+      "deleteError": "Impossible de supprimer la clé API.",
       "keyAdded": "Clé API ajoutée.",
       "keyDeleted": "Clé API supprimée.",
       "keyActivated": "Clé API activée.",
@@ -424,6 +432,13 @@
     }
   },
   "documents": {
+    "status": {
+      "indexed": "Indexé",
+      "processing": "En traitement",
+      "uploaded": "Téléversé",
+      "pending": "En attente",
+      "error": "Erreur"
+    },
     "upload": {
       "dragAndDrop": "Glissez-déposez un fichier ici, ou cliquez pour sélectionner",
       "selectFiles": "Sélectionner des fichiers",
@@ -448,7 +463,10 @@
       "deleteDocumentTitle": "Supprimer le document",
       "loadingPreview": "Chargement de l'aperçu...",
       "previewNotAvailable": "L'aperçu n'est pas disponible pour ce type de fichier.",
-      "downloadDocument": "Télécharger le document"
+      "downloadDocument": "Télécharger le document",
+      "indexedAt": "Indexé le {date}",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer « {name} » ?",
+      "unableToLoadPreview": "Impossible de charger l'aperçu de ce document."
     }
   },
   "sidebar": {

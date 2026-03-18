@@ -95,6 +95,14 @@
       "providerLabel": "Provider",
       "apiKeyLabel": "API key",
       "saveKey": "Save key",
+      "saveKeySuccess": "API key saved for {provider}.",
+      "saveKeyError": "Failed to save API key.",
+      "activateSuccess": "API key activated.",
+      "activateError": "Failed to activate API key.",
+      "deactivateSuccess": "API key deactivated.",
+      "deactivateError": "Failed to deactivate API key.",
+      "deleteSuccess": "API key deleted.",
+      "deleteError": "Failed to delete API key.",
       "keyAdded": "API key added.",
       "keyDeleted": "API key deleted.",
       "keyActivated": "API key activated.",
@@ -424,6 +432,13 @@
     }
   },
   "documents": {
+    "status": {
+      "indexed": "Indexed",
+      "processing": "Processing",
+      "uploaded": "Uploaded",
+      "pending": "Pending",
+      "error": "Error"
+    },
     "upload": {
       "dragAndDrop": "Drag and drop a file here, or click to select",
       "selectFiles": "Select Files",
@@ -448,7 +463,10 @@
       "deleteDocumentTitle": "Delete Document",
       "loadingPreview": "Loading preview...",
       "previewNotAvailable": "Preview is not available for this file type.",
-      "downloadDocument": "Download document"
+      "downloadDocument": "Download document",
+      "indexedAt": "Indexed {date}",
+      "deleteConfirm": "Are you sure you want to delete \"{name}\"?",
+      "unableToLoadPreview": "Unable to load preview for this document."
     }
   },
   "sidebar": {
