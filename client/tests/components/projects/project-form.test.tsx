@@ -34,7 +34,7 @@ describe("ProjectForm", () => {
   it("should disable submit when name is empty", () => {
     renderWithProviders(<ProjectForm onSubmit={vi.fn()} />);
 
-    const button = screen.getByRole("button", { name: /create project/i });
+    const button = screen.getByRole("button", { name: /new project/i });
     expect(button).toBeDisabled();
   });
 
@@ -44,7 +44,7 @@ describe("ProjectForm", () => {
 
     await user.type(screen.getByLabelText(/name/i), "My Project");
 
-    const button = screen.getByRole("button", { name: /create project/i });
+    const button = screen.getByRole("button", { name: /new project/i });
     expect(button).toBeEnabled();
   });
 
@@ -55,7 +55,7 @@ describe("ProjectForm", () => {
 
     await user.type(screen.getByLabelText(/name/i), "My Project");
     await user.type(screen.getByLabelText(/description/i), "A description");
-    await user.click(screen.getByRole("button", { name: /create project/i }));
+    await user.click(screen.getByRole("button", { name: /new project/i }));
 
     expect(onSubmit).toHaveBeenCalledWith({
       name: "My Project",
@@ -124,13 +124,13 @@ describe("ProjectForm", () => {
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     // Warning dialog should appear
-    expect(screen.getByText(/reindexation requise/i)).toBeInTheDocument();
+    expect(screen.getByText(/reindexing required/i)).toBeInTheDocument();
 
     // onSubmit should NOT have been called yet
     expect(onSubmit).not.toHaveBeenCalled();
 
     // Confirm
-    await user.click(screen.getByRole("button", { name: /confirmer/i }));
+    await user.click(screen.getByRole("button", { name: /confirm and save/i }));
 
     // Now onSubmit should have been called
     expect(onSubmit).toHaveBeenCalledWith(

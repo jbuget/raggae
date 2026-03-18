@@ -78,7 +78,7 @@ describe("MessageInput", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /thinking/i }),
+      screen.getByRole("button", { name: /send/i }),
     ).toBeDisabled();
   });
 });
