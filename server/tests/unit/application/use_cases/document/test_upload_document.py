@@ -6,6 +6,7 @@ import pytest
 
 from raggae.application.use_cases.document.upload_document import UploadDocument
 from raggae.domain.entities.document import Document
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import (
     DocumentTooLargeError,
@@ -16,6 +17,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestUploadDocument:
@@ -252,6 +254,102 @@ class TestUploadDocument:
                 project_id=project_id,
                 user_id=user_id,
                 file_name="one_more.pdf",
+                file_content=b"content",
+                content_type="application/pdf",
+            )
+
+    async def test_upload_document_org_maker_can_upload(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_org_member_repo = AsyncMock()
+        mock_org_member_repo.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.MAKER,
+            joined_at=datetime.now(UTC),
+        )
+        mock_document_repository.find_by_project_id.return_value = []
+        mock_file_storage_service.upload_file.return_value = None
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+            organization_member_repository=mock_org_member_repo,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=requester_id,
+            file_name="doc.pdf",
+            file_content=b"content",
+            content_type="application/pdf",
+        )
+
+        # Then
+        assert result.file_name == "doc.pdf"
+
+    async def test_upload_document_org_user_cannot_upload(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_org_member_repo = AsyncMock()
+        mock_org_member_repo.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
+        )
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+            organization_member_repository=mock_org_member_repo,
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(
+                project_id=project_id,
+                user_id=requester_id,
+                file_name="doc.pdf",
                 file_content=b"content",
                 content_type="application/pdf",
             )

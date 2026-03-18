@@ -6,9 +6,11 @@ import pytest
 
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.domain.entities.document import Document
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import DocumentNotFoundError
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestDeleteDocument:
@@ -29,18 +31,24 @@ class TestDeleteDocument:
         return AsyncMock()
 
     @pytest.fixture
+    def mock_organization_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
     def use_case(
         self,
         mock_document_repository: AsyncMock,
         mock_document_chunk_repository: AsyncMock,
         mock_project_repository: AsyncMock,
         mock_file_storage_service: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
     ) -> DeleteDocument:
         return DeleteDocument(
             document_repository=mock_document_repository,
             document_chunk_repository=mock_document_chunk_repository,
             project_repository=mock_project_repository,
             file_storage_service=mock_file_storage_service,
+            organization_member_repository=mock_organization_member_repository,
         )
 
     async def test_delete_document_success(
@@ -117,3 +125,86 @@ class TestDeleteDocument:
         # When / Then
         with pytest.raises(DocumentNotFoundError):
             await use_case.execute(project_id=project_id, document_id=uuid4(), user_id=user_id)
+
+    async def test_delete_document_org_maker_can_delete(
+        self,
+        use_case: DeleteDocument,
+        mock_document_repository: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        document_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.MAKER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+        mock_document_repository.find_by_id.return_value = Document(
+            id=document_id,
+            project_id=project_id,
+            file_name="doc.pdf",
+            content_type="application/pdf",
+            file_size=100,
+            storage_key="key-1",
+            created_at=datetime.now(UTC),
+        )
+
+        # When
+        await use_case.execute(project_id=project_id, document_id=document_id, user_id=requester_id)
+
+        # Then
+        mock_file_storage_service.delete_file.assert_called_once_with("key-1")
+
+    async def test_delete_document_org_user_cannot_delete(
+        self,
+        use_case: DeleteDocument,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project_id, document_id=uuid4(), user_id=requester_id)

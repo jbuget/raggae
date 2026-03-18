@@ -7,6 +7,9 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
     DocumentChunkRepository,
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
+)
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.project_embedding_service_resolver import (
@@ -27,6 +30,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectReindexInProgressError,
 )
 from raggae.domain.value_objects.document_status import DocumentStatus
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc"}
 
@@ -75,6 +79,7 @@ class UploadDocument:
         document_indexing_service: DocumentIndexingService | None = None,
         project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         max_documents_per_project: int | None = None,
+        organization_member_repository: OrganizationMemberRepository | None = None,
     ) -> None:
         self._document_repository = document_repository
         self._project_repository = project_repository
@@ -87,6 +92,7 @@ class UploadDocument:
         self._document_indexing_service = document_indexing_service
         self._project_embedding_service_resolver = project_embedding_service_resolver
         self._max_documents_per_project = max_documents_per_project
+        self._organization_member_repository = organization_member_repository
 
     async def execute(
         self,
@@ -201,8 +207,20 @@ class UploadDocument:
 
     async def _assert_project_owner(self, project_id: UUID, user_id: UUID) -> Project:
         project = await self._project_repository.find_by_id(project_id)
-        if project is None or project.user_id != user_id:
+        if project is None:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        if project.user_id != user_id:
+            if project.organization_id is None or self._organization_member_repository is None:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
+            member = await self._organization_member_repository.find_by_organization_and_user(
+                organization_id=project.organization_id,
+                user_id=user_id,
+            )
+            if member is None or member.role not in {
+                OrganizationMemberRole.OWNER,
+                OrganizationMemberRole.MAKER,
+            }:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
         return project

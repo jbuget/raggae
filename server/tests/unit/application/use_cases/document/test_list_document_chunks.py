@@ -7,10 +7,12 @@ import pytest
 from raggae.application.use_cases.document.list_document_chunks import ListDocumentChunks
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.document_chunk import DocumentChunk
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import DocumentNotFoundError
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class TestListDocumentChunks:
@@ -27,16 +29,22 @@ class TestListDocumentChunks:
         return AsyncMock()
 
     @pytest.fixture
+    def mock_organization_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
     def use_case(
         self,
         mock_document_repository: AsyncMock,
         mock_document_chunk_repository: AsyncMock,
         mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
     ) -> ListDocumentChunks:
         return ListDocumentChunks(
             document_repository=mock_document_repository,
             document_chunk_repository=mock_document_chunk_repository,
             project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
         )
 
     async def test_list_document_chunks_success(
@@ -167,3 +175,88 @@ class TestListDocumentChunks:
                 document_id=uuid4(),
                 user_id=user_id,
             )
+
+    async def test_list_document_chunks_org_maker_can_access(
+        self,
+        use_case: ListDocumentChunks,
+        mock_document_repository: AsyncMock,
+        mock_document_chunk_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        document_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.MAKER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+        mock_document_repository.find_by_id.return_value = Document(
+            id=document_id,
+            project_id=project_id,
+            file_name="doc.txt",
+            content_type="text/plain",
+            file_size=12,
+            storage_key="documents/doc.txt",
+            created_at=datetime.now(UTC),
+        )
+        mock_document_chunk_repository.find_by_document_id.return_value = []
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id, document_id=document_id, user_id=requester_id
+        )
+
+        # Then
+        assert result.document_id == document_id
+
+    async def test_list_document_chunks_org_user_cannot_access(
+        self,
+        use_case: ListDocumentChunks,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project_id, document_id=uuid4(), user_id=requester_id)
