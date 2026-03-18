@@ -1,0 +1,81 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "confirm": "Confirm",
+    "close": "Close",
+    "add": "Add",
+    "edit": "Edit",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "active": "Active",
+    "inactive": "Inactive",
+    "or": "or"
+  },
+  "nav": {
+    "menu": "Menu",
+    "projects": "Projects",
+    "organizations": "Organizations",
+    "invitations": "Invitations",
+    "settings": "Settings"
+  },
+  "header": {
+    "account": "Account",
+    "userSettings": "User settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "register": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "forgotPassword": "Forgot password?"
+  },
+  "settings": {
+    "title": "User Settings",
+    "profile": {
+      "title": "Profile",
+      "emailLabel": "Email",
+      "fullNameLabel": "Full name",
+      "fullNamePlaceholder": "Your full name",
+      "saveSuccess": "Full name updated.",
+      "saveError": "Failed to update full name."
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose the interface language.",
+      "label": "Interface language",
+      "saveSuccess": "Language updated.",
+      "saveError": "Failed to update language."
+    },
+    "apiKeys": {
+      "title": "AI Provider API Keys",
+      "addKey": "Add API key",
+      "noKeys": "No API keys configured.",
+      "keyAdded": "API key added.",
+      "keyDeleted": "API key deleted.",
+      "keyActivated": "API key activated.",
+      "keyDeactivated": "API key deactivated.",
+      "addError": "Failed to add API key.",
+      "deleteConfirmTitle": "Delete API key",
+      "deleteConfirmDescription": "This action cannot be undone.",
+      "apiKeyLabel": "API key",
+      "apiKeyPlaceholder": "Paste your API key here"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "new": "New project",
+    "empty": "No projects yet.",
+    "namePlaceholder": "Project name"
+  },
+  "organizations": {
+    "title": "Organizations",
+    "new": "New organization"
+  }
+}

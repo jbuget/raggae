@@ -1,0 +1,81 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "loading": "Chargement...",
+    "saving": "Enregistrement...",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "or": "ou"
+  },
+  "nav": {
+    "menu": "Menu",
+    "projects": "Projets",
+    "organizations": "Organisations",
+    "invitations": "Invitations",
+    "settings": "Paramètres"
+  },
+  "header": {
+    "account": "Compte",
+    "userSettings": "Paramètres utilisateur",
+    "signOut": "Se déconnecter"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "register": "S'inscrire",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "fullName": "Nom complet",
+    "forgotPassword": "Mot de passe oublié ?"
+  },
+  "settings": {
+    "title": "Paramètres utilisateur",
+    "profile": {
+      "title": "Profil",
+      "emailLabel": "E-mail",
+      "fullNameLabel": "Nom complet",
+      "fullNamePlaceholder": "Votre nom complet",
+      "saveSuccess": "Nom mis à jour.",
+      "saveError": "Impossible de mettre à jour le nom."
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez la langue de l'interface.",
+      "label": "Langue de l'interface",
+      "saveSuccess": "Langue mise à jour.",
+      "saveError": "Impossible de mettre à jour la langue."
+    },
+    "apiKeys": {
+      "title": "Clés API des fournisseurs IA",
+      "addKey": "Ajouter une clé API",
+      "noKeys": "Aucune clé API configurée.",
+      "keyAdded": "Clé API ajoutée.",
+      "keyDeleted": "Clé API supprimée.",
+      "keyActivated": "Clé API activée.",
+      "keyDeactivated": "Clé API désactivée.",
+      "addError": "Impossible d'ajouter la clé API.",
+      "deleteConfirmTitle": "Supprimer la clé API",
+      "deleteConfirmDescription": "Cette action est irréversible.",
+      "apiKeyLabel": "Clé API",
+      "apiKeyPlaceholder": "Collez votre clé API ici"
+    }
+  },
+  "projects": {
+    "title": "Projets",
+    "new": "Nouveau projet",
+    "empty": "Aucun projet pour le moment.",
+    "namePlaceholder": "Nom du projet"
+  },
+  "organizations": {
+    "title": "Organisations",
+    "new": "Nouvelle organisation"
+  }
+}
