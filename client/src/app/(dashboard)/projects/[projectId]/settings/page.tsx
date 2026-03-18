@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -108,6 +109,21 @@ export default function ProjectSettingsPage() {
     null,
   );
 
+  const t = useTranslations("projects.settings");
+  const tCommon = useTranslations("common");
+  const tForm = useTranslations("projects.form");
+
+  const tabLabels: Record<SettingsTab, string> = {
+    "General": t("tabs.general"),
+    "Publication": t("tabs.publication"),
+    "Models": t("tabs.models"),
+    "Knowledge indexing": t("tabs.knowledgeIndexing"),
+    "Document ingestion": t("tabs.documentIngestion"),
+    "Context retrieval": t("tabs.contextRetrieval"),
+    "Context augmentation": t("tabs.contextAugmentation"),
+    "Answer generation": t("tabs.answerGeneration"),
+  };
+
   if (isLoading) {
     return (
       <div className="w-full space-y-4">
@@ -118,7 +134,7 @@ export default function ProjectSettingsPage() {
   }
 
   if (!project) {
-    return <div className="text-center text-muted-foreground">Project not found</div>;
+    return <div className="text-center text-muted-foreground">{t("notFound")}</div>;
   }
 
   const effectiveName = name ?? project.name;
@@ -255,8 +271,8 @@ export default function ProjectSettingsPage() {
       return;
     }
     updateProject.mutate(payload, {
-      onSuccess: () => toast.success("Project updated"),
-      onError: () => toast.error("Failed to update project"),
+      onSuccess: () => toast.success(t("updateSuccess")),
+      onError: () => toast.error(t("updateError")),
     });
   }
 
@@ -284,7 +300,7 @@ export default function ProjectSettingsPage() {
                 ].join(" ")}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab}
+                {tabLabels[tab]}
               </button>
             );
           })}
@@ -293,8 +309,7 @@ export default function ProjectSettingsPage() {
 
       {isProjectReindexing && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Reindexation en cours ({project.reindex_progress}/{project.reindex_total}).
-          Les actions d&apos;upload, chat et reindex sont temporairement bloquees.
+          {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
         </div>
       )}
 
@@ -302,46 +317,44 @@ export default function ProjectSettingsPage() {
         <div className="max-w-3xl space-y-6">
           <div className="space-y-6 rounded-md">
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t("general.nameLabel")}</Label>
               <Input
                 id="name"
                 value={effectiveName}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="My project"
+                placeholder={t("general.namePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("general.descriptionLabel")}</Label>
               <Textarea
                 id="description"
                 value={effectiveDescription}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What is this project about?"
+                placeholder={t("general.descriptionPlaceholder")}
                 rows={3}
               />
             </div>
           </div>
           <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
-            {updateProject.isPending ? "Saving..." : "Save changes"}
+            {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
           </Button>
           <div className="space-y-3 rounded-md border p-4">
-            <p className="text-base font-semibold tracking-tight">Delete project</p>
+            <p className="text-base font-semibold tracking-tight">{t("general.deleteTitle")}</p>
             <p className="text-sm text-muted-foreground">
-              This action is irreversible and removes project settings, conversations, and
-              documents.
+              {t("general.deleteDescription")}
             </p>
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <DialogTrigger asChild>
                 <Button variant="destructive" className="cursor-pointer">
-                  Delete Project
+                  {t("general.deleteButton")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Delete Project</DialogTitle>
+                  <DialogTitle>{t("general.deleteDialogTitle")}</DialogTitle>
                   <DialogDescription>
-                    Are you sure you want to delete &quot;{project.name}&quot;? This action cannot
-                    be undone.
+                    {t("general.deleteDialogDescription", { name: project.name })}
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -350,7 +363,7 @@ export default function ProjectSettingsPage() {
                     className="cursor-pointer"
                     onClick={() => setDeleteOpen(false)}
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </Button>
                   <Button
                     variant="destructive"
@@ -359,14 +372,14 @@ export default function ProjectSettingsPage() {
                     onClick={() => {
                       deleteProject.mutate(project.id, {
                         onSuccess: () => {
-                          toast.success("Project deleted");
+                          toast.success(t("general.deleteSuccess"));
                           router.push("/projects");
                         },
-                        onError: () => toast.error("Failed to delete project"),
+                        onError: () => toast.error(t("general.deleteError")),
                       });
                     }}
                   >
-                    {deleteProject.isPending ? "Deleting..." : "Delete"}
+                    {deleteProject.isPending ? tCommon("deleting") : tCommon("delete")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -378,23 +391,23 @@ export default function ProjectSettingsPage() {
       {activeTab === "Publication" && (
         <div className="max-w-3xl space-y-6">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground">Status</span>
+            <span className="text-sm font-medium text-muted-foreground">{t("publication.statusLabel")}</span>
             {project.is_published ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                Published
+                {t("publication.published")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                 <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                Unpublished
+                {t("publication.unpublished")}
               </span>
             )}
           </div>
 
           {project.is_published && (
             <div className="space-y-2">
-              <p className="text-sm font-medium">Public URL</p>
+              <p className="text-sm font-medium">{t("publication.publicUrl")}</p>
               <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
                 <code className="flex-1 truncate text-xs text-muted-foreground">
                   {typeof window !== "undefined" ? window.location.origin : ""}/chat/{project.id}
@@ -407,14 +420,14 @@ export default function ProjectSettingsPage() {
                     navigator.clipboard.writeText(
                       `${window.location.origin}/chat/${project.id}`,
                     );
-                    toast.success("URL copied to clipboard");
+                    toast.success(t("publication.urlCopied"));
                   }}
                 >
-                  Copy
+                  {t("publication.copy")}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Note: the public chat page is not yet available.
+                {t("publication.noteNotAvailable")}
               </p>
             </div>
           )}
@@ -422,22 +435,21 @@ export default function ProjectSettingsPage() {
           <div className="space-y-3 rounded-md border p-4">
             {project.is_published ? (
               <>
-                <p className="text-base font-semibold tracking-tight">Unpublish this project</p>
+                <p className="text-base font-semibold tracking-tight">{t("publication.unpublishTitle")}</p>
                 <p className="text-sm text-muted-foreground">
-                  The project will no longer be accessible publicly.
+                  {t("publication.unpublishDescription")}
                 </p>
                 <Dialog open={unpublishOpen} onOpenChange={setUnpublishOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="cursor-pointer">
-                      Unpublish project
+                      {t("publication.unpublishButton")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Unpublish project</DialogTitle>
+                      <DialogTitle>{t("publication.unpublishDialogTitle")}</DialogTitle>
                       <DialogDescription>
-                        This project will no longer be accessible publicly. You can re-publish it
-                        at any time.
+                        {t("publication.unpublishDialogDescription")}
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -446,7 +458,7 @@ export default function ProjectSettingsPage() {
                         className="cursor-pointer"
                         onClick={() => setUnpublishOpen(false)}
                       >
-                        Cancel
+                        {tCommon("cancel")}
                       </Button>
                       <Button
                         className="cursor-pointer"
@@ -454,14 +466,14 @@ export default function ProjectSettingsPage() {
                         onClick={() => {
                           unpublishProject.mutate(undefined, {
                             onSuccess: () => {
-                              toast.success("Project unpublished");
+                              toast.success(t("publication.unpublishSuccess"));
                               setUnpublishOpen(false);
                             },
-                            onError: () => toast.error("Failed to unpublish project"),
+                            onError: () => toast.error(t("publication.unpublishError")),
                           });
                         }}
                       >
-                        {unpublishProject.isPending ? "Unpublishing..." : "Confirm"}
+                        {unpublishProject.isPending ? t("publication.unpublishing") : tCommon("confirm")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -469,21 +481,19 @@ export default function ProjectSettingsPage() {
               </>
             ) : (
               <>
-                <p className="text-base font-semibold tracking-tight">Publish this project</p>
+                <p className="text-base font-semibold tracking-tight">{t("publication.publishTitle")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Make this project accessible to anyone with the URL. Users will be able to chat
-                  with it without signing in.
+                  {t("publication.publishDescription")}
                 </p>
                 <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
                   <DialogTrigger asChild>
-                    <Button className="cursor-pointer">Publish project</Button>
+                    <Button className="cursor-pointer">{t("publication.publishButton")}</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Publish project</DialogTitle>
+                      <DialogTitle>{t("publication.publishDialogTitle")}</DialogTitle>
                       <DialogDescription>
-                        This project will be accessible to anyone with its public URL. Are you
-                        sure you want to make it public?
+                        {t("publication.publishDialogDescription")}
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -492,7 +502,7 @@ export default function ProjectSettingsPage() {
                         className="cursor-pointer"
                         onClick={() => setPublishOpen(false)}
                       >
-                        Cancel
+                        {tCommon("cancel")}
                       </Button>
                       <Button
                         className="cursor-pointer"
@@ -500,14 +510,14 @@ export default function ProjectSettingsPage() {
                         onClick={() => {
                           publishProject.mutate(undefined, {
                             onSuccess: () => {
-                              toast.success("Project published");
+                              toast.success(t("publication.publishSuccess"));
                               setPublishOpen(false);
                             },
-                            onError: () => toast.error("Failed to publish project"),
+                            onError: () => toast.error(t("publication.publishError")),
                           });
                         }}
                       >
-                        {publishProject.isPending ? "Publishing..." : "Confirm"}
+                        {publishProject.isPending ? t("publication.publishing") : tCommon("confirm")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -521,17 +531,17 @@ export default function ProjectSettingsPage() {
       {activeTab === "Document ingestion" && (
         <div className="max-w-4xl space-y-4">
           <p className="text-muted-foreground text-sm">
-            La base documentaire du projet est configuree via les options d&apos;indexation.
+            {t("documentIngestion.description")}
           </p>
           <p className="text-sm text-muted-foreground">
-            {indexedCount} indexed / {totalCount} total
+            {t("documentIngestion.indexedTotal", { indexed: indexedCount, total: totalCount })}
           </p>
           <DocumentUpload
             onUpload={(files) => {
               uploadDocument.mutate(files, {
                 onSuccess: (result) =>
-                  toast.success(`${result.succeeded} uploaded, ${result.failed} failed`),
-                onError: () => toast.error("Failed to upload document"),
+                  toast.success(t("documentIngestion.uploadSuccess", { succeeded: result.succeeded, failed: result.failed })),
+                onError: () => toast.error(t("documentIngestion.uploadError")),
               });
             }}
             isUploading={uploadDocument.isPending}
@@ -556,8 +566,8 @@ export default function ProjectSettingsPage() {
                   onReindex={(id) => {
                     if (isProjectReindexing) return;
                     reindexDocument.mutate(id, {
-                      onSuccess: () => toast.success("Document reindexed"),
-                      onError: () => toast.error("Failed to reindex document"),
+                      onSuccess: () => toast.success(t("documentIngestion.reindexSuccess")),
+                      onError: () => toast.error(t("documentIngestion.reindexError")),
                     });
                   }}
                   reindexingId={
@@ -566,8 +576,8 @@ export default function ProjectSettingsPage() {
                   disableReindex={isProjectReindexing}
                   onDelete={(id) => {
                     deleteDocument.mutate(id, {
-                      onSuccess: () => toast.success("Document deleted"),
-                      onError: () => toast.error("Failed to delete document"),
+                      onSuccess: () => toast.success(t("documentIngestion.deleteSuccess")),
+                      onError: () => toast.error(t("documentIngestion.deleteError")),
                     });
                   }}
                   isDeleting={deleteDocument.isPending}
@@ -576,7 +586,7 @@ export default function ProjectSettingsPage() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No documents yet. Upload your first document in this section.
+              {t("documentIngestion.empty")}
             </p>
           )}
         </div>
@@ -584,20 +594,20 @@ export default function ProjectSettingsPage() {
 
       {activeTab === "Knowledge indexing" && (
         <div className="max-w-3xl space-y-4 rounded-md">
-          <p className="text-base font-semibold tracking-tight">Knowledge indexing</p>
+          <p className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</p>
           <div className="space-y-2">
-            <Label htmlFor="chunkingStrategy">Chunking strategy</Label>
+            <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
             <select
               id="chunkingStrategy"
               value={effectiveChunkingStrategy}
               onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
-              <option value="auto">Auto</option>
-              <option value="fixed_window">Fixed window</option>
-              <option value="paragraph">Paragraph</option>
-              <option value="heading_section">Heading section</option>
-              <option value="semantic">Semantic</option>
+              <option value="auto">{tForm("chunkingAuto")}</option>
+              <option value="fixed_window">{tForm("chunkingFixed")}</option>
+              <option value="paragraph">{tForm("chunkingParagraph")}</option>
+              <option value="heading_section">{tForm("chunkingHeading")}</option>
+              <option value="semantic">{tForm("chunkingSemantic")}</option>
             </select>
           </div>
           <div className="flex items-center gap-2">
@@ -606,27 +616,24 @@ export default function ProjectSettingsPage() {
               checked={effectiveParentChildChunking}
               onCheckedChange={setParentChildChunking}
             />
-            <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
+            <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
           </div>
           <p className="text-xs text-muted-foreground">
-            Recommendation: parent-child chunking usually performs better with the `Semantic`
-            strategy.
+            {t("knowledgeIndexing.parentChildRecommendation")}
           </p>
           {isSemanticRecommended ? (
             <p className="text-xs text-amber-700">
-              Parent-child chunking is enabled with a non-`Semantic` strategy. It works, but
-              relevance is often better with `Semantic`.
+              {t("knowledgeIndexing.parentChildWarning")}
             </p>
           ) : null}
           <hr className="border-border" />
           <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
-            {updateProject.isPending ? "Saving..." : "Save changes"}
+            {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
           </Button>
           <div className="space-y-3 rounded-md border p-4">
-            <p className="text-base font-semibold tracking-tight">Reindex all documents</p>
+            <p className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.reindexTitle")}</p>
             <p className="text-sm text-muted-foreground">
-              Reindexing recomputes chunks and embeddings for all project documents and can take
-              time.
+              {t("knowledgeIndexing.reindexDescription")}
             </p>
             <Button
               className="cursor-pointer"
@@ -635,13 +642,13 @@ export default function ProjectSettingsPage() {
                 reindexProject.mutate(undefined, {
                   onSuccess: (result) =>
                     toast.success(
-                      `Reindexation terminee: ${result.indexed_documents}/${result.total_documents} indexes, ${result.failed_documents} en erreur`,
+                      t("knowledgeIndexing.reindexSuccess", { indexed: result.indexed_documents, total: result.total_documents, failed: result.failed_documents }),
                     ),
-                  onError: () => toast.error("Failed to reindex project"),
+                  onError: () => toast.error(t("knowledgeIndexing.reindexError")),
                 });
               }}
             >
-              {reindexProject.isPending ? "Reindexing..." : "Reindex all documents"}
+              {reindexProject.isPending ? t("knowledgeIndexing.reindexing") : t("knowledgeIndexing.reindexButton")}
             </Button>
           </div>
         </div>
@@ -649,13 +656,12 @@ export default function ProjectSettingsPage() {
 
       {activeTab === "Models" && (
         <div className="max-w-3xl space-y-4 rounded-md">
-          <p className="text-base font-semibold tracking-tight">Embedding model</p>
+          <p className="text-base font-semibold tracking-tight">{t("models.embeddingTitle")}</p>
           <p className="text-sm text-muted-foreground">
-            Used to convert your documents and user queries into vectors for semantic retrieval.
-            Changing it usually requires reindexing documents.
+            {t("models.embeddingDescription")}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="embeddingBackend">Embedding backend</Label>
+            <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}</Label>
             <select
               id="embeddingBackend"
               value={effectiveEmbeddingBackend}
@@ -676,10 +682,10 @@ export default function ProjectSettingsPage() {
           {effectiveEmbeddingBackend ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="embeddingCredentialId">Embedding API key</Label>
+                <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}</Label>
                 {project.embedding_api_key_masked ? (
                   <p className="text-xs text-muted-foreground">
-                    Existing key: {project.embedding_api_key_masked}
+                    {t("models.existingKey", { key: project.embedding_api_key_masked })}
                   </p>
                 ) : null}
                 <select
@@ -693,8 +699,8 @@ export default function ProjectSettingsPage() {
                 >
                   <option value="">
                     {embeddingProviderForHints
-                      ? "No selection"
-                      : "Select OpenAI or Gemini backend first"}
+                      ? t("models.noSelection")
+                      : t("models.selectEmbeddingFirst")}
                   </option>
                   {embeddingCredentialOptions.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -704,26 +710,28 @@ export default function ProjectSettingsPage() {
                 </select>
                 {embeddingProviderForHints ? (
                   <p className="text-xs text-muted-foreground">
-                    Your saved keys for {embeddingProviderForHints}:{" "}
-                    {embeddingCredentialOptions.length > 0
-                      ? embeddingCredentialOptions.map((item) => item.masked_key).join(", ")
-                      : "none"}
+                    {t("models.savedKeysFor", {
+                      provider: embeddingProviderForHints,
+                      keys: embeddingCredentialOptions.length > 0
+                        ? embeddingCredentialOptions.map((item) => item.masked_key).join(", ")
+                        : t("models.noKeys"),
+                    })}
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Credentials are available only for OpenAI/Gemini user keys.
+                    {t("models.embeddingCredentialsNote")}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="embeddingModel">Embedding model</Label>
+                <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}</Label>
                 <select
                   id="embeddingModel"
                   value={effectiveEmbeddingModel}
                   onChange={(e) => setEmbeddingModel(e.target.value)}
                   className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                 >
-                  <option value="">Select a model</option>
+                  <option value="">{t("models.selectModel")}</option>
                   {embeddingModelOptions.map((model) => (
                     <option key={model.id} value={model.id}>
                       {model.label}
@@ -734,13 +742,12 @@ export default function ProjectSettingsPage() {
             </>
           ) : null}
           <hr className="border-border" />
-          <p className="text-base font-semibold tracking-tight">RAG / LLM model</p>
+          <p className="text-base font-semibold tracking-tight">{t("models.llmTitle")}</p>
           <p className="text-sm text-muted-foreground">
-            Used to generate final answers from retrieved context and conversation history. Choose
-            it based on quality, speed, and cost.
+            {t("models.llmDescription")}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="llmBackend">LLM backend</Label>
+            <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}</Label>
             <select
               id="llmBackend"
               value={effectiveLlmBackend}
@@ -762,10 +769,10 @@ export default function ProjectSettingsPage() {
           {effectiveLlmBackend ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="llmCredentialId">LLM API key</Label>
+                <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}</Label>
                 {project.llm_api_key_masked ? (
                   <p className="text-xs text-muted-foreground">
-                    Existing key: {project.llm_api_key_masked}
+                    {t("models.existingKey", { key: project.llm_api_key_masked })}
                   </p>
                 ) : null}
                 <select
@@ -779,8 +786,8 @@ export default function ProjectSettingsPage() {
                 >
                   <option value="">
                     {llmProviderForHints
-                      ? "No selection"
-                      : "Select OpenAI, Gemini or Anthropic backend first"}
+                      ? t("models.noSelection")
+                      : t("models.selectLlmFirst")}
                   </option>
                   {llmCredentialOptions.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -790,26 +797,28 @@ export default function ProjectSettingsPage() {
                 </select>
                 {llmProviderForHints ? (
                   <p className="text-xs text-muted-foreground">
-                    Your saved keys for {llmProviderForHints}:{" "}
-                    {llmCredentialOptions.length > 0
-                      ? llmCredentialOptions.map((item) => item.masked_key).join(", ")
-                      : "none"}
+                    {t("models.savedKeysFor", {
+                      provider: llmProviderForHints,
+                      keys: llmCredentialOptions.length > 0
+                        ? llmCredentialOptions.map((item) => item.masked_key).join(", ")
+                        : t("models.noKeys"),
+                    })}
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Credentials are available only for OpenAI/Gemini/Anthropic user keys.
+                    {t("models.llmCredentialsNote")}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="llmModel">LLM model</Label>
+                <Label htmlFor="llmModel">{t("models.llmModelLabel")}</Label>
                 <select
                   id="llmModel"
                   value={effectiveLlmModel}
                   onChange={(e) => setLlmModel(e.target.value)}
                   className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                 >
-                  <option value="">Select a model</option>
+                  <option value="">{t("models.selectModel")}</option>
                   {llmModelOptions.map((model) => (
                     <option key={model.id} value={model.id}>
                       {model.label}
@@ -824,25 +833,25 @@ export default function ProjectSettingsPage() {
 
       {activeTab === "Context retrieval" && (
         <div className="max-w-3xl space-y-4 rounded-md">
-          <p className="text-base font-semibold tracking-tight">Context retrieval</p>
+          <p className="text-base font-semibold tracking-tight">{t("contextRetrieval.title")}</p>
           <p className="text-sm text-muted-foreground">
-            Configure how chunks are selected before answer generation.
+            {t("contextRetrieval.description")}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="retrievalStrategy">Search type</Label>
+            <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}</Label>
             <select
               id="retrievalStrategy"
               value={effectiveRetrievalStrategy}
               onChange={(e) => setRetrievalStrategy(e.target.value as RetrievalStrategy)}
               className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
             >
-              <option value="hybrid">Hybrid (recommended)</option>
-              <option value="vector">Vector</option>
-              <option value="fulltext">Fulltext</option>
+              <option value="hybrid">{t("contextRetrieval.hybrid")}</option>
+              <option value="vector">{t("contextRetrieval.vector")}</option>
+              <option value="fulltext">{t("contextRetrieval.fulltext")}</option>
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="retrievalTopK">Top-K</Label>
+            <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}</Label>
             <Input
               id="retrievalTopK"
               type="number"
@@ -856,11 +865,11 @@ export default function ProjectSettingsPage() {
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Default number of chunks retrieved for each user message.
+              {t("contextRetrieval.topKNote")}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="retrievalMinScore">Min score threshold</Label>
+            <Label htmlFor="retrievalMinScore">{t("contextRetrieval.minScoreLabel")}</Label>
             <Input
               id="retrievalMinScore"
               type="number"
@@ -876,7 +885,7 @@ export default function ProjectSettingsPage() {
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Discard chunks scored below this threshold (between 0.0 and 1.0).
+              {t("contextRetrieval.minScoreNote")}
             </p>
           </div>
         </div>
@@ -884,9 +893,9 @@ export default function ProjectSettingsPage() {
 
       {activeTab === "Context augmentation" && (
         <div className="max-w-3xl space-y-4 rounded-md">
-          <p className="text-base font-semibold tracking-tight">Context augmentation</p>
+          <p className="text-base font-semibold tracking-tight">{t("contextAugmentation.title")}</p>
           <div className="flex items-center justify-between rounded-md border p-3">
-            <Label htmlFor="rerankingEnabled">Enable reranking</Label>
+            <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
             <button
               id="rerankingEnabled"
               type="button"
@@ -907,7 +916,7 @@ export default function ProjectSettingsPage() {
           {effectiveRerankingEnabled ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="rerankerBackend">Reranker backend</Label>
+                <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}</Label>
                 <select
                   id="rerankerBackend"
                   value={effectiveRerankerBackend}
@@ -917,14 +926,14 @@ export default function ProjectSettingsPage() {
                   }}
                   className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                 >
-                  <option value="none">None</option>
-                  <option value="cross_encoder">Cross-encoder</option>
-                  <option value="inmemory">InMemory</option>
-                  <option value="mmr">MMR Diversity</option>
+                  <option value="none">{t("contextAugmentation.rerankerNone")}</option>
+                  <option value="cross_encoder">{t("contextAugmentation.rerankerCrossEncoder")}</option>
+                  <option value="inmemory">{t("contextAugmentation.rerankerInMemory")}</option>
+                  <option value="mmr">{t("contextAugmentation.rerankerMmr")}</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rerankerModel">Reranker model</Label>
+                <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}</Label>
                 <select
                   id="rerankerModel"
                   value={effectiveRerankerModel}
@@ -934,8 +943,8 @@ export default function ProjectSettingsPage() {
                 >
                   <option value="">
                     {effectiveRerankerBackend === "none"
-                      ? "Select a reranker backend"
-                      : "Select a model"}
+                      ? t("contextAugmentation.selectRerankerBackend")
+                      : t("contextAugmentation.selectModel")}
                   </option>
                   {rerankerModelOptions.map((model) => (
                     <option key={model.id} value={model.id}>
@@ -945,7 +954,7 @@ export default function ProjectSettingsPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rerankerCandidateMultiplier">Candidate multiplier</Label>
+                <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}</Label>
                 <Input
                   id="rerankerCandidateMultiplier"
                   type="number"
@@ -959,7 +968,7 @@ export default function ProjectSettingsPage() {
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Number of candidates fetched before reranking = top-k * multiplier.
+                  {t("contextAugmentation.candidateMultiplierNote")}
                 </p>
               </div>
             </>
@@ -971,7 +980,7 @@ export default function ProjectSettingsPage() {
         <div className="max-w-3xl space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="systemPrompt">Project prompt</Label>
+              <Label htmlFor="systemPrompt">{t("answerGeneration.promptLabel")}</Label>
               <span
                 className={`text-xs ${nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"}`}
               >
@@ -982,16 +991,16 @@ export default function ProjectSettingsPage() {
               id="systemPrompt"
               value={effectiveSystemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="Instructions for the AI assistant..."
+              placeholder={t("answerGeneration.promptPlaceholder")}
               rows={16}
               maxLength={MAX_SYSTEM_PROMPT_LENGTH}
             />
             <p className="text-muted-foreground text-xs">
-              Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+              {t("answerGeneration.promptLimit")}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="chatHistoryWindowSize">Chat history window size</Label>
+            <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
             <Input
               id="chatHistoryWindowSize"
               type="number"
@@ -1005,11 +1014,11 @@ export default function ProjectSettingsPage() {
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Maximum number of recent conversation messages kept in prompt context.
+              {t("answerGeneration.chatHistoryWindowNote")}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="chatHistoryMaxChars">Chat history max chars</Label>
+            <Label htmlFor="chatHistoryMaxChars">{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>
             <Input
               id="chatHistoryMaxChars"
               type="number"
@@ -1023,7 +1032,7 @@ export default function ProjectSettingsPage() {
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Character budget for injected conversation history in the LLM prompt.
+              {t("answerGeneration.chatHistoryMaxCharsNote")}
             </p>
           </div>
         </div>
@@ -1031,20 +1040,17 @@ export default function ProjectSettingsPage() {
 
       {activeTab !== "Document ingestion" && activeTab !== "General" && activeTab !== "Knowledge indexing" && activeTab !== "Publication" ? (
         <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
-          {updateProject.isPending ? "Saving..." : "Save changes"}
+          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
         </Button>
       ) : null}
 
       <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reindexation requise</DialogTitle>
+            <DialogTitle>{tForm("reindexTitle")}</DialogTitle>
             <DialogDescription>
-              {effectiveParentChildChunking
-                ? "Activer le mode parent-child necessite de reindexer tous les documents du projet pour creer la hierarchie parent/enfant."
-                : "Desactiver le mode parent-child necessite de reindexer tous les documents du projet pour revenir au chunking standard."}
-              {" "}Les documents existants ne seront pas utilisables correctement tant qu&apos;ils
-              n&apos;auront pas ete reindexes.
+              {tForm(effectiveParentChildChunking ? "reindexEnableDescription" : "reindexDisableDescription")}
+              {" "}{tForm("reindexDocumentsWarning")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1056,21 +1062,21 @@ export default function ProjectSettingsPage() {
                 setPendingData(null);
               }}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               className="cursor-pointer"
               onClick={() => {
                 if (!pendingData) return;
                 updateProject.mutate(pendingData, {
-                  onSuccess: () => toast.success("Project updated"),
-                  onError: () => toast.error("Failed to update project"),
+                  onSuccess: () => toast.success(t("updateSuccess")),
+                  onError: () => toast.error(t("updateError")),
                 });
                 setReindexWarningOpen(false);
                 setPendingData(null);
               }}
             >
-              Confirm and save
+              {tForm("confirmAndSave")}
             </Button>
           </DialogFooter>
         </DialogContent>
