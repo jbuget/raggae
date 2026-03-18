@@ -1,8 +1,9 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getCurrentUser } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,6 +39,14 @@ export function LoginForm() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
+        const session = await getSession();
+        if (session?.accessToken) {
+          const user = await getCurrentUser(session.accessToken);
+          if (user.locale) {
+            const maxAge = 60 * 60 * 24 * 365;
+            document.cookie = `raggae_locale=${user.locale};path=/;max-age=${maxAge};SameSite=Lax`;
+          }
+        }
         router.push("/projects");
       }
     } catch {
