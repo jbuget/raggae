@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 
+from raggae.application.dto.user_dto import UserDTO
 from raggae.domain.entities.user import User
 from raggae.domain.exceptions.user_exceptions import UserAlreadyInactiveError
 from raggae.domain.value_objects.locale import Locale
@@ -96,6 +97,24 @@ class TestUser:
 
         # Then
         assert user.locale == Locale.FR
+
+    def test_user_dto_from_entity_maps_locale(self) -> None:
+        # Given
+        user = User(
+            id=uuid4(),
+            email="test@example.com",
+            hashed_password="hashed_pwd",
+            full_name="John Doe",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            locale=Locale.FR,
+        )
+
+        # When
+        dto = UserDTO.from_entity(user)
+
+        # Then
+        assert dto.locale == Locale.FR
 
     def test_user_locale_is_immutable(self) -> None:
         # Given
