@@ -53,8 +53,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
-          cache-from: type=gha,scope=server
-          cache-to: type=gha,mode=max,scope=server
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/raggae-server:cache
+            type=gha,scope=server
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/raggae-server:cache,mode=max
 
   build-client:
     name: Build & push client image
