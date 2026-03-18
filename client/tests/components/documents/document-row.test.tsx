@@ -18,45 +18,31 @@ const mockDoc = {
   processing_strategy: null,
   status: "indexed" as const,
   error_message: null,
+  last_indexed_at: null,
+};
+
+const defaultProps = {
+  chunkingStrategy: "auto" as const,
+  parentChildChunking: false,
+  onDelete: vi.fn(),
+  isDeleting: false,
+  onReindex: vi.fn(),
+  reindexingId: null,
 };
 
 describe("DocumentRow", () => {
   it("should display file name", () => {
-    renderWithProviders(
-      <DocumentRow
-        document={mockDoc}
-        onDelete={vi.fn()}
-        isDeleting={false}
-        onReindex={vi.fn()}
-        reindexingId={null}
-      />,
-    );
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
     expect(screen.getByText("report.pdf")).toBeInTheDocument();
   });
 
   it("should display file size formatted", () => {
-    renderWithProviders(
-      <DocumentRow
-        document={mockDoc}
-        onDelete={vi.fn()}
-        isDeleting={false}
-        onReindex={vi.fn()}
-        reindexingId={null}
-      />,
-    );
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
     expect(screen.getByText("2.0 KB")).toBeInTheDocument();
   });
 
   it("should display created date", () => {
-    renderWithProviders(
-      <DocumentRow
-        document={mockDoc}
-        onDelete={vi.fn()}
-        isDeleting={false}
-        onReindex={vi.fn()}
-        reindexingId={null}
-      />,
-    );
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
     expect(screen.getByText(/Jan 15, 2026/)).toBeInTheDocument();
   });
 
@@ -64,13 +50,7 @@ describe("DocumentRow", () => {
     const onDelete = vi.fn();
     const user = userEvent.setup();
     renderWithProviders(
-      <DocumentRow
-        document={mockDoc}
-        onDelete={onDelete}
-        isDeleting={false}
-        onReindex={vi.fn()}
-        reindexingId={null}
-      />,
+      <DocumentRow document={mockDoc} {...defaultProps} onDelete={onDelete} />,
     );
 
     await user.click(screen.getByRole("button", { name: /delete/i }));

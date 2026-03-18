@@ -24,13 +24,13 @@ describe("Sidebar", () => {
 
     expect(
       screen.getByRole("link", { name: /project one/i }),
-    ).toHaveAttribute("href", "/projects/proj-1");
+    ).toHaveAttribute("href", "/projects/proj-1/chat");
     expect(
       screen.getByRole("link", { name: /project two/i }),
-    ).toHaveAttribute("href", "/projects/proj-2");
+    ).toHaveAttribute("href", "/projects/proj-2/chat");
   });
 
-  it("should open project contextual menu with chat/documents/settings links", async () => {
+  it("should open project contextual menu with chat and settings links", async () => {
     const user = userEvent.setup();
     renderWithProviders(<Sidebar />);
 
@@ -39,10 +39,6 @@ describe("Sidebar", () => {
     expect(screen.getByRole("menuitem", { name: /^chat$/i })).toHaveAttribute(
       "href",
       "/projects/proj-1/chat",
-    );
-    expect(screen.getByRole("menuitem", { name: /^documents$/i })).toHaveAttribute(
-      "href",
-      "/projects/proj-1/documents",
     );
     expect(screen.getByRole("menuitem", { name: /^settings$/i })).toHaveAttribute(
       "href",

@@ -37,7 +37,7 @@ describe("ProjectCard", () => {
   it("should link to project detail", () => {
     renderWithProviders(<ProjectCard project={mockProject} />);
     const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/projects/proj-1");
+    expect(link).toHaveAttribute("href", "/projects/proj-1/chat");
   });
 
   it("should show 'No description' when empty", () => {

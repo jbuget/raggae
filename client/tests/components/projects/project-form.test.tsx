@@ -10,7 +10,21 @@ vi.mock("next/navigation", () => ({
 
 describe("ProjectForm", () => {
   it("should render name, description, and system prompt fields", () => {
-    renderWithProviders(<ProjectForm onSubmit={vi.fn()} />);
+    const initialData = {
+      id: "proj-1",
+      user_id: "user-1",
+      name: "",
+      description: "",
+      system_prompt: "",
+      is_published: false,
+      created_at: "2026-01-01T00:00:00Z",
+      chunking_strategy: "auto" as const,
+      parent_child_chunking: false,
+      reindex_status: "idle",
+      reindex_progress: 0,
+      reindex_total: 0,
+    };
+    renderWithProviders(<ProjectForm initialData={initialData} onSubmit={vi.fn()} submitLabel="Save" />);
 
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
@@ -46,9 +60,6 @@ describe("ProjectForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       name: "My Project",
       description: "A description",
-      system_prompt: "",
-      chunking_strategy: "auto",
-      parent_child_chunking: false,
     });
   });
 
