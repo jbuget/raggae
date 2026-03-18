@@ -1,7 +1,7 @@
+import re
+
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
-
-import re
 
 _SENTENCE_END_RE = re.compile(r"(?<=[.!?;:])\s+")
 

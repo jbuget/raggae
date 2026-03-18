@@ -249,6 +249,9 @@ from raggae.infrastructure.services.adaptive_text_chunker_service import (
     AdaptiveTextChunkerService,
 )
 from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPasswordHasher
+from raggae.infrastructure.services.contextual_embedding_service import (
+    ContextualEmbeddingService,
+)
 from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
     FernetProviderApiKeyCryptoService,
 )
@@ -298,6 +301,7 @@ from raggae.infrastructure.services.minio_file_storage_service import (
 from raggae.infrastructure.services.multiformat_document_text_extractor import (
     MultiFormatDocumentTextExtractor,
 )
+from raggae.infrastructure.services.ollama_embedding_service import OllamaEmbeddingService
 from raggae.infrastructure.services.ollama_llm_service import OllamaLLMService
 from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbeddingService
 from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
@@ -341,13 +345,6 @@ def _build_embedding_service() -> EmbeddingService:
             expected_dimension=settings.embedding_dimension,
         )
     if settings.default_embedding_provider == "ollama":
-        from raggae.infrastructure.services.ollama_embedding_service import (
-            OllamaEmbeddingService,
-        )
-        from raggae.infrastructure.services.contextual_embedding_service import (
-            ContextualEmbeddingService,
-        )
-
         ollama_service = OllamaEmbeddingService(
             base_url=settings.ollama_base_url,
             model=settings.ollama_embedding_model,

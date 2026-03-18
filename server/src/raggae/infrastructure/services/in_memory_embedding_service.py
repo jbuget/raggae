@@ -2,7 +2,6 @@ import hashlib
 import re
 from math import log, sqrt
 
-
 _WORD_RE = re.compile(r"[a-zA-ZÀ-ÿ0-9]+")
 
 # Common French + English stop words to ignore
@@ -12,7 +11,7 @@ _STOP_WORDS = frozenset({
     "son", "sa", "ses", "il", "elle", "on", "nous", "vous", "ils", "ne",
     "pas", "plus", "avec", "ou", "mais", "sont", "être", "avoir", "fait",
     "the", "a", "an", "and", "or", "of", "to", "in", "is", "it", "for",
-    "on", "at", "by", "this", "that", "with", "from", "as", "be", "not",
+    "at", "by", "this", "that", "with", "from", "as", "be", "not",
     "d", "l", "s", "n", "qu", "c", "j", "m",
 })
 
@@ -46,7 +45,6 @@ class InMemoryEmbeddingService:
         for word in meaningful:
             word_count[word] = word_count.get(word, 0) + 1
 
-        total_words = len(meaningful)
         for word, count in word_count.items():
             # TF component: log-scaled term frequency
             tf = 1.0 + log(count) if count > 0 else 0.0
