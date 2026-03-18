@@ -20,9 +20,6 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NEXT_API_URL=http://server:8000
-ENV NEXT_API_URL=${NEXT_API_URL}
-
 RUN pnpm build
 
 # ---- runner ----
