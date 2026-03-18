@@ -28,6 +28,10 @@ pytest tests/unit/domain/entities/test_user.py  # Single file
 pytest tests/unit/domain/entities/test_user.py::TestUser::test_create_user  # Single test
 pytest --cov=src --cov-report=html  # With coverage
 
+# Benchmarks
+pytest tests/unit/infrastructure/benchmarks/ -v --tb=short          # Tous les benchmarks
+pytest tests/unit/infrastructure/benchmarks/test_benchmark_report.py -v --tb=short  # Régénérer le rapport Markdown
+
 # Code quality
 ruff format src/ tests/             # Format
 ruff check src/ tests/              # Lint

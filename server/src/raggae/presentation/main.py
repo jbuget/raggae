@@ -42,6 +42,7 @@ app.include_router(model_credentials_router, prefix="/api/v1")
 app.include_router(org_model_credentials_router, prefix="/api/v1")
 
 
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Health check endpoint."""
