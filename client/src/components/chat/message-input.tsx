@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,7 @@ export function MessageInput({
   disabled = false,
   isThinking = false,
 }: MessageInputProps) {
+  const t = useTranslations("chat.input");
   const [message, setMessage] = useState("");
 
   const isDisabled = !message.trim() || disabled;
@@ -39,19 +41,19 @@ export function MessageInput({
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type a message..."
+        placeholder={t("placeholder")}
         rows={1}
         className="min-h-[40px] resize-none"
-        aria-label="Message"
+        aria-label={t("ariaLabel")}
       />
       <Button onClick={handleSubmit} disabled={isDisabled}>
         {isThinking ? (
           <span className="inline-flex items-center gap-2">
             <Loader2Icon className="size-4 animate-spin" />
-            Thinking...
+            {t("send")}
           </span>
         ) : (
-          "Send"
+          t("send")
         )}
       </Button>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown/render-markdown";
@@ -26,6 +27,7 @@ export function MessageBubble({
   sourceDocuments = [],
   onSourceClick,
 }: MessageBubbleProps) {
+  const t = useTranslations("chat.messageBubble");
   const isUser = role === "user";
   const [copied, setCopied] = useState(false);
 
@@ -84,7 +86,7 @@ export function MessageBubble({
           type="button"
           onClick={handleCopy}
           className="inline-flex cursor-pointer items-center gap-1 self-end rounded px-2 py-1 text-sm text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground"
-          title="Copier le message"
+          title={t("copyMessage")}
         >
           {copied ? (
             <CheckIcon className="size-4" />

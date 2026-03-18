@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "./message-bubble";
 import { MessageInput } from "./message-input";
@@ -37,6 +38,7 @@ export function ChatPanel({
   disabled = false,
   disabledMessage,
 }: ChatPanelProps) {
+  const t = useTranslations("chat.panel");
   const router = useRouter();
   const { token } = useAuth();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(
@@ -166,7 +168,7 @@ export function ChatPanel({
       setSelectedDocumentUrl(objectUrl);
       setSelectedDocumentType(blob.type || "application/octet-stream");
     } catch {
-      setSelectedDocumentError("Unable to load this document.");
+      setSelectedDocumentError(t("unableToLoadDocument"));
     } finally {
       setIsSelectedDocumentLoading(false);
     }
@@ -215,7 +217,7 @@ export function ChatPanel({
             size="sm"
             onClick={() => setShowChunks(!showChunks)}
           >
-            {showChunks ? "Hide" : "Show"} sources ({citedDocuments.length})
+            {showChunks ? t("hideSources") : t("showSources")} {t("sources")} ({citedDocuments.length})
           </Button>
           {showChunks && (
             <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
@@ -224,7 +226,7 @@ export function ChatPanel({
                   key={document.documentId}
                   className="rounded-md bg-muted p-2 text-xs"
                 >
-                  <p className="font-medium">Source {i + 1}</p>
+                  <p className="font-medium">{t("source")} {i + 1}</p>
                   <p className="mt-1 line-clamp-1">{document.documentName}</p>
                 </div>
               ))}
@@ -236,7 +238,7 @@ export function ChatPanel({
       <div className="sticky bottom-0 border-t bg-background p-4">
         {disabled && (
           <p className="mb-2 text-xs text-amber-700">
-            {disabledMessage || "Chat is temporarily disabled for this project."}
+            {disabledMessage || t("disabledDefault")}
           </p>
         )}
         <MessageInput
@@ -263,7 +265,7 @@ export function ChatPanel({
         <DialogContent className="h-[94vh] max-h-[94vh] w-[98vw] max-w-[98vw] sm:max-w-none overflow-hidden p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
-              {selectedSourceDocument?.documentName || "Document preview"}
+              {selectedSourceDocument?.documentName || t("documentPreview")}
             </DialogTitle>
             {selectedSourceDocument?.chunkIds &&
               selectedSourceDocument.chunkIds.length > 0 && (
@@ -280,9 +282,9 @@ export function ChatPanel({
                         type="button"
                         className="rounded px-1.5 py-0.5 text-xs hover:bg-muted"
                         onClick={() => navigator.clipboard.writeText(chunkId)}
-                        title="Copy chunk ID"
+                        title={t("copyChunkIdTitle")}
                       >
-                        Copy
+                        {t("copyChunkId")}
                       </button>
                     </div>
                   ))}
@@ -291,7 +293,7 @@ export function ChatPanel({
           </DialogHeader>
           <div className="h-full min-h-0 overflow-y-auto rounded-md border bg-muted/20 p-3">
             {isSelectedDocumentLoading && (
-              <p className="text-sm text-muted-foreground">Loading document...</p>
+              <p className="text-sm text-muted-foreground">{t("loadingDocument")}</p>
             )}
             {!isSelectedDocumentLoading && selectedDocumentError && (
               <p className="text-sm text-destructive">{selectedDocumentError}</p>
@@ -334,14 +336,14 @@ export function ChatPanel({
               !selectedDocumentType?.startsWith("text/") && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Preview is not available for this file type.
+                    {t("previewNotAvailable")}
                   </p>
                   <a
                     href={selectedDocumentUrl}
                     download={selectedSourceDocument?.documentName}
                     className="inline-flex rounded-md border bg-background px-3 py-2 text-sm"
                   >
-                    Download document
+                    {t("downloadDocument")}
                   </a>
                 </div>
               )}

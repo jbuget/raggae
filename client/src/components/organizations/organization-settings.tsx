@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { OrgCredentialsPanel } from "@/components/organizations/org-credentials-panel";
 import { OrganizationMembersPanel } from "@/components/organizations/organization-members-panel";
@@ -33,11 +34,18 @@ type OrganizationSettingsProps = {
 };
 
 export function OrganizationSettings({ organizationId }: OrganizationSettingsProps) {
+  const t = useTranslations("organizations.settings");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const { data, isLoading, error } = useOrganization(organizationId);
   const deleteOrganization = useDeleteOrganization(organizationId);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<OrgSettingsTab>("General");
+  const tabLabels: Record<OrgSettingsTab, string> = {
+    General: t("tabGeneral"),
+    Members: t("tabMembers"),
+    "API Keys": t("tabApiKeys"),
+  };
 
   if (isLoading) {
     return (
@@ -49,14 +57,14 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
   }
 
   if (error || !data) {
-    return <div className="text-destructive">Failed to load organization.</div>;
+    return <div className="text-destructive">{t("loadError")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Organization settings</h1>
-        <p className="text-sm text-muted-foreground">Manage organization profile and access.</p>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
       <div className="flex border-b">
@@ -76,7 +84,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
               ].join(" ")}
               onClick={() => setActiveTab(tab)}
             >
-              {tab}
+              {tabLabels[tab]}
             </button>
           );
         })}
@@ -94,42 +102,42 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
           />
 
           <div className="rounded-lg border border-destructive/40 p-5 space-y-3">
-            <p className="text-sm font-medium text-destructive">Danger zone</p>
+            <p className="text-sm font-medium text-destructive">{t("dangerZone")}</p>
             <p className="text-sm text-muted-foreground">
-              Delete this organization and all related data.
+              {t("dangerDescription")}
             </p>
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <DialogTrigger asChild>
                 <Button variant="destructive" disabled={deleteOrganization.isPending}>
-                  Delete organization
+                  {t("deleteOrg")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Delete organization</DialogTitle>
+                  <DialogTitle>{t("deleteTitle")}</DialogTitle>
                   <DialogDescription>
-                    This action is irreversible. All organization data will be permanently deleted.
+                    {t("deleteWarning")}
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                    Cancel
+                    {tCommon("cancel")}
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() =>
                       deleteOrganization.mutate(undefined, {
                         onSuccess: () => {
-                          toast.success("Organization deleted");
+                          toast.success(t("deleteSuccess"));
                           setDeleteOpen(false);
                           router.push("/organizations");
                         },
-                        onError: () => toast.error("Failed to delete organization"),
+                        onError: () => toast.error(t("deleteError")),
                       })
                     }
                     disabled={deleteOrganization.isPending}
                   >
-                    {deleteOrganization.isPending ? "Deleting..." : "Confirm delete"}
+                    {deleteOrganization.isPending ? t("deleting") : t("confirmDelete")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -160,6 +168,8 @@ function OrganizationProfileForm({
   initialDescription,
   initialLogoUrl,
 }: OrganizationProfileFormProps) {
+  const t = useTranslations("organizations.settings");
+  const tCommon = useTranslations("common");
   const updateOrganization = useUpdateOrganization(organizationId);
   const [name, setName] = useState(initialName);
   const [slug, setSlug] = useState(initialSlug ?? "");
@@ -169,15 +179,15 @@ function OrganizationProfileForm({
   return (
     <div className="rounded-lg border p-5 space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="org-name">Name</Label>
+        <Label htmlFor="org-name">{t("nameLabel")}</Label>
         <Input id="org-name" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="org-slug">Slug</Label>
+        <Label htmlFor="org-slug">{t("slugLabel")}</Label>
         <Input id="org-slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="org-description">Description</Label>
+        <Label htmlFor="org-description">{t("descriptionLabel")}</Label>
         <Textarea
           id="org-description"
           value={description}
@@ -185,7 +195,7 @@ function OrganizationProfileForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="org-logo-url">Logo URL</Label>
+        <Label htmlFor="org-logo-url">{t("logoLabel")}</Label>
         <Input
           id="org-logo-url"
           value={logoUrl}
@@ -202,14 +212,14 @@ function OrganizationProfileForm({
               logo_url: logoUrl.trim() || null,
             },
             {
-              onSuccess: () => toast.success("Organization updated"),
-              onError: () => toast.error("Failed to update organization"),
+              onSuccess: () => toast.success(t("updateSuccess")),
+              onError: () => toast.error(t("updateError")),
             },
           )
         }
         disabled={updateOrganization.isPending || !name.trim()}
       >
-        {updateOrganization.isPending ? "Saving..." : "Save"}
+        {updateOrganization.isPending ? tCommon("saving") : tCommon("save")}
       </Button>
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/providers/theme-provider";
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const t = useTranslations("layout.themeToggle");
 
   return (
     <Button
@@ -12,9 +14,9 @@ export function ThemeToggle() {
       size="sm"
       className="cursor-pointer"
       onClick={toggleTheme}
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      aria-label={theme === "light" ? t("switchToDark") : t("switchToLight")}
     >
-      {theme === "light" ? "Dark" : "Light"}
+      {theme === "light" ? t("dark") : t("light")}
     </Button>
   );
 }

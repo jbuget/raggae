@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
 import type { ConversationResponse } from "@/lib/types/api";
 
 export function ConversationSidebar() {
+  const t = useTranslations("chat.sidebar");
   const router = useRouter();
   const params = useParams<{ projectId: string; conversationId?: string }>();
   const pathname = usePathname();
@@ -41,7 +43,7 @@ export function ConversationSidebar() {
       <div className="border-b p-3">
         <Button asChild className="w-full" size="sm">
           <Link href={`/projects/${params.projectId}/chat`}>
-            New Conversation
+            {t("newConversation")}
           </Link>
         </Button>
       </div>
@@ -55,7 +57,7 @@ export function ConversationSidebar() {
           </div>
         ) : sorted.length === 0 ? (
           <p className="p-3 text-sm text-muted-foreground">
-            No conversations yet
+            {t("noConversations")}
           </p>
         ) : (
           <div className="space-y-1 p-2">
@@ -95,6 +97,8 @@ function ConversationItem({
   isActive: boolean;
   onDelete: (id: string) => void;
 }) {
+  const t = useTranslations("chat.sidebar");
+  const tCommon = useTranslations("common");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const conversationLabel = conversation.title || formatDate(conversation.created_at);
 
@@ -124,14 +128,14 @@ function ConversationItem({
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Conversation</DialogTitle>
+              <DialogTitle>{t("deleteTitle")}</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete this conversation?
+                {t("deleteConfirm")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -140,7 +144,7 @@ function ConversationItem({
                   setDeleteOpen(false);
                 }}
               >
-                Delete
+                {tCommon("delete")}
               </Button>
             </DialogFooter>
           </DialogContent>

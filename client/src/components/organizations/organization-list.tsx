@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useQueries } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { useCreateOrganization, useOrganizations } from "@/lib/hooks/use-organizations";
 
 export function OrganizationList() {
+  const t = useTranslations("organizations");
+  const tCommon = useTranslations("common");
   const { token, user } = useAuth();
   const { data, isLoading, error } = useOrganizations();
   const sortedOrganizations = [...(data ?? [])].sort((a, b) =>
@@ -66,28 +69,28 @@ export function OrganizationList() {
     <div className="space-y-6">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button>Create organization</Button>
+          <Button>{t("list.createTitle")}</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create organization</DialogTitle>
+            <DialogTitle>{t("list.createTitle")}</DialogTitle>
             <DialogDescription>
-              Set a name, URL slug, and optional description.
+              {t("list.createDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Input
-              placeholder="Name"
+              placeholder={t("list.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             <Input
-              placeholder="Slug (e.g. acme)"
+              placeholder={t("list.slugPlaceholder")}
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
             />
             <Textarea
-              placeholder="Description (optional)"
+              placeholder={t("list.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -109,15 +112,15 @@ export function OrganizationList() {
                       setName("");
                       setSlug("");
                       setDescription("");
-                      toast.success("Organization created");
+                      toast.success(t("list.createSuccess"));
                     },
-                    onError: () => toast.error("Failed to create organization"),
+                    onError: () => toast.error(t("list.createError")),
                   },
                 );
               }}
               disabled={createOrganization.isPending}
             >
-              {createOrganization.isPending ? "Creating..." : "Create"}
+              {createOrganization.isPending ? tCommon("creating") : tCommon("confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -129,21 +132,21 @@ export function OrganizationList() {
             <div key={organization.id} className="rounded-md border p-4">
               <p className="text-base font-semibold">{organization.name}</p>
               <p className="text-xs text-muted-foreground">
-                {organization.slug ? `/${organization.slug}` : "No slug"}
+                {organization.slug ? `/${organization.slug}` : t("list.noSlug")}
               </p>
               <p className="text-sm text-muted-foreground">
-                {organization.description ?? "No description"}
+                {organization.description ?? tCommon("noDescription")}
               </p>
               {ownerOrganizationIds.has(organization.id) && (
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link href={`/organizations/${organization.id}`}>Manage</Link>
+                  <Link href={`/organizations/${organization.id}`}>{t("list.manage")}</Link>
                 </Button>
               )}
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No organizations yet.</p>
+        <p className="text-sm text-muted-foreground">{t("list.empty")}</p>
       )}
     </div>
   );

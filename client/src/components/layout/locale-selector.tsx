@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +12,12 @@ import { useUpdateUserLocale } from "@/lib/hooks/use-user-profile";
 import { useAuth } from "@/lib/hooks/use-auth";
 import type { UpdateUserLocaleRequest } from "@/lib/types/api";
 
-const LOCALES: Array<{ value: UpdateUserLocaleRequest["locale"]; flag: string; label: string; short: string }> = [
-  { value: "en", flag: "🇬🇧", label: "English", short: "EN" },
-  { value: "fr", flag: "🇫🇷", label: "Français", short: "FR" },
-];
+const LOCALE_FLAGS: Record<UpdateUserLocaleRequest["locale"], { flag: string; short: string }> = {
+  en: { flag: "🇬🇧", short: "EN" },
+  fr: { flag: "🇫🇷", short: "FR" },
+};
+
+const LOCALE_VALUES: Array<UpdateUserLocaleRequest["locale"]> = ["en", "fr"];
 
 function setLocaleCookie(locale: string) {
   const maxAge = 60 * 60 * 24 * 365; // 1 year
@@ -24,10 +26,11 @@ function setLocaleCookie(locale: string) {
 
 export function LocaleSelector() {
   const currentLocale = useLocale();
+  const t = useTranslations("layout.localeSelector");
   const { isAuthenticated } = useAuth();
   const updateLocale = useUpdateUserLocale();
 
-  const current = LOCALES.find((l) => l.value === currentLocale) ?? LOCALES[0];
+  const current = LOCALE_FLAGS[currentLocale as UpdateUserLocaleRequest["locale"]] ?? LOCALE_FLAGS.en;
 
   function handleSelect(locale: UpdateUserLocaleRequest["locale"]) {
     if (locale === currentLocale) return;
@@ -53,13 +56,13 @@ export function LocaleSelector() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {LOCALES.map((locale) => (
+        {LOCALE_VALUES.map((value) => (
           <DropdownMenuItem
-            key={locale.value}
-            onClick={() => handleSelect(locale.value)}
-            className={currentLocale === locale.value ? "font-semibold" : ""}
+            key={value}
+            onClick={() => handleSelect(value)}
+            className={currentLocale === value ? "font-semibold" : ""}
           >
-            {locale.flag} {locale.label}
+            {LOCALE_FLAGS[value].flag} {t(value)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

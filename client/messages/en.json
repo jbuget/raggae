@@ -13,7 +13,14 @@
     "deactivate": "Deactivate",
     "active": "Active",
     "inactive": "Inactive",
-    "or": "or"
+    "or": "or",
+    "on": "on",
+    "off": "off",
+    "creating": "Creating...",
+    "deleting": "Deleting...",
+    "sending": "Sending...",
+    "accepting": "Accepting...",
+    "noDescription": "No description"
   },
   "nav": {
     "menu": "Menu",
@@ -28,23 +35,48 @@
     "signOut": "Sign out"
   },
   "auth": {
-    "login": "Log in",
-    "logout": "Log out",
-    "register": "Sign up",
-    "email": "Email",
-    "password": "Password",
-    "fullName": "Full name",
-    "forgotPassword": "Forgot password?"
+    "login": {
+      "title": "Login",
+      "subtitle": "Sign in to your Raggae account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "signingIn": "Signing in...",
+      "signIn": "Sign in",
+      "noAccount": "Don't have an account?",
+      "register": "Register",
+      "invalidCredentials": "Invalid email or password",
+      "unexpectedError": "An unexpected error occurred"
+    },
+    "register": {
+      "title": "Register",
+      "subtitle": "Create a new Raggae account",
+      "fullNameLabel": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "emailAlreadyExists": "An account with this email already exists",
+      "unexpectedError": "An unexpected error occurred",
+      "creatingAccount": "Creating account...",
+      "createAccount": "Create account",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    }
   },
   "settings": {
     "title": "User Settings",
+    "description": "Manage your account and API keys.",
     "profile": {
       "title": "Profile",
+      "description": "Update your account display name.",
       "emailLabel": "Email",
       "fullNameLabel": "Full name",
       "fullNamePlaceholder": "Your full name",
-      "saveSuccess": "Full name updated.",
-      "saveError": "Failed to update full name."
+      "save": "Save profile",
+      "saveSuccess": "Profile updated.",
+      "saveError": "Failed to update profile."
     },
     "language": {
       "title": "Language",
@@ -55,8 +87,14 @@
     },
     "apiKeys": {
       "title": "AI Provider API Keys",
-      "addKey": "Add API key",
-      "noKeys": "No API keys configured.",
+      "description": "Add keys for OpenAI, Gemini, or Anthropic. Only one key per provider can be active at a time.",
+      "addKey": "Add a key",
+      "noKeys": "No API key saved yet.",
+      "addTitle": "Add an API key",
+      "addDescription": "Select a provider then paste your API key.",
+      "providerLabel": "Provider",
+      "apiKeyLabel": "API key",
+      "saveKey": "Save key",
       "keyAdded": "API key added.",
       "keyDeleted": "API key deleted.",
       "keyActivated": "API key activated.",
@@ -64,7 +102,6 @@
       "addError": "Failed to add API key.",
       "deleteConfirmTitle": "Delete API key",
       "deleteConfirmDescription": "This action cannot be undone.",
-      "apiKeyLabel": "API key",
       "apiKeyPlaceholder": "Paste your API key here"
     }
   },
@@ -72,10 +109,244 @@
     "title": "Projects",
     "new": "New project",
     "empty": "No projects yet.",
-    "namePlaceholder": "Project name"
+    "namePlaceholder": "Project name",
+    "notFound": "Project not found",
+    "list": {
+      "createTitle": "Create project",
+      "createSuccess": "Project created",
+      "createError": "Failed to create project",
+      "createFirst": "Create your first project"
+    },
+    "card": {
+      "created": "Created"
+    },
+    "page": {
+      "chatTitle": "Chat",
+      "chatDescription": "Start a conversation with your documents",
+      "settingsTitle": "Settings",
+      "settingsDescription": "Configure project settings",
+      "settings": "Settings",
+      "chat": "Chat"
+    },
+    "chatPage": {
+      "reindexingMessage": "Reindexing in progress ({progress}/{total}). Chat is temporarily disabled."
+    },
+    "form": {
+      "editTitle": "Edit Project",
+      "newTitle": "New Project",
+      "presentationSection": "Presentation",
+      "nameLabel": "Name *",
+      "namePlaceholder": "My project",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What is this project about?",
+      "promptSection": "Prompt",
+      "systemPromptLabel": "System Prompt",
+      "systemPromptPlaceholder": "Instructions for the AI assistant...",
+      "systemPromptLimit": "Limit: 8000 characters. Beyond this, saving will be refused.",
+      "systemPromptNearLimit": "You're approaching the limit. Consider shortening the prompt.",
+      "knowledgeSection": "Knowledge",
+      "knowledgeDescription": "Settings below control how documents are prepared before indexing.",
+      "chunkingStrategyLabel": "Chunking Strategy",
+      "chunkingAuto": "Auto",
+      "chunkingFixed": "Fixed window",
+      "chunkingParagraph": "Paragraph",
+      "chunkingHeading": "Heading section",
+      "chunkingSemantic": "Semantic",
+      "chunkingDescription": "Chunking defines how a document is split before indexing. `Auto` automatically chooses based on text structure.",
+      "indexingSection": "Indexing",
+      "parentChildLabel": "Enable parent-child chunking",
+      "parentChildDescription": "Parent-child mode builds large parent chunks (rich context) and smaller child chunks (finer for search). This can improve retrieval relevance on long documents, at the cost of heavier indexing.",
+      "parentChildRecommendation": "Recommendation: parent-child mode generally works better with the `Semantic` chunking strategy.",
+      "parentChildWarning": "Parent-child mode is active with a non-`Semantic` strategy. This works, but relevance is often better with `Semantic`.",
+      "retrievalSection": "Retrieval",
+      "retrievalDescription": "Retrieval settings will be centralized here in a future iteration.",
+      "answerSection": "Answer",
+      "answerDescription": "Answer generation settings will be centralized here in a future iteration.",
+      "reindexTitle": "Reindexing required",
+      "reindexEnableDescription": "Enabling parent-child mode requires reindexing all project documents to create the parent/child hierarchy.",
+      "reindexDisableDescription": "Disabling parent-child mode requires reindexing all project documents to return to standard chunking.",
+      "reindexDocumentsWarning": "Existing documents will not work correctly until they have been reindexed.",
+      "confirmAndSave": "Confirm and save"
+    }
   },
   "organizations": {
     "title": "Organizations",
-    "new": "New organization"
+    "new": "New organization",
+    "list": {
+      "createTitle": "Create organization",
+      "createDescription": "Set a name, URL slug, and optional description.",
+      "namePlaceholder": "Name",
+      "slugPlaceholder": "Slug (e.g. acme)",
+      "descriptionPlaceholder": "Description (optional)",
+      "createSuccess": "Organization created",
+      "createError": "Failed to create organization",
+      "noSlug": "No slug",
+      "manage": "Manage",
+      "empty": "No organizations yet."
+    },
+    "settings": {
+      "title": "Organization settings",
+      "description": "Manage organization profile and access.",
+      "tabGeneral": "General",
+      "tabMembers": "Members",
+      "tabApiKeys": "API Keys",
+      "dangerZone": "Danger zone",
+      "dangerDescription": "Delete this organization and all related data.",
+      "deleteOrg": "Delete organization",
+      "deleteTitle": "Delete organization",
+      "deleteWarning": "This action is irreversible. All organization data will be permanently deleted.",
+      "deleting": "Deleting...",
+      "confirmDelete": "Confirm delete",
+      "deleteSuccess": "Organization deleted",
+      "deleteError": "Failed to delete organization",
+      "loadError": "Failed to load organization.",
+      "nameLabel": "Name",
+      "slugLabel": "Slug",
+      "descriptionLabel": "Description",
+      "logoLabel": "Logo URL",
+      "updateSuccess": "Organization updated",
+      "updateError": "Failed to update organization"
+    },
+    "members": {
+      "title": "Members",
+      "description": "Invite, change roles, and remove members from this organization.",
+      "inviteLabel": "Invite member",
+      "invitePlaceholder": "user@example.com",
+      "inviteSuccess": "Invitation sent",
+      "inviteError": "Failed to invite member",
+      "currentMembers": "Current members",
+      "joined": "Joined",
+      "remove": "Remove",
+      "removeError": "Failed to remove member",
+      "pendingInvitations": "Pending invitations",
+      "noPendingInvitations": "No pending invitations.",
+      "resend": "Resend",
+      "revoke": "Revoke",
+      "resendSuccess": "Invitation resent",
+      "resendError": "Failed to resend invitation",
+      "revokeSuccess": "Invitation revoked",
+      "revokeError": "Failed to revoke invitation"
+    },
+    "credentials": {
+      "title": "AI provider API keys",
+      "description": "Add keys for OpenAI, Gemini, or Anthropic. Only one key per provider can be active at a time.",
+      "addKey": "Add a key",
+      "noKeys": "No API key saved yet.",
+      "addTitle": "Add an API key",
+      "addDescription": "Select a provider then paste your API key.",
+      "providerLabel": "Provider",
+      "apiKeyLabel": "API key",
+      "saveKey": "Save key"
+    }
+  },
+  "invitations": {
+    "page": {
+      "title": "Invitations",
+      "description": "Accept pending invitations to join organizations."
+    },
+    "list": {
+      "loadError": "Failed to load invitations",
+      "empty": "No pending invitations.",
+      "role": "Role:",
+      "expires": "Expires:",
+      "accept": "Accept",
+      "acceptSuccess": "Invitation accepted",
+      "acceptError": "Failed to accept invitation"
+    }
+  },
+  "chat": {
+    "input": {
+      "placeholder": "Type a message...",
+      "ariaLabel": "Message",
+      "send": "Send"
+    },
+    "panel": {
+      "hideSources": "Hide",
+      "showSources": "Show",
+      "sources": "sources",
+      "source": "Source",
+      "disabledDefault": "Chat is temporarily disabled for this project.",
+      "unableToLoadDocument": "Unable to load this document.",
+      "documentPreview": "Document preview",
+      "copyChunkId": "Copy",
+      "copyChunkIdTitle": "Copy chunk ID",
+      "loadingDocument": "Loading document...",
+      "previewNotAvailable": "Preview is not available for this file type.",
+      "downloadDocument": "Download document"
+    },
+    "messageBubble": {
+      "copyMessage": "Copy message"
+    },
+    "streamingIndicator": {
+      "thinking": "Thinking..."
+    },
+    "sidebar": {
+      "newConversation": "New Conversation",
+      "noConversations": "No conversations yet",
+      "deleteTitle": "Delete Conversation",
+      "deleteConfirm": "Are you sure you want to delete this conversation?"
+    }
+  },
+  "documents": {
+    "upload": {
+      "dragAndDrop": "Drag and drop a file here, or click to select",
+      "selectFiles": "Select Files",
+      "filesSelected": "file(s) selected",
+      "uploading": "Uploading...",
+      "upload": "Upload"
+    },
+    "row": {
+      "copyId": "Copy ID",
+      "indexDate": "Index date:",
+      "embedding": "Embedding:",
+      "chunking": "Chunking:",
+      "parentChild": "Parent-child:",
+      "previewTitle": "Preview",
+      "previewAriaLabel": "Preview document",
+      "reindexingAriaLabel": "Reindexing document",
+      "reindexAriaLabel": "Reindex document",
+      "reindexingLabel": "Reindexing...",
+      "reindexLabel": "Reindex",
+      "deleteAriaLabel": "Delete document",
+      "deleteTitle": "Delete",
+      "deleteDocumentTitle": "Delete Document",
+      "loadingPreview": "Loading preview...",
+      "previewNotAvailable": "Preview is not available for this file type.",
+      "downloadDocument": "Download document"
+    }
+  },
+  "sidebar": {
+    "myProjects": "My Projects",
+    "createProject": "Create project",
+    "createProjectIn": "Create project in {orgName}",
+    "noProjects": "No projects",
+    "projectMenu": "Project menu {projectName}",
+    "chat": "Chat",
+    "settings": "Settings",
+    "githubProject": "GitHub project"
+  },
+  "layout": {
+    "themeToggle": {
+      "dark": "Dark",
+      "light": "Light",
+      "switchToDark": "Switch to dark mode",
+      "switchToLight": "Switch to light mode"
+    },
+    "localeSelector": {
+      "en": "English",
+      "fr": "Français"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "404",
+      "message": "Page not found",
+      "goHome": "Go home"
+    },
+    "error": {
+      "title": "Something went wrong",
+      "message": "An unexpected error occurred",
+      "retry": "Try again"
+    }
   }
 }

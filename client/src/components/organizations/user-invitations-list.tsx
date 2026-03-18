@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +10,8 @@ import {
 } from "@/lib/hooks/use-user-invitations";
 
 export function UserInvitationsList() {
+  const t = useTranslations("invitations.list");
+  const tCommon = useTranslations("common");
   const { data, isLoading, error } = useUserPendingOrganizationInvitations();
   const acceptInvitation = useAcceptUserOrganizationInvitation();
 
@@ -22,11 +25,11 @@ export function UserInvitationsList() {
   }
 
   if (error) {
-    return <div className="text-destructive">Failed to load invitations</div>;
+    return <div className="text-destructive">{t("loadError")}</div>;
   }
 
   if (!data || data.length === 0) {
-    return <p className="text-sm text-muted-foreground">No pending invitations.</p>;
+    return <p className="text-sm text-muted-foreground">{t("empty")}</p>;
   }
 
   return (
@@ -39,22 +42,22 @@ export function UserInvitationsList() {
           <div className="space-y-1">
             <p className="text-base font-semibold">{invitation.organization_name}</p>
             <p className="text-sm text-muted-foreground">
-              Role: {invitation.role}
+              {t("role")} {invitation.role}
             </p>
             <p className="text-xs text-muted-foreground">
-              Expires: {new Date(invitation.expires_at).toLocaleString()}
+              {t("expires")} {new Date(invitation.expires_at).toLocaleString()}
             </p>
           </div>
           <Button
             onClick={() =>
               acceptInvitation.mutate(invitation.id, {
-                onSuccess: () => toast.success("Invitation accepted"),
-                onError: () => toast.error("Failed to accept invitation"),
+                onSuccess: () => toast.success(t("acceptSuccess")),
+                onError: () => toast.error(t("acceptError")),
               })
             }
             disabled={acceptInvitation.isPending}
           >
-            {acceptInvitation.isPending ? "Accepting..." : "Accept"}
+            {acceptInvitation.isPending ? tCommon("accepting") : t("accept")}
           </Button>
         </div>
       ))}
