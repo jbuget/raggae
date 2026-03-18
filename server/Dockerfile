@@ -5,12 +5,13 @@ FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml .
-COPY src/ src/
 
-RUN pip install --no-cache-dir .
+RUN uv pip install --system --no-cache .
+
+COPY src/ src/
 
 # ---- runtime ----
 FROM python:3.13-slim AS runtime
