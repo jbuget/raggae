@@ -16,10 +16,15 @@ export interface UserResponse {
   full_name: string;
   is_active: boolean;
   created_at: string;
+  locale: string;
 }
 
 export interface UpdateUserFullNameRequest {
   full_name: string;
+}
+
+export interface UpdateUserLocaleRequest {
+  locale: "en" | "fr";
 }
 
 export interface TokenResponse {

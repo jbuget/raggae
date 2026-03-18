@@ -3,6 +3,7 @@ import type {
   RegisterRequest,
   TokenResponse,
   UpdateUserFullNameRequest,
+  UpdateUserLocaleRequest,
   UserResponse,
 } from "@/lib/types/api";
 import { apiFetch } from "./client";
@@ -30,6 +31,17 @@ export function updateUserFullName(
   data: UpdateUserFullNameRequest,
 ): Promise<UserResponse> {
   return apiFetch<UserResponse>("/auth/me/full-name", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export function updateUserLocale(
+  token: string,
+  data: UpdateUserLocaleRequest,
+): Promise<UserResponse> {
+  return apiFetch<UserResponse>("/auth/me/locale", {
     method: "PATCH",
     body: JSON.stringify(data),
     token,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -11,14 +12,17 @@ import { listOrganizationMembers, listOrganizationProjects } from "@/lib/api/org
 import { useOrganizations } from "@/lib/hooks/use-organizations";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/projects", label: "Projects" },
-  { href: "/organizations", label: "Organizations" },
-  { href: "/invitations", label: "Invitations" },
-];
-
 export function MobileSidebar() {
   const pathname = usePathname();
+  const t = useTranslations("sidebar");
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
+
+  const navItems = [
+    { href: "/projects", label: tNav("projects") },
+    { href: "/organizations", label: tNav("organizations") },
+    { href: "/invitations", label: tNav("invitations") },
+  ];
   const { token, user } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const { data: organizations } = useOrganizations();
@@ -82,19 +86,19 @@ export function MobileSidebar() {
         <div className="mt-4 border-t pt-3">
           <div className="flex h-7 items-center justify-between px-1 pb-2">
             <p className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              My Projects
+              {t("myProjects")}
             </p>
             <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-              <Link href="/projects?create=1" aria-label="Create project">
+              <Link href="/projects?create=1" aria-label={t("createProject")}>
                 <Plus className="h-4 w-4" />
               </Link>
             </Button>
           </div>
           {isLoading && (
-            <p className="px-3 py-1 text-sm text-muted-foreground">Loading...</p>
+            <p className="px-3 py-1 text-sm text-muted-foreground">{tCommon("loading")}</p>
           )}
           {!isLoading && projects?.length === 0 && (
-            <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>
+            <p className="px-3 py-1 text-sm text-muted-foreground">{t("noProjects")}</p>
           )}
           {!isLoading &&
             projects
@@ -128,7 +132,7 @@ export function MobileSidebar() {
                 <Button asChild variant="ghost" size="icon" className="h-7 w-7">
                   <Link
                     href={`/projects?create=1&organizationId=${organization.id}`}
-                    aria-label={`Create project in ${organization.name}`}
+                    aria-label={t("createProjectIn", { orgName: organization.name })}
                   >
                     <Plus className="h-4 w-4" />
                   </Link>
@@ -136,7 +140,7 @@ export function MobileSidebar() {
               )}
             </div>
             {(organizationProjectsMap.get(organization.id) ?? []).length === 0 ? (
-              <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>
+              <p className="px-3 py-1 text-sm text-muted-foreground">{t("noProjects")}</p>
             ) : (
               (organizationProjectsMap.get(organization.id) ?? []).map((project) => (
                 <Link

@@ -10,13 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslations } from "next-intl";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { LocaleSelector } from "@/components/layout/locale-selector";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MobileSidebar } from "./mobile-sidebar";
 
 export function Header() {
   const { user } = useAuth();
+  const t = useTranslations("header");
 
   return (
     <header className="flex h-14 items-center justify-between border-b px-6">
@@ -24,7 +27,7 @@ export function Header() {
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm" className="md:hidden">
-              Menu
+              {t("account")}
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
@@ -34,11 +37,12 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        <LocaleSelector />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="cursor-pointer">
-              {user?.email ?? "Account"}
+              {user?.email ?? t("account")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -46,11 +50,11 @@ export function Header() {
               {user?.email}
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings">User settings</Link>
+              <Link href="/settings">{t("userSettings")}</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
-              Sign out
+              {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

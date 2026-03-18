@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +21,8 @@ import { ProjectCard } from "./project-card";
 import { useCreateProject, useProjects } from "@/lib/hooks/use-projects";
 
 export function ProjectList() {
+  const t = useTranslations("projects");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: projects, isLoading, error } = useProjects();
@@ -52,7 +55,7 @@ export function ProjectList() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Projects</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Dialog
           open={effectiveCreateOpen}
           onOpenChange={(open) => {
@@ -63,20 +66,20 @@ export function ProjectList() {
           }}
         >
           <DialogTrigger asChild>
-            <Button>New Project</Button>
+            <Button>{t("new")}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create project</DialogTitle>
+              <DialogTitle>{t("list.createTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="new-project-name">Name *</Label>
+                <Label htmlFor="new-project-name">{t("form.nameLabel")}</Label>
                 <Input
                   id="new-project-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="My project"
+                  placeholder={t("form.namePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
@@ -102,19 +105,19 @@ export function ProjectList() {
                     },
                     {
                       onSuccess: (project) => {
-                        toast.success("Project created");
+                        toast.success(t("list.createSuccess"));
                         setCreateOpen(false);
                         setName("");
                         setDescription("");
                         router.push(`/projects/${project.id}/settings`);
                       },
-                      onError: () => toast.error("Failed to create project"),
+                      onError: () => toast.error(t("list.createError")),
                     },
                   );
                 }}
                 disabled={!name.trim() || createProject.isPending}
               >
-                {createProject.isPending ? "Creating..." : "Create"}
+                {createProject.isPending ? tCommon("creating") : t("list.createTitle")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -123,8 +126,8 @@ export function ProjectList() {
 
       {projects && projects.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">No projects yet</p>
-          <Button onClick={() => setCreateOpen(true)}>Create your first project</Button>
+          <p className="text-muted-foreground mb-4">{t("empty")}</p>
+          <Button onClick={() => setCreateOpen(true)}>{t("list.createFirst")}</Button>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

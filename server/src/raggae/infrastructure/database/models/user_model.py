@@ -17,3 +17,4 @@ class UserModel(Base):
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    locale: Mapped[str] = mapped_column(String(2), nullable=False, server_default="en")

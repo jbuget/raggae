@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,8 +24,8 @@ import {
   useDeleteModelCredential,
   useModelCredentials,
 } from "@/lib/hooks/use-model-credentials";
-import { useCurrentUserProfile, useUpdateUserFullName } from "@/lib/hooks/use-user-profile";
-import type { ModelProvider } from "@/lib/types/api";
+import { useCurrentUserProfile, useUpdateUserFullName, useUpdateUserLocale } from "@/lib/hooks/use-user-profile";
+import type { ModelProvider, UpdateUserLocaleRequest } from "@/lib/types/api";
 
 const PROVIDERS: Array<{ value: ModelProvider; label: string; placeholder: string }> = [
   { value: "openai", label: "OpenAI", placeholder: "sk-..." },
@@ -32,9 +33,23 @@ const PROVIDERS: Array<{ value: ModelProvider; label: string; placeholder: strin
   { value: "anthropic", label: "Anthropic", placeholder: "sk-ant-..." },
 ];
 
+const LOCALE_OPTIONS: Array<{ value: UpdateUserLocaleRequest["locale"]; flag: string; label: string }> = [
+  { value: "en", flag: "🇬🇧", label: "English" },
+  { value: "fr", flag: "🇫🇷", label: "Français" },
+];
+
+function setLocaleCookie(locale: string) {
+  const maxAge = 60 * 60 * 24 * 365;
+  document.cookie = `raggae_locale=${locale};path=/;max-age=${maxAge};SameSite=Lax`;
+}
+
 export default function UserSettingsPage() {
+  const t = useTranslations("settings");
+  const tCommon = useTranslations("common");
+  const currentLocale = useLocale();
   const { data: userProfile, isLoading: userLoading } = useCurrentUserProfile();
   const updateUserFullName = useUpdateUserFullName();
+  const updateUserLocale = useUpdateUserLocale();
   const { data: credentials, isLoading } = useModelCredentials();
   const createCredential = useCreateModelCredential();
   const activateCredential = useActivateModelCredential();
@@ -58,12 +73,12 @@ export default function UserSettingsPage() {
       { provider: modalProvider, api_key: apiKey },
       {
         onSuccess: () => {
-          toast.success(`${modalProvider} API key saved`);
+          toast.success(t("apiKeys.saveKeySuccess", { provider: modalProvider }));
           setModalOpen(false);
           setModalApiKey("");
         },
         onError: (error) => {
-          toast.error((error as Error).message || "Failed to save API key");
+          toast.error((error as Error).message || t("apiKeys.saveKeyError"));
         },
       },
     );
@@ -72,21 +87,21 @@ export default function UserSettingsPage() {
   function handleToggleActive(credentialId: string, currentlyActive: boolean) {
     if (currentlyActive) {
       deactivateCredential.mutate(credentialId, {
-        onSuccess: () => toast.success("API key deactivated"),
-        onError: (error) => toast.error((error as Error).message || "Failed to deactivate API key"),
+        onSuccess: () => toast.success(t("apiKeys.deactivateSuccess")),
+        onError: (error) => toast.error((error as Error).message || t("apiKeys.deactivateError")),
       });
     } else {
       activateCredential.mutate(credentialId, {
-        onSuccess: () => toast.success("API key activated"),
-        onError: () => toast.error("Failed to activate API key"),
+        onSuccess: () => toast.success(t("apiKeys.activateSuccess")),
+        onError: () => toast.error(t("apiKeys.activateError")),
       });
     }
   }
 
   function handleDelete(credentialId: string) {
     deleteCredential.mutate(credentialId, {
-      onSuccess: () => toast.success("API key deleted"),
-      onError: () => toast.error("Failed to delete API key"),
+      onSuccess: () => toast.success(t("apiKeys.deleteSuccess")),
+      onError: () => toast.error(t("apiKeys.deleteError")),
     });
   }
 
@@ -98,17 +113,17 @@ export default function UserSettingsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">User Settings</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your AI provider API keys.
+          {t("description")}
         </p>
       </div>
 
       <Card className="space-y-4 p-5">
         <div className="space-y-1">
-          <h2 className="text-lg font-medium">Profile</h2>
+          <h2 className="text-lg font-medium">{t("profile.title")}</h2>
           <p className="text-sm text-muted-foreground">
-            Update your account display name.
+            {t("profile.description")}
           </p>
         </div>
         {userLoading ? (
@@ -116,16 +131,16 @@ export default function UserSettingsPage() {
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="user-email">Email</Label>
+              <Label htmlFor="user-email">{t("profile.emailLabel")}</Label>
               <Input id="user-email" value={userProfile?.email ?? ""} disabled />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="user-full-name">Full name</Label>
+              <Label htmlFor="user-full-name">{t("profile.fullNameLabel")}</Label>
               <Input
                 id="user-full-name"
                 value={effectiveFullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your full name"
+                placeholder={t("profile.fullNamePlaceholder")}
               />
             </div>
             <Button
@@ -133,27 +148,62 @@ export default function UserSettingsPage() {
               onClick={() =>
                 updateUserFullName.mutate(effectiveFullName.trim(), {
                   onSuccess: () => {
-                    toast.success("Profile updated");
+                    toast.success(t("profile.saveSuccess"));
                     setFullName("");
                   },
                   onError: (error) =>
-                    toast.error((error as Error).message || "Failed to update profile"),
+                    toast.error((error as Error).message || t("profile.saveError")),
                 })
               }
               disabled={!effectiveFullName.trim() || updateUserFullName.isPending}
             >
-              {updateUserFullName.isPending ? "Saving..." : "Save profile"}
+              {updateUserFullName.isPending ? tCommon("saving") : t("profile.save")}
             </Button>
           </div>
         )}
       </Card>
 
       <Card className="space-y-4 p-5">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium">{t("language.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("language.description")}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="locale-select">{t("language.label")}</Label>
+          <select
+            id="locale-select"
+            defaultValue={currentLocale}
+            onChange={(e) => {
+              const locale = e.target.value as UpdateUserLocaleRequest["locale"];
+              setLocaleCookie(locale);
+              updateUserLocale.mutate(
+                { locale },
+                {
+                  onSuccess: () => {
+                    toast.success(t("language.saveSuccess"));
+                    window.location.reload();
+                  },
+                  onError: () => toast.error(t("language.saveError")),
+                },
+              );
+            }}
+            className="flex h-9 w-full max-w-xs rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            {LOCALE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.flag} {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </Card>
+
+      <Card className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-lg font-medium">AI provider API keys</h2>
+            <h2 className="text-lg font-medium">{t("apiKeys.title")}</h2>
             <p className="text-sm text-muted-foreground">
-              Add keys for OpenAI, Gemini, or Anthropic. Only one key per provider can be active at a time.
+              {t("apiKeys.description")}
             </p>
           </div>
           <Button
@@ -161,7 +211,7 @@ export default function UserSettingsPage() {
             className="shrink-0 cursor-pointer"
             onClick={() => setModalOpen(true)}
           >
-            Add a key
+            {t("apiKeys.addKey")}
           </Button>
         </div>
 
@@ -192,7 +242,7 @@ export default function UserSettingsPage() {
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {item.is_active ? "Active" : "Inactive"}
+                      {item.is_active ? tCommon("active") : tCommon("inactive")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -209,7 +259,7 @@ export default function UserSettingsPage() {
                       disabled={deleteCredential.isPending}
                       onClick={() => handleDelete(item.id)}
                     >
-                      Delete
+                      {tCommon("delete")}
                     </Button>
                   </div>
                 </div>
@@ -217,22 +267,22 @@ export default function UserSettingsPage() {
             })}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No API key saved yet.</p>
+          <p className="text-sm text-muted-foreground">{t("apiKeys.noKeys")}</p>
         )}
       </Card>
 
       <Dialog open={modalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add an API key</DialogTitle>
+            <DialogTitle>{t("apiKeys.addTitle")}</DialogTitle>
             <DialogDescription>
-              Select a provider then paste your API key.
+              {t("apiKeys.addDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="modal-provider">Provider</Label>
+              <Label htmlFor="modal-provider">{t("apiKeys.providerLabel")}</Label>
               <select
                 id="modal-provider"
                 value={modalProvider}
@@ -248,7 +298,7 @@ export default function UserSettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="modal-api-key">API key</Label>
+              <Label htmlFor="modal-api-key">{t("apiKeys.apiKeyLabel")}</Label>
               <Input
                 id="modal-api-key"
                 type="password"
@@ -267,7 +317,7 @@ export default function UserSettingsPage() {
               disabled={!modalApiKey.trim() || createCredential.isPending}
               onClick={handleSave}
             >
-              Save key
+              {t("apiKeys.saveKey")}
             </Button>
           </DialogFooter>
         </DialogContent>

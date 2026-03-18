@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from raggae.domain.entities.user import User
+from raggae.domain.value_objects.locale import Locale
 
 
 @dataclass
@@ -14,6 +15,7 @@ class UserDTO:
     full_name: str
     is_active: bool
     created_at: datetime
+    locale: Locale = Locale.EN
 
     @classmethod
     def from_entity(cls, user: User) -> "UserDTO":
@@ -23,4 +25,5 @@ class UserDTO:
             full_name=user.full_name,
             is_active=user.is_active,
             created_at=user.created_at,
+            locale=user.locale,
         )

@@ -1,0 +1,506 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "loading": "Chargement...",
+    "saving": "Enregistrement...",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "or": "ou",
+    "on": "activé",
+    "off": "désactivé",
+    "creating": "Création...",
+    "deleting": "Suppression...",
+    "sending": "Envoi...",
+    "accepting": "Acceptation...",
+    "noDescription": "Sans description"
+  },
+  "nav": {
+    "menu": "Menu",
+    "projects": "Projets",
+    "organizations": "Organisations",
+    "invitations": "Invitations",
+    "settings": "Paramètres"
+  },
+  "header": {
+    "account": "Compte",
+    "userSettings": "Paramètres utilisateur",
+    "signOut": "Se déconnecter"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Connectez-vous à votre compte Raggae",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "vous@exemple.fr",
+      "passwordLabel": "Mot de passe",
+      "signingIn": "Connexion en cours...",
+      "signIn": "Se connecter",
+      "noAccount": "Pas encore de compte ?",
+      "register": "S'inscrire",
+      "invalidCredentials": "E-mail ou mot de passe incorrect",
+      "unexpectedError": "Une erreur inattendue est survenue"
+    },
+    "register": {
+      "title": "Inscription",
+      "subtitle": "Créez votre compte Raggae",
+      "fullNameLabel": "Nom complet",
+      "fullNamePlaceholder": "Jean Dupont",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "vous@exemple.fr",
+      "passwordLabel": "Mot de passe",
+      "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
+      "emailAlreadyExists": "Un compte avec cet e-mail existe déjà",
+      "unexpectedError": "Une erreur inattendue est survenue",
+      "creatingAccount": "Création du compte...",
+      "createAccount": "Créer un compte",
+      "alreadyHaveAccount": "Déjà un compte ?",
+      "signIn": "Se connecter"
+    }
+  },
+  "settings": {
+    "title": "Paramètres utilisateur",
+    "description": "Gérez votre compte et vos clés API.",
+    "profile": {
+      "title": "Profil",
+      "description": "Mettez à jour votre nom d'affichage.",
+      "emailLabel": "E-mail",
+      "fullNameLabel": "Nom complet",
+      "fullNamePlaceholder": "Votre nom complet",
+      "save": "Enregistrer le profil",
+      "saveSuccess": "Profil mis à jour.",
+      "saveError": "Impossible de mettre à jour le profil."
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez la langue de l'interface.",
+      "label": "Langue de l'interface",
+      "saveSuccess": "Langue mise à jour.",
+      "saveError": "Impossible de mettre à jour la langue."
+    },
+    "apiKeys": {
+      "title": "Clés API des fournisseurs IA",
+      "description": "Ajoutez des clés pour OpenAI, Gemini ou Anthropic. Une seule clé par fournisseur peut être active à la fois.",
+      "addKey": "Ajouter une clé",
+      "noKeys": "Aucune clé API enregistrée.",
+      "addTitle": "Ajouter une clé API",
+      "addDescription": "Sélectionnez un fournisseur puis collez votre clé API.",
+      "providerLabel": "Fournisseur",
+      "apiKeyLabel": "Clé API",
+      "saveKey": "Enregistrer la clé",
+      "saveKeySuccess": "Clé API enregistrée pour {provider}.",
+      "saveKeyError": "Impossible d'enregistrer la clé API.",
+      "activateSuccess": "Clé API activée.",
+      "activateError": "Impossible d'activer la clé API.",
+      "deactivateSuccess": "Clé API désactivée.",
+      "deactivateError": "Impossible de désactiver la clé API.",
+      "deleteSuccess": "Clé API supprimée.",
+      "deleteError": "Impossible de supprimer la clé API.",
+      "keyAdded": "Clé API ajoutée.",
+      "keyDeleted": "Clé API supprimée.",
+      "keyActivated": "Clé API activée.",
+      "keyDeactivated": "Clé API désactivée.",
+      "addError": "Impossible d'ajouter la clé API.",
+      "deleteConfirmTitle": "Supprimer la clé API",
+      "deleteConfirmDescription": "Cette action est irréversible.",
+      "apiKeyPlaceholder": "Collez votre clé API ici"
+    }
+  },
+  "projects": {
+    "title": "Projets",
+    "new": "Nouveau projet",
+    "empty": "Aucun projet pour le moment.",
+    "namePlaceholder": "Nom du projet",
+    "notFound": "Projet introuvable",
+    "list": {
+      "createTitle": "Créer un projet",
+      "createSuccess": "Projet créé",
+      "createError": "Erreur lors de la création du projet",
+      "createFirst": "Créer votre premier projet"
+    },
+    "card": {
+      "created": "Créé le"
+    },
+    "page": {
+      "chatTitle": "Chat",
+      "chatDescription": "Commencez une conversation avec vos documents",
+      "settingsTitle": "Paramètres",
+      "settingsDescription": "Configurer les paramètres du projet",
+      "settings": "Paramètres",
+      "chat": "Chat"
+    },
+    "chatPage": {
+      "reindexingMessage": "Réindexation en cours ({progress}/{total}). Le chat est temporairement désactivé."
+    },
+    "settings": {
+      "notFound": "Projet introuvable",
+      "tabs": {
+        "general": "Général",
+        "publication": "Publication",
+        "models": "Modèles",
+        "knowledgeIndexing": "Indexation",
+        "documentIngestion": "Documents",
+        "contextRetrieval": "Retrieval",
+        "contextAugmentation": "Augmentation",
+        "answerGeneration": "Génération"
+      },
+      "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
+      "saveChanges": "Enregistrer",
+      "updateSuccess": "Projet mis à jour",
+      "updateError": "Erreur lors de la mise à jour du projet",
+      "general": {
+        "nameLabel": "Nom *",
+        "namePlaceholder": "Mon projet",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "De quoi parle ce projet ?",
+        "deleteTitle": "Supprimer le projet",
+        "deleteDescription": "Cette action est irréversible et supprime les paramètres, conversations et documents du projet.",
+        "deleteButton": "Supprimer le projet",
+        "deleteDialogTitle": "Supprimer le projet",
+        "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer « {name} » ? Cette action est irréversible.",
+        "deleteSuccess": "Projet supprimé",
+        "deleteError": "Erreur lors de la suppression du projet"
+      },
+      "publication": {
+        "statusLabel": "Statut",
+        "published": "Publié",
+        "unpublished": "Non publié",
+        "publicUrl": "URL publique",
+        "copy": "Copier",
+        "urlCopied": "URL copiée dans le presse-papiers",
+        "noteNotAvailable": "Note : la page de chat publique n'est pas encore disponible.",
+        "unpublishTitle": "Dépublier ce projet",
+        "unpublishDescription": "Le projet ne sera plus accessible publiquement.",
+        "unpublishButton": "Dépublier le projet",
+        "unpublishDialogTitle": "Dépublier le projet",
+        "unpublishDialogDescription": "Ce projet ne sera plus accessible publiquement. Vous pourrez le republier à tout moment.",
+        "unpublishing": "Dépublication...",
+        "unpublishSuccess": "Projet dépublié",
+        "unpublishError": "Erreur lors de la dépublication",
+        "publishTitle": "Publier ce projet",
+        "publishDescription": "Rendez ce projet accessible à toute personne disposant de l'URL. Les utilisateurs pourront chatter sans se connecter.",
+        "publishButton": "Publier le projet",
+        "publishDialogTitle": "Publier le projet",
+        "publishDialogDescription": "Ce projet sera accessible à toute personne disposant de l'URL publique. Êtes-vous sûr de vouloir le rendre public ?",
+        "publishing": "Publication...",
+        "publishSuccess": "Projet publié",
+        "publishError": "Erreur lors de la publication"
+      },
+      "documentIngestion": {
+        "description": "La base documentaire du projet est configurée via les options d'indexation.",
+        "indexedTotal": "{indexed} indexés / {total} au total",
+        "uploadSuccess": "{succeeded} téléversés, {failed} en erreur",
+        "uploadError": "Erreur lors du téléversement",
+        "empty": "Aucun document pour l'instant. Téléversez votre premier document dans cette section.",
+        "reindexSuccess": "Document réindexé",
+        "reindexError": "Erreur lors de la réindexation du document",
+        "deleteSuccess": "Document supprimé",
+        "deleteError": "Erreur lors de la suppression du document"
+      },
+      "knowledgeIndexing": {
+        "title": "Indexation",
+        "chunkingLabel": "Stratégie de découpage",
+        "parentChildLabel": "Activer le découpage parent-enfant",
+        "parentChildRecommendation": "Recommandation : le mode parent-enfant fonctionne généralement mieux avec la stratégie `Sémantique`.",
+        "parentChildWarning": "Le mode parent-enfant est actif avec une stratégie non `Sémantique`. Cela fonctionne, mais la pertinence est souvent meilleure avec `Sémantique`.",
+        "reindexTitle": "Réindexer tous les documents",
+        "reindexDescription": "La réindexation recalcule les chunks et les embeddings pour tous les documents du projet. Cette opération peut prendre du temps.",
+        "reindexButton": "Réindexer tous les documents",
+        "reindexing": "Réindexation...",
+        "reindexSuccess": "Réindexation terminée : {indexed}/{total} indexés, {failed} en erreur",
+        "reindexError": "Erreur lors de la réindexation du projet"
+      },
+      "models": {
+        "embeddingTitle": "Modèle d'embedding",
+        "embeddingDescription": "Utilisé pour convertir vos documents et requêtes en vecteurs pour la recherche sémantique. Un changement nécessite généralement de réindexer les documents.",
+        "embeddingBackendLabel": "Backend d'embedding",
+        "embeddingApiKeyLabel": "Clé API d'embedding",
+        "existingKey": "Clé existante : {key}",
+        "noSelection": "Aucune sélection",
+        "selectEmbeddingFirst": "Sélectionnez d'abord OpenAI ou Gemini",
+        "savedKeysFor": "Vos clés pour {provider} : {keys}",
+        "noKeys": "aucune",
+        "embeddingCredentialsNote": "Les credentials sont disponibles uniquement pour les clés utilisateur OpenAI/Gemini.",
+        "embeddingModelLabel": "Modèle d'embedding",
+        "selectModel": "Sélectionner un modèle",
+        "llmTitle": "Modèle RAG / LLM",
+        "llmDescription": "Utilisé pour générer les réponses finales à partir du contexte récupéré et de l'historique de conversation. Choisissez-le selon la qualité, la vitesse et le coût.",
+        "llmBackendLabel": "Backend LLM",
+        "llmApiKeyLabel": "Clé API LLM",
+        "selectLlmFirst": "Sélectionnez d'abord OpenAI, Gemini ou Anthropic",
+        "llmCredentialsNote": "Les credentials sont disponibles uniquement pour les clés utilisateur OpenAI/Gemini/Anthropic.",
+        "llmModelLabel": "Modèle LLM"
+      },
+      "contextRetrieval": {
+        "title": "Retrieval",
+        "description": "Configurez comment les chunks sont sélectionnés avant la génération de réponse.",
+        "searchTypeLabel": "Type de recherche",
+        "hybrid": "Hybride (recommandé)",
+        "vector": "Vectoriel",
+        "fulltext": "Plein texte",
+        "topKLabel": "Top-K",
+        "topKNote": "Nombre de chunks récupérés par défaut pour chaque message utilisateur.",
+        "minScoreLabel": "Seuil de score minimum",
+        "minScoreNote": "Les chunks dont le score est inférieur à ce seuil sont ignorés (entre 0.0 et 1.0)."
+      },
+      "contextAugmentation": {
+        "title": "Augmentation du contexte",
+        "rerankingLabel": "Activer le reranking",
+        "rerankerBackendLabel": "Backend de reranking",
+        "rerankerNone": "Aucun",
+        "rerankerCrossEncoder": "Cross-encoder",
+        "rerankerInMemory": "InMemory",
+        "rerankerMmr": "MMR Diversity",
+        "rerankerModelLabel": "Modèle de reranking",
+        "selectRerankerBackend": "Sélectionnez un backend de reranking",
+        "selectModel": "Sélectionner un modèle",
+        "candidateMultiplierLabel": "Multiplicateur de candidats",
+        "candidateMultiplierNote": "Nombre de candidats récupérés avant reranking = top-k × multiplicateur."
+      },
+      "answerGeneration": {
+        "promptLabel": "Prompt du projet",
+        "promptPlaceholder": "Instructions pour l'assistant IA...",
+        "promptLimit": "Limite : 8 000 caractères. Au-delà, la sauvegarde sera refusée.",
+        "promptNearLimit": "Vous approchez de la limite. Pensez à raccourcir le prompt.",
+        "chatHistoryWindowLabel": "Fenêtre d'historique de chat",
+        "chatHistoryWindowNote": "Nombre maximum de messages récents conservés dans le contexte du prompt.",
+        "chatHistoryMaxCharsLabel": "Budget caractères pour l'historique",
+        "chatHistoryMaxCharsNote": "Budget en caractères pour l'historique de conversation injecté dans le prompt LLM."
+      }
+    },
+    "form": {
+      "editTitle": "Modifier le projet",
+      "newTitle": "Nouveau projet",
+      "presentationSection": "Présentation",
+      "nameLabel": "Nom *",
+      "namePlaceholder": "Mon projet",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "De quoi parle ce projet ?",
+      "promptSection": "Prompt",
+      "systemPromptLabel": "Prompt système",
+      "systemPromptPlaceholder": "Instructions pour l'assistant IA...",
+      "systemPromptLimit": "Limite : 8 000 caractères. Au-delà, la sauvegarde sera refusée.",
+      "systemPromptNearLimit": "Vous approchez de la limite. Pensez à raccourcir le prompt.",
+      "knowledgeSection": "Base de connaissances",
+      "knowledgeDescription": "Les réglages ci-dessous contrôlent comment les documents sont préparés avant indexation.",
+      "chunkingStrategyLabel": "Stratégie de découpage",
+      "chunkingAuto": "Auto",
+      "chunkingFixed": "Fenêtre fixe",
+      "chunkingParagraph": "Paragraphe",
+      "chunkingHeading": "Section par titre",
+      "chunkingSemantic": "Sémantique",
+      "chunkingDescription": "Le découpage définit comment un document est découpé avant indexation. `Auto` choisit automatiquement selon la structure du texte.",
+      "indexingSection": "Indexation",
+      "parentChildLabel": "Activer le découpage parent-enfant",
+      "parentChildDescription": "Le mode parent-enfant construit de grands chunks parents (contexte riche) et des chunks enfants plus fins (pour la recherche). Cela peut améliorer la pertinence du retrieval sur des documents longs, au prix d'une indexation plus lourde.",
+      "parentChildRecommendation": "Recommandation : le mode parent-enfant fonctionne généralement mieux avec la stratégie `Sémantique`.",
+      "parentChildWarning": "Le mode parent-enfant est actif avec une stratégie non `Sémantique`. Cela fonctionne, mais la pertinence est souvent meilleure avec `Sémantique`.",
+      "retrievalSection": "Retrieval",
+      "retrievalDescription": "Les réglages de retrieval seront centralisés ici dans une prochaine itération.",
+      "answerSection": "Réponse",
+      "answerDescription": "Les réglages de génération de réponse seront centralisés ici dans une prochaine itération.",
+      "reindexTitle": "Réindexation requise",
+      "reindexEnableDescription": "Activer le mode parent-enfant nécessite de réindexer tous les documents du projet pour créer la hiérarchie parent/enfant.",
+      "reindexDisableDescription": "Désactiver le mode parent-enfant nécessite de réindexer tous les documents du projet pour revenir au découpage standard.",
+      "reindexDocumentsWarning": "Les documents existants ne fonctionneront pas correctement tant qu'ils n'auront pas été réindexés.",
+      "confirmAndSave": "Confirmer et sauvegarder"
+    }
+  },
+  "organizations": {
+    "title": "Organisations",
+    "new": "Nouvelle organisation",
+    "list": {
+      "createTitle": "Créer une organisation",
+      "createDescription": "Définissez un nom, un slug URL et une description optionnelle.",
+      "namePlaceholder": "Nom",
+      "slugPlaceholder": "Slug (ex. acme)",
+      "descriptionPlaceholder": "Description (optionnelle)",
+      "createSuccess": "Organisation créée",
+      "createError": "Erreur lors de la création de l'organisation",
+      "noSlug": "Sans slug",
+      "manage": "Gérer",
+      "empty": "Aucune organisation pour le moment."
+    },
+    "settings": {
+      "title": "Paramètres de l'organisation",
+      "description": "Gérez le profil et les accès de l'organisation.",
+      "tabGeneral": "Général",
+      "tabMembers": "Membres",
+      "tabApiKeys": "Clés API",
+      "dangerZone": "Zone dangereuse",
+      "dangerDescription": "Supprimez cette organisation et toutes les données associées.",
+      "deleteOrg": "Supprimer l'organisation",
+      "deleteTitle": "Supprimer l'organisation",
+      "deleteWarning": "Cette action est irréversible. Toutes les données de l'organisation seront définitivement supprimées.",
+      "deleting": "Suppression...",
+      "confirmDelete": "Confirmer la suppression",
+      "deleteSuccess": "Organisation supprimée",
+      "deleteError": "Erreur lors de la suppression",
+      "loadError": "Impossible de charger l'organisation.",
+      "nameLabel": "Nom",
+      "slugLabel": "Slug",
+      "descriptionLabel": "Description",
+      "logoLabel": "URL du logo",
+      "updateSuccess": "Organisation mise à jour",
+      "updateError": "Erreur lors de la mise à jour"
+    },
+    "members": {
+      "title": "Membres",
+      "description": "Invitez, changez les rôles et retirez des membres de cette organisation.",
+      "inviteLabel": "Inviter un membre",
+      "invitePlaceholder": "utilisateur@exemple.fr",
+      "inviteSuccess": "Invitation envoyée",
+      "inviteError": "Erreur lors de l'invitation",
+      "currentMembers": "Membres actuels",
+      "joined": "Rejoint le",
+      "remove": "Retirer",
+      "removeError": "Erreur lors de la suppression",
+      "pendingInvitations": "Invitations en attente",
+      "noPendingInvitations": "Aucune invitation en attente.",
+      "resend": "Renvoyer",
+      "revoke": "Révoquer",
+      "resendSuccess": "Invitation renvoyée",
+      "resendError": "Erreur lors du renvoi",
+      "revokeSuccess": "Invitation révoquée",
+      "revokeError": "Erreur lors de la révocation"
+    },
+    "credentials": {
+      "title": "Clés API des fournisseurs IA",
+      "description": "Ajoutez des clés pour OpenAI, Gemini ou Anthropic. Une seule clé par fournisseur peut être active à la fois.",
+      "addKey": "Ajouter une clé",
+      "noKeys": "Aucune clé API enregistrée.",
+      "addTitle": "Ajouter une clé API",
+      "addDescription": "Sélectionnez un fournisseur puis collez votre clé API.",
+      "providerLabel": "Fournisseur",
+      "apiKeyLabel": "Clé API",
+      "saveKey": "Enregistrer la clé"
+    }
+  },
+  "invitations": {
+    "page": {
+      "title": "Invitations",
+      "description": "Acceptez les invitations en attente pour rejoindre des organisations."
+    },
+    "list": {
+      "loadError": "Impossible de charger les invitations",
+      "empty": "Aucune invitation en attente.",
+      "role": "Rôle :",
+      "expires": "Expire le :",
+      "accept": "Accepter",
+      "acceptSuccess": "Invitation acceptée",
+      "acceptError": "Erreur lors de l'acceptation"
+    }
+  },
+  "chat": {
+    "input": {
+      "placeholder": "Écrire un message...",
+      "ariaLabel": "Message",
+      "send": "Envoyer"
+    },
+    "panel": {
+      "hideSources": "Masquer",
+      "showSources": "Afficher",
+      "sources": "sources",
+      "source": "Source",
+      "disabledDefault": "Le chat est temporairement désactivé pour ce projet.",
+      "unableToLoadDocument": "Impossible de charger ce document.",
+      "documentPreview": "Aperçu du document",
+      "copyChunkId": "Copier",
+      "copyChunkIdTitle": "Copier l'ID du chunk",
+      "loadingDocument": "Chargement du document...",
+      "previewNotAvailable": "L'aperçu n'est pas disponible pour ce type de fichier.",
+      "downloadDocument": "Télécharger le document"
+    },
+    "messageBubble": {
+      "copyMessage": "Copier le message"
+    },
+    "streamingIndicator": {
+      "thinking": "Réflexion..."
+    },
+    "sidebar": {
+      "newConversation": "Nouvelle conversation",
+      "noConversations": "Aucune conversation pour le moment",
+      "deleteTitle": "Supprimer la conversation",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?"
+    }
+  },
+  "documents": {
+    "status": {
+      "indexed": "Indexé",
+      "processing": "En traitement",
+      "uploaded": "Téléversé",
+      "pending": "En attente",
+      "error": "Erreur"
+    },
+    "upload": {
+      "dragAndDrop": "Glissez-déposez un fichier ici, ou cliquez pour sélectionner",
+      "selectFiles": "Sélectionner des fichiers",
+      "filesSelected": "fichier(s) sélectionné(s)",
+      "uploading": "Téléversement...",
+      "upload": "Téléverser"
+    },
+    "row": {
+      "copyId": "Copier l'ID",
+      "indexDate": "Date d'indexation :",
+      "embedding": "Embedding :",
+      "chunking": "Découpage :",
+      "parentChild": "Parent-enfant :",
+      "previewTitle": "Aperçu",
+      "previewAriaLabel": "Prévisualiser le document",
+      "reindexingAriaLabel": "Réindexation en cours",
+      "reindexAriaLabel": "Réindexer le document",
+      "reindexingLabel": "Réindexation...",
+      "reindexLabel": "Réindexer",
+      "deleteAriaLabel": "Supprimer le document",
+      "deleteTitle": "Supprimer",
+      "deleteDocumentTitle": "Supprimer le document",
+      "loadingPreview": "Chargement de l'aperçu...",
+      "previewNotAvailable": "L'aperçu n'est pas disponible pour ce type de fichier.",
+      "downloadDocument": "Télécharger le document",
+      "indexedAt": "Indexé le {date}",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer « {name} » ?",
+      "unableToLoadPreview": "Impossible de charger l'aperçu de ce document."
+    }
+  },
+  "sidebar": {
+    "myProjects": "Mes projets",
+    "createProject": "Créer un projet",
+    "createProjectIn": "Créer un projet dans {orgName}",
+    "noProjects": "Aucun projet",
+    "projectMenu": "Menu du projet {projectName}",
+    "chat": "Chat",
+    "settings": "Paramètres",
+    "githubProject": "Projet GitHub"
+  },
+  "layout": {
+    "themeToggle": {
+      "dark": "Sombre",
+      "light": "Clair",
+      "switchToDark": "Passer en mode sombre",
+      "switchToLight": "Passer en mode clair"
+    },
+    "localeSelector": {
+      "en": "English",
+      "fr": "Français"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "404",
+      "message": "Page introuvable",
+      "goHome": "Accueil"
+    },
+    "error": {
+      "title": "Une erreur est survenue",
+      "message": "Une erreur inattendue est survenue",
+      "retry": "Réessayer"
+    }
+  }
+}

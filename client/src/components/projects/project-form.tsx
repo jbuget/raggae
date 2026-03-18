@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,8 +43,10 @@ export function ProjectForm({
   initialData,
   onSubmit,
   isLoading = false,
-  submitLabel = "Create Project",
+  submitLabel,
 }: ProjectFormProps) {
+  const t = useTranslations("projects.form");
+  const tCommon = useTranslations("common");
   const isCreateMode = initialData === undefined;
   const [name, setName] = useState(initialData?.name ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
@@ -113,29 +116,29 @@ export function ProjectForm({
       <Card>
         <CardHeader>
           <CardTitle>
-            {initialData ? "Edit Project" : "New Project"}
+            {initialData ? t("editTitle") : t("newTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
-              <h3 className="text-base font-semibold">Presentation</h3>
+              <h3 className="text-base font-semibold">{t("presentationSection")}</h3>
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t("nameLabel")}</Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="My project"
+                  placeholder={t("namePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("descriptionLabel")}</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What is this project about?"
+                  placeholder={t("descriptionPlaceholder")}
                   rows={3}
                 />
               </div>
@@ -146,10 +149,10 @@ export function ProjectForm({
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-base font-semibold">Prompt</h3>
+                  <h3 className="text-base font-semibold">{t("promptSection")}</h3>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="systemPrompt">System Prompt</Label>
+                      <Label htmlFor="systemPrompt">{t("systemPromptLabel")}</Label>
                       <span
                         className={`text-xs ${
                           nearSystemPromptLimit ? "text-amber-700" : "text-muted-foreground"
@@ -162,16 +165,16 @@ export function ProjectForm({
                       id="systemPrompt"
                       value={systemPrompt}
                       onChange={(e) => setSystemPrompt(e.target.value)}
-                      placeholder="Instructions for the AI assistant..."
+                      placeholder={t("systemPromptPlaceholder")}
                       rows={5}
                       maxLength={MAX_SYSTEM_PROMPT_LENGTH}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Limite: 8000 caracteres. Au-dela, la sauvegarde du projet sera refusee.
+                      {t("systemPromptLimit")}
                     </p>
                     {nearSystemPromptLimit ? (
                       <p className="text-xs text-amber-700">
-                        Tu approches de la limite. Pense a raccourcir si possible.
+                        {t("systemPromptNearLimit")}
                       </p>
                     ) : null}
                   </div>
@@ -179,28 +182,26 @@ export function ProjectForm({
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-base font-semibold">Knowledge</h3>
+                  <h3 className="text-base font-semibold">{t("knowledgeSection")}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Les reglages ci-dessous controlent comment les documents sont prepares avant
-                    indexation.
+                    {t("knowledgeDescription")}
                   </p>
                   <div className="space-y-2">
-                    <Label htmlFor="chunkingStrategy">Chunking Strategy</Label>
+                    <Label htmlFor="chunkingStrategy">{t("chunkingStrategyLabel")}</Label>
                     <select
                       id="chunkingStrategy"
                       value={chunkingStrategy}
                       onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
                       className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                     >
-                      <option value="auto">Auto</option>
-                      <option value="fixed_window">Fixed window</option>
-                      <option value="paragraph">Paragraph</option>
-                      <option value="heading_section">Heading section</option>
-                      <option value="semantic">Semantic</option>
+                      <option value="auto">{t("chunkingAuto")}</option>
+                      <option value="fixed_window">{t("chunkingFixed")}</option>
+                      <option value="paragraph">{t("chunkingParagraph")}</option>
+                      <option value="heading_section">{t("chunkingHeading")}</option>
+                      <option value="semantic">{t("chunkingSemantic")}</option>
                     </select>
                     <p className="text-muted-foreground text-sm">
-                      Le chunking definit comment un document est decoupe avant indexation. `Auto`
-                      choisit automatiquement selon la structure du texte.
+                      {t("chunkingDescription")}
                     </p>
                   </div>
                 </div>
@@ -208,7 +209,7 @@ export function ProjectForm({
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-base font-semibold">Indexing</h3>
+                  <h3 className="text-base font-semibold">{t("indexingSection")}</h3>
                   <div className="flex items-center gap-2">
                     <input
                       id="parentChildChunking"
@@ -217,21 +218,17 @@ export function ProjectForm({
                       onChange={(e) => setParentChildChunking(e.target.checked)}
                       className="h-4 w-4"
                     />
-                    <Label htmlFor="parentChildChunking">Enable parent-child chunking</Label>
+                    <Label htmlFor="parentChildChunking">{t("parentChildLabel")}</Label>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Le mode parent-child construit de gros chunks parents (contexte riche) et des
-                    chunks enfants (plus fins pour la recherche). Cela peut ameliorer la pertinence du
-                    retrieval sur des documents longs, au prix d&apos;une indexation plus lourde.
+                    {t("parentChildDescription")}
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    Recommandation: le mode parent-child fonctionne generalement mieux avec la strategie
-                    de chunking `Semantic`.
+                    {t("parentChildRecommendation")}
                   </p>
                   {isSemanticRecommended ? (
                     <p className="text-sm text-amber-700">
-                      Le mode parent-child est actif avec une strategie non `Semantic`. Cela
-                      fonctionne, mais la pertinence est souvent meilleure avec `Semantic`.
+                      {t("parentChildWarning")}
                     </p>
                   ) : null}
                 </div>
@@ -239,26 +236,25 @@ export function ProjectForm({
                 <Separator />
 
                 <div className="space-y-2">
-                  <h3 className="text-base font-semibold">Retrieval</h3>
+                  <h3 className="text-base font-semibold">{t("retrievalSection")}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Les reglages de retrieval seront centralises ici dans une prochaine iteration.
+                    {t("retrievalDescription")}
                   </p>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-2">
-                  <h3 className="text-base font-semibold">Answer</h3>
+                  <h3 className="text-base font-semibold">{t("answerSection")}</h3>
                   <p className="text-muted-foreground text-sm">
-                    Les reglages de generation de reponse seront centralises ici dans une prochaine
-                    iteration.
+                    {t("answerDescription")}
                   </p>
                 </div>
               </>
             )}
 
             <Button type="submit" className="cursor-pointer" disabled={isDisabled}>
-              {isLoading ? "Saving..." : submitLabel}
+              {isLoading ? tCommon("saving") : (submitLabel ?? t("newTitle"))}
             </Button>
           </form>
         </CardContent>
@@ -267,13 +263,12 @@ export function ProjectForm({
       <Dialog open={!isCreateMode && reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reindexation requise</DialogTitle>
+            <DialogTitle>{t("reindexTitle")}</DialogTitle>
             <DialogDescription>
               {parentChildChunking
-                ? "Activer le mode parent-child necessite de reindexer tous les documents du projet pour creer la hierarchie parent/enfant."
-                : "Desactiver le mode parent-child necessite de reindexer tous les documents du projet pour revenir au chunking standard."}
-              {" "}Les documents existants ne seront pas utilisables correctement tant qu&apos;ils
-              n&apos;auront pas ete reindexes.
+                ? t("reindexEnableDescription")
+                : t("reindexDisableDescription")}
+              {" "}{t("reindexDocumentsWarning")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -282,13 +277,13 @@ export function ProjectForm({
               className="cursor-pointer"
               onClick={handleCancelReindex}
             >
-              Annuler
+              {tCommon("cancel")}
             </Button>
             <Button
               className="cursor-pointer"
               onClick={handleConfirmReindex}
             >
-              Confirmer et sauvegarder
+              {t("confirmAndSave")}
             </Button>
           </DialogFooter>
         </DialogContent>

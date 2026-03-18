@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -19,12 +20,17 @@ class UpdateUserFullNameRequest(BaseModel):
     full_name: str = Field(..., min_length=1)
 
 
+class UpdateUserLocaleRequest(BaseModel):
+    locale: Literal["en", "fr"]
+
+
 class UserResponse(BaseModel):
     id: UUID
     email: str
     full_name: str
     is_active: bool
     created_at: datetime
+    locale: str = "en"
 
 
 class TokenResponse(BaseModel):

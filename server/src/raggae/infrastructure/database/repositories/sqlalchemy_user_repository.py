@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.user import User
+from raggae.domain.value_objects.locale import Locale
 from raggae.infrastructure.database.models.user_model import UserModel
 
 
@@ -24,6 +25,7 @@ class SQLAlchemyUserRepository:
                     full_name=user.full_name,
                     is_active=user.is_active,
                     created_at=user.created_at,
+                    locale=str(user.locale),
                 )
                 session.add(model)
             else:
@@ -31,6 +33,7 @@ class SQLAlchemyUserRepository:
                 model.hashed_password = user.hashed_password
                 model.full_name = user.full_name
                 model.is_active = user.is_active
+                model.locale = str(user.locale)
             await session.commit()
 
     async def find_by_id(self, user_id: UUID) -> User | None:
@@ -45,6 +48,7 @@ class SQLAlchemyUserRepository:
                 full_name=model.full_name,
                 is_active=model.is_active,
                 created_at=model.created_at,
+                locale=Locale(model.locale),
             )
 
     async def find_by_email(self, email: str) -> User | None:
@@ -60,4 +64,5 @@ class SQLAlchemyUserRepository:
                 full_name=model.full_name,
                 is_active=model.is_active,
                 created_at=model.created_at,
+                locale=Locale(model.locale),
             )

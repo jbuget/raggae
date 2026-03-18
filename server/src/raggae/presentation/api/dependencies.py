@@ -177,6 +177,7 @@ from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
+from raggae.application.use_cases.user.update_user_locale import UpdateUserLocale
 from raggae.infrastructure.config.settings import settings
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
     InMemoryConversationRepository,
@@ -582,6 +583,10 @@ def get_update_user_full_name_use_case() -> UpdateUserFullName:
     return UpdateUserFullName(user_repository=_user_repository)
 
 
+def get_update_user_locale_use_case() -> UpdateUserLocale:
+    return UpdateUserLocale(user_repository=_user_repository)
+
+
 def get_create_project_use_case() -> CreateProject:
     return CreateProject(
         project_repository=_project_repository,
@@ -606,15 +611,12 @@ def get_delete_project_use_case() -> DeleteProject:
 
 
 def get_update_project_use_case() -> UpdateProject:
-    return (
-        UpdateProject(
-            project_repository=_project_repository,
-            organization_member_repository=_organization_member_repository,
-            provider_credential_repository=_provider_credential_repository,
-            org_provider_credential_repository=_org_credential_repository,
-        )
-        .with_crypto_service(_provider_api_key_crypto_service)
-    )
+    return UpdateProject(
+        project_repository=_project_repository,
+        organization_member_repository=_organization_member_repository,
+        provider_credential_repository=_provider_credential_repository,
+        org_provider_credential_repository=_org_credential_repository,
+    ).with_crypto_service(_provider_api_key_crypto_service)
 
 
 def get_publish_project_use_case() -> PublishProject:

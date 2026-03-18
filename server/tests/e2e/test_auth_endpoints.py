@@ -125,6 +125,84 @@ class TestAuthEndpoints:
         assert response.json()["email"] == "me@example.com"
         assert response.json()["full_name"] == "Test User"
 
+    async def test_register_user_response_contains_default_locale_en(
+        self, client: AsyncClient
+    ) -> None:
+        # When
+        response = await client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "locale-default@example.com",
+                "password": "SecurePass123!",
+                "full_name": "Locale User",
+            },
+        )
+
+        # Then
+        assert response.status_code == 201
+        assert response.json()["locale"] == "en"
+
+    async def test_get_current_user_returns_locale_field(self, client: AsyncClient) -> None:
+        # Given
+        token = await self._register_and_login(client, "locale-me@example.com")
+
+        # When
+        response = await client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        # Then
+        assert response.status_code == 200
+        assert response.json()["locale"] == "en"
+
+    async def test_update_user_locale_to_fr_returns_200(self, client: AsyncClient) -> None:
+        # Given
+        token = await self._register_and_login(client, "locale-fr@example.com")
+
+        # When
+        response = await client.patch(
+            "/api/v1/auth/me/locale",
+            json={"locale": "fr"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        # Then
+        assert response.status_code == 200
+        assert response.json()["locale"] == "fr"
+
+    async def test_update_user_locale_persists(self, client: AsyncClient) -> None:
+        # Given
+        token = await self._register_and_login(client, "locale-persist@example.com")
+        await client.patch(
+            "/api/v1/auth/me/locale",
+            json={"locale": "fr"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        # When
+        profile = await client.get(
+            "/api/v1/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        # Then
+        assert profile.json()["locale"] == "fr"
+
+    async def test_update_user_locale_invalid_value_returns_422(self, client: AsyncClient) -> None:
+        # Given
+        token = await self._register_and_login(client, "locale-invalid@example.com")
+
+        # When
+        response = await client.patch(
+            "/api/v1/auth/me/locale",
+            json={"locale": "de"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        # Then
+        assert response.status_code == 422
+
     async def test_update_user_full_name_updates_profile(self, client: AsyncClient) -> None:
         token = await self._register_and_login(client, "update-name@example.com")
 

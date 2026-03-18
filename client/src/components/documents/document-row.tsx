@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Eye, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,9 @@ export function DocumentRow({
   reindexingId,
   disableReindex = false,
 }: DocumentRowProps) {
+  const t = useTranslations("documents.row");
+  const tStatus = useTranslations("documents.status");
+  const tCommon = useTranslations("common");
   const { token } = useAuth();
   const isReindexing = reindexingId === document.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -55,7 +59,7 @@ export function DocumentRow({
   const [previewType, setPreviewType] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const statusLabel = document.status.charAt(0).toUpperCase() + document.status.slice(1);
+  const statusLabel = tStatus(document.status as "indexed" | "processing" | "uploaded" | "pending" | "error");
   const statusClassName =
     document.status === "indexed"
       ? "border-emerald-200 bg-emerald-100 text-emerald-800"
@@ -89,7 +93,7 @@ export function DocumentRow({
       setPreviewUrl(URL.createObjectURL(blob));
       setPreviewType(blob.type || "application/octet-stream");
     } catch {
-      setPreviewError("Unable to load preview for this document.");
+      setPreviewError(t("unableToLoadPreview"));
     } finally {
       setPreviewLoading(false);
     }
@@ -108,7 +112,7 @@ export function DocumentRow({
           </Badge>
           {document.status === "indexed" && document.last_indexed_at ? (
             <Badge variant="outline" className="px-1.5 py-0 text-[10px] leading-4">
-              Indexed {formatDateTime(document.last_indexed_at)}
+              {t("indexedAt", { date: formatDateTime(document.last_indexed_at) })}
             </Badge>
           ) : null}
         </div>
@@ -116,7 +120,7 @@ export function DocumentRow({
           <span
             className="font-mono cursor-pointer hover:text-foreground"
             onClick={() => navigator.clipboard.writeText(document.id)}
-            title="Copy ID"
+            title={t("copyId")}
           >
             {document.id}
           </span>
@@ -127,10 +131,10 @@ export function DocumentRow({
           )}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>Index date: {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "-"}</span>
-          <span>Embedding: {embeddingBackendLabel} / {embeddingModelLabel}</span>
-          <span>Chunking: {chunkingStrategyLabel}</span>
-          <span>Parent-child: {parentChildChunking ? "on" : "off"}</span>
+          <span>{t("indexDate")} {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "-"}</span>
+          <span>{t("embedding")} {embeddingBackendLabel} / {embeddingModelLabel}</span>
+          <span>{t("chunking")} {chunkingStrategyLabel}</span>
+          <span>{t("parentChild")} {parentChildChunking ? tCommon("on") : tCommon("off")}</span>
         </div>
       </div>
 
@@ -140,8 +144,8 @@ export function DocumentRow({
           size="icon-sm"
           className="cursor-pointer rounded-none border-0"
           onClick={handlePreviewOpen}
-          aria-label="Preview document"
-          title="Preview"
+          aria-label={t("previewAriaLabel")}
+          title={t("previewTitle")}
         >
           <Eye />
         </Button>
@@ -151,8 +155,8 @@ export function DocumentRow({
           className="cursor-pointer rounded-none border-0"
           disabled={isReindexing || disableReindex}
           onClick={() => onReindex(document.id)}
-          aria-label={isReindexing ? "Reindexing document" : "Reindex document"}
-          title={isReindexing ? "Reindexing..." : "Reindex"}
+          aria-label={isReindexing ? t("reindexingAriaLabel") : t("reindexAriaLabel")}
+          title={isReindexing ? t("reindexingLabel") : t("reindexLabel")}
         >
           <RefreshCw className={isReindexing ? "animate-spin" : ""} />
         </Button>
@@ -163,22 +167,22 @@ export function DocumentRow({
             variant="ghost"
             size="icon-sm"
             className="cursor-pointer rounded-none border-0 text-destructive"
-            aria-label="Delete document"
-            title="Delete"
+            aria-label={t("deleteAriaLabel")}
+            title={t("deleteTitle")}
           >
             <Trash2 />
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
+            <DialogTitle>{t("deleteDocumentTitle")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{document.file_name}&quot;?
+              {t("deleteConfirm", { name: document.file_name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" className="cursor-pointer" onClick={() => setDeleteOpen(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -189,7 +193,7 @@ export function DocumentRow({
                 setDeleteOpen(false);
               }}
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? tCommon("deleting") : tCommon("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -212,7 +216,7 @@ export function DocumentRow({
             <DialogTitle>{document.file_name}</DialogTitle>
           </DialogHeader>
           <div className="h-full min-h-0 overflow-y-auto rounded-md border bg-muted/20 p-3">
-            {previewLoading && <p className="text-sm text-muted-foreground">Loading preview...</p>}
+            {previewLoading && <p className="text-sm text-muted-foreground">{t("loadingPreview")}</p>}
             {!previewLoading && previewError && (
               <p className="text-sm text-destructive">{previewError}</p>
             )}
@@ -233,14 +237,14 @@ export function DocumentRow({
               !previewType?.startsWith("text/") && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Preview is not available for this file type.
+                    {t("previewNotAvailable")}
                   </p>
                   <a
                     href={previewUrl}
                     download={document.file_name}
                     className="inline-flex rounded-md border bg-background px-3 py-2 text-sm"
                   >
-                    Download document
+                    {t("downloadDocument")}
                   </a>
                 </div>
               )}

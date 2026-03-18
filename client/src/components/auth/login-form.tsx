@@ -1,8 +1,10 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { getCurrentUser } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
+  const t = useTranslations("auth.login");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,12 +39,20 @@ export function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError(t("invalidCredentials"));
       } else {
+        const session = await getSession();
+        if (session?.accessToken) {
+          const user = await getCurrentUser(session.accessToken);
+          if (user.locale) {
+            const maxAge = 60 * 60 * 24 * 365;
+            document.cookie = `raggae_locale=${user.locale};path=/;max-age=${maxAge};SameSite=Lax`;
+          }
+        }
         router.push("/projects");
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(t("unexpectedError"));
     } finally {
       setIsLoading(false);
     }
@@ -50,25 +61,25 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <CardDescription>
-          Sign in to your Raggae account
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
@@ -82,12 +93,12 @@ export function LoginForm() {
             </p>
           )}
           <Button type="submit" className="w-full" disabled={isDisabled}>
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? t("signingIn") : t("signIn")}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t("noAccount")}{" "}
             <a href="/register" className="text-primary hover:underline">
-              Register
+              {t("register")}
             </a>
           </p>
         </form>

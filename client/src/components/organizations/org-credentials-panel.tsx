@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,6 +37,8 @@ type OrgCredentialsPanelProps = {
 };
 
 export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps) {
+  const t = useTranslations("organizations.credentials");
+  const tCommon = useTranslations("common");
   const { data: credentials, isLoading } = useOrgModelCredentials(organizationId);
   const createCredential = useCreateOrgModelCredential(organizationId);
   const activateCredential = useActivateOrgModelCredential(organizationId);
@@ -97,9 +100,9 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
     <Card className="space-y-4 p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <h2 className="text-lg font-medium">AI provider API keys</h2>
+          <h2 className="text-lg font-medium">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">
-            Add keys for OpenAI, Gemini, or Anthropic. Only one key per provider can be active at a time.
+            {t("description")}
           </p>
         </div>
         <Button
@@ -107,7 +110,7 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
           className="shrink-0 cursor-pointer"
           onClick={() => setModalOpen(true)}
         >
-          Add a key
+          {t("addKey")}
         </Button>
       </div>
 
@@ -138,7 +141,7 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {item.is_active ? "Active" : "Inactive"}
+                    {item.is_active ? tCommon("active") : tCommon("inactive")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -163,21 +166,21 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No API key saved yet.</p>
+        <p className="text-sm text-muted-foreground">{t("noKeys")}</p>
       )}
 
       <Dialog open={modalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add an API key</DialogTitle>
+            <DialogTitle>{t("addTitle")}</DialogTitle>
             <DialogDescription>
-              Select a provider then paste your API key.
+              {t("addDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="org-modal-provider">Provider</Label>
+              <Label htmlFor="org-modal-provider">{t("providerLabel")}</Label>
               <select
                 id="org-modal-provider"
                 value={modalProvider}
@@ -193,7 +196,7 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="org-modal-api-key">API key</Label>
+              <Label htmlFor="org-modal-api-key">{t("apiKeyLabel")}</Label>
               <Input
                 id="org-modal-api-key"
                 type="password"
@@ -212,7 +215,7 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
               disabled={!modalApiKey.trim() || createCredential.isPending}
               onClick={handleSave}
             >
-              Save key
+              {t("saveKey")}
             </Button>
           </DialogFooter>
         </DialogContent>

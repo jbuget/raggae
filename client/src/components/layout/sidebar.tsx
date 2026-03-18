@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Github, MoreHorizontal, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,14 +18,17 @@ import { listOrganizationMembers, listOrganizationProjects } from "@/lib/api/org
 import { useOrganizations } from "@/lib/hooks/use-organizations";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/projects", label: "Projects", icon: "folder" },
-  { href: "/organizations", label: "Organizations", icon: "building" },
-  { href: "/invitations", label: "Invitations", icon: "mail" },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
+  const t = useTranslations("sidebar");
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
+
+  const navItems = [
+    { href: "/projects", label: tNav("projects"), icon: "folder" },
+    { href: "/organizations", label: tNav("organizations"), icon: "building" },
+    { href: "/invitations", label: tNav("invitations"), icon: "mail" },
+  ];
   const { token, user } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const { data: organizations } = useOrganizations();
@@ -91,19 +95,19 @@ export function Sidebar() {
         <div className="mt-4 border-t pt-3">
           <div className="flex h-7 items-center justify-between px-1 pb-2">
             <p className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              My Projects
+              {t("myProjects")}
             </p>
             <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-              <Link href="/projects?create=1" aria-label="Create project">
+              <Link href="/projects?create=1" aria-label={t("createProject")}>
                 <Plus className="h-4 w-4" />
               </Link>
             </Button>
           </div>
           {isLoading && (
-            <p className="px-3 py-1 text-sm text-muted-foreground">Loading...</p>
+            <p className="px-3 py-1 text-sm text-muted-foreground">{tCommon("loading")}</p>
           )}
           {!isLoading && projects?.length === 0 && (
-            <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>
+            <p className="px-3 py-1 text-sm text-muted-foreground">{t("noProjects")}</p>
           )}
           {!isLoading &&
             projects
@@ -136,17 +140,17 @@ export function Sidebar() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 cursor-pointer"
-                      aria-label={`Project menu ${project.name}`}
+                      aria-label={t("projectMenu", { projectName: project.name })}
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link href={`/projects/${project.id}/chat`}>Chat</Link>
+                      <Link href={`/projects/${project.id}/chat`}>{t("chat")}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+                      <Link href={`/projects/${project.id}/settings`}>{t("settings")}</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -166,7 +170,7 @@ export function Sidebar() {
                 <Button asChild variant="ghost" size="icon" className="h-7 w-7">
                   <Link
                     href={`/projects?create=1&organizationId=${organization.id}`}
-                    aria-label={`Create project in ${organization.name}`}
+                    aria-label={t("createProjectIn", { orgName: organization.name })}
                   >
                     <Plus className="h-4 w-4" />
                   </Link>
@@ -174,7 +178,7 @@ export function Sidebar() {
               )}
             </div>
             {(organizationProjectsMap.get(organization.id) ?? []).length === 0 ? (
-              <p className="px-3 py-1 text-sm text-muted-foreground">No projects</p>
+              <p className="px-3 py-1 text-sm text-muted-foreground">{t("noProjects")}</p>
             ) : (
               (organizationProjectsMap.get(organization.id) ?? []).map((project) => (
                 <div
@@ -204,18 +208,18 @@ export function Sidebar() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 cursor-pointer"
-                        aria-label={`Project menu ${project.name}`}
+                        aria-label={t("projectMenu", { projectName: project.name })}
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link href={`/projects/${project.id}/chat`}>Chat</Link>
+                        <Link href={`/projects/${project.id}/chat`}>{t("chat")}</Link>
                       </DropdownMenuItem>
                       {editableOrganizationIds.has(organization.id) && (
                         <DropdownMenuItem asChild className="cursor-pointer">
-                          <Link href={`/projects/${project.id}/settings`}>Settings</Link>
+                          <Link href={`/projects/${project.id}/settings`}>{t("settings")}</Link>
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -234,7 +238,7 @@ export function Sidebar() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <Github className="size-4" />
-          <span>GitHub project</span>
+          <span>{t("githubProject")}</span>
         </a>
         <p className="mt-2 text-xs text-muted-foreground">
           {gitBranch}@{shortCommit}

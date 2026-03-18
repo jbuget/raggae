@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +17,7 @@ import { register } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 
 export function RegisterForm() {
+  const t = useTranslations("auth.register");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +32,7 @@ export function RegisterForm() {
     setError("");
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t("passwordMinLength"));
       return;
     }
 
@@ -41,9 +43,9 @@ export function RegisterForm() {
       router.push("/login");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setError("An account with this email already exists");
+        setError(t("emailAlreadyExists"));
       } else {
-        setError("An unexpected error occurred");
+        setError(t("unexpectedError"));
       }
     } finally {
       setIsLoading(false);
@@ -53,35 +55,35 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Register</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <CardDescription>
-          Create a new Raggae account
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="fullName">{t("fullNameLabel")}</Label>
             <Input
               id="fullName"
               type="text"
-              placeholder="John Doe"
+              placeholder={t("fullNamePlaceholder")}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
@@ -90,7 +92,7 @@ export function RegisterForm() {
             />
             {password.length > 0 && password.length < 8 && (
               <p className="text-sm text-muted-foreground">
-                Password must be at least 8 characters
+                {t("passwordMinLength")}
               </p>
             )}
           </div>
@@ -100,12 +102,12 @@ export function RegisterForm() {
             </p>
           )}
           <Button type="submit" className="w-full" disabled={isDisabled}>
-            {isLoading ? "Creating account..." : "Create account"}
+            {isLoading ? t("creatingAccount") : t("createAccount")}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <a href="/login" className="text-primary hover:underline">
-              Sign in
+              {t("signIn")}
             </a>
           </p>
         </form>

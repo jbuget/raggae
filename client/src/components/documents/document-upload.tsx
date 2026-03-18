@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatFileSize } from "@/lib/utils/format";
@@ -12,6 +13,7 @@ interface DocumentUploadProps {
 }
 
 export function DocumentUpload({ onUpload, isUploading, disabled = false }: DocumentUploadProps) {
+  const t = useTranslations("documents.upload");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -68,7 +70,7 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
           data-testid="drop-zone"
         >
           <p className="text-sm text-muted-foreground">
-            Drag and drop a file here, or click to select
+            {t("dragAndDrop")}
           </p>
           <input
             ref={inputRef}
@@ -76,7 +78,7 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
             multiple
             onChange={handleChange}
             className="hidden"
-            aria-label="Select files"
+            aria-label={t("selectFiles")}
           />
           <Button
             type="button"
@@ -85,7 +87,7 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
           >
-            Select Files
+            {t("selectFiles")}
           </Button>
         </div>
 
@@ -93,7 +95,7 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
           <div className="mt-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">
-                {selectedFiles.length} file(s) selected
+                {selectedFiles.length} {t("filesSelected")}
               </p>
               <p className="text-xs text-muted-foreground">
                 {selectedFiles.map((file) => file.name).join(", ")}
@@ -109,7 +111,7 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
               onClick={handleUpload}
               disabled={isUploading || disabled}
             >
-              {isUploading ? "Uploading..." : "Upload"}
+              {isUploading ? t("uploading") : t("upload")}
             </Button>
           </div>
         )}

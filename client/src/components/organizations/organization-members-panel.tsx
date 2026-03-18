@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ type OrganizationMembersPanelProps = {
 };
 
 export function OrganizationMembersPanel({ organizationId }: OrganizationMembersPanelProps) {
+  const t = useTranslations("organizations.members");
+  const tCommon = useTranslations("common");
   const { data: members, isLoading: membersLoading } = useOrganizationMembers(organizationId);
   const { data: invitations, isLoading: invitationsLoading } =
     useOrganizationInvitations(organizationId);
@@ -38,17 +41,17 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   return (
     <div className="rounded-lg border p-5 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Members</h2>
+        <h2 className="text-lg font-semibold">{t("title")}</h2>
         <p className="text-sm text-muted-foreground">
-          Invite, change roles, and remove members from this organization.
+          {t("description")}
         </p>
       </div>
 
       <div className="space-y-3">
-        <Label>Invite member</Label>
+        <Label>{t("inviteLabel")}</Label>
         <div className="flex flex-wrap items-center gap-2">
           <Input
-            placeholder="user@example.com"
+            placeholder={t("invitePlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="max-w-sm"
@@ -72,21 +75,21 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                   onSuccess: () => {
                     setEmail("");
                     setRole("user");
-                    toast.success("Invitation sent");
+                    toast.success(t("inviteSuccess"));
                   },
-                  onError: () => toast.error("Failed to invite member"),
+                  onError: () => toast.error(t("inviteError")),
                 },
               )
             }
             disabled={!email.trim() || inviteMember.isPending}
           >
-            {inviteMember.isPending ? "Sending..." : "Invite"}
+            {inviteMember.isPending ? tCommon("sending") : t("inviteLabel")}
           </Button>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>Current members</Label>
+        <Label>{t("currentMembers")}</Label>
         {membersLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (
@@ -102,7 +105,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       .filter(Boolean)
                       .join(" ") || member.user_id}
                   </p>
-                  <p className="text-muted-foreground">Joined {member.joined_at}</p>
+                  <p className="text-muted-foreground">{t("joined")} {member.joined_at}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <select
@@ -132,12 +135,12 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                     onClick={() =>
                       removeMember.mutate(member.id, {
                         onSuccess: () => toast.success("Member removed"),
-                        onError: () => toast.error("Failed to remove member"),
+                        onError: () => toast.error(t("removeError")),
                       })
                     }
                     disabled={removeMember.isPending}
                   >
-                    Remove
+                    {t("remove")}
                   </Button>
                 </div>
               </div>
@@ -147,13 +150,13 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
       </div>
 
       <div className="space-y-2">
-        <Label>Pending invitations</Label>
+        <Label>{t("pendingInvitations")}</Label>
         {invitationsLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-2">
             {!invitations || invitations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No pending invitations.</p>
+              <p className="text-sm text-muted-foreground">{t("noPendingInvitations")}</p>
             ) : (
               invitations.map((invitation) => (
                 <div
@@ -171,25 +174,25 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       variant="outline"
                       onClick={() =>
                         resendInvitation.mutate(invitation.id, {
-                          onSuccess: () => toast.success("Invitation resent"),
-                          onError: () => toast.error("Failed to resend invitation"),
+                          onSuccess: () => toast.success(t("resendSuccess")),
+                          onError: () => toast.error(t("resendError")),
                         })
                       }
                       disabled={resendInvitation.isPending}
                     >
-                      Resend
+                      {t("resend")}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() =>
                         revokeInvitation.mutate(invitation.id, {
-                          onSuccess: () => toast.success("Invitation revoked"),
-                          onError: () => toast.error("Failed to revoke invitation"),
+                          onSuccess: () => toast.success(t("revokeSuccess")),
+                          onError: () => toast.error(t("revokeError")),
                         })
                       }
                       disabled={revokeInvitation.isPending}
                     >
-                      Revoke
+                      {t("revoke")}
                     </Button>
                   </div>
                 </div>
