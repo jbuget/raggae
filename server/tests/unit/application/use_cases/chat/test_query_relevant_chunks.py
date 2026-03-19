@@ -1,18 +1,20 @@
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.document_chunk import DocumentChunk
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.domain.value_objects.chunk_level import ChunkLevel
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
-def _make_project(project_id=None, user_id=None):
+def _make_project(project_id=None, user_id=None, organization_id=None):
     return Project(
         id=project_id or uuid4(),
         user_id=user_id or uuid4(),
@@ -21,6 +23,19 @@ def _make_project(project_id=None, user_id=None):
         system_prompt="",
         is_published=False,
         created_at=datetime.now(UTC),
+        organization_id=organization_id,
+    )
+
+
+def _make_member(
+    organization_id: UUID, user_id: UUID, role: OrganizationMemberRole
+) -> OrganizationMember:
+    return OrganizationMember(
+        id=uuid4(),
+        organization_id=organization_id,
+        user_id=user_id,
+        role=role,
+        joined_at=datetime.now(UTC),
     )
 
 
@@ -979,3 +994,140 @@ class TestQueryRelevantChunks:
         assert result.chunks[1].content == "standard chunk"
         # Parent fetched only once
         mock_chunk_repo.find_by_id.assert_awaited_once_with(parent_id)
+
+
+class TestQueryRelevantChunksOrgAccess:
+    @pytest.fixture
+    def mock_project_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def mock_embedding_service(self) -> AsyncMock:
+        svc = AsyncMock()
+        svc.embed_texts.return_value = [[0.1, 0.2, 0.3]]
+        return svc
+
+    @pytest.fixture
+    def mock_chunk_retrieval_service(self) -> AsyncMock:
+        svc = AsyncMock()
+        svc.retrieve_chunks.return_value = []
+        return svc
+
+    @pytest.fixture
+    def mock_org_member_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    def _make_use_case(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+        mock_org_member_repository: AsyncMock,
+    ) -> QueryRelevantChunks:
+        return QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_chunk_retrieval_service,
+            organization_member_repository=mock_org_member_repository,
+        )
+
+    async def test_query_org_maker_can_access_project(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+        mock_org_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        org_id = uuid4()
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(
+            project_id, organization_id=org_id
+        )
+        mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
+            org_id, user_id, OrganizationMemberRole.MAKER
+        )
+        use_case = self._make_use_case(
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
+        )
+
+        # When / Then — no exception raised
+        await use_case.execute(project_id=project_id, user_id=user_id, query="hello")
+
+    async def test_query_org_owner_can_access_project(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+        mock_org_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        org_id = uuid4()
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(
+            project_id, organization_id=org_id
+        )
+        mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
+            org_id, user_id, OrganizationMemberRole.OWNER
+        )
+        use_case = self._make_use_case(
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
+        )
+
+        # When / Then — no exception raised
+        await use_case.execute(project_id=project_id, user_id=user_id, query="hello")
+
+    async def test_query_non_member_raises_error(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+        mock_org_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        org_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(
+            project_id, organization_id=org_id
+        )
+        mock_org_member_repository.find_by_organization_and_user.return_value = None
+        use_case = self._make_use_case(
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project_id, user_id=uuid4(), query="hello")
+
+    async def test_query_without_org_member_repo_raises_error_for_non_owner(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+    ) -> None:
+        # Given
+        org_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(
+            project_id, organization_id=org_id
+        )
+        use_case = QueryRelevantChunks(
+            project_repository=mock_project_repository,
+            embedding_service=mock_embedding_service,
+            chunk_retrieval_service=mock_chunk_retrieval_service,
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project_id, user_id=uuid4(), query="hello")
