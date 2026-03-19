@@ -27,7 +27,9 @@ def _make_project(project_id=None, user_id=None, organization_id=None):
     )
 
 
-def _make_member(organization_id: UUID, user_id: UUID, role: OrganizationMemberRole) -> OrganizationMember:
+def _make_member(
+    organization_id: UUID, user_id: UUID, role: OrganizationMemberRole
+) -> OrganizationMember:
     return OrganizationMember(
         id=uuid4(),
         organization_id=organization_id,
@@ -1047,7 +1049,10 @@ class TestQueryRelevantChunksOrgAccess:
             org_id, user_id, OrganizationMemberRole.MAKER
         )
         use_case = self._make_use_case(
-            mock_project_repository, mock_embedding_service, mock_chunk_retrieval_service, mock_org_member_repository
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
         )
 
         # When / Then — no exception raised
@@ -1071,7 +1076,10 @@ class TestQueryRelevantChunksOrgAccess:
             org_id, user_id, OrganizationMemberRole.OWNER
         )
         use_case = self._make_use_case(
-            mock_project_repository, mock_embedding_service, mock_chunk_retrieval_service, mock_org_member_repository
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
         )
 
         # When / Then — no exception raised
@@ -1092,7 +1100,10 @@ class TestQueryRelevantChunksOrgAccess:
         )
         mock_org_member_repository.find_by_organization_and_user.return_value = None
         use_case = self._make_use_case(
-            mock_project_repository, mock_embedding_service, mock_chunk_retrieval_service, mock_org_member_repository
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
         )
 
         # When / Then
