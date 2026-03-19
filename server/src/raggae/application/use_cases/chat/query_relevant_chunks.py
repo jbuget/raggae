@@ -11,6 +11,9 @@ from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
 from raggae.application.interfaces.repositories.document_chunk_repository import (
     DocumentChunkRepository,
 )
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
+)
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.services.chunk_retrieval_service import ChunkRetrievalService
 from raggae.application.interfaces.services.embedding_service import EmbeddingService
@@ -19,6 +22,7 @@ from raggae.application.interfaces.services.project_embedding_service_resolver i
 )
 from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
 class QueryRelevantChunks:
@@ -35,6 +39,7 @@ class QueryRelevantChunks:
         reranker_candidate_multiplier: int = 3,
         document_chunk_repository: DocumentChunkRepository | None = None,
         context_window_size: int = 0,
+        organization_member_repository: OrganizationMemberRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._embedding_service = embedding_service
@@ -45,6 +50,7 @@ class QueryRelevantChunks:
         self._reranker_candidate_multiplier = reranker_candidate_multiplier
         self._document_chunk_repository = document_chunk_repository
         self._context_window_size = context_window_size
+        self._organization_member_repository = organization_member_repository
 
     async def execute(
         self,
@@ -61,8 +67,20 @@ class QueryRelevantChunks:
     ) -> QueryRelevantChunksResultDTO:
         started_at = perf_counter()
         project = await self._project_repository.find_by_id(project_id)
-        if project is None or project.user_id != user_id:
+        if project is None:
             raise ProjectNotFoundError(f"Project {project_id} not found")
+        if project.user_id != user_id:
+            if project.organization_id is None or self._organization_member_repository is None:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
+            member = await self._organization_member_repository.find_by_organization_and_user(
+                organization_id=project.organization_id,
+                user_id=user_id,
+            )
+            if member is None or member.role not in {
+                OrganizationMemberRole.OWNER,
+                OrganizationMemberRole.MAKER,
+            }:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
 
         embedding_service = (
             self._project_embedding_service_resolver.resolve(project)

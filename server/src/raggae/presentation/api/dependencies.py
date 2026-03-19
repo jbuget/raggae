@@ -716,6 +716,7 @@ def get_query_relevant_chunks_use_case() -> QueryRelevantChunks:
         reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
         document_chunk_repository=_document_chunk_repository,
         context_window_size=settings.retrieval_context_window_size,
+        organization_member_repository=_organization_member_repository,
     )
 
 
