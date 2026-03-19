@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, Languages, Moon, Settings, Sun } from "lucide-react";
+import { Check, Languages, Monitor, Moon, Settings, Sun } from "lucide-react";
+import type { Theme } from "@/lib/providers/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,9 +37,19 @@ export function Header() {
   const { user } = useAuth();
   const t = useTranslations("header");
   const tTheme = useTranslations("layout.themeToggle");
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+
+  const THEMES: Array<{ value: Theme; label: string; icon: React.ReactNode }> = [
+    { value: "light", label: tTheme("light"), icon: <Sun size={14} /> },
+    { value: "dark", label: tTheme("dark"), icon: <Moon size={14} /> },
+    { value: "system", label: tTheme("system"), icon: <Monitor size={14} /> },
+  ];
   const currentLocale = useLocale();
   const updateLocale = useUpdateUserLocale();
+
+  function handleThemeSelect(next: Theme) {
+    if (next !== theme) setTheme(next);
+  }
 
   function handleLocaleSelect(locale: UpdateUserLocaleRequest["locale"]) {
     if (locale === currentLocale) return;
@@ -104,13 +115,28 @@ export function Header() {
               </DropdownMenuSubContent>
             </DropdownMenuSub>
 
-            <DropdownMenuItem
-              onClick={toggleTheme}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
-              {theme === "light" ? tTheme("dark") : tTheme("light")}
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="flex items-center gap-2">
+                <Sun size={14} />
+                {tTheme("label")}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {THEMES.map(({ value, label, icon }) => (
+                  <DropdownMenuItem
+                    key={value}
+                    onClick={() => handleThemeSelect(value)}
+                    className="flex items-center gap-2"
+                  >
+                    <Check
+                      size={14}
+                      className={theme === value ? "opacity-100" : "opacity-0"}
+                    />
+                    {icon}
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
             <DropdownMenuSeparator />
 

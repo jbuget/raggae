@@ -485,8 +485,10 @@
   },
   "layout": {
     "themeToggle": {
-      "dark": "Sombre",
+      "label": "Thème",
       "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système",
       "switchToDark": "Passer en mode sombre",
       "switchToLight": "Passer en mode clair"
     },
