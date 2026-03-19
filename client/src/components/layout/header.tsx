@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, Languages, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { Check, Languages, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import type { Theme } from "@/lib/providers/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -142,8 +142,9 @@ export function Header() {
 
             <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="cursor-pointer"
+              className="flex cursor-pointer items-center gap-2"
             >
+              <LogOut size={14} />
               {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
