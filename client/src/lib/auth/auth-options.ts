@@ -6,6 +6,31 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
+      id: "entra-token",
+      name: "Microsoft Entra",
+      credentials: {
+        accessToken: { type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.accessToken) return null;
+        try {
+          const payload = JSON.parse(
+            Buffer.from(
+              credentials.accessToken.split(".")[1],
+              "base64url",
+            ).toString("utf8"),
+          ) as { sub?: string; email?: string };
+          return {
+            id: payload.sub ?? "unknown",
+            email: payload.email ?? "",
+            accessToken: credentials.accessToken,
+          };
+        } catch {
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },

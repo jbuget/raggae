@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, getSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { getCurrentUser } from "@/lib/api/auth";
@@ -15,13 +15,39 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+
+const ENTRA_ENABLED = process.env.NEXT_PUBLIC_ENTRA_ENABLED === "true";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+function MicrosoftIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 21 21"
+      width="16"
+      height="16"
+      className="mr-2 shrink-0"
+      aria-hidden="true"
+    >
+      <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+      <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+      <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+      <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+    </svg>
+  );
+}
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    searchParams.get("error") === "sso" ? t("ssoError") : "",
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const isDisabled = !email || !password || isLoading;
@@ -101,6 +127,28 @@ export function LoginForm() {
               {t("register")}
             </a>
           </p>
+          {ENTRA_ENABLED && (
+            <>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">
+                  {t("orSeparator")}
+                </span>
+                <Separator className="flex-1" />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  window.location.href = `${BACKEND_URL}/api/v1/auth/entra/login?redirect_url=/projects`;
+                }}
+              >
+                <MicrosoftIcon />
+                {t("signInWithMicrosoft")}
+              </Button>
+            </>
+          )}
         </form>
       </CardContent>
     </Card>
