@@ -87,14 +87,14 @@ export function Header() {
             <DropdownMenuSeparator />
 
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center gap-2">
+              <Link href="/settings" className="flex cursor-pointer items-center gap-2">
                 <Settings size={14} />
                 {t("userSettings")}
               </Link>
             </DropdownMenuItem>
 
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="flex items-center gap-2">
+              <DropdownMenuSubTrigger className="flex cursor-pointer items-center gap-2">
                 <Languages size={14} />
                 {t("language")}
               </DropdownMenuSubTrigger>
@@ -103,7 +103,7 @@ export function Header() {
                   <DropdownMenuItem
                     key={value}
                     onClick={() => handleLocaleSelect(value)}
-                    className="flex items-center gap-2"
+                    className="flex cursor-pointer items-center gap-2"
                   >
                     <Check
                       size={14}
@@ -116,7 +116,7 @@ export function Header() {
             </DropdownMenuSub>
 
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="flex items-center gap-2">
+              <DropdownMenuSubTrigger className="flex cursor-pointer items-center gap-2">
                 <Sun size={14} />
                 {tTheme("label")}
               </DropdownMenuSubTrigger>
@@ -125,7 +125,7 @@ export function Header() {
                   <DropdownMenuItem
                     key={value}
                     onClick={() => handleThemeSelect(value)}
-                    className="flex items-center gap-2"
+                    className="flex cursor-pointer items-center gap-2"
                   >
                     <Check
                       size={14}
