@@ -103,7 +103,7 @@ class TestSaveProviderApiKey:
         with pytest.raises(DuplicateProviderCredentialError):
             await use_case.execute(user_id=user_id, provider="gemini", api_key="AIzatest1234")
 
-    async def test_save_provider_api_key_second_credential_is_saved_inactive_when_one_is_active(
+    async def test_save_provider_api_key_second_credential_is_saved_active_even_when_one_exists(
         self,
     ) -> None:
         # Given
@@ -144,8 +144,8 @@ class TestSaveProviderApiKey:
         repository.set_inactive.assert_not_awaited()
         repository.save.assert_awaited_once()
         saved_credential = repository.save.await_args.args[0]
-        assert saved_credential.is_active is False
-        assert result.is_active is False
+        assert saved_credential.is_active is True
+        assert result.is_active is True
 
     async def test_save_provider_api_key_invalid_provider_raises_error(self) -> None:
         # Given
