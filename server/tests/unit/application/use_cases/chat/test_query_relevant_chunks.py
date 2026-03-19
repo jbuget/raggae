@@ -1085,6 +1085,68 @@ class TestQueryRelevantChunksOrgAccess:
         # When / Then — no exception raised
         await use_case.execute(project_id=project_id, user_id=user_id, query="hello")
 
+    async def test_query_org_user_can_access_published_project(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+        mock_org_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        org_id = uuid4()
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=uuid4(),
+            name="Project",
+            description="",
+            system_prompt="",
+            is_published=True,
+            created_at=datetime.now(UTC),
+            organization_id=org_id,
+        )
+        mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
+            org_id, user_id, OrganizationMemberRole.USER
+        )
+        use_case = self._make_use_case(
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
+        )
+
+        # When / Then — no exception raised
+        await use_case.execute(project_id=project_id, user_id=user_id, query="hello")
+
+    async def test_query_org_user_cannot_access_unpublished_project(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        mock_chunk_retrieval_service: AsyncMock,
+        mock_org_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        org_id = uuid4()
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = _make_project(
+            project_id, organization_id=org_id
+        )
+        mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
+            org_id, user_id, OrganizationMemberRole.USER
+        )
+        use_case = self._make_use_case(
+            mock_project_repository,
+            mock_embedding_service,
+            mock_chunk_retrieval_service,
+            mock_org_member_repository,
+        )
+
+        # When / Then
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(project_id=project_id, user_id=user_id, query="hello")
+
     async def test_query_non_member_raises_error(
         self,
         mock_project_repository: AsyncMock,

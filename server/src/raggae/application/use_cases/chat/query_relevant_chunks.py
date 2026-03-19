@@ -76,11 +76,11 @@ class QueryRelevantChunks:
                 organization_id=project.organization_id,
                 user_id=user_id,
             )
-            if member is None or member.role not in {
-                OrganizationMemberRole.OWNER,
-                OrganizationMemberRole.MAKER,
-            }:
+            if member is None:
                 raise ProjectNotFoundError(f"Project {project_id} not found")
+            if member.role not in {OrganizationMemberRole.OWNER, OrganizationMemberRole.MAKER}:
+                if not project.is_published:
+                    raise ProjectNotFoundError(f"Project {project_id} not found")
 
         embedding_service = (
             self._project_embedding_service_resolver.resolve(project)
