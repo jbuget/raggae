@@ -156,7 +156,7 @@ class TestGetProject:
 
         assert result.id == project.id
 
-    async def test_get_project_org_user_cannot_access(
+    async def test_get_project_org_user_cannot_access_unpublished_project(
         self,
         use_case: GetProject,
         mock_project_repository: AsyncMock,
@@ -187,3 +187,36 @@ class TestGetProject:
 
         with pytest.raises(ProjectNotFoundError):
             await use_case.execute(project_id=project.id, user_id=requester_id)
+
+    async def test_get_project_org_user_can_access_published_project(
+        self,
+        use_case: GetProject,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        organization_id = uuid4()
+        requester_id = uuid4()
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            organization_id=organization_id,
+            name="Org project",
+            description="desc",
+            system_prompt="prompt",
+            is_published=True,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+        mock_organization_member_repository.find_by_organization_and_user.return_value = (
+            OrganizationMember(
+                id=uuid4(),
+                organization_id=organization_id,
+                user_id=requester_id,
+                role=OrganizationMemberRole.USER,
+                joined_at=datetime.now(UTC),
+            )
+        )
+
+        result = await use_case.execute(project_id=project.id, user_id=requester_id)
+
+        assert result.id == project.id
