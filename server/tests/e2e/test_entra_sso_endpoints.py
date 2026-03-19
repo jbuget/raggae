@@ -48,7 +48,6 @@ async def entra_client(client: AsyncClient) -> AsyncIterator[AsyncClient]:
         patch.object(settings, "entra_allowed_domains", ["waat.fr"]),
         patch.object(settings, "frontend_url", "http://localhost:3000"),
     ):
-        dependencies._entra_oauth_provider._pkce_store.clear()
         dependencies._oauth_code_store._codes.clear()
         yield client
 
@@ -98,8 +97,9 @@ class TestEntraLoginEndpoint:
     async def test_e2e_entra_login_returns_501_when_disabled(
         self, client: AsyncClient
     ) -> None:
-        # When — ENTRA_ENABLED=false (default in tests)
-        resp = await client.get("/api/v1/auth/entra/login", follow_redirects=False)
+        # When — ENTRA_ENABLED=false (explicitly disabled)
+        with patch.object(settings, "entra_enabled", False):
+            resp = await client.get("/api/v1/auth/entra/login", follow_redirects=False)
 
         # Then
         assert resp.status_code == 501
@@ -262,8 +262,9 @@ class TestEntraTokenEndpoint:
     async def test_e2e_entra_token_returns_501_when_disabled(
         self, client: AsyncClient
     ) -> None:
-        # When
-        resp = await client.post("/api/v1/auth/entra/token", json={"code": "any"})
+        # When — ENTRA_ENABLED=false (explicitly disabled)
+        with patch.object(settings, "entra_enabled", False):
+            resp = await client.post("/api/v1/auth/entra/token", json={"code": "any"})
 
         # Then
         assert resp.status_code == 501

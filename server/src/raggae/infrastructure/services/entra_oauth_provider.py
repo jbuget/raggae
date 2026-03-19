@@ -1,8 +1,5 @@
 import asyncio
-import base64
-import hashlib
 import logging
-import os
 
 import msal
 
@@ -12,16 +9,7 @@ from raggae.domain.exceptions.user_exceptions import OAuthProviderError
 
 logger = logging.getLogger(__name__)
 
-_SCOPES = ["openid", "profile", "email", "User.Read"]
-
-
-def _generate_code_verifier() -> str:
-    return base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode()
-
-
-def _generate_code_challenge(code_verifier: str) -> str:
-    digest = hashlib.sha256(code_verifier.encode()).digest()
-    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+_SCOPES = ["User.Read"]
 
 
 def _resolve_email(claims: dict[str, object]) -> str:
@@ -56,9 +44,6 @@ class EntraOAuthProvider:
     and provide a Redis-backed implementation.
     """
 
-    def __init__(self) -> None:
-        self._pkce_store: dict[str, str] = {}  # csrf_token → code_verifier
-
     def _build_msal_app(self, config: EntraConfig) -> msal.ConfidentialClientApplication:
         return msal.ConfidentialClientApplication(
             client_id=config.client_id,
@@ -67,32 +52,23 @@ class EntraOAuthProvider:
         )
 
     async def get_authorization_url(self, state: str, config: EntraConfig) -> str:
-        code_verifier = _generate_code_verifier()
-        code_challenge = _generate_code_challenge(code_verifier)
-        self._pkce_store[state] = code_verifier
-
         app = self._build_msal_app(config)
         url: str = await asyncio.to_thread(
             lambda: app.get_authorization_request_url(
                 scopes=_SCOPES,
                 state=state,
                 redirect_uri=config.redirect_uri,
-                code_challenge=code_challenge,
-                code_challenge_method="S256",
             )
         )
         return url
 
     async def exchange_code(self, code: str, state: str, config: EntraConfig) -> OAuthUserInfo:
-        code_verifier = self._pkce_store.pop(state, None)
-
         app = self._build_msal_app(config)
         result: dict[str, object] = await asyncio.to_thread(
             lambda: app.acquire_token_by_authorization_code(
                 code=code,
                 scopes=_SCOPES,
                 redirect_uri=config.redirect_uri,
-                code_verifier=code_verifier,
             )
         )
 
