@@ -99,3 +99,24 @@ class TestLoginUser:
         # When / Then
         with pytest.raises(InvalidCredentialsError):
             await use_case.execute(email="test@example.com", password="WrongPass123!")
+
+    async def test_login_user_sso_only_account_raises_invalid_credentials(
+        self,
+        use_case: LoginUser,
+        mock_user_repository: AsyncMock,
+    ) -> None:
+        # Given — compte SSO-only, pas de mot de passe local
+        sso_user = User(
+            id=uuid4(),
+            email="sso@example.com",
+            hashed_password=None,
+            full_name="SSO User",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            entra_id="oid-abc-123",
+        )
+        mock_user_repository.find_by_email.return_value = sso_user
+
+        # When / Then — même erreur générique, aucun info leak sur le type de compte
+        with pytest.raises(InvalidCredentialsError):
+            await use_case.execute(email="sso@example.com", password="AnyPass123!")
