@@ -32,6 +32,7 @@
   "header": {
     "account": "Account",
     "userSettings": "User settings",
+    "language": "Language",
     "signOut": "Sign out"
   },
   "auth": {
