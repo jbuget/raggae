@@ -41,6 +41,7 @@ class SaveProviderApiKey:
         if any(c.key_fingerprint == fingerprint for c in existing):
             raise DuplicateProviderCredentialError()
         now = datetime.now(UTC)
+        should_activate = not any(c.is_active for c in existing)
         credential = UserModelProviderCredential(
             id=uuid4(),
             user_id=user_id,
@@ -48,7 +49,7 @@ class SaveProviderApiKey:
             encrypted_api_key=self._provider_api_key_crypto_service.encrypt(api_key),
             key_fingerprint=fingerprint,
             key_suffix=api_key[-4:],
-            is_active=True,
+            is_active=should_activate,
             created_at=now,
             updated_at=now,
         )

@@ -8,11 +8,9 @@ WORKDIR /app
 RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml .
-
-RUN mkdir -p src/raggae && touch src/raggae/__init__.py
-RUN uv pip install --system --no-cache .
-
 COPY src/ src/
+
+RUN uv pip install --system --no-cache .
 
 # ---- runtime ----
 FROM python:3.13-slim AS runtime

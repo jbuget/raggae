@@ -38,7 +38,7 @@ class TestSaveProviderApiKey:
         repository.save.assert_awaited_once()
         repository.set_active.assert_not_awaited()
 
-    async def test_save_provider_api_key_credential_saved_active_directly(self) -> None:
+    async def test_save_provider_api_key_first_credential_is_saved_active(self) -> None:
         # Given
         user_id = uuid4()
         saved_credentials: list = []
@@ -61,7 +61,7 @@ class TestSaveProviderApiKey:
         # When
         result = await use_case.execute(user_id=user_id, provider="gemini", api_key="AIzatest1234")
 
-        # Then — la credential est directement insérée active (plus de contrainte d'unicité)
+        # Then
         assert len(saved_credentials) == 1
         assert saved_credentials[0].is_active is True
         repository.set_active.assert_not_awaited()
@@ -103,8 +103,10 @@ class TestSaveProviderApiKey:
         with pytest.raises(DuplicateProviderCredentialError):
             await use_case.execute(user_id=user_id, provider="gemini", api_key="AIzatest1234")
 
-    async def test_save_provider_api_key_does_not_deactivate_existing_credentials(self) -> None:
-        # Given — une credential active existante pour le même provider
+    async def test_save_provider_api_key_second_credential_is_saved_inactive_when_one_is_active(
+        self,
+    ) -> None:
+        # Given
         from datetime import UTC, datetime
 
         from raggae.domain.entities.user_model_provider_credential import (
@@ -136,11 +138,14 @@ class TestSaveProviderApiKey:
         )
 
         # When
-        await use_case.execute(user_id=user_id, provider="openai", api_key="sk-test-xxxx")
+        result = await use_case.execute(user_id=user_id, provider="openai", api_key="sk-test-xxxx")
 
-        # Then — les credentials existantes ne sont PAS désactivées
+        # Then
         repository.set_inactive.assert_not_awaited()
         repository.save.assert_awaited_once()
+        saved_credential = repository.save.await_args.args[0]
+        assert saved_credential.is_active is False
+        assert result.is_active is False
 
     async def test_save_provider_api_key_invalid_provider_raises_error(self) -> None:
         # Given
