@@ -46,7 +46,10 @@
       "noAccount": "Pas encore de compte ?",
       "register": "S'inscrire",
       "invalidCredentials": "E-mail ou mot de passe incorrect",
-      "unexpectedError": "Une erreur inattendue est survenue"
+      "unexpectedError": "Une erreur inattendue est survenue",
+      "orSeparator": "ou",
+      "signInWithMicrosoft": "Se connecter avec Microsoft",
+      "ssoError": "L'authentification SSO a échoué. Veuillez réessayer."
     },
     "register": {
       "title": "Inscription",

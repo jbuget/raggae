@@ -26,6 +26,7 @@ class SQLAlchemyUserRepository:
                     is_active=user.is_active,
                     created_at=user.created_at,
                     locale=str(user.locale),
+                    entra_id=user.entra_id,
                 )
                 session.add(model)
             else:
@@ -34,22 +35,27 @@ class SQLAlchemyUserRepository:
                 model.full_name = user.full_name
                 model.is_active = user.is_active
                 model.locale = str(user.locale)
+                model.entra_id = user.entra_id
             await session.commit()
+
+    def _to_entity(self, model: UserModel) -> User:
+        return User(
+            id=model.id,
+            email=model.email,
+            hashed_password=model.hashed_password,
+            full_name=model.full_name,
+            is_active=model.is_active,
+            created_at=model.created_at,
+            locale=Locale(model.locale),
+            entra_id=model.entra_id,
+        )
 
     async def find_by_id(self, user_id: UUID) -> User | None:
         async with self._session_factory() as session:
             model = await session.get(UserModel, user_id)
             if model is None:
                 return None
-            return User(
-                id=model.id,
-                email=model.email,
-                hashed_password=model.hashed_password,
-                full_name=model.full_name,
-                is_active=model.is_active,
-                created_at=model.created_at,
-                locale=Locale(model.locale),
-            )
+            return self._to_entity(model)
 
     async def find_by_email(self, email: str) -> User | None:
         async with self._session_factory() as session:
@@ -57,12 +63,12 @@ class SQLAlchemyUserRepository:
             model = result.scalar_one_or_none()
             if model is None:
                 return None
-            return User(
-                id=model.id,
-                email=model.email,
-                hashed_password=model.hashed_password,
-                full_name=model.full_name,
-                is_active=model.is_active,
-                created_at=model.created_at,
-                locale=Locale(model.locale),
-            )
+            return self._to_entity(model)
+
+    async def find_by_entra_id(self, entra_id: str) -> User | None:
+        async with self._session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.entra_id == entra_id))
+            model = result.scalar_one_or_none()
+            if model is None:
+                return None
+            return self._to_entity(model)

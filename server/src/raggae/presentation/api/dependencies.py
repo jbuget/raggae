@@ -173,7 +173,10 @@ from raggae.application.use_cases.provider_credentials.list_provider_api_keys im
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
+from raggae.application.config.entra_config import EntraConfig
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
+from raggae.application.use_cases.user.handle_oauth_callback import HandleOAuthCallback
+from raggae.application.use_cases.user.initiate_oauth_login import InitiateOAuthLogin
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
@@ -333,6 +336,8 @@ from raggae.infrastructure.services.simple_text_chunker_service import (
 from raggae.infrastructure.services.simple_text_sanitizer_service import (
     SimpleTextSanitizerService,
 )
+from raggae.infrastructure.cache.oauth_code_store import InMemoryOAuthCodeStore
+from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
@@ -558,6 +563,39 @@ _project_reranker_service_resolver: ProjectRerankerServiceResolver = (
 _conversation_title_generator: ConversationTitleGenerator = LLMConversationTitleGenerator(
     llm_service=_llm_service
 )
+_entra_oauth_provider = EntraOAuthProvider()
+_oauth_code_store = InMemoryOAuthCodeStore()
+
+
+def get_entra_config() -> EntraConfig:
+    return EntraConfig(
+        client_id=settings.entra_client_id,
+        client_secret=settings.entra_client_secret,
+        tenant_id=settings.entra_tenant_id,
+        redirect_uri=settings.entra_redirect_uri,
+        allowed_domains=settings.entra_allowed_domains,
+        single_logout=settings.entra_single_logout,
+        client_secret_expires_at=settings.entra_client_secret_expires_at,
+    )
+
+
+def get_initiate_oauth_login_use_case() -> InitiateOAuthLogin:
+    return InitiateOAuthLogin(
+        oauth_provider=_entra_oauth_provider,
+        config=get_entra_config(),
+    )
+
+
+def get_handle_oauth_callback_use_case() -> HandleOAuthCallback:
+    return HandleOAuthCallback(
+        oauth_provider=_entra_oauth_provider,
+        user_repository=_user_repository,
+        token_service=_token_service,
+    )
+
+
+def get_oauth_code_store() -> InMemoryOAuthCodeStore:
+    return _oauth_code_store
 
 
 def get_register_user_use_case() -> RegisterUser:

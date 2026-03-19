@@ -36,3 +36,14 @@ class UserResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class OAuthTokenRequest(BaseModel):
+    code: str
+
+
+class OAuthLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    is_new_user: bool = False
+    account_linked: bool = False

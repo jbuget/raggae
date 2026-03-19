@@ -6,6 +6,39 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
+      id: "entra-token",
+      name: "Microsoft Entra",
+      credentials: {
+        accessToken: { type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.accessToken) return null;
+        try {
+          const payload = JSON.parse(
+            Buffer.from(
+              credentials.accessToken.split(".")[1],
+              "base64url",
+            ).toString("utf8"),
+          ) as { sub?: string };
+
+          const meResp = await fetch(`${BACKEND_URL}/api/v1/auth/me`, {
+            headers: { Authorization: `Bearer ${credentials.accessToken}` },
+          });
+          if (!meResp.ok) return null;
+          const me = (await meResp.json()) as { email: string; full_name: string };
+
+          return {
+            id: payload.sub ?? "unknown",
+            email: me.email,
+            name: me.full_name,
+            accessToken: credentials.accessToken,
+          };
+        } catch {
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -52,6 +85,7 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = (user as unknown as { accessToken: string }).accessToken;
         token.email = user.email;
         token.userId = user.id;
+        token.name = user.name;
       }
       return token;
     },
@@ -60,6 +94,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.email = token.email as string;
         session.user.id = token.userId as string;
+        session.user.name = token.name as string;
       }
       return session;
     },

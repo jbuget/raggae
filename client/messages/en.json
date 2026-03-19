@@ -46,7 +46,10 @@
       "noAccount": "Don't have an account?",
       "register": "Register",
       "invalidCredentials": "Invalid email or password",
-      "unexpectedError": "An unexpected error occurred"
+      "unexpectedError": "An unexpected error occurred",
+      "orSeparator": "or",
+      "signInWithMicrosoft": "Sign in with Microsoft",
+      "ssoError": "SSO authentication failed. Please try again."
     },
     "register": {
       "title": "Register",

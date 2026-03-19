@@ -12,3 +12,11 @@ class UserNotFoundError(Exception):
 
 class InvalidCredentialsError(Exception):
     """Raised when login credentials are invalid."""
+
+
+class OAuthDomainNotAllowedError(Exception):
+    """Raised when an OAuth user's email domain is not in the allowed list."""
+
+
+class OAuthProviderError(Exception):
+    """Raised when an OAuth provider returns an unexpected error."""

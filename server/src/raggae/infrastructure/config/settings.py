@@ -1,6 +1,7 @@
+from datetime import datetime
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 _SERVER_ROOT = Path(__file__).resolve().parents[4]
@@ -58,6 +59,24 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "raggae-documents"
     s3_region: str = "us-east-1"
     s3_secure: bool = False
+    frontend_url: str = "http://localhost:3000"
+    entra_enabled: bool = False
+    entra_client_id: str = ""
+    entra_client_secret: str = ""
+    entra_tenant_id: str = ""
+    entra_redirect_uri: str = ""
+    entra_allowed_domains: list[str] = Field(default_factory=list)
+    entra_single_logout: bool = False
+    entra_client_secret_expires_at: datetime | None = None
+
+    @field_validator("entra_allowed_domains", mode="before")
+    @classmethod
+    def parse_entra_allowed_domains(cls, v: object) -> list[str]:
+        if isinstance(v, str):
+            return [d.strip() for d in v.split(",") if d.strip()]
+        if isinstance(v, list):
+            return [str(item) for item in v]
+        return []
 
     model_config = {
         "env_file": (_SERVER_ROOT / ".env", ".env"),
