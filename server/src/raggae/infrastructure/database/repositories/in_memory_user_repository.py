@@ -20,3 +20,9 @@ class InMemoryUserRepository:
             if user.email == email:
                 return user
         return None
+
+    async def find_by_entra_id(self, entra_id: str) -> User | None:
+        for user in self._users.values():
+            if user.entra_id == entra_id:
+                return user
+        return None
