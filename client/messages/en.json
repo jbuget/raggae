@@ -32,6 +32,7 @@
   "header": {
     "account": "Account",
     "userSettings": "User settings",
+    "language": "Language",
     "signOut": "Sign out"
   },
   "auth": {
@@ -484,8 +485,10 @@
   },
   "layout": {
     "themeToggle": {
-      "dark": "Dark",
+      "label": "Theme",
       "light": "Light",
+      "dark": "Dark",
+      "system": "System",
       "switchToDark": "Switch to dark mode",
       "switchToLight": "Switch to light mode"
     },

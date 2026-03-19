@@ -32,6 +32,7 @@
   "header": {
     "account": "Compte",
     "userSettings": "Paramètres utilisateur",
+    "language": "Langue",
     "signOut": "Se déconnecter"
   },
   "auth": {
@@ -484,8 +485,10 @@
   },
   "layout": {
     "themeToggle": {
-      "dark": "Sombre",
+      "label": "Thème",
       "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système",
       "switchToDark": "Passer en mode sombre",
       "switchToLight": "Passer en mode clair"
     },
