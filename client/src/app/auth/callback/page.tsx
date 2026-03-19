@@ -47,9 +47,26 @@ function EntraCallback() {
 
         if (result?.error) {
           router.replace("/login?error=sso");
-        } else {
-          router.replace(redirect);
+          return;
         }
+
+        const { getSession } = await import("next-auth/react");
+        const session = await getSession();
+        if (session?.accessToken) {
+          const meResp = await fetch(
+            `${BACKEND_URL}/api/v1/auth/me`,
+            { headers: { Authorization: `Bearer ${session.accessToken}` } },
+          );
+          if (meResp.ok) {
+            const me = await meResp.json() as { locale?: string };
+            if (me.locale) {
+              const maxAge = 60 * 60 * 24 * 365;
+              document.cookie = `raggae_locale=${me.locale};path=/;max-age=${maxAge};SameSite=Lax`;
+            }
+          }
+        }
+
+        router.replace(redirect);
       } catch {
         router.replace("/login?error=sso");
       }
