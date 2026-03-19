@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml .
 
+RUN mkdir -p src/raggae && touch src/raggae/__init__.py
 RUN uv pip install --system --no-cache .
 
 COPY src/ src/
