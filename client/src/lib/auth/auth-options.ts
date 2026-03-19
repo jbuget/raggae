@@ -19,10 +19,18 @@ export const authOptions: NextAuthOptions = {
               credentials.accessToken.split(".")[1],
               "base64url",
             ).toString("utf8"),
-          ) as { sub?: string; email?: string };
+          ) as { sub?: string };
+
+          const meResp = await fetch(`${BACKEND_URL}/api/v1/auth/me`, {
+            headers: { Authorization: `Bearer ${credentials.accessToken}` },
+          });
+          if (!meResp.ok) return null;
+          const me = (await meResp.json()) as { email: string; full_name: string };
+
           return {
             id: payload.sub ?? "unknown",
-            email: payload.email ?? "",
+            email: me.email,
+            name: me.full_name,
             accessToken: credentials.accessToken,
           };
         } catch {
@@ -77,6 +85,7 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = (user as unknown as { accessToken: string }).accessToken;
         token.email = user.email;
         token.userId = user.id;
+        token.name = user.name;
       }
       return token;
     },
@@ -85,6 +94,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.email = token.email as string;
         session.user.id = token.userId as string;
+        session.user.name = token.name as string;
       }
       return session;
     },
