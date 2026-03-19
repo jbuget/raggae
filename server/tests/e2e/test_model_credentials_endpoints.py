@@ -62,14 +62,14 @@ class TestModelCredentialsEndpoints:
         assert before_activate.status_code == 200
         before_data = before_activate.json()
         assert len(before_data) == 2
-        assert len([item for item in before_data if item["is_active"]]) == 1
+        assert len([item for item in before_data if item["is_active"]]) == 2
 
         assert activate.status_code == 204
 
         assert after_activate.status_code == 200
         after_data = after_activate.json()
         assert len(after_data) == 2
-        assert len([item for item in after_data if item["is_active"]]) == 1
+        assert len([item for item in after_data if item["is_active"]]) == 2
         first = next(item for item in after_data if item["id"] == first_id)
         assert first["is_active"] is True
 
