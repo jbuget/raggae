@@ -30,13 +30,14 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "system";
+    return (localStorage.getItem("theme") as Theme | null) ?? "system";
+  });
 
   useEffect(() => {
-    const stored = (localStorage.getItem("theme") as Theme | null) ?? "system";
-    setThemeState(stored);
-    applyTheme(stored);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (theme !== "system") return;
@@ -49,7 +50,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   function setTheme(next: Theme) {
     setThemeState(next);
     localStorage.setItem("theme", next);
-    applyTheme(next);
   }
 
   return (
