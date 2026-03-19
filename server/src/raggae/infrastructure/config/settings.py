@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "raggae-documents"
     s3_region: str = "us-east-1"
     s3_secure: bool = False
+    frontend_url: str = "http://localhost:3000"
     entra_enabled: bool = False
     entra_client_id: str = ""
     entra_client_secret: str = ""
