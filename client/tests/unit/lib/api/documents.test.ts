@@ -1,15 +1,11 @@
 import { http, HttpResponse } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   deleteDocument,
   listDocuments,
   uploadDocuments,
 } from "@/lib/api/documents";
 import { server } from "../../../helpers/msw-server";
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 const mockDoc = {
   id: "doc-1",

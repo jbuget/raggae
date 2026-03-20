@@ -1,11 +1,7 @@
 import { http, HttpResponse } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ApiError, apiFetch } from "@/lib/api/client";
 import { server } from "../../../helpers/msw-server";
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 describe("apiFetch", () => {
   it("should make a GET request and return JSON", async () => {

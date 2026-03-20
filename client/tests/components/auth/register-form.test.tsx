@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { RegisterForm } from "@/components/auth/register-form";
 import { renderWithProviders } from "../../helpers/render";
 import { server } from "../../helpers/msw-server";
@@ -12,12 +12,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-beforeAll(() => server.listen());
 afterEach(() => {
-  server.resetHandlers();
   vi.clearAllMocks();
 });
-afterAll(() => server.close());
 
 describe("RegisterForm", () => {
   it("should render all input fields", () => {
