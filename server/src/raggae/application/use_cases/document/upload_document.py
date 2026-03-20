@@ -121,9 +121,7 @@ class UploadDocument:
         project = await self._assert_project_owner(project_id=project_id, user_id=user_id)
         existing_documents = await self._document_repository.find_by_project_id(project_id)
         indexed_by_name = {
-            doc.file_name.lower()
-            for doc in existing_documents
-            if doc.processing_strategy is not None
+            doc.file_name.lower() for doc in existing_documents if doc.processing_strategy is not None
         }
         existing_names = {doc.file_name.lower() for doc in existing_documents}
         request_names: set[str] = set()
@@ -231,8 +229,7 @@ class UploadDocument:
         existing = await self._document_repository.find_by_project_id(project_id)
         if len(existing) >= self._max_documents_per_project:
             raise ProjectDocumentLimitReachedError(
-                f"Project {project_id} has reached the maximum of "
-                f"{self._max_documents_per_project} documents"
+                f"Project {project_id} has reached the maximum of {self._max_documents_per_project} documents"
             )
 
     async def _execute_single(
@@ -286,9 +283,7 @@ class UploadDocument:
         except (DocumentExtractionError, EmbeddingGenerationError) as exc:
             document = document.transition_to(DocumentStatus.ERROR, error_message=str(exc))
             await self._document_repository.save(document)
-            await self._cleanup_failed_document(
-                document_id=document.id, storage_key=document.storage_key
-            )
+            await self._cleanup_failed_document(document_id=document.id, storage_key=document.storage_key)
             raise
 
         return DocumentDTO.from_entity(document)

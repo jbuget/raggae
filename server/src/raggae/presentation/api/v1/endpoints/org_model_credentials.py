@@ -136,14 +136,10 @@ async def activate_org_model_credential(
     organization_id: UUID,
     credential_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        ActivateOrgProviderApiKey, Depends(get_activate_org_provider_api_key_use_case)
-    ],
+    use_case: Annotated[ActivateOrgProviderApiKey, Depends(get_activate_org_provider_api_key_use_case)],
 ) -> None:
     try:
-        await use_case.execute(
-            credential_id=credential_id, organization_id=organization_id, user_id=user_id
-        )
+        await use_case.execute(credential_id=credential_id, organization_id=organization_id, user_id=user_id)
     except OrganizationAccessDeniedError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -169,14 +165,10 @@ async def deactivate_org_model_credential(
     organization_id: UUID,
     credential_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        DeactivateOrgProviderApiKey, Depends(get_deactivate_org_provider_api_key_use_case)
-    ],
+    use_case: Annotated[DeactivateOrgProviderApiKey, Depends(get_deactivate_org_provider_api_key_use_case)],
 ) -> None:
     try:
-        await use_case.execute(
-            credential_id=credential_id, organization_id=organization_id, user_id=user_id
-        )
+        await use_case.execute(credential_id=credential_id, organization_id=organization_id, user_id=user_id)
     except OrganizationAccessDeniedError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -210,9 +202,7 @@ async def delete_org_model_credential(
     use_case: Annotated[DeleteOrgProviderApiKey, Depends(get_delete_org_provider_api_key_use_case)],
 ) -> None:
     try:
-        await use_case.execute(
-            credential_id=credential_id, organization_id=organization_id, user_id=user_id
-        )
+        await use_case.execute(credential_id=credential_id, organization_id=organization_id, user_id=user_id)
     except OrganizationAccessDeniedError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

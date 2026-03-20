@@ -23,9 +23,7 @@ class ParentChildChunkingService:
 
         return self._group_into_parents(non_empty, parent_size)
 
-    def _group_into_parents(
-        self, chunks: list[str], parent_size: int
-    ) -> list[tuple[str, list[str]]]:
+    def _group_into_parents(self, chunks: list[str], parent_size: int) -> list[tuple[str, list[str]]]:
         result: list[tuple[str, list[str]]] = []
         current_parts: list[str] = []
         current_len = 0

@@ -34,9 +34,7 @@ class TestOllamaEmbeddingService:
             assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
             assert mock_post.call_count == 2
 
-    async def test_embed_texts_empty_list_returns_empty(
-        self, service: OllamaEmbeddingService
-    ) -> None:
+    async def test_embed_texts_empty_list_returns_empty(self, service: OllamaEmbeddingService) -> None:
         # When
         result = await service.embed_texts([])
 
@@ -58,9 +56,7 @@ class TestOllamaEmbeddingService:
             with pytest.raises(EmbeddingGenerationError):
                 await service.embed_texts(["hello"])
 
-    async def test_embed_texts_sends_one_request_per_text(
-        self, service: OllamaEmbeddingService
-    ) -> None:
+    async def test_embed_texts_sends_one_request_per_text(self, service: OllamaEmbeddingService) -> None:
         # Given
         mock_response = AsyncMock(spec=httpx.Response)
         mock_response.status_code = 200

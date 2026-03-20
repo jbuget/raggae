@@ -28,8 +28,7 @@ class DeactivateProviderApiKey:
 
         projects = await self._project_repository.find_by_user_id(user_id)
         if any(
-            p.embedding_api_key_credential_id == credential_id
-            or p.llm_api_key_credential_id == credential_id
+            p.embedding_api_key_credential_id == credential_id or p.llm_api_key_credential_id == credential_id
             for p in projects
         ):
             raise CredentialInUseError()

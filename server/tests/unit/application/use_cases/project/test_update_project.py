@@ -167,14 +167,12 @@ class TestUpdateProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.OWNER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.OWNER,
+            joined_at=datetime.now(UTC),
         )
 
         result = await use_case.execute(
@@ -206,14 +204,12 @@ class TestUpdateProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.MAKER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.MAKER,
+            joined_at=datetime.now(UTC),
         )
 
         result = await use_case.execute(
@@ -245,14 +241,12 @@ class TestUpdateProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.USER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
         )
 
         with pytest.raises(ProjectNotFoundError):
@@ -927,14 +921,12 @@ class TestUpdateProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=user_id,
-                role=OrganizationMemberRole.OWNER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=user_id,
+            role=OrganizationMemberRole.OWNER,
+            joined_at=datetime.now(UTC),
         )
         org_credential = OrgModelProviderCredential(
             id=org_cred_id,
@@ -994,14 +986,12 @@ class TestUpdateProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=user_id,
-                role=OrganizationMemberRole.OWNER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=user_id,
+            role=OrganizationMemberRole.OWNER,
+            joined_at=datetime.now(UTC),
         )
         org_credential = OrgModelProviderCredential(
             id=org_cred_id,
@@ -1061,14 +1051,12 @@ class TestUpdateProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=user_id,
-                role=OrganizationMemberRole.OWNER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=user_id,
+            role=OrganizationMemberRole.OWNER,
+            joined_at=datetime.now(UTC),
         )
         mock_provider_credential_repository.list_by_user_id_and_provider.return_value = []
         mock_org_credential_repository.list_by_org_id_and_provider.return_value = []

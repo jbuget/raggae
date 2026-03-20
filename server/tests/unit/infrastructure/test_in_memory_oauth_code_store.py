@@ -16,9 +16,7 @@ def make_result(token: str = "jwt-token") -> OAuthLoginResult:
 
 
 class TestInMemoryOAuthCodeStore:
-    async def test_consume_returns_result_for_stored_code(
-        self, store: InMemoryOAuthCodeStore
-    ) -> None:
+    async def test_consume_returns_result_for_stored_code(self, store: InMemoryOAuthCodeStore) -> None:
         # Given
         result = make_result()
         await store.store("code-abc", result, ttl_seconds=30)
@@ -30,9 +28,7 @@ class TestInMemoryOAuthCodeStore:
         assert consumed is not None
         assert consumed.access_token == "jwt-token"
 
-    async def test_consume_removes_code_after_first_use(
-        self, store: InMemoryOAuthCodeStore
-    ) -> None:
+    async def test_consume_removes_code_after_first_use(self, store: InMemoryOAuthCodeStore) -> None:
         # Given
         await store.store("code-abc", make_result(), ttl_seconds=30)
         await store.consume("code-abc")
@@ -43,18 +39,14 @@ class TestInMemoryOAuthCodeStore:
         # Then — code already consumed
         assert second is None
 
-    async def test_consume_returns_none_for_unknown_code(
-        self, store: InMemoryOAuthCodeStore
-    ) -> None:
+    async def test_consume_returns_none_for_unknown_code(self, store: InMemoryOAuthCodeStore) -> None:
         # When
         result = await store.consume("unknown-code")
 
         # Then
         assert result is None
 
-    async def test_consume_returns_none_for_expired_code(
-        self, store: InMemoryOAuthCodeStore
-    ) -> None:
+    async def test_consume_returns_none_for_expired_code(self, store: InMemoryOAuthCodeStore) -> None:
         # Given — store with already-expired entry
         result = make_result()
         store._codes["expired-code"] = (

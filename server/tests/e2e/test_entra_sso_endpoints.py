@@ -130,9 +130,7 @@ class TestEntraLoginEndpoint:
 
 
 class TestEntraCallbackEndpoint:
-    async def test_e2e_entra_callback_returns_400_on_state_mismatch(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_callback_returns_400_on_state_mismatch(self, entra_client: AsyncClient) -> None:
         # Given — perform login to get a valid cookie
         mock_app = make_msal_app()
         _, raw_cookie = await _do_login(entra_client, mock_app)
@@ -152,9 +150,7 @@ class TestEntraCallbackEndpoint:
         # Then
         assert resp.status_code == 400
 
-    async def test_e2e_entra_callback_returns_400_without_cookie(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_callback_returns_400_without_cookie(self, entra_client: AsyncClient) -> None:
         # When — no state cookie at all
         resp = await entra_client.get(
             "/api/v1/auth/entra/callback",
@@ -217,9 +213,7 @@ class TestEntraCallbackEndpoint:
         assert resp.headers["location"].startswith("http://localhost:3000/auth/callback")
         assert "code=" in resp.headers["location"]
 
-    async def test_e2e_entra_callback_clears_oauth_state_cookie(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_callback_clears_oauth_state_cookie(self, entra_client: AsyncClient) -> None:
         # Given
         mock_app = make_msal_app()
         csrf_token, raw_cookie = await _do_login(entra_client, mock_app)
@@ -251,18 +245,14 @@ class TestEntraTokenEndpoint:
         # Then
         assert resp.status_code == 501
 
-    async def test_e2e_entra_token_returns_400_for_invalid_code(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_token_returns_400_for_invalid_code(self, entra_client: AsyncClient) -> None:
         # When
         resp = await entra_client.post("/api/v1/auth/entra/token", json={"code": "invalid-code"})
 
         # Then
         assert resp.status_code == 400
 
-    async def test_e2e_entra_token_returns_400_on_code_reuse(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_token_returns_400_on_code_reuse(self, entra_client: AsyncClient) -> None:
         # Given — full flow to get a valid code
         mock_app = make_msal_app()
         csrf_token, raw_cookie = await _do_login(entra_client, mock_app)
@@ -296,9 +286,7 @@ class TestEntraFullFlow:
         assert data["token_type"] == "bearer"
         assert len(data["access_token"]) > 0
 
-    async def test_e2e_full_sso_flow_links_existing_local_account(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_full_sso_flow_links_existing_local_account(self, entra_client: AsyncClient) -> None:
         # Given — pre-existing local account with same email
         await entra_client.post(
             "/api/v1/auth/register",
@@ -329,9 +317,7 @@ class TestEntraFullFlow:
         mock_app = make_msal_app()
         csrf_token, raw_cookie = await _do_login(entra_client, mock_app)
         one_time_code = await _do_callback(entra_client, mock_app, csrf_token, raw_cookie)
-        token_resp = await entra_client.post(
-            "/api/v1/auth/entra/token", json={"code": one_time_code}
-        )
+        token_resp = await entra_client.post("/api/v1/auth/entra/token", json={"code": one_time_code})
         access_token = token_resp.json()["access_token"]
 
         # When — use JWT to call a protected endpoint

@@ -27,9 +27,7 @@ def _make_project(project_id=None, user_id=None, organization_id=None):
     )
 
 
-def _make_member(
-    organization_id: UUID, user_id: UUID, role: OrganizationMemberRole
-) -> OrganizationMember:
+def _make_member(organization_id: UUID, user_id: UUID, role: OrganizationMemberRole) -> OrganizationMember:
     return OrganizationMember(
         id=uuid4(),
         organization_id=organization_id,
@@ -290,9 +288,7 @@ class TestQueryRelevantChunks:
         mock_project_repository.find_by_id.return_value = _make_project(project_id, user_id)
 
         raw_chunks = [
-            RetrievedChunkDTO(
-                chunk_id=uuid4(), document_id=uuid4(), content=f"chunk {i}", score=0.5
-            )
+            RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content=f"chunk {i}", score=0.5)
             for i in range(6)
         ]
         mock_retrieval = AsyncMock()
@@ -361,17 +357,13 @@ class TestQueryRelevantChunks:
         mock_retrieval = AsyncMock()
         mock_retrieval.retrieve_chunks.return_value = [
             RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="relevant", score=0.5),
-            RetrievedChunkDTO(
-                chunk_id=uuid4(), document_id=uuid4(), content="low score", score=0.5
-            ),
+            RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="low score", score=0.5),
         ]
 
         mock_reranker = AsyncMock()
         mock_reranker.rerank.return_value = [
             RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="relevant", score=0.8),
-            RetrievedChunkDTO(
-                chunk_id=uuid4(), document_id=uuid4(), content="low score", score=0.1
-            ),
+            RetrievedChunkDTO(chunk_id=uuid4(), document_id=uuid4(), content="low score", score=0.1),
         ]
 
         use_case = QueryRelevantChunks(
@@ -1042,9 +1034,7 @@ class TestQueryRelevantChunksOrgAccess:
         org_id = uuid4()
         user_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = _make_project(
-            project_id, organization_id=org_id
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, organization_id=org_id)
         mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
             org_id, user_id, OrganizationMemberRole.MAKER
         )
@@ -1069,9 +1059,7 @@ class TestQueryRelevantChunksOrgAccess:
         org_id = uuid4()
         user_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = _make_project(
-            project_id, organization_id=org_id
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, organization_id=org_id)
         mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
             org_id, user_id, OrganizationMemberRole.OWNER
         )
@@ -1130,9 +1118,7 @@ class TestQueryRelevantChunksOrgAccess:
         org_id = uuid4()
         user_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = _make_project(
-            project_id, organization_id=org_id
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, organization_id=org_id)
         mock_org_member_repository.find_by_organization_and_user.return_value = _make_member(
             org_id, user_id, OrganizationMemberRole.USER
         )
@@ -1157,9 +1143,7 @@ class TestQueryRelevantChunksOrgAccess:
         # Given
         org_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = _make_project(
-            project_id, organization_id=org_id
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, organization_id=org_id)
         mock_org_member_repository.find_by_organization_and_user.return_value = None
         use_case = self._make_use_case(
             mock_project_repository,
@@ -1181,9 +1165,7 @@ class TestQueryRelevantChunksOrgAccess:
         # Given
         org_id = uuid4()
         project_id = uuid4()
-        mock_project_repository.find_by_id.return_value = _make_project(
-            project_id, organization_id=org_id
-        )
+        mock_project_repository.find_by_id.return_value = _make_project(project_id, organization_id=org_id)
         use_case = QueryRelevantChunks(
             project_repository=mock_project_repository,
             embedding_service=mock_embedding_service,

@@ -111,27 +111,27 @@ def _generate_report() -> str:
     benchmark_titles = {
         "chunking_fixed_vs_semantic.csv": (
             "🔪 Chunking: Fixed Window vs Semantic",
-            "Compares character-based fixed window chunking (baseline) against semantic chunking that uses sentence embeddings to detect natural topic boundaries.",
+            "Compares character-based fixed window chunking (baseline) against semantic chunking that uses sentence embeddings to detect natural topic boundaries.",  # noqa: E501
         ),
         "chunking_fixed_vs_paragraph.csv": (
             "🔪 Chunking: Fixed Window vs Paragraph",
-            "Compares character-based fixed window chunking (baseline) against paragraph-aware chunking that respects natural paragraph boundaries.",
+            "Compares character-based fixed window chunking (baseline) against paragraph-aware chunking that respects natural paragraph boundaries.",  # noqa: E501
         ),
         "embedding_plain_vs_contextual.csv": (
             "🔢 Embedding: Plain vs Contextual",
-            "Compares standard SHA256-based embeddings (baseline) against contextual embeddings with task-specific prefixes (search_document/search_query).",
+            "Compares standard SHA256-based embeddings (baseline) against contextual embeddings with task-specific prefixes (search_document/search_query).",  # noqa: E501
         ),
         "retrieval_hybrid_vs_diversity.csv": (
             "🔍 Retrieval: Hybrid vs Hybrid+MMR Diversity",
-            "Compares standard hybrid search (vector + lexical) against hybrid search enhanced with MMR diversity reranking to reduce redundancy.",
+            "Compares standard hybrid search (vector + lexical) against hybrid search enhanced with MMR diversity reranking to reduce redundancy.",  # noqa: E501
         ),
         "context_old_vs_enhanced_prompt.csv": (
             "📝 Context: Old Prompt vs Enhanced Prompt",
-            "Compares the original RAG prompt against an enhanced prompt with source attribution, structured sections, and numbered excerpts.",
+            "Compares the original RAG prompt against an enhanced prompt with source attribution, structured sections, and numbered excerpts.",  # noqa: E501
         ),
         "end_to_end_pipeline.csv": (
             "🚀 End-to-End: Baseline vs Optimized Pipeline",
-            "Full pipeline comparison combining all optimizations: paragraph chunking + contextual embeddings + MMR diversity reranking + enhanced prompt.",
+            "Full pipeline comparison combining all optimizations: paragraph chunking + contextual embeddings + MMR diversity reranking + enhanced prompt.",  # noqa: E501
         ),
     }
 
@@ -152,7 +152,7 @@ def _generate_report() -> str:
         for row in rows:
             winner_emoji = {"optimized": "✅", "baseline": "❌", "tie": "➖"}.get(row["Winner"], "")
             sections.append(
-                f"| {row['Metric']} | {row['Baseline']} | {row['Optimized']} | {row['Improvement (%)']} | {winner_emoji} {row['Winner']} |"
+                f"| {row['Metric']} | {row['Baseline']} | {row['Optimized']} | {row['Improvement (%)']} | {winner_emoji} {row['Winner']} |"  # noqa: E501
             )
         sections.append("")
 
@@ -186,29 +186,15 @@ def _generate_report() -> str:
     sections.append(
         "| Chunking | `information_density` | Ratio of unique to total words per chunk | ✅ Yes |"
     )
-    sections.append(
-        "| Retrieval | `precision@5` | Fraction of top-5 results that are relevant | ✅ Yes |"
-    )
-    sections.append(
-        "| Retrieval | `recall@5` | Fraction of relevant docs found in top-5 | ✅ Yes |"
-    )
+    sections.append("| Retrieval | `precision@5` | Fraction of top-5 results that are relevant | ✅ Yes |")
+    sections.append("| Retrieval | `recall@5` | Fraction of relevant docs found in top-5 | ✅ Yes |")
     sections.append("| Retrieval | `mrr` | Mean Reciprocal Rank | ✅ Yes |")
     sections.append("| Retrieval | `ndcg@5` | Normalized Discounted Cumulative Gain | ✅ Yes |")
-    sections.append(
-        "| Retrieval | `ctx_diversity` | Average pairwise cosine distance of results | ✅ Yes |"
-    )
-    sections.append(
-        "| Retrieval | `ctx_redundancy` | 1 - ctx_diversity (overlap between results) | ❌ No |"
-    )
-    sections.append(
-        "| Context | `source_attribution` | Presence of source references in prompt | ✅ Yes |"
-    )
-    sections.append(
-        "| Context | `structure_quality` | Structured sections (headers, numbering) | ✅ Yes |"
-    )
-    sections.append(
-        "| Context | `query_preserved` | Original query present in final prompt | ✅ Yes |"
-    )
+    sections.append("| Retrieval | `ctx_diversity` | Average pairwise cosine distance of results | ✅ Yes |")
+    sections.append("| Retrieval | `ctx_redundancy` | 1 - ctx_diversity (overlap between results) | ❌ No |")
+    sections.append("| Context | `source_attribution` | Presence of source references in prompt | ✅ Yes |")
+    sections.append("| Context | `structure_quality` | Structured sections (headers, numbering) | ✅ Yes |")
+    sections.append("| Context | `query_preserved` | Original query present in final prompt | ✅ Yes |")
     sections.append(
         "| Context | `context_utilization` | Fraction of retrieved chunks used in prompt | ✅ Yes |"
     )
@@ -228,33 +214,23 @@ def _generate_report() -> str:
     sections.append("- **Embedding:** Contextual prefix embedding (search_document/search_query)")
     sections.append("- **Retrieval:** Hybrid search + MMR diversity reranking (λ=0.7)")
     sections.append("- **Reranking:** Maximal Marginal Relevance for diversity")
-    sections.append(
-        "- **Prompt:** Enhanced template with source attribution, structured sections\n"
-    )
+    sections.append("- **Prompt:** Enhanced template with source attribution, structured sections\n")
 
     # --- Recommendations ---
     sections.append("## 💡 Recommendations\n")
     if total_opt > total_base:
-        sections.append(
-            "The optimized pipeline **outperforms the baseline** across most metrics.\n"
-        )
+        sections.append("The optimized pipeline **outperforms the baseline** across most metrics.\n")
         sections.append("### Key wins:")
-        sections.append(
-            "- **Boundary coherence** dramatically improves with paragraph/semantic chunking"
-        )
+        sections.append("- **Boundary coherence** dramatically improves with paragraph/semantic chunking")
         sections.append("- **Context diversity** improves with MMR reranking, reducing redundancy")
         sections.append("- **Source attribution** is fully enabled by the enhanced prompt template")
-        sections.append(
-            "- **Information density** improves when chunks follow natural boundaries\n"
-        )
+        sections.append("- **Information density** improves when chunks follow natural boundaries\n")
     else:
         sections.append("Results are mixed. Further tuning of parameters may be needed.\n")
 
     sections.append("### Suggested next steps:")
     sections.append("1. Test with real embedding models (OpenAI, Gemini) instead of SHA256 hashing")
-    sections.append(
-        "2. Tune MMR λ parameter (currently 0.7) for optimal relevance-diversity balance"
-    )
+    sections.append("2. Tune MMR λ parameter (currently 0.7) for optimal relevance-diversity balance")
     sections.append("3. Experiment with semantic chunking similarity thresholds")
     sections.append("4. Add cross-encoder reranking for production workloads")
     sections.append("5. Benchmark with larger document corpora\n")

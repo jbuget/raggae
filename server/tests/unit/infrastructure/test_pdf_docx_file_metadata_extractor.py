@@ -13,9 +13,7 @@ from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
 
 
 class TestPdfDocxFileMetadataExtractor:
-    async def test_extract_metadata_pdf_with_metadata(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_extract_metadata_pdf_with_metadata(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Given
         extractor = PdfDocxFileMetadataExtractor()
 
@@ -39,9 +37,7 @@ class TestPdfDocxFileMetadataExtractor:
         assert result.document_date is not None
         assert result.document_date.isoformat() == "2026-01-27"
 
-    async def test_extract_metadata_pdf_without_metadata(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_extract_metadata_pdf_without_metadata(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Given
         extractor = PdfDocxFileMetadataExtractor()
 

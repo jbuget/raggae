@@ -10,11 +10,7 @@ class TestHeadingSectionTextChunkerService:
         chunker = HeadingSectionTextChunkerService(
             fallback_chunker=SimpleTextChunkerService(chunk_size=1000, chunk_overlap=0)
         )
-        text = (
-            "# Title\nLine one.\nLine two.\n\n"
-            "## Section\nSection body.\n\n"
-            "### Details\nDetails body."
-        )
+        text = "# Title\nLine one.\nLine two.\n\n## Section\nSection body.\n\n### Details\nDetails body."
 
         # When
         chunks = await chunker.chunk_text(text)

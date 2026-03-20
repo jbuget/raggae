@@ -33,7 +33,5 @@ class GetEffectiveProviderApiKey:
             None,
         )
         if active_credential is not None:
-            return self._provider_api_key_crypto_service.decrypt(
-                active_credential.encrypted_api_key
-            )
+            return self._provider_api_key_crypto_service.decrypt(active_credential.encrypted_api_key)
         return self._global_api_keys.get(model_provider.value)

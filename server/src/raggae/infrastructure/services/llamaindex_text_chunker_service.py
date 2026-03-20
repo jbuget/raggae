@@ -64,9 +64,7 @@ class LlamaIndexTextChunkerService:
         try:
             module = importlib.import_module("llama_index.core.node_parser")
         except ModuleNotFoundError as exc:
-            raise RuntimeError(
-                "llama-index-core is required when TEXT_CHUNKER_BACKEND=llamaindex"
-            ) from exc
+            raise RuntimeError("llama-index-core is required when TEXT_CHUNKER_BACKEND=llamaindex") from exc
 
         sentence_splitter = module.SentenceSplitter
         return cast(

@@ -119,9 +119,7 @@ class SQLAlchemyConversationRepository:
 
     async def delete(self, conversation_id: UUID) -> None:
         async with self._session_factory() as session:
-            await session.execute(
-                delete(ConversationModel).where(ConversationModel.id == conversation_id)
-            )
+            await session.execute(delete(ConversationModel).where(ConversationModel.id == conversation_id))
             await session.commit()
 
     async def update_title(self, conversation_id: UUID, title: str) -> None:

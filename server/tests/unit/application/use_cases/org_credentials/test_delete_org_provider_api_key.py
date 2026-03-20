@@ -123,9 +123,7 @@ class TestDeleteOrgProviderApiKey:
 
         # When / Then
         with pytest.raises(OrgCredentialInUseError):
-            await use_case.execute(
-                credential_id=credential_id, organization_id=org_id, user_id=uuid4()
-            )
+            await use_case.execute(credential_id=credential_id, organization_id=org_id, user_id=uuid4())
 
     async def test_delete_org_provider_api_key_in_use_by_llm_raises_error(self) -> None:
         # Given
@@ -155,6 +153,4 @@ class TestDeleteOrgProviderApiKey:
 
         # When / Then
         with pytest.raises(OrgCredentialInUseError):
-            await use_case.execute(
-                credential_id=credential_id, organization_id=org_id, user_id=uuid4()
-            )
+            await use_case.execute(credential_id=credential_id, organization_id=org_id, user_id=uuid4())

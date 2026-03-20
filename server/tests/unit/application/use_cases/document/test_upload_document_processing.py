@@ -151,9 +151,7 @@ class TestUploadDocumentProcessing:
         mock_text_sanitizer_service.sanitize_text.assert_called_once_with(
             "hello\x00 world\r\n\r\nfrom raggae   "
         )
-        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
-            "hello world\n\nfrom raggae"
-        )
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with("hello world\n\nfrom raggae")
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
@@ -379,9 +377,7 @@ class TestUploadDocumentProcessing:
         )
 
         # Then
-        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
-            "hello world\n\nfrom raggae"
-        )
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with("hello world\n\nfrom raggae")
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,

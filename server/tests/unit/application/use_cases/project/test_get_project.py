@@ -109,14 +109,12 @@ class TestGetProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.OWNER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.OWNER,
+            joined_at=datetime.now(UTC),
         )
 
         result = await use_case.execute(project_id=project.id, user_id=requester_id)
@@ -142,14 +140,12 @@ class TestGetProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.MAKER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.MAKER,
+            joined_at=datetime.now(UTC),
         )
 
         result = await use_case.execute(project_id=project.id, user_id=requester_id)
@@ -175,14 +171,12 @@ class TestGetProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.USER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
         )
 
         with pytest.raises(ProjectNotFoundError):
@@ -207,14 +201,12 @@ class TestGetProject:
             created_at=datetime.now(UTC),
         )
         mock_project_repository.find_by_id.return_value = project
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.USER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
         )
 
         result = await use_case.execute(project_id=project.id, user_id=requester_id)

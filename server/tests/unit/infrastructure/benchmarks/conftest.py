@@ -55,9 +55,7 @@ def write_benchmark_csv(
         wins_opt = sum(1 for r in rows if r["Winner"] == "optimized")
         wins_base = sum(1 for r in rows if r["Winner"] == "baseline")
         ties = sum(1 for r in rows if r["Winner"] == "tie")
-        fh.write(
-            f"\nSUMMARY;Optimized wins: {wins_opt};Baseline wins: {wins_base};Ties: {ties};;\n"
-        )
+        fh.write(f"\nSUMMARY;Optimized wins: {wins_opt};Baseline wins: {wins_base};Ties: {ties};;\n")
 
     return filepath
 

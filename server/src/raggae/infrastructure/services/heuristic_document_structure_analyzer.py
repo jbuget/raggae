@@ -22,9 +22,7 @@ class HeuristicDocumentStructureAnalyzer:
         paragraphs = [part.strip() for part in normalized.split("\n\n") if part.strip()]
         paragraph_count = len(paragraphs)
         average_paragraph_length = (
-            sum(len(paragraph) for paragraph in paragraphs) // paragraph_count
-            if paragraph_count > 0
-            else 0
+            sum(len(paragraph) for paragraph in paragraphs) // paragraph_count if paragraph_count > 0 else 0
         )
 
         has_headings = False

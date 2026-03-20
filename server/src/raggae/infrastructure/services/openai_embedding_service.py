@@ -33,6 +33,5 @@ class OpenAIEmbeddingService:
         for embedding in embeddings:
             if len(embedding) != self._expected_dimension:
                 raise EmbeddingGenerationError(
-                    "Invalid embedding dimension: "
-                    f"expected {self._expected_dimension}, got {len(embedding)}"
+                    f"Invalid embedding dimension: expected {self._expected_dimension}, got {len(embedding)}"
                 )

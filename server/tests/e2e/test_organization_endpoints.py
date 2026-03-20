@@ -125,9 +125,7 @@ class TestOrganizationEndpoints:
         assert len(projects.json()) == 1
         assert projects.json()[0]["name"] == "Org Project"
 
-    async def test_organization_projects_forbidden_for_non_member(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_organization_projects_forbidden_for_non_member(self, client: AsyncClient) -> None:
         owner_headers = await self._auth_headers(client)
         organization_id = await self._create_organization(client, owner_headers)
         other_headers = await self._auth_headers(client)

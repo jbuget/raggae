@@ -17,9 +17,7 @@ class MultiFormatDocumentTextExtractor:
         elif extension == "docx":
             text = self._extract_docx(content)
         elif extension == "doc":
-            raise DocumentExtractionError(
-                "DOC extraction is not supported in sync mode yet. Use DOCX."
-            )
+            raise DocumentExtractionError("DOC extraction is not supported in sync mode yet. Use DOCX.")
         else:
             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
 

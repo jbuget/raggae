@@ -81,9 +81,7 @@ class EntraOAuthProvider:
                     "error_description": result.get("error_description"),
                 },
             )
-            raise OAuthProviderError(
-                f"Entra token exchange failed: {result.get('error_description')}"
-            )
+            raise OAuthProviderError(f"Entra token exchange failed: {result.get('error_description')}")
 
         claims: dict[str, object] = result.get("id_token_claims", {})  # type: ignore[assignment]
         email = _resolve_email(claims)

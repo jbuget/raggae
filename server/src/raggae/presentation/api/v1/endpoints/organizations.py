@@ -127,9 +127,7 @@ async def get_organization(
     try:
         organization = await use_case.execute(organization_id=organization_id, user_id=user_id)
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     return OrganizationResponse(**organization.__dict__)
@@ -152,9 +150,7 @@ async def update_organization(
             logo_url=data.logo_url,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     logger.info(
@@ -177,9 +173,7 @@ async def delete_organization(
     try:
         await use_case.execute(organization_id=organization_id, user_id=user_id)
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     logger.info(
@@ -197,9 +191,7 @@ async def list_organization_members(
     try:
         members = await use_case.execute(organization_id=organization_id, user_id=user_id)
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     return [OrganizationMemberResponse(**member.__dict__) for member in members]
@@ -214,9 +206,7 @@ async def list_organization_projects(
     try:
         projects = await use_case.execute(organization_id=organization_id, user_id=user_id)
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     return [
@@ -264,9 +254,7 @@ async def update_organization_member_role(
     member_id: UUID,
     data: UpdateOrganizationMemberRoleRequest,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        UpdateOrganizationMemberRole, Depends(get_update_organization_member_role_use_case)
-    ],
+    use_case: Annotated[UpdateOrganizationMemberRole, Depends(get_update_organization_member_role_use_case)],
 ) -> OrganizationMemberResponse:
     try:
         member = await use_case.execute(
@@ -276,9 +264,7 @@ async def update_organization_member_role(
             role=data.role,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except LastOrganizationOwnerError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
@@ -312,9 +298,7 @@ async def remove_organization_member(
             member_id=member_id,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except LastOrganizationOwnerError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
@@ -342,9 +326,7 @@ async def leave_organization(
     try:
         await use_case.execute(organization_id=organization_id, user_id=user_id)
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except LastOrganizationOwnerError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
@@ -370,9 +352,7 @@ async def invite_organization_member(
             role=data.role,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationInvitationInvalidError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
@@ -392,9 +372,7 @@ async def invite_organization_member(
 async def list_organization_invitations(
     organization_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        ListOrganizationInvitations, Depends(get_list_organization_invitations_use_case)
-    ],
+    use_case: Annotated[ListOrganizationInvitations, Depends(get_list_organization_invitations_use_case)],
 ) -> list[OrganizationInvitationResponse]:
     try:
         invitations = await use_case.execute(
@@ -402,9 +380,7 @@ async def list_organization_invitations(
             requester_user_id=user_id,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     return [OrganizationInvitationResponse(**invitation.__dict__) for invitation in invitations]
@@ -418,9 +394,7 @@ async def resend_organization_invitation(
     organization_id: UUID,
     invitation_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        ResendOrganizationInvitation, Depends(get_resend_organization_invitation_use_case)
-    ],
+    use_case: Annotated[ResendOrganizationInvitation, Depends(get_resend_organization_invitation_use_case)],
 ) -> OrganizationInvitationResponse:
     try:
         invitation = await use_case.execute(
@@ -429,13 +403,9 @@ async def resend_organization_invitation(
             invitation_id=invitation_id,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationInvitationInvalidError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
-        ) from None
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     logger.info(
@@ -457,9 +427,7 @@ async def revoke_organization_invitation(
     organization_id: UUID,
     invitation_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        RevokeOrganizationInvitation, Depends(get_revoke_organization_invitation_use_case)
-    ],
+    use_case: Annotated[RevokeOrganizationInvitation, Depends(get_revoke_organization_invitation_use_case)],
 ) -> OrganizationInvitationResponse:
     try:
         invitation = await use_case.execute(
@@ -468,13 +436,9 @@ async def revoke_organization_invitation(
             invitation_id=invitation_id,
         )
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationInvitationInvalidError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
-        ) from None
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     logger.info(
@@ -492,20 +456,14 @@ async def revoke_organization_invitation(
 async def accept_organization_invitation(
     data: AcceptOrganizationInvitationRequest,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[
-        AcceptOrganizationInvitation, Depends(get_accept_organization_invitation_use_case)
-    ],
+    use_case: Annotated[AcceptOrganizationInvitation, Depends(get_accept_organization_invitation_use_case)],
 ) -> OrganizationMemberResponse:
     try:
         member = await use_case.execute(token_hash=data.token, user_id=user_id)
     except OrganizationNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        ) from None
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationInvitationInvalidError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
-        ) from None
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)) from None
     return OrganizationMemberResponse(**member.__dict__)
 
 
@@ -518,10 +476,7 @@ async def list_user_pending_organization_invitations(
     ],
 ) -> list[UserPendingOrganizationInvitationResponse]:
     invitations = await use_case.execute(user_id=user_id)
-    return [
-        UserPendingOrganizationInvitationResponse(**invitation.__dict__)
-        for invitation in invitations
-    ]
+    return [UserPendingOrganizationInvitationResponse(**invitation.__dict__) for invitation in invitations]
 
 
 @router.post(

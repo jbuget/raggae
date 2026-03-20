@@ -32,9 +32,7 @@ class LoginUser:
         if not user:
             raise InvalidCredentialsError("Invalid email or password")
 
-        if user.hashed_password is None or not self._password_hasher.verify(
-            password, user.hashed_password
-        ):
+        if user.hashed_password is None or not self._password_hasher.verify(password, user.hashed_password):
             raise InvalidCredentialsError("Invalid email or password")
 
         access_token = self._token_service.create_access_token(user.id)

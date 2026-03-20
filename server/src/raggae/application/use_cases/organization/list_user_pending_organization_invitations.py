@@ -35,9 +35,7 @@ class ListUserPendingOrganizationInvitations:
             return []
 
         now = datetime.now(UTC)
-        invitations = await self._organization_invitation_repository.find_pending_by_email(
-            user.email
-        )
+        invitations = await self._organization_invitation_repository.find_pending_by_email(user.email)
         pending_invitations: list[UserPendingOrganizationInvitationDTO] = []
         for invitation in invitations:
             if invitation.expires_at < now:
@@ -47,9 +45,7 @@ class ListUserPendingOrganizationInvitations:
                 )
                 await self._organization_invitation_repository.save(expired)
                 continue
-            organization = await self._organization_repository.find_by_id(
-                invitation.organization_id
-            )
+            organization = await self._organization_repository.find_by_id(invitation.organization_id)
             if organization is None:
                 continue
             pending_invitations.append(
@@ -59,6 +55,4 @@ class ListUserPendingOrganizationInvitations:
                 )
             )
 
-        return sorted(
-            pending_invitations, key=lambda invitation: invitation.created_at, reverse=True
-        )
+        return sorted(pending_invitations, key=lambda invitation: invitation.created_at, reverse=True)

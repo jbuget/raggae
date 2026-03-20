@@ -37,30 +37,20 @@ class ProjectModel(Base):
     reindex_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="idle", server_default="idle"
     )
-    reindex_progress: Mapped[int] = mapped_column(
-        Integer(), nullable=False, default=0, server_default="0"
-    )
-    reindex_total: Mapped[int] = mapped_column(
-        Integer(), nullable=False, default=0, server_default="0"
-    )
+    reindex_progress: Mapped[int] = mapped_column(Integer(), nullable=False, default=0, server_default="0")
+    reindex_total: Mapped[int] = mapped_column(Integer(), nullable=False, default=0, server_default="0")
     embedding_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
     embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
     embedding_api_key_encrypted: Mapped[str | None] = mapped_column(Text(), nullable=True)
-    embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True), nullable=True
-    )
+    embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     llm_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
     llm_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
     llm_api_key_encrypted: Mapped[str | None] = mapped_column(Text(), nullable=True)
-    llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True), nullable=True
-    )
+    llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     retrieval_strategy: Mapped[str] = mapped_column(
         String(16), nullable=False, default="hybrid", server_default="hybrid"
     )
-    retrieval_top_k: Mapped[int] = mapped_column(
-        Integer(), nullable=False, default=8, server_default="8"
-    )
+    retrieval_top_k: Mapped[int] = mapped_column(Integer(), nullable=False, default=8, server_default="8")
     retrieval_min_score: Mapped[float] = mapped_column(
         Float(), nullable=False, default=0.3, server_default="0.3"
     )

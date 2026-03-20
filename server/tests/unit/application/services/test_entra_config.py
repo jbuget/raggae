@@ -1,7 +1,5 @@
 from datetime import UTC, datetime, timedelta
 
-import pytest
-
 from raggae.application.config.entra_config import EntraConfig
 
 

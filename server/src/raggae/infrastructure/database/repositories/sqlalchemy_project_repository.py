@@ -73,9 +73,7 @@ class SQLAlchemyProjectRepository:
                 model.llm_model = project.llm_model
                 model.llm_api_key_encrypted = project.llm_api_key_encrypted
                 model.llm_api_key_credential_id = project.llm_api_key_credential_id
-                model.org_embedding_api_key_credential_id = (
-                    project.org_embedding_api_key_credential_id
-                )
+                model.org_embedding_api_key_credential_id = project.org_embedding_api_key_credential_id
                 model.org_llm_api_key_credential_id = project.org_llm_api_key_credential_id
                 model.retrieval_strategy = project.retrieval_strategy
                 model.retrieval_top_k = project.retrieval_top_k
@@ -130,9 +128,7 @@ class SQLAlchemyProjectRepository:
 
     async def find_by_user_id(self, user_id: UUID) -> list[Project]:
         async with self._session_factory() as session:
-            result = await session.execute(
-                select(ProjectModel).where(ProjectModel.user_id == user_id)
-            )
+            result = await session.execute(select(ProjectModel).where(ProjectModel.user_id == user_id))
             models = result.scalars().all()
             return [
                 Project(

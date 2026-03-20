@@ -15,9 +15,7 @@ class InMemoryProviderCredentialRepository:
         self._credentials[credential.id] = credential
 
     async def list_by_user_id(self, user_id: UUID) -> list[UserModelProviderCredential]:
-        return [
-            credential for credential in self._credentials.values() if credential.user_id == user_id
-        ]
+        return [credential for credential in self._credentials.values() if credential.user_id == user_id]
 
     async def list_by_user_id_and_provider(
         self,

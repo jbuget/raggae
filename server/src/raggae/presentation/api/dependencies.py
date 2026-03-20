@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from raggae.application.config.entra_config import EntraConfig
 from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
@@ -173,7 +174,6 @@ from raggae.application.use_cases.provider_credentials.list_provider_api_keys im
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
-from raggae.application.config.entra_config import EntraConfig
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.handle_oauth_callback import HandleOAuthCallback
 from raggae.application.use_cases.user.initiate_oauth_login import InitiateOAuthLogin
@@ -181,6 +181,7 @@ from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.application.use_cases.user.update_user_locale import UpdateUserLocale
+from raggae.infrastructure.cache.oauth_code_store import InMemoryOAuthCodeStore
 from raggae.infrastructure.config.settings import settings
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
     InMemoryConversationRepository,
@@ -256,6 +257,7 @@ from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPassword
 from raggae.infrastructure.services.contextual_embedding_service import (
     ContextualEmbeddingService,
 )
+from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
     FernetProviderApiKeyCryptoService,
 )
@@ -336,8 +338,6 @@ from raggae.infrastructure.services.simple_text_chunker_service import (
 from raggae.infrastructure.services.simple_text_sanitizer_service import (
     SimpleTextSanitizerService,
 )
-from raggae.infrastructure.cache.oauth_code_store import InMemoryOAuthCodeStore
-from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
@@ -368,32 +368,26 @@ def _build_embedding_service() -> EmbeddingService:
 
 if settings.persistence_backend == "postgres":
     _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
-    _project_repository: ProjectRepository = SQLAlchemyProjectRepository(
-        session_factory=SessionFactory
-    )
-    _document_repository: DocumentRepository = SQLAlchemyDocumentRepository(
-        session_factory=SessionFactory
-    )
+    _project_repository: ProjectRepository = SQLAlchemyProjectRepository(session_factory=SessionFactory)
+    _document_repository: DocumentRepository = SQLAlchemyDocumentRepository(session_factory=SessionFactory)
     _document_chunk_repository: DocumentChunkRepository = SQLAlchemyDocumentChunkRepository(
         session_factory=SessionFactory
     )
     _conversation_repository: ConversationRepository = SQLAlchemyConversationRepository(
         session_factory=SessionFactory
     )
-    _message_repository: MessageRepository = SQLAlchemyMessageRepository(
+    _message_repository: MessageRepository = SQLAlchemyMessageRepository(session_factory=SessionFactory)
+    _provider_credential_repository: ProviderCredentialRepository = SQLAlchemyProviderCredentialRepository(
         session_factory=SessionFactory
     )
-    _provider_credential_repository: ProviderCredentialRepository = (
-        SQLAlchemyProviderCredentialRepository(session_factory=SessionFactory)
-    )
-    _org_credential_repository: OrgProviderCredentialRepository = (
-        SQLAlchemyOrgProviderCredentialRepository(session_factory=SessionFactory)
+    _org_credential_repository: OrgProviderCredentialRepository = SQLAlchemyOrgProviderCredentialRepository(
+        session_factory=SessionFactory
     )
     _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
         session_factory=SessionFactory
     )
-    _organization_member_repository: OrganizationMemberRepository = (
-        SQLAlchemyOrganizationMemberRepository(session_factory=SessionFactory)
+    _organization_member_repository: OrganizationMemberRepository = SQLAlchemyOrganizationMemberRepository(
+        session_factory=SessionFactory
     )
     _organization_invitation_repository: OrganizationInvitationRepository = (
         SQLAlchemyOrganizationInvitationRepository(session_factory=SessionFactory)
@@ -434,9 +428,7 @@ _provider_api_key_resolver = GetEffectiveProviderApiKey(
     global_api_keys={
         "openai": settings.default_llm_api_key if settings.default_llm_provider == "openai" else "",
         "gemini": settings.default_llm_api_key if settings.default_llm_provider == "gemini" else "",
-        "anthropic": settings.default_llm_api_key
-        if settings.default_llm_provider == "anthropic"
-        else "",
+        "anthropic": settings.default_llm_api_key if settings.default_llm_provider == "anthropic" else "",
     },
 )
 if settings.storage_backend == "minio":
@@ -473,9 +465,7 @@ elif settings.text_chunker_backend == "native":
         chunk_overlap=settings.chunk_overlap,
     )
     _paragraph_chunker = ParagraphTextChunkerService(chunk_size=settings.chunk_size)
-    _heading_section_chunker = HeadingSectionTextChunkerService(
-        fallback_chunker=_fixed_window_chunker
-    )
+    _heading_section_chunker = HeadingSectionTextChunkerService(fallback_chunker=_fixed_window_chunker)
     _semantic_chunker = SemanticTextChunkerService(
         embedding_service=_semantic_embedding_service,
         chunk_size=settings.chunk_size,
@@ -526,12 +516,10 @@ elif settings.default_llm_provider == "ollama":
     )
 else:
     _llm_service = InMemoryLLMService()
-_project_embedding_service_resolver: ProjectEmbeddingServiceResolver = (
-    RuntimeProjectEmbeddingServiceResolver(
-        settings=settings,
-        provider_api_key_crypto_service=_provider_api_key_crypto_service,
-        default_embedding_service=_embedding_service,
-    )
+_project_embedding_service_resolver: ProjectEmbeddingServiceResolver = RuntimeProjectEmbeddingServiceResolver(
+    settings=settings,
+    provider_api_key_crypto_service=_provider_api_key_crypto_service,
+    default_embedding_service=_embedding_service,
 )
 _project_llm_service_resolver: ProjectLLMServiceResolver = RuntimeProjectLLMServiceResolver(
     settings=settings,
@@ -554,11 +542,9 @@ elif settings.reranker_backend == "mmr":
     _reranker_service = MmrDiversityRerankerService(lambda_param=0.85)
 else:
     _reranker_service = None
-_project_reranker_service_resolver: ProjectRerankerServiceResolver = (
-    RuntimeProjectRerankerServiceResolver(
-        settings=settings,
-        default_reranker_service=_reranker_service,
-    )
+_project_reranker_service_resolver: ProjectRerankerServiceResolver = RuntimeProjectRerankerServiceResolver(
+    settings=settings,
+    default_reranker_service=_reranker_service,
 )
 _conversation_title_generator: ConversationTitleGenerator = LLMConversationTitleGenerator(
     llm_service=_llm_service
@@ -959,9 +945,7 @@ def get_accept_organization_invitation_use_case() -> AcceptOrganizationInvitatio
     )
 
 
-def get_list_user_pending_organization_invitations_use_case() -> (
-    ListUserPendingOrganizationInvitations
-):
+def get_list_user_pending_organization_invitations_use_case() -> ListUserPendingOrganizationInvitations:
     return ListUserPendingOrganizationInvitations(
         user_repository=_user_repository,
         organization_repository=_organization_repository,

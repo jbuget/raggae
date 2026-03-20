@@ -170,9 +170,7 @@ class DocumentIndexingService:
         embedding_service: EmbeddingService,
     ) -> list[DocumentChunk]:
         chunk_payloads = [self._build_chunk_payload(chunk_text) for chunk_text in chunks]
-        indexed_payloads = [
-            payload for payload in chunk_payloads if str(payload["content"]).strip()
-        ]
+        indexed_payloads = [payload for payload in chunk_payloads if str(payload["content"]).strip()]
         if not indexed_payloads:
             return []
 

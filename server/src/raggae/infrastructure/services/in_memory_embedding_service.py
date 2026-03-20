@@ -114,9 +114,7 @@ class InMemoryEmbeddingService:
             # Hash word to a dimension bucket (deterministic)
             bucket = int(hashlib.md5(word.encode("utf-8")).hexdigest(), 16) % self._dimension
             # Alternate sign based on a second hash to reduce collisions
-            sign = (
-                1.0 if (int(hashlib.sha1(word.encode("utf-8")).hexdigest(), 16) % 2) == 0 else -1.0
-            )
+            sign = 1.0 if (int(hashlib.sha1(word.encode("utf-8")).hexdigest(), 16) % 2) == 0 else -1.0
             vector[bucket] += sign * tf
 
         # L2 normalize

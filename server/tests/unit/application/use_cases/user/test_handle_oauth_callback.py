@@ -199,9 +199,7 @@ class TestHandleOAuthCallback:
         entra_config: EntraConfig,
     ) -> None:
         # Given — Entra now returns a new email for same oid
-        mock_oauth_provider.exchange_code.return_value = make_user_info(
-            email="jeremy.buget@waat.fr"
-        )
+        mock_oauth_provider.exchange_code.return_value = make_user_info(email="jeremy.buget@waat.fr")
         existing = User(
             id=uuid4(),
             email="j.buget@waat.fr",

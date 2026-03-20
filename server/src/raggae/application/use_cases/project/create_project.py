@@ -109,15 +109,10 @@ class CreateProject:
                 f"System prompt exceeds {MAX_PROJECT_SYSTEM_PROMPT_LENGTH} characters"
             )
         if embedding_backend is not None and embedding_backend not in _SUPPORTED_EMBEDDING_BACKENDS:
-            raise InvalidProjectEmbeddingBackendError(
-                f"Unsupported embedding backend: {embedding_backend}"
-            )
+            raise InvalidProjectEmbeddingBackendError(f"Unsupported embedding backend: {embedding_backend}")
         if llm_backend is not None and llm_backend not in _SUPPORTED_LLM_BACKENDS:
             raise InvalidProjectLLMBackendError(f"Unsupported llm backend: {llm_backend}")
-        if (
-            retrieval_strategy is not None
-            and retrieval_strategy not in _SUPPORTED_RETRIEVAL_STRATEGIES
-        ):
+        if retrieval_strategy is not None and retrieval_strategy not in _SUPPORTED_RETRIEVAL_STRATEGIES:
             raise InvalidProjectRetrievalStrategyError(
                 f"Unsupported retrieval strategy: {retrieval_strategy}"
             )
@@ -129,9 +124,7 @@ class CreateProject:
                 f"and {MAX_PROJECT_RETRIEVAL_TOP_K}"
             )
         if retrieval_min_score is not None and not (
-            MIN_PROJECT_RETRIEVAL_MIN_SCORE
-            <= retrieval_min_score
-            <= MAX_PROJECT_RETRIEVAL_MIN_SCORE
+            MIN_PROJECT_RETRIEVAL_MIN_SCORE <= retrieval_min_score <= MAX_PROJECT_RETRIEVAL_MIN_SCORE
         ):
             raise InvalidProjectRetrievalMinScoreError(
                 f"retrieval_min_score must be between {MIN_PROJECT_RETRIEVAL_MIN_SCORE} "
@@ -148,9 +141,7 @@ class CreateProject:
                 f"{MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE}"
             )
         if chat_history_max_chars is not None and not (
-            MIN_PROJECT_CHAT_HISTORY_MAX_CHARS
-            <= chat_history_max_chars
-            <= MAX_PROJECT_CHAT_HISTORY_MAX_CHARS
+            MIN_PROJECT_CHAT_HISTORY_MAX_CHARS <= chat_history_max_chars <= MAX_PROJECT_CHAT_HISTORY_MAX_CHARS
         ):
             raise InvalidProjectChatHistoryMaxCharsError(
                 f"chat_history_max_chars must be between "
@@ -158,9 +149,7 @@ class CreateProject:
                 f"{MAX_PROJECT_CHAT_HISTORY_MAX_CHARS}"
             )
         if reranker_backend is not None and reranker_backend not in _SUPPORTED_RERANKER_BACKENDS:
-            raise InvalidProjectRerankerBackendError(
-                f"Unsupported reranker backend: {reranker_backend}"
-            )
+            raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
         if reranker_candidate_multiplier is not None and not (
             MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
             <= reranker_candidate_multiplier
@@ -201,8 +190,7 @@ class CreateProject:
         encrypted_llm_api_key = self._encrypt_api_key_if_provided(resolved_llm_api_key)
         effective_embedding_api_key_credential_id = (
             embedding_api_key_credential_id
-            if embedding_api_key_credential_id is not None
-            and resolved_embedding_api_key is not None
+            if embedding_api_key_credential_id is not None and resolved_embedding_api_key is not None
             else None
         )
         effective_llm_api_key_credential_id = (
@@ -290,9 +278,7 @@ class CreateProject:
                 f"{config_type}_backend is required when {config_type}_api_key is provided"
             )
         if backend not in {"openai", "gemini", "anthropic"}:
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key cannot be used with backend '{backend}'"
-            )
+            raise ProjectAPIKeyNotOwnedError(f"{config_type}_api_key cannot be used with backend '{backend}'")
         if self._provider_credential_repository is None:
             raise ProjectAPIKeyNotOwnedError("Provider credential repository is not configured")
         if self._provider_api_key_crypto_service is None:
@@ -324,8 +310,7 @@ class CreateProject:
             )
         if backend is None:
             raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_backend is required when "
-                f"{config_type}_api_key_credential_id is provided"
+                f"{config_type}_backend is required when {config_type}_api_key_credential_id is provided"
             )
         if backend not in {"openai", "gemini", "anthropic"}:
             raise ProjectAPIKeyNotOwnedError(

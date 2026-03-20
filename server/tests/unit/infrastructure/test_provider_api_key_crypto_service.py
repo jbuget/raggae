@@ -7,9 +7,7 @@ from raggae.infrastructure.services.fernet_provider_api_key_crypto_service impor
 
 def test_encrypt_and_decrypt_should_return_original_api_key() -> None:
     # Given
-    service = FernetProviderApiKeyCryptoService(
-        encryption_key="MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
-    )
+    service = FernetProviderApiKeyCryptoService(encryption_key="MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
     api_key = "sk-test-secret"
 
     # When
@@ -23,9 +21,7 @@ def test_encrypt_and_decrypt_should_return_original_api_key() -> None:
 
 def test_fingerprint_should_match_sha256_hex_digest() -> None:
     # Given
-    service = FernetProviderApiKeyCryptoService(
-        encryption_key="MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
-    )
+    service = FernetProviderApiKeyCryptoService(encryption_key="MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
     api_key = "AIza-test-secret"
 
     # When

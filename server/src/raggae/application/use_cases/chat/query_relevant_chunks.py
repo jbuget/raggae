@@ -90,18 +90,14 @@ class QueryRelevantChunks:
         query_embedding = (await embedding_service.embed_texts([query]))[0]
         strategy_used = _resolve_strategy(strategy, query)
         effective_min_score = self._min_score if min_score is None else min_score
-        effective_reranker_service = (
-            self._reranker_service if reranker_service is None else reranker_service
-        )
+        effective_reranker_service = self._reranker_service if reranker_service is None else reranker_service
         effective_reranker_candidate_multiplier = (
             self._reranker_candidate_multiplier
             if reranker_candidate_multiplier is None
             else reranker_candidate_multiplier
         )
 
-        fetch_limit = (
-            limit * effective_reranker_candidate_multiplier if effective_reranker_service else limit
-        )
+        fetch_limit = limit * effective_reranker_candidate_multiplier if effective_reranker_service else limit
 
         chunks = await self._chunk_retrieval_service.retrieve_chunks(
             project_id=project_id,
@@ -133,9 +129,7 @@ class QueryRelevantChunks:
             execution_time_ms=(perf_counter() - started_at) * 1000.0,
         )
 
-    async def _expand_context_window(
-        self, chunks: list[RetrievedChunkDTO]
-    ) -> list[RetrievedChunkDTO]:
+    async def _expand_context_window(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
         if self._context_window_size <= 0 or self._document_chunk_repository is None:
             return chunks
 
@@ -191,9 +185,7 @@ class QueryRelevantChunks:
         merged.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
         return merged
 
-    async def _resolve_parent_context(
-        self, chunks: list[RetrievedChunkDTO]
-    ) -> list[RetrievedChunkDTO]:
+    async def _resolve_parent_context(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
         if self._document_chunk_repository is None:
             return chunks
 

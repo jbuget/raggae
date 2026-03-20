@@ -11,9 +11,7 @@ from raggae.infrastructure.database.models.base import Base
 
 class MessageModel(Base):
     __tablename__ = "messages"
-    __table_args__ = (
-        CheckConstraint("role IN ('user', 'assistant', 'system')", name="ck_messages_role"),
-    )
+    __table_args__ = (CheckConstraint("role IN ('user', 'assistant', 'system')", name="ck_messages_role"),)
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     conversation_id: Mapped[UUID] = mapped_column(

@@ -44,8 +44,7 @@ class OllamaEmbeddingService:
             embedding = list(payload["embeddings"][0])
             if self._expected_dimension is not None and len(embedding) != self._expected_dimension:
                 raise EmbeddingGenerationError(
-                    "Invalid embedding dimension: "
-                    f"expected {self._expected_dimension}, got {len(embedding)}"
+                    f"Invalid embedding dimension: expected {self._expected_dimension}, got {len(embedding)}"
                 )
             return embedding
         except httpx.HTTPStatusError as exc:

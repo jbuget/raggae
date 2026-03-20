@@ -150,9 +150,7 @@ class TestBenchmarkRetrieval:
         assert sanitized_texts, "No test documents found"
 
         embedding_svc = InMemoryEmbeddingService(dimension=32)
-        chunk_texts, chunk_ids, embeddings, chunk_sources = await _build_index(
-            sanitized_texts, embedding_svc
-        )
+        chunk_texts, chunk_ids, embeddings, chunk_sources = await _build_index(sanitized_texts, embedding_svc)
 
         mmr_reranker = MmrDiversityRerankerService(lambda_param=0.85)
         rows: list[dict] = []
@@ -200,12 +198,8 @@ class TestBenchmarkRetrieval:
                 chunk_embeddings=candidate_embs,
                 query_embedding=q_emb,
             )
-            opt_retrieved = [
-                chunk_ids[dto.chunk_index] for dto in mmr_results if dto.chunk_index is not None
-            ]
-            opt_embs = [
-                embeddings[dto.chunk_index] for dto in mmr_results if dto.chunk_index is not None
-            ]
+            opt_retrieved = [chunk_ids[dto.chunk_index] for dto in mmr_results if dto.chunk_index is not None]
+            opt_embs = [embeddings[dto.chunk_index] for dto in mmr_results if dto.chunk_index is not None]
 
             # --- Metrics ---
             # precision@5
@@ -229,12 +223,8 @@ class TestBenchmarkRetrieval:
             rows.append(make_row(benchmark_name, label, "ctx_diversity", d_base, d_opt))
 
             # ctx_relevance_density
-            rel_base = sum(1 for r in base_retrieved if r in relevant_ids) / max(
-                len(base_retrieved), 1
-            )
-            rel_opt = sum(1 for r in opt_retrieved if r in relevant_ids) / max(
-                len(opt_retrieved), 1
-            )
+            rel_base = sum(1 for r in base_retrieved if r in relevant_ids) / max(len(base_retrieved), 1)
+            rel_opt = sum(1 for r in opt_retrieved if r in relevant_ids) / max(len(opt_retrieved), 1)
             rows.append(make_row(benchmark_name, label, "ctx_relevance_density", rel_base, rel_opt))
 
             # ctx_redundancy

@@ -32,17 +32,11 @@ def build_rag_prompt(
         context = "No context available."
 
     # --- Conversation history ---
-    history = (
-        "\n".join(conversation_history)
-        if conversation_history
-        else "No prior conversation history."
-    )
+    history = "\n".join(conversation_history) if conversation_history else "No prior conversation history."
 
     # --- Project instructions ---
     project_prompt = (project_system_prompt or "").strip()
-    project_section = (
-        f"\n\n## Project-level instructions\n{project_prompt}" if project_prompt else ""
-    )
+    project_section = f"\n\n## Project-level instructions\n{project_prompt}" if project_prompt else ""
 
     # --- Source list for attribution ---
     source_list = ""

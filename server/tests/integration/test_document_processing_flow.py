@@ -139,9 +139,7 @@ class TestDocumentProcessingFlow:
         text_chunker_service = AdaptiveTextChunkerService(
             fixed_window_chunker=fixed_window_chunker,
             paragraph_chunker=ParagraphTextChunkerService(chunk_size=30),
-            heading_section_chunker=HeadingSectionTextChunkerService(
-                fallback_chunker=fixed_window_chunker
-            ),
+            heading_section_chunker=HeadingSectionTextChunkerService(fallback_chunker=fixed_window_chunker),
         )
         embedding_service = InMemoryEmbeddingService(dimension=16)
         document_indexing_service = DocumentIndexingService(
@@ -206,9 +204,7 @@ class TestDocumentProcessingFlow:
         text_chunker_service = AdaptiveTextChunkerService(
             fixed_window_chunker=fixed_window_chunker,
             paragraph_chunker=ParagraphTextChunkerService(chunk_size=120),
-            heading_section_chunker=HeadingSectionTextChunkerService(
-                fallback_chunker=fixed_window_chunker
-            ),
+            heading_section_chunker=HeadingSectionTextChunkerService(fallback_chunker=fixed_window_chunker),
             context_window_size=6,
         )
         embedding_service = InMemoryEmbeddingService(dimension=16)
