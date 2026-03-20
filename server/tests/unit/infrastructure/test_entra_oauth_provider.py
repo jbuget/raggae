@@ -140,9 +140,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given — initiate first to store PKCE verifier
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
-            make_claims()
-        )
+        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(make_claims())
         with patch(
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,
@@ -288,18 +286,14 @@ class TestEntraOAuthProviderExchangeCode:
 
             # When / Then
             with pytest.raises(OAuthProviderError):
-                await provider.exchange_code(
-                    code="bad-code", state="csrf-token", config=config
-                )
+                await provider.exchange_code(code="bad-code", state="csrf-token", config=config)
 
     async def test_exchange_code_passes_pkce_verifier_to_msal(
         self, provider: EntraOAuthProvider, config: EntraConfig
     ) -> None:
         # Given
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
-            make_claims()
-        )
+        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(make_claims())
         with patch(
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,

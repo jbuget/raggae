@@ -68,9 +68,7 @@ class TestInMemoryOAuthCodeStore:
         # Then
         assert consumed is None
 
-    async def test_store_multiple_codes_independently(
-        self, store: InMemoryOAuthCodeStore
-    ) -> None:
+    async def test_store_multiple_codes_independently(self, store: InMemoryOAuthCodeStore) -> None:
         # Given
         await store.store("code-1", make_result("token-1"), ttl_seconds=30)
         await store.store("code-2", make_result("token-2"), ttl_seconds=30)

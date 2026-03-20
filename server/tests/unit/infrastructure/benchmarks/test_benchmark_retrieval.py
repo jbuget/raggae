@@ -164,7 +164,9 @@ class TestBenchmarkRetrieval:
             label = query[:30]
 
             relevant_ids = {
-                cid for cid, src in zip(chunk_ids, chunk_sources, strict=True) if _doc_matches(src, expected_kw)
+                cid
+                for cid, src in zip(chunk_ids, chunk_sources, strict=True)
+                if _doc_matches(src, expected_kw)
             }
 
             q_emb = (await embedding_svc.embed_texts([query]))[0]

@@ -42,9 +42,7 @@ async def entra_client(client: AsyncClient) -> AsyncIterator[AsyncClient]:
         patch.object(settings, "entra_client_id", "test-client-id"),
         patch.object(settings, "entra_client_secret", "test-secret"),
         patch.object(settings, "entra_tenant_id", "test-tenant"),
-        patch.object(
-            settings, "entra_redirect_uri", "https://test.example.com/callback"
-        ),
+        patch.object(settings, "entra_redirect_uri", "https://test.example.com/callback"),
         patch.object(settings, "entra_allowed_domains", ["waat.fr"]),
         patch.object(settings, "frontend_url", "http://localhost:3000"),
     ):
@@ -52,9 +50,7 @@ async def entra_client(client: AsyncClient) -> AsyncIterator[AsyncClient]:
         yield client
 
 
-async def _do_login(
-    client: AsyncClient, mock_app: MagicMock
-) -> tuple[str, str]:
+async def _do_login(client: AsyncClient, mock_app: MagicMock) -> tuple[str, str]:
     """Perform the /login step and return (csrf_token, raw_cookie_value)."""
     with patch(
         "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
@@ -94,9 +90,7 @@ async def _do_callback(
 
 
 class TestEntraLoginEndpoint:
-    async def test_e2e_entra_login_returns_501_when_disabled(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_login_returns_501_when_disabled(self, client: AsyncClient) -> None:
         # When — ENTRA_ENABLED=false (explicitly disabled)
         with patch.object(settings, "entra_enabled", False):
             resp = await client.get("/api/v1/auth/entra/login", follow_redirects=False)
@@ -104,9 +98,7 @@ class TestEntraLoginEndpoint:
         # Then
         assert resp.status_code == 501
 
-    async def test_e2e_entra_login_redirects_to_microsoft(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_login_redirects_to_microsoft(self, entra_client: AsyncClient) -> None:
         # Given
         mock_app = make_msal_app()
 
@@ -115,19 +107,13 @@ class TestEntraLoginEndpoint:
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,
         ):
-            resp = await entra_client.get(
-                "/api/v1/auth/entra/login", follow_redirects=False
-            )
+            resp = await entra_client.get("/api/v1/auth/entra/login", follow_redirects=False)
 
         # Then
         assert resp.status_code == 302
-        assert resp.headers["location"].startswith(
-            "https://login.microsoftonline.com/authorize"
-        )
+        assert resp.headers["location"].startswith("https://login.microsoftonline.com/authorize")
 
-    async def test_e2e_entra_login_sets_oauth_state_cookie(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_login_sets_oauth_state_cookie(self, entra_client: AsyncClient) -> None:
         # Given
         mock_app = make_msal_app()
 
@@ -136,9 +122,7 @@ class TestEntraLoginEndpoint:
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,
         ):
-            resp = await entra_client.get(
-                "/api/v1/auth/entra/login", follow_redirects=False
-            )
+            resp = await entra_client.get("/api/v1/auth/entra/login", follow_redirects=False)
 
         # Then — signed state cookie present
         assert "oauth_state" in resp.cookies
@@ -259,9 +243,7 @@ class TestEntraCallbackEndpoint:
 
 
 class TestEntraTokenEndpoint:
-    async def test_e2e_entra_token_returns_501_when_disabled(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_e2e_entra_token_returns_501_when_disabled(self, client: AsyncClient) -> None:
         # When — ENTRA_ENABLED=false (explicitly disabled)
         with patch.object(settings, "entra_enabled", False):
             resp = await client.post("/api/v1/auth/entra/token", json={"code": "any"})
@@ -273,9 +255,7 @@ class TestEntraTokenEndpoint:
         self, entra_client: AsyncClient
     ) -> None:
         # When
-        resp = await entra_client.post(
-            "/api/v1/auth/entra/token", json={"code": "invalid-code"}
-        )
+        resp = await entra_client.post("/api/v1/auth/entra/token", json={"code": "invalid-code"})
 
         # Then
         assert resp.status_code == 400
@@ -292,27 +272,21 @@ class TestEntraTokenEndpoint:
         await entra_client.post("/api/v1/auth/entra/token", json={"code": one_time_code})
 
         # When — second use
-        resp = await entra_client.post(
-            "/api/v1/auth/entra/token", json={"code": one_time_code}
-        )
+        resp = await entra_client.post("/api/v1/auth/entra/token", json={"code": one_time_code})
 
         # Then
         assert resp.status_code == 400
 
 
 class TestEntraFullFlow:
-    async def test_e2e_full_sso_flow_creates_new_user(
-        self, entra_client: AsyncClient
-    ) -> None:
+    async def test_e2e_full_sso_flow_creates_new_user(self, entra_client: AsyncClient) -> None:
         # Given
         mock_app = make_msal_app()
         csrf_token, raw_cookie = await _do_login(entra_client, mock_app)
         one_time_code = await _do_callback(entra_client, mock_app, csrf_token, raw_cookie)
 
         # When — exchange one-time code
-        resp = await entra_client.post(
-            "/api/v1/auth/entra/token", json={"code": one_time_code}
-        )
+        resp = await entra_client.post("/api/v1/auth/entra/token", json={"code": one_time_code})
 
         # Then
         assert resp.status_code == 200
@@ -339,9 +313,7 @@ class TestEntraFullFlow:
         mock_app = make_msal_app()
         csrf_token, raw_cookie = await _do_login(entra_client, mock_app)
         one_time_code = await _do_callback(entra_client, mock_app, csrf_token, raw_cookie)
-        resp = await entra_client.post(
-            "/api/v1/auth/entra/token", json={"code": one_time_code}
-        )
+        resp = await entra_client.post("/api/v1/auth/entra/token", json={"code": one_time_code})
 
         # Then
         assert resp.status_code == 200

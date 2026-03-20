@@ -948,11 +948,13 @@ class TestUpdateProject:
             updated_at=datetime.now(UTC),
         )
         mock_org_credential_repository.list_by_org_id_and_provider.return_value = [org_credential]
-        use_case = UpdateProject(
-            project_repository=mock_project_repository,
-            organization_member_repository=mock_organization_member_repository,
-        ).with_crypto_service(mock_crypto_service).with_org_credential_repository(
-            mock_org_credential_repository
+        use_case = (
+            UpdateProject(
+                project_repository=mock_project_repository,
+                organization_member_repository=mock_organization_member_repository,
+            )
+            .with_crypto_service(mock_crypto_service)
+            .with_org_credential_repository(mock_org_credential_repository)
         )
 
         # When
@@ -1013,11 +1015,13 @@ class TestUpdateProject:
             updated_at=datetime.now(UTC),
         )
         mock_org_credential_repository.list_by_org_id_and_provider.return_value = [org_credential]
-        use_case = UpdateProject(
-            project_repository=mock_project_repository,
-            organization_member_repository=mock_organization_member_repository,
-        ).with_crypto_service(mock_crypto_service).with_org_credential_repository(
-            mock_org_credential_repository
+        use_case = (
+            UpdateProject(
+                project_repository=mock_project_repository,
+                organization_member_repository=mock_organization_member_repository,
+            )
+            .with_crypto_service(mock_crypto_service)
+            .with_org_credential_repository(mock_org_credential_repository)
         )
 
         # When
@@ -1068,12 +1072,14 @@ class TestUpdateProject:
         )
         mock_provider_credential_repository.list_by_user_id_and_provider.return_value = []
         mock_org_credential_repository.list_by_org_id_and_provider.return_value = []
-        use_case = UpdateProject(
-            project_repository=mock_project_repository,
-            organization_member_repository=mock_organization_member_repository,
-            provider_credential_repository=mock_provider_credential_repository,
-        ).with_crypto_service(mock_crypto_service).with_org_credential_repository(
-            mock_org_credential_repository
+        use_case = (
+            UpdateProject(
+                project_repository=mock_project_repository,
+                organization_member_repository=mock_organization_member_repository,
+                provider_credential_repository=mock_provider_credential_repository,
+            )
+            .with_crypto_service(mock_crypto_service)
+            .with_org_credential_repository(mock_org_credential_repository)
         )
 
         # When / Then

@@ -216,19 +216,18 @@ class UpdateProject:
                 f"{MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER} and "
                 f"{MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER}"
             )
-        resolved_embedding_api_key, embedding_is_org = (
-            await self._resolve_api_key_from_credential_id(
-                user_id=user_id,
-                organization_id=project.organization_id,
-                backend=(
-                    embedding_backend
-                    if embedding_backend is not None
-                    else project.embedding_backend
-                ),
-                api_key=embedding_api_key,
-                api_key_credential_id=embedding_api_key_credential_id,
-                config_type="embedding",
-            )
+        (
+            resolved_embedding_api_key,
+            embedding_is_org,
+        ) = await self._resolve_api_key_from_credential_id(
+            user_id=user_id,
+            organization_id=project.organization_id,
+            backend=(
+                embedding_backend if embedding_backend is not None else project.embedding_backend
+            ),
+            api_key=embedding_api_key,
+            api_key_credential_id=embedding_api_key_credential_id,
+            config_type="embedding",
         )
         resolved_llm_api_key, llm_is_org = await self._resolve_api_key_from_credential_id(
             user_id=user_id,
