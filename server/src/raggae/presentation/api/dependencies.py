@@ -1024,6 +1024,7 @@ def get_list_project_snapshots_use_case() -> ListProjectSnapshots:
     return ListProjectSnapshots(
         project_repository=_project_repository,
         snapshot_repository=_project_snapshot_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -1031,6 +1032,7 @@ def get_get_project_snapshot_use_case() -> GetProjectSnapshot:
     return GetProjectSnapshot(
         project_repository=_project_repository,
         snapshot_repository=_project_snapshot_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
@@ -1038,6 +1040,7 @@ def get_restore_project_snapshot_use_case() -> RestoreProjectSnapshot:
     return RestoreProjectSnapshot(
         project_repository=_project_repository,
         snapshot_repository=_project_snapshot_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 

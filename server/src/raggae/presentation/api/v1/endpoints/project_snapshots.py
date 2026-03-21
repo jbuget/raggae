@@ -41,7 +41,7 @@ async def list_project_snapshots(
     offset: int = Query(default=0, ge=0),
 ) -> ProjectSnapshotListResponse:
     try:
-        snapshot_dtos = await use_case.execute(
+        snapshot_dtos, total = await use_case.execute(
             project_id=project_id,
             user_id=user_id,
             limit=limit,
@@ -92,7 +92,7 @@ async def list_project_snapshots(
 
     return ProjectSnapshotListResponse(
         snapshots=snapshots,
-        total=len(snapshots),
+        total=total,
         limit=limit,
         offset=offset,
     )

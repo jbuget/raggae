@@ -6,11 +6,16 @@ import pytest
 from raggae.application.use_cases.project_snapshot.restore_project_snapshot import (
     RestoreProjectSnapshot,
 )
+from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.domain.exceptions.project_snapshot_exceptions import ProjectSnapshotNotFoundError
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+from raggae.infrastructure.database.repositories.in_memory_organization_member_repository import (
+    InMemoryOrganizationMemberRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
@@ -29,14 +34,20 @@ class TestRestoreProjectSnapshot:
         return InMemoryProjectSnapshotRepository()
 
     @pytest.fixture
+    def org_member_repository(self) -> InMemoryOrganizationMemberRepository:
+        return InMemoryOrganizationMemberRepository()
+
+    @pytest.fixture
     def use_case(
         self,
         project_repository: InMemoryProjectRepository,
         snapshot_repository: InMemoryProjectSnapshotRepository,
+        org_member_repository: InMemoryOrganizationMemberRepository,
     ) -> RestoreProjectSnapshot:
         return RestoreProjectSnapshot(
             project_repository=project_repository,
             snapshot_repository=snapshot_repository,
+            organization_member_repository=org_member_repository,
         )
 
     @pytest.fixture
@@ -241,3 +252,175 @@ class TestRestoreProjectSnapshot:
         # Then
         assert result_dto.id == sample_project.id
         assert result_dto.name == sample_project.name
+
+    async def test_restore_project_snapshot_allows_org_owner(
+        self,
+        use_case: RestoreProjectSnapshot,
+        project_repository: InMemoryProjectRepository,
+        snapshot_repository: InMemoryProjectSnapshotRepository,
+        org_member_repository: InMemoryOrganizationMemberRepository,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        creator_user_id = uuid4()
+        org_owner_user_id = uuid4()
+
+        org_project = Project(
+            id=uuid4(),
+            user_id=creator_user_id,
+            organization_id=organization_id,
+            name="Org Project",
+            description="An org project",
+            system_prompt="You are helpful.",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            chunking_strategy=ChunkingStrategy.AUTO,
+            retrieval_strategy="hybrid",
+            retrieval_top_k=8,
+            retrieval_min_score=0.3,
+            chat_history_window_size=8,
+            chat_history_max_chars=4000,
+            reranking_enabled=False,
+            reranker_candidate_multiplier=3,
+        )
+        await project_repository.save(org_project)
+
+        snapshot = ProjectSnapshot.from_project(
+            project=org_project,
+            version_number=1,
+            created_by_user_id=creator_user_id,
+        )
+        await snapshot_repository.save(snapshot)
+
+        member = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=org_owner_user_id,
+            role=OrganizationMemberRole.OWNER,
+            joined_at=datetime.now(UTC),
+        )
+        await org_member_repository.save(member)
+
+        # When
+        result_dto = await use_case.execute(
+            project_id=org_project.id,
+            version_number=1,
+            user_id=org_owner_user_id,
+        )
+
+        # Then
+        assert result_dto.id == org_project.id
+
+    async def test_restore_project_snapshot_allows_org_maker(
+        self,
+        use_case: RestoreProjectSnapshot,
+        project_repository: InMemoryProjectRepository,
+        snapshot_repository: InMemoryProjectSnapshotRepository,
+        org_member_repository: InMemoryOrganizationMemberRepository,
+    ) -> None:
+        # Given
+        organization_id = uuid4()
+        creator_user_id = uuid4()
+        maker_user_id = uuid4()
+
+        org_project = Project(
+            id=uuid4(),
+            user_id=creator_user_id,
+            organization_id=organization_id,
+            name="Org Project",
+            description="An org project",
+            system_prompt="You are helpful.",
+            is_published=False,
+            created_at=datetime.now(UTC),
+            chunking_strategy=ChunkingStrategy.AUTO,
+            retrieval_strategy="hybrid",
+            retrieval_top_k=8,
+            retrieval_min_score=0.3,
+            chat_history_window_size=8,
+            chat_history_max_chars=4000,
+            reranking_enabled=False,
+            reranker_candidate_multiplier=3,
+        )
+        await project_repository.save(org_project)
+
+        snapshot = ProjectSnapshot.from_project(
+            project=org_project,
+            version_number=1,
+            created_by_user_id=creator_user_id,
+        )
+        await snapshot_repository.save(snapshot)
+
+        member = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=maker_user_id,
+            role=OrganizationMemberRole.MAKER,
+            joined_at=datetime.now(UTC),
+        )
+        await org_member_repository.save(member)
+
+        # When
+        result_dto = await use_case.execute(
+            project_id=org_project.id,
+            version_number=1,
+            user_id=maker_user_id,
+        )
+
+        # Then
+        assert result_dto.id == org_project.id
+
+    async def test_restore_project_snapshot_raises_for_org_user(
+        self,
+        use_case: RestoreProjectSnapshot,
+        project_repository: InMemoryProjectRepository,
+        snapshot_repository: InMemoryProjectSnapshotRepository,
+        org_member_repository: InMemoryOrganizationMemberRepository,
+    ) -> None:
+        # Given — org USER role cannot restore (read-only)
+        organization_id = uuid4()
+        creator_user_id = uuid4()
+        regular_user_id = uuid4()
+
+        org_project = Project(
+            id=uuid4(),
+            user_id=creator_user_id,
+            organization_id=organization_id,
+            name="Org Project",
+            description="An org project",
+            system_prompt="You are helpful.",
+            is_published=True,
+            created_at=datetime.now(UTC),
+            chunking_strategy=ChunkingStrategy.AUTO,
+            retrieval_strategy="hybrid",
+            retrieval_top_k=8,
+            retrieval_min_score=0.3,
+            chat_history_window_size=8,
+            chat_history_max_chars=4000,
+            reranking_enabled=False,
+            reranker_candidate_multiplier=3,
+        )
+        await project_repository.save(org_project)
+
+        snapshot = ProjectSnapshot.from_project(
+            project=org_project,
+            version_number=1,
+            created_by_user_id=creator_user_id,
+        )
+        await snapshot_repository.save(snapshot)
+
+        member = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=regular_user_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
+        )
+        await org_member_repository.save(member)
+
+        # When / Then — USER cannot restore even on published project
+        with pytest.raises(ProjectNotFoundError):
+            await use_case.execute(
+                project_id=org_project.id,
+                version_number=1,
+                user_id=regular_user_id,
+            )
