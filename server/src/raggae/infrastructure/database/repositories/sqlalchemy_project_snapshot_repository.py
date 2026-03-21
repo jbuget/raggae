@@ -91,7 +91,7 @@ class SQLAlchemyProjectSnapshotRepository:
             result = await session.execute(
                 select(func.count()).where(ProjectSnapshotModel.project_id == project_id)
             )
-            return result.scalar_one()
+            return int(result.scalar_one())
 
     async def get_next_version_number(self, project_id: UUID) -> int:
         async with self._session_factory() as session:
@@ -103,7 +103,7 @@ class SQLAlchemyProjectSnapshotRepository:
             max_version = result.scalar_one_or_none()
             if max_version is None:
                 return 1
-            return max_version + 1
+            return int(max_version) + 1
 
     def _to_entity(self, model: ProjectSnapshotModel) -> ProjectSnapshot:
         return ProjectSnapshot(
