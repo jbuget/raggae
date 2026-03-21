@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-const ENTRA_ENABLED = process.env.NEXT_PUBLIC_ENTRA_ENABLED === "true";
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
@@ -39,7 +38,7 @@ function MicrosoftIcon() {
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ entraEnabled = false }: { entraEnabled?: boolean }) {
   const t = useTranslations("auth.login");
   const router = useRouter();
   const searchParams = useSearchParams();
