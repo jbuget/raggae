@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
+from raggae.application.use_cases.project.generate_project_prompt import GenerateProjectPrompt
 from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.publish_project import PublishProject
@@ -32,6 +33,7 @@ from raggae.presentation.api.dependencies import (
     get_create_project_use_case,
     get_current_user_id,
     get_delete_project_use_case,
+    get_generate_project_prompt_use_case,
     get_get_project_use_case,
     get_list_projects_use_case,
     get_publish_project_use_case,
@@ -42,6 +44,8 @@ from raggae.presentation.api.dependencies import (
 )
 from raggae.presentation.api.v1.schemas.project_schemas import (
     CreateProjectRequest,
+    GeneratePromptRequest,
+    GeneratePromptResponse,
     ProjectResponse,
     ReindexProjectResponse,
     UpdateProjectRequest,
@@ -60,6 +64,20 @@ router = APIRouter(
 
 ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
 ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory", "mmr"]
+
+
+@router.post("/generate-prompt", status_code=status.HTTP_200_OK)
+async def generate_prompt(
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    data: GeneratePromptRequest,
+    use_case: Annotated[GenerateProjectPrompt, Depends(get_generate_project_prompt_use_case)],
+) -> GeneratePromptResponse:
+    system_prompt = await use_case.execute(
+        description=data.description,
+        name=data.name,
+        audience=data.audience,
+    )
+    return GeneratePromptResponse(system_prompt=system_prompt)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

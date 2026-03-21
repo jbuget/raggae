@@ -315,6 +315,44 @@
       "reindexDisableDescription": "Désactiver le mode parent-enfant nécessite de réindexer tous les documents du projet pour revenir au découpage standard.",
       "reindexDocumentsWarning": "Les documents existants ne fonctionneront pas correctement tant qu'ils n'auront pas été réindexés.",
       "confirmAndSave": "Confirmer et sauvegarder"
+    },
+    "wizard": {
+      "title": "Nouvel assistant",
+      "createSuccess": "Assistant créé !",
+      "createError": "Erreur lors de la création de l'assistant",
+      "uploadWarning": "Assistant créé, mais certains documents n'ont pas pu être uploadés",
+      "next": "Suivant",
+      "back": "Retour",
+      "creating": "Création...",
+      "skipAndCreate": "Ignorer et créer",
+      "createWithDocuments": "Créer avec {count} document(s)",
+      "nameLabel": "Nom *",
+      "namePlaceholder": "ex. : Assistant RH",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "À quoi sert cet assistant ? Pour qui est-il conçu ?",
+      "descriptionHint": "La description aide l'IA à générer un prompt système pertinent à l'étape suivante.",
+      "promptLabel": "Prompt système",
+      "promptPlaceholder": "Instructions pour l'assistant IA...",
+      "promptNearLimit": "Vous approchez la limite",
+      "promptOverLimit": "Limite dépassée — veuillez raccourcir le prompt",
+      "generatePrompt": "Générer avec l'IA",
+      "dropZoneLabel": "Déposez vos fichiers ici",
+      "selectFiles": "Sélectionner des fichiers",
+      "acceptedFormats": "Acceptés : PDF, DOCX, TXT, MD",
+      "filesSelected": "fichier(s) sélectionné(s)",
+      "step": {
+        "identity": "Identité",
+        "prompt": "Comportement",
+        "documents": "Documents"
+      },
+      "promptGenerator": {
+        "title": "Décrivez ce que doit faire votre assistant",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "ex. : Répondre aux questions RH sur les congés, la mutuelle et le règlement intérieur, en français, avec un ton professionnel",
+        "generate": "Générer",
+        "generating": "Génération...",
+        "cancel": "Annuler"
+      }
     }
   },
   "organizations": {

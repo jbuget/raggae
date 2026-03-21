@@ -315,6 +315,44 @@
       "reindexDisableDescription": "Disabling parent-child mode requires reindexing all project documents to return to standard chunking.",
       "reindexDocumentsWarning": "Existing documents will not work correctly until they have been reindexed.",
       "confirmAndSave": "Confirm and save"
+    },
+    "wizard": {
+      "title": "New assistant",
+      "createSuccess": "Assistant created!",
+      "createError": "Failed to create assistant",
+      "uploadWarning": "Assistant created but some documents could not be uploaded",
+      "next": "Next",
+      "back": "Back",
+      "creating": "Creating...",
+      "skipAndCreate": "Skip and create",
+      "createWithDocuments": "Create with {count} document(s)",
+      "nameLabel": "Name *",
+      "namePlaceholder": "e.g. HR Assistant",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What does this assistant do? Who is it for?",
+      "descriptionHint": "The description helps the AI generate a relevant system prompt in the next step.",
+      "promptLabel": "System prompt",
+      "promptPlaceholder": "Instructions for the AI assistant...",
+      "promptNearLimit": "Approaching the limit",
+      "promptOverLimit": "Limit exceeded — please shorten the prompt",
+      "generatePrompt": "Generate with AI",
+      "dropZoneLabel": "Drop your files here",
+      "selectFiles": "Select files",
+      "acceptedFormats": "Accepted: PDF, DOCX, TXT, MD",
+      "filesSelected": "file(s) selected",
+      "step": {
+        "identity": "Identity",
+        "prompt": "Behaviour",
+        "documents": "Documents"
+      },
+      "promptGenerator": {
+        "title": "Describe what your assistant should do",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "e.g. Answer HR questions about leave, mutual insurance and internal rules, in French, with a professional tone",
+        "generate": "Generate",
+        "generating": "Generating...",
+        "cancel": "Cancel"
+      }
     }
   },
   "organizations": {
