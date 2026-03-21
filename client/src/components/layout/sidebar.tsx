@@ -150,6 +150,9 @@ export function Sidebar() {
                       <Link href={`/projects/${project.id}/chat`}>{t("chat")}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href={`/projects/${project.id}/snapshots`}>{t("snapshots")}</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href={`/projects/${project.id}/settings`}>{t("settings")}</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -216,6 +219,9 @@ export function Sidebar() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild className="cursor-pointer">
                         <Link href={`/projects/${project.id}/chat`}>{t("chat")}</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href={`/projects/${project.id}/snapshots`}>{t("snapshots")}</Link>
                       </DropdownMenuItem>
                       {editableOrganizationIds.has(organization.id) && (
                         <DropdownMenuItem asChild className="cursor-pointer">
