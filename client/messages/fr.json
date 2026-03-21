@@ -279,6 +279,30 @@
         "chatHistoryMaxCharsNote": "Budget en caractères pour l'historique de conversation injecté dans le prompt LLM."
       }
     },
+    "snapshots": {
+      "title": "Historique des versions",
+      "description": "Consultez et restaurez les versions précédentes de la configuration de ce projet.",
+      "version": "Version",
+      "date": "Date",
+      "label": "Étiquette",
+      "createdBy": "Créé par",
+      "restoredFrom": "Restauré depuis v{version}",
+      "currentVersion": "Version courante",
+      "restore": "Restaurer",
+      "restoring": "Restauration...",
+      "restoreDialogTitle": "Restaurer la version {version}",
+      "restoreDialogDescription": "Cette action va remplacer la configuration actuelle du projet par celle de la version {version}. Un nouveau snapshot de la configuration actuelle sera créé avant la restauration. Cette action est réversible.",
+      "restoreSuccess": "Version {version} restaurée avec succès",
+      "restoreError": "Erreur lors de la restauration de la version {version}",
+      "empty": "Aucune version disponible pour le moment.",
+      "embeddingModel": "Embedding",
+      "llmModel": "LLM",
+      "retrievalStrategy": "Retrieval",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "pageInfo": "Page {current} sur {total}",
+      "loadError": "Impossible de charger l'historique des versions."
+    },
     "form": {
       "editTitle": "Modifier le projet",
       "newTitle": "Nouveau projet",
@@ -481,6 +505,7 @@
     "projectMenu": "Menu du projet {projectName}",
     "chat": "Chat",
     "settings": "Paramètres",
+    "snapshots": "Historique",
     "githubProject": "Projet GitHub"
   },
   "layout": {

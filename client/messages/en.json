@@ -279,6 +279,30 @@
         "chatHistoryMaxCharsNote": "Character budget for injected conversation history in the LLM prompt."
       }
     },
+    "snapshots": {
+      "title": "Version history",
+      "description": "View and restore previous versions of this project's configuration.",
+      "version": "Version",
+      "date": "Date",
+      "label": "Label",
+      "createdBy": "Created by",
+      "restoredFrom": "Restored from v{version}",
+      "currentVersion": "Current version",
+      "restore": "Restore",
+      "restoring": "Restoring...",
+      "restoreDialogTitle": "Restore version {version}",
+      "restoreDialogDescription": "This action will replace the current project configuration with the one from version {version}. A new snapshot of the current configuration will be created before restoring. This action is reversible.",
+      "restoreSuccess": "Version {version} restored successfully",
+      "restoreError": "Failed to restore version {version}",
+      "empty": "No versions available yet.",
+      "embeddingModel": "Embedding",
+      "llmModel": "LLM",
+      "retrievalStrategy": "Retrieval",
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {current} of {total}",
+      "loadError": "Failed to load version history."
+    },
     "form": {
       "editTitle": "Edit Project",
       "newTitle": "New Project",
@@ -481,6 +505,7 @@
     "projectMenu": "Project menu {projectName}",
     "chat": "Chat",
     "settings": "Settings",
+    "snapshots": "History",
     "githubProject": "GitHub project"
   },
   "layout": {
