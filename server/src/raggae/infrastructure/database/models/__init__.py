@@ -11,6 +11,7 @@ from raggae.infrastructure.database.models.organization_member_model import (
 )
 from raggae.infrastructure.database.models.organization_model import OrganizationModel
 from raggae.infrastructure.database.models.project_model import ProjectModel
+from raggae.infrastructure.database.models.project_snapshot_model import ProjectSnapshotModel
 from raggae.infrastructure.database.models.user_model import UserModel
 from raggae.infrastructure.database.models.user_model_provider_credential_model import (
     UserModelProviderCredentialModel,
@@ -26,6 +27,7 @@ __all__ = [
     "OrganizationMemberModel",
     "OrganizationModel",
     "ProjectModel",
+    "ProjectSnapshotModel",
     "UserModel",
     "UserModelProviderCredentialModel",
 ]
