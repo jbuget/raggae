@@ -20,6 +20,9 @@ from raggae.presentation.api.v1.endpoints.org_model_credentials import (
     router as org_model_credentials_router,
 )
 from raggae.presentation.api.v1.endpoints.organizations import router as organizations_router
+from raggae.presentation.api.v1.endpoints.project_snapshots import (
+    router as project_snapshots_router,
+)
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
 
 logger = logging.getLogger(__name__)
@@ -67,6 +70,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(entra_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
+app.include_router(project_snapshots_router, prefix="/api/v1")
 app.include_router(organizations_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
