@@ -56,16 +56,6 @@ export type OrganizationInvitationStatus =
   | "revoked"
   | "expired";
 
-export interface GeneratePromptRequest {
-  description: string;
-  name?: string;
-  audience?: string;
-}
-
-export interface GeneratePromptResponse {
-  system_prompt: string;
-}
-
 export interface CreateProjectRequest {
   name: string;
   organization_id?: string | null;

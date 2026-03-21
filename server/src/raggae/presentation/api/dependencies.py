@@ -150,7 +150,6 @@ from raggae.application.use_cases.organization.update_organization_member_role i
 )
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
-from raggae.application.use_cases.project.generate_project_prompt import GenerateProjectPrompt
 from raggae.application.use_cases.project.get_project import GetProject
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.publish_project import PublishProject
@@ -610,10 +609,6 @@ def get_update_user_full_name_use_case() -> UpdateUserFullName:
 
 def get_update_user_locale_use_case() -> UpdateUserLocale:
     return UpdateUserLocale(user_repository=_user_repository)
-
-
-def get_generate_project_prompt_use_case() -> GenerateProjectPrompt:
-    return GenerateProjectPrompt(llm_service=_llm_service)
 
 
 def get_create_project_use_case() -> CreateProject:

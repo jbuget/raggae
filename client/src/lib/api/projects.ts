@@ -1,23 +1,10 @@
 import type {
   CreateProjectRequest,
-  GeneratePromptRequest,
-  GeneratePromptResponse,
   ProjectResponse,
   ReindexProjectResponse,
   UpdateProjectRequest,
 } from "@/lib/types/api";
 import { apiFetch } from "./client";
-
-export function generateProjectPrompt(
-  token: string,
-  data: GeneratePromptRequest,
-): Promise<GeneratePromptResponse> {
-  return apiFetch<GeneratePromptResponse>("/projects/generate-prompt", {
-    method: "POST",
-    body: JSON.stringify(data),
-    token,
-  });
-}
 
 export function listProjects(token: string): Promise<ProjectResponse[]> {
   return apiFetch<ProjectResponse[]>("/projects", { token });

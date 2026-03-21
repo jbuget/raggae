@@ -151,13 +151,3 @@ class ReindexProjectResponse(BaseModel):
     total_documents: int
     indexed_documents: int
     failed_documents: int
-
-
-class GeneratePromptRequest(BaseModel):
-    description: str = Field(..., min_length=1)
-    name: str = ""
-    audience: str = ""
-
-
-class GeneratePromptResponse(BaseModel):
-    system_prompt: str
