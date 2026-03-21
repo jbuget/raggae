@@ -47,9 +47,7 @@ class ListOrganizationInvitations:
             raise OrganizationAccessDeniedError(
                 f"User {requester_user_id} cannot list invitations for organization {organization_id}"
             )
-        invitations = await self._organization_invitation_repository.find_by_organization_id(
-            organization_id
-        )
+        invitations = await self._organization_invitation_repository.find_by_organization_id(organization_id)
         return [
             OrganizationInvitationDTO.from_entity(invitation)
             for invitation in invitations

@@ -382,9 +382,7 @@ class TestReindexDocument:
         mock_document_indexing_service: AsyncMock,
     ) -> None:
         # Given
-        mock_project_repository.find_by_id.return_value = replace(
-            project, reindex_status="in_progress"
-        )
+        mock_project_repository.find_by_id.return_value = replace(project, reindex_status="in_progress")
         use_case = ReindexDocument(
             document_repository=mock_document_repository,
             project_repository=mock_project_repository,
@@ -475,9 +473,7 @@ class TestReindexDocument:
         )
 
         # When
-        result = await use_case.execute(
-            project_id=project_id, document_id=document_id, user_id=requester_id
-        )
+        result = await use_case.execute(project_id=project_id, document_id=document_id, user_id=requester_id)
 
         # Then
         assert result.id == document_id
@@ -522,6 +518,4 @@ class TestReindexDocument:
 
         # When / Then
         with pytest.raises(ProjectNotFoundError):
-            await use_case.execute(
-                project_id=project_id, document_id=document_id, user_id=requester_id
-            )
+            await use_case.execute(project_id=project_id, document_id=document_id, user_id=requester_id)

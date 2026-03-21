@@ -125,9 +125,7 @@ class TestAuthEndpoints:
         assert response.json()["email"] == "me@example.com"
         assert response.json()["full_name"] == "Test User"
 
-    async def test_register_user_response_contains_default_locale_en(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_register_user_response_contains_default_locale_en(self, client: AsyncClient) -> None:
         # When
         response = await client.post(
             "/api/v1/auth/register",

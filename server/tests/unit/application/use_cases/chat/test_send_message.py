@@ -436,9 +436,7 @@ class TestSendMessage:
         mock_llm_service: AsyncMock,
     ) -> None:
         # Given
-        mock_llm_service.generate_answer.return_value = (
-            "# Instructions Système Plateforme RAGGAE\nsecret"
-        )
+        mock_llm_service.generate_answer.return_value = "# Instructions Système Plateforme RAGGAE\nsecret"
 
         # When
         result = await use_case.execute(

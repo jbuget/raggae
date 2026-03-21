@@ -248,10 +248,7 @@ class SendMessage:
             conversation_history=conversation_history,
         )
         effective_llm_provider = self._resolve_effective_llm_provider(project)
-        if (
-            self._provider_api_key_resolver is not None
-            and effective_llm_provider in _API_KEY_PROVIDERS
-        ):
+        if self._provider_api_key_resolver is not None and effective_llm_provider in _API_KEY_PROVIDERS:
             await self._provider_api_key_resolver.resolve(
                 user_id=user_id,
                 provider=effective_llm_provider,
@@ -458,10 +455,7 @@ class SendMessage:
             conversation_history=conversation_history,
         )
         effective_llm_provider = self._resolve_effective_llm_provider(project)
-        if (
-            self._provider_api_key_resolver is not None
-            and effective_llm_provider in _API_KEY_PROVIDERS
-        ):
+        if self._provider_api_key_resolver is not None and effective_llm_provider in _API_KEY_PROVIDERS:
             await self._provider_api_key_resolver.resolve(
                 user_id=user_id,
                 provider=effective_llm_provider,
@@ -487,8 +481,7 @@ class SendMessage:
                 reliability_percent = self._compute_reliability_percent(relevant_chunks)
         except LLMGenerationError as exc:
             accumulated_answer = (
-                "I found relevant context but could not generate an answer right now. "
-                f"Provider error: {exc}"
+                f"I found relevant context but could not generate an answer right now. Provider error: {exc}"
             )
             source_documents = []
             reliability_percent = 0
@@ -634,11 +627,7 @@ class SendMessage:
 
         latest = latest_candidates[0]
         latest_message = await self._message_repository.find_latest_by_conversation_id(latest.id)
-        if (
-            latest_message is not None
-            and latest_message.role == "user"
-            and latest_message.content == message
-        ):
+        if latest_message is not None and latest_message.role == "user" and latest_message.content == message:
             return latest, True
         return latest, False
 

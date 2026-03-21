@@ -18,9 +18,7 @@ class TestDeactivateProviderApiKey:
         user_id = uuid4()
         credential_id = uuid4()
         credential_repo = AsyncMock()
-        credential_repo.list_by_user_id = AsyncMock(
-            return_value=[type("C", (), {"id": credential_id})()]
-        )
+        credential_repo.list_by_user_id = AsyncMock(return_value=[type("C", (), {"id": credential_id})()])
         project_repo = AsyncMock()
         project_repo.find_by_user_id = AsyncMock(return_value=[])
         use_case = DeactivateProviderApiKey(
@@ -54,9 +52,7 @@ class TestDeactivateProviderApiKey:
         user_id = uuid4()
         credential_id = uuid4()
         credential_repo = AsyncMock()
-        credential_repo.list_by_user_id = AsyncMock(
-            return_value=[type("C", (), {"id": credential_id})()]
-        )
+        credential_repo.list_by_user_id = AsyncMock(return_value=[type("C", (), {"id": credential_id})()])
         project = type(
             "P",
             (),
@@ -78,9 +74,7 @@ class TestDeactivateProviderApiKey:
         user_id = uuid4()
         credential_id = uuid4()
         credential_repo = AsyncMock()
-        credential_repo.list_by_user_id = AsyncMock(
-            return_value=[type("C", (), {"id": credential_id})()]
-        )
+        credential_repo.list_by_user_id = AsyncMock(return_value=[type("C", (), {"id": credential_id})()])
         project = type(
             "P",
             (),

@@ -204,9 +204,7 @@ class TestChatEndpoints:
         assert response.headers["content-type"].startswith("text/event-stream")
         assert "data:" in payload
         data_events = [
-            line.removeprefix("data: ").strip()
-            for line in payload.splitlines()
-            if line.startswith("data: ")
+            line.removeprefix("data: ").strip() for line in payload.splitlines() if line.startswith("data: ")
         ]
         parsed_events = [json.loads(raw) for raw in data_events]
         done_events = [event for event in parsed_events if event.get("done") is True]
@@ -278,8 +276,7 @@ class TestChatEndpoints:
 
         # When
         response = await client.get(
-            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/messages"
-            "?limit=1&offset=1",
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/messages?limit=1&offset=1",
             headers=headers,
         )
 

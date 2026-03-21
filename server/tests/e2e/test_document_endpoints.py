@@ -35,9 +35,7 @@ class TestDocumentEndpoints:
         )
         return headers, response.json()["id"]
 
-    async def test_upload_document_returns_detailed_batch_response(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_upload_document_returns_detailed_batch_response(self, client: AsyncClient) -> None:
         # Given
         headers, project_id = await self._create_project(client)
 
@@ -256,9 +254,7 @@ class TestDocumentEndpoints:
         # Then
         assert response.status_code == 404
 
-    async def test_upload_documents_rejects_more_than_twenty_files(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_upload_documents_rejects_more_than_twenty_files(self, client: AsyncClient) -> None:
         # Given
         headers, project_id = await self._create_project(client)
         files = [("files", (f"doc-{idx}.txt", b"hello", "text/plain")) for idx in range(21)]

@@ -70,8 +70,7 @@ class SQLAlchemyOrganizationInvitationRepository:
                 select(OrganizationInvitationModel).where(
                     OrganizationInvitationModel.organization_id == organization_id,
                     OrganizationInvitationModel.email == email,
-                    OrganizationInvitationModel.status
-                    == OrganizationInvitationStatus.PENDING.value,
+                    OrganizationInvitationModel.status == OrganizationInvitationStatus.PENDING.value,
                 )
             )
             model = result.scalars().first()
@@ -91,8 +90,7 @@ class SQLAlchemyOrganizationInvitationRepository:
             result = await session.execute(
                 select(OrganizationInvitationModel).where(
                     OrganizationInvitationModel.email == email.strip().lower(),
-                    OrganizationInvitationModel.status
-                    == OrganizationInvitationStatus.PENDING.value,
+                    OrganizationInvitationModel.status == OrganizationInvitationStatus.PENDING.value,
                 )
             )
             return [self._to_entity(model) for model in result.scalars().all()]

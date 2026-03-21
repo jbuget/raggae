@@ -46,9 +46,7 @@ class HandleOAuthCallback:
         self._token_service = token_service
 
     async def execute(self, code: str, state: OAuthState, config: EntraConfig) -> OAuthLoginResult:
-        user_info = await self._oauth_provider.exchange_code(
-            code=code, state=state.csrf_token, config=config
-        )
+        user_info = await self._oauth_provider.exchange_code(code=code, state=state.csrf_token, config=config)
 
         if not config.is_domain_allowed(user_info.email):
             logger.warning(
@@ -71,9 +69,7 @@ class HandleOAuthCallback:
 
         return await self._create_new_sso_user(user_info)
 
-    async def _login_existing_entra_user(
-        self, user: User, user_info: OAuthUserInfo
-    ) -> OAuthLoginResult:
+    async def _login_existing_entra_user(self, user: User, user_info: OAuthUserInfo) -> OAuthLoginResult:
         if not user.is_active:
             raise UserAlreadyInactiveError()
 

@@ -14,5 +14,8 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     globals: true,
     css: false,
+    env: {
+      NEXTAUTH_URL: "http://localhost:3000",
+    },
   },
 });

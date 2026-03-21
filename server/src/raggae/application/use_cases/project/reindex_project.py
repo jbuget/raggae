@@ -55,9 +55,7 @@ class ReindexProject:
                     document = document.transition_to(DocumentStatus.PROCESSING)
                     await self._document_repository.save(document)
 
-                file_content, _ = await self._file_storage_service.download_file(
-                    document.storage_key
-                )
+                file_content, _ = await self._file_storage_service.download_file(document.storage_key)
                 embedding_service = (
                     self._project_embedding_service_resolver.resolve(project)
                     if self._project_embedding_service_resolver is not None

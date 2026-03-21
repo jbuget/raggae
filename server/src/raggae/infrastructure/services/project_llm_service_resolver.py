@@ -51,11 +51,7 @@ class ProjectLLMServiceResolver:
                 keep_alive=self._settings.ollama_keep_alive,
             )
 
-        return (
-            self._default_llm_service
-            if self._default_llm_service is not None
-            else InMemoryLLMService()
-        )
+        return self._default_llm_service if self._default_llm_service is not None else InMemoryLLMService()
 
     def _resolve_api_key(self, encrypted_api_key: str | None, fallback_api_key: str) -> str:
         if encrypted_api_key is None or encrypted_api_key.strip() == "":

@@ -77,9 +77,7 @@ class TestActivateOrgProviderApiKey:
             return_value=_make_member(OrganizationMemberRole.OWNER)
         )
         cred_repo = AsyncMock()
-        cred_repo.list_by_org_id = AsyncMock(
-            return_value=[_make_credential(org_id, credential_id), other]
-        )
+        cred_repo.list_by_org_id = AsyncMock(return_value=[_make_credential(org_id, credential_id), other])
         use_case = ActivateOrgProviderApiKey(
             org_credential_repository=cred_repo,
             organization_member_repository=member_repo,

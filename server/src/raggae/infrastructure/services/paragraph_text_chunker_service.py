@@ -30,9 +30,7 @@ class ParagraphTextChunkerService:
         if not normalized:
             return []
 
-        paragraphs = [
-            paragraph.strip() for paragraph in normalized.split("\n\n") if paragraph.strip()
-        ]
+        paragraphs = [paragraph.strip() for paragraph in normalized.split("\n\n") if paragraph.strip()]
         if not paragraphs:
             return []
 

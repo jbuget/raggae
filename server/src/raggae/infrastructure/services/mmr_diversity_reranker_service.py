@@ -116,9 +116,7 @@ class MmrDiversityRerankerService:
                 rel = len(query_words & chunk_words) / max(len(query_words), 1)
 
                 if selected:
-                    max_sim = max(
-                        _word_overlap(chunks[idx].content, chunks[s].content) for s in selected
-                    )
+                    max_sim = max(_word_overlap(chunks[idx].content, chunks[s].content) for s in selected)
                 else:
                     max_sim = 0.0
 

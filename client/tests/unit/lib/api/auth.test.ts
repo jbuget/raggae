@@ -1,11 +1,7 @@
 import { http, HttpResponse } from "msw";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { login, register } from "@/lib/api/auth";
 import { server } from "../../../helpers/msw-server";
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 describe("register", () => {
   it("should register a new user", async () => {

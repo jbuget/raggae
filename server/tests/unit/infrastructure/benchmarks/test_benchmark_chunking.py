@@ -112,9 +112,7 @@ class TestBenchmarkChunkingFixedVsSemantic:
             ec_base = float(empty_chunk_count(baseline_chunks))
             ec_opt = float(empty_chunk_count(optimized_chunks))
             rows.append(
-                make_row(
-                    benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False
-                )
+                make_row(benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False)
             )
 
             # single_word_chunks – lower is better
@@ -178,9 +176,7 @@ class TestBenchmarkChunkingFixedVsParagraph:
             ec_base = float(empty_chunk_count(baseline_chunks))
             ec_opt = float(empty_chunk_count(optimized_chunks))
             rows.append(
-                make_row(
-                    benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False
-                )
+                make_row(benchmark_name, label, "empty_chunks", ec_base, ec_opt, higher_is_better=False)
             )
 
             sw_base = float(single_word_chunk_count(baseline_chunks))

@@ -48,11 +48,7 @@ class DeleteConversation:
                     raise ProjectNotFoundError(f"Project {project_id} not found")
 
         conversation = await self._conversation_repository.find_by_id(conversation_id)
-        if (
-            conversation is None
-            or conversation.project_id != project_id
-            or conversation.user_id != user_id
-        ):
+        if conversation is None or conversation.project_id != project_id or conversation.user_id != user_id:
             raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
 
         await self._conversation_repository.delete(conversation_id)

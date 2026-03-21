@@ -281,8 +281,6 @@ async def get_document_file(
         content=document_file.content,
         media_type=document_file.content_type,
         headers={
-            "Content-Disposition": (
-                f"inline; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"
-            ),
+            "Content-Disposition": (f"inline; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"),
         },
     )

@@ -106,9 +106,7 @@ class TestMultiFormatDocumentTextExtractor:
         result = await extractor.extract_text(
             file_name="file.docx",
             content=b"PK...",
-            content_type=(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            ),
+            content_type=("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
         )
 
         # Then
@@ -132,9 +130,7 @@ class TestMultiFormatDocumentTextExtractor:
         result = await extractor.extract_text(
             file_name="meeting.docx",
             content=content,
-            content_type=(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            ),
+            content_type=("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
         )
 
         # Then

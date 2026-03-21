@@ -22,9 +22,7 @@ class TestPassword:
             ("", "empty"),
         ],
     )
-    def test_create_password_with_weak_format_raises_error(
-        self, weak_password: str, reason: str
-    ) -> None:
+    def test_create_password_with_weak_format_raises_error(self, weak_password: str, reason: str) -> None:
         # When / Then
         with pytest.raises(WeakPasswordError):
             Password(weak_password)

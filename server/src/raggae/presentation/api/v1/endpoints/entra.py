@@ -131,9 +131,7 @@ async def entra_callback(
     await code_store.store(one_time_code, login_result, ttl_seconds=30)
 
     redirect_url = parsed_state.redirect_url or "/"
-    frontend_callback = (
-        f"{settings.frontend_url}/auth/callback?code={one_time_code}&redirect={redirect_url}"
-    )
+    frontend_callback = f"{settings.frontend_url}/auth/callback?code={one_time_code}&redirect={redirect_url}"
 
     response = RedirectResponse(url=frontend_callback, status_code=302)
     response.delete_cookie(key=_COOKIE_NAME)

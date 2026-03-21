@@ -140,17 +140,13 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given — initiate first to store PKCE verifier
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
-            make_claims()
-        )
+        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(make_claims())
         with patch(
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         # Then
         assert result.provider_id == "oid-abc-123"
@@ -169,9 +165,7 @@ class TestEntraOAuthProviderExchangeCode:
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         # Then — mail takes priority
         assert result.email == "mail@waat.fr"
@@ -189,15 +183,11 @@ class TestEntraOAuthProviderExchangeCode:
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         assert result.email == "pref@waat.fr"
 
-    async def test_email_falls_back_to_upn(
-        self, provider: EntraOAuthProvider, config: EntraConfig
-    ) -> None:
+    async def test_email_falls_back_to_upn(self, provider: EntraOAuthProvider, config: EntraConfig) -> None:
         # Given — no mail, no preferred_username
         mock_app = make_msal_app()
         mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
@@ -208,9 +198,7 @@ class TestEntraOAuthProviderExchangeCode:
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         assert result.email == "upn@waat.fr"
 
@@ -227,9 +215,7 @@ class TestEntraOAuthProviderExchangeCode:
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         assert result.full_name == "Jérémy Buget"
 
@@ -246,9 +232,7 @@ class TestEntraOAuthProviderExchangeCode:
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         assert result.full_name == "Jérémy Buget"
 
@@ -265,9 +249,7 @@ class TestEntraOAuthProviderExchangeCode:
             return_value=mock_app,
         ):
             await provider.get_authorization_url(state="csrf-token", config=config)
-            result = await provider.exchange_code(
-                code="auth-code", state="csrf-token", config=config
-            )
+            result = await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
         assert result.full_name == "j.buget"
 
@@ -288,18 +270,14 @@ class TestEntraOAuthProviderExchangeCode:
 
             # When / Then
             with pytest.raises(OAuthProviderError):
-                await provider.exchange_code(
-                    code="bad-code", state="csrf-token", config=config
-                )
+                await provider.exchange_code(code="bad-code", state="csrf-token", config=config)
 
     async def test_exchange_code_passes_pkce_verifier_to_msal(
         self, provider: EntraOAuthProvider, config: EntraConfig
     ) -> None:
         # Given
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
-            make_claims()
-        )
+        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(make_claims())
         with patch(
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,

@@ -199,14 +199,12 @@ class TestListDocumentChunks:
             is_published=False,
             created_at=datetime.now(UTC),
         )
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.MAKER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.MAKER,
+            joined_at=datetime.now(UTC),
         )
         mock_document_repository.find_by_id.return_value = Document(
             id=document_id,
@@ -220,9 +218,7 @@ class TestListDocumentChunks:
         mock_document_chunk_repository.find_by_document_id.return_value = []
 
         # When
-        result = await use_case.execute(
-            project_id=project_id, document_id=document_id, user_id=requester_id
-        )
+        result = await use_case.execute(project_id=project_id, document_id=document_id, user_id=requester_id)
 
         # Then
         assert result.document_id == document_id
@@ -247,14 +243,12 @@ class TestListDocumentChunks:
             is_published=False,
             created_at=datetime.now(UTC),
         )
-        mock_organization_member_repository.find_by_organization_and_user.return_value = (
-            OrganizationMember(
-                id=uuid4(),
-                organization_id=organization_id,
-                user_id=requester_id,
-                role=OrganizationMemberRole.USER,
-                joined_at=datetime.now(UTC),
-            )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = OrganizationMember(
+            id=uuid4(),
+            organization_id=organization_id,
+            user_id=requester_id,
+            role=OrganizationMemberRole.USER,
+            joined_at=datetime.now(UTC),
         )
 
         # When / Then

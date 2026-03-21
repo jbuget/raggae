@@ -109,9 +109,7 @@ class TestOrganizationInvitationUseCases:
             email="user@example.com",
             role=OrganizationMemberRole.MAKER,
         )
-        listed = await list_use_case.execute(
-            organization_id=org.id, requester_user_id=owner.user_id
-        )
+        listed = await list_use_case.execute(organization_id=org.id, requester_user_id=owner.user_id)
         renewed = await resend.execute(
             organization_id=org.id,
             requester_user_id=owner.user_id,

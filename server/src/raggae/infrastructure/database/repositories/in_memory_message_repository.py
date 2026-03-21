@@ -19,20 +19,14 @@ class InMemoryMessageRepository:
         offset: int = 0,
     ) -> list[Message]:
         messages = [
-            message
-            for message in self._messages.values()
-            if message.conversation_id == conversation_id
+            message for message in self._messages.values() if message.conversation_id == conversation_id
         ]
         messages.sort(key=lambda item: item.created_at)
         return messages[offset : offset + limit]
 
     async def count_by_conversation_id(self, conversation_id: UUID) -> int:
         return len(
-            [
-                message
-                for message in self._messages.values()
-                if message.conversation_id == conversation_id
-            ]
+            [message for message in self._messages.values() if message.conversation_id == conversation_id]
         )
 
     async def find_latest_by_conversation_id(
@@ -40,9 +34,7 @@ class InMemoryMessageRepository:
         conversation_id: UUID,
     ) -> Message | None:
         messages = [
-            message
-            for message in self._messages.values()
-            if message.conversation_id == conversation_id
+            message for message in self._messages.values() if message.conversation_id == conversation_id
         ]
         if not messages:
             return None

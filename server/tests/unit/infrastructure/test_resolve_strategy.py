@@ -40,9 +40,7 @@ class TestResolveStrategy:
         # When / Then
         for query in french_queries:
             result = resolve_strategy("auto", query)
-            assert result == "hybrid", (
-                f"Expected 'hybrid' for French query '{query}', got '{result}'"
-            )
+            assert result == "hybrid", f"Expected 'hybrid' for French query '{query}', got '{result}'"
 
     def test_auto_double_quotes_resolve_to_fulltext(self, resolve_strategy: type) -> None:
         """Given a query with double quotes in auto mode, it should resolve to fulltext."""

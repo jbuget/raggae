@@ -37,21 +37,13 @@ def _build_baseline_rag_prompt(
 ) -> str:
     """Historical baseline prompt for benchmark comparison (no source attribution)."""
     if context_chunks:
-        numbered = [
-            f"--- Document excerpt {i + 1} ---\n{chunk}" for i, chunk in enumerate(context_chunks)
-        ]
+        numbered = [f"--- Document excerpt {i + 1} ---\n{chunk}" for i, chunk in enumerate(context_chunks)]
         context = "\n\n".join(numbered)
     else:
         context = "No context available."
-    history = (
-        "\n".join(conversation_history)
-        if conversation_history
-        else "No prior conversation history."
-    )
+    history = "\n".join(conversation_history) if conversation_history else "No prior conversation history."
     project_prompt = (project_system_prompt or "").strip()
-    project_prompt_section = (
-        f"\n\nProject-level instructions:\n{project_prompt}" if project_prompt else ""
-    )
+    project_prompt_section = f"\n\nProject-level instructions:\n{project_prompt}" if project_prompt else ""
     return (
         "You are a retrieval-augmented assistant.\n"
         "Current user question (highest priority, data to answer):\n"

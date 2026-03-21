@@ -81,9 +81,7 @@ class TestProjectEndpoints:
         assert data["parent_child_chunking"] is False
         assert "id" in data
 
-    async def test_create_project_with_chunking_settings_returns_201(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_create_project_with_chunking_settings_returns_201(self, client: AsyncClient) -> None:
         # Given
         headers = await self._auth_headers(client)
 

@@ -23,9 +23,7 @@ class DocumentChunkModel(Base):
     )
     chunk_index: Mapped[int] = mapped_column(Integer(), nullable=False)
     content: Mapped[str] = mapped_column(Text(), nullable=False)
-    embedding: Mapped[list[float]] = mapped_column(
-        Vector(settings.embedding_dimension), nullable=False
-    )
+    embedding: Mapped[list[float]] = mapped_column(Vector(settings.embedding_dimension), nullable=False)
     metadata_json: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     chunk_level: Mapped[str] = mapped_column(String(16), nullable=False, server_default="standard")

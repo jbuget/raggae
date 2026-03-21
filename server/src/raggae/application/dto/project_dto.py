@@ -46,13 +46,9 @@ class ProjectDTO:
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
         embedding_masked = (
-            f"...{project.embedding_api_key_encrypted[-4:]}"
-            if project.embedding_api_key_encrypted
-            else None
+            f"...{project.embedding_api_key_encrypted[-4:]}" if project.embedding_api_key_encrypted else None
         )
-        llm_masked = (
-            f"...{project.llm_api_key_encrypted[-4:]}" if project.llm_api_key_encrypted else None
-        )
+        llm_masked = f"...{project.llm_api_key_encrypted[-4:]}" if project.llm_api_key_encrypted else None
         return cls(
             id=project.id,
             user_id=project.user_id,

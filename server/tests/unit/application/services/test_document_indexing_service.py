@@ -130,9 +130,7 @@ class TestDocumentIndexingService:
         mock_text_sanitizer_service.sanitize_text.assert_called_once_with(
             "hello\x00 world\r\n\r\nfrom raggae   "
         )
-        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
-            "hello world\n\nfrom raggae"
-        )
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with("hello world\n\nfrom raggae")
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
@@ -140,9 +138,7 @@ class TestDocumentIndexingService:
         )
         mock_embedding_service.embed_texts.assert_called_once_with(["hello world", "from raggae"])
         mock_document_chunk_repository.replace_document_chunks.assert_called_once()
-        assert (
-            mock_document_chunk_repository.replace_document_chunks.call_args.args[0] == document.id
-        )
+        assert mock_document_chunk_repository.replace_document_chunks.call_args.args[0] == document.id
         saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert len(saved_chunks) == 2
         assert saved_chunks[0].content == "hello world"
@@ -176,9 +172,7 @@ class TestDocumentIndexingService:
         result = await service.run_pipeline(document, project, b"hello world from raggae")
 
         # Then
-        mock_document_structure_analyzer.analyze_text.assert_called_once_with(
-            "hello world\n\nfrom raggae"
-        )
+        mock_document_structure_analyzer.analyze_text.assert_called_once_with("hello world\n\nfrom raggae")
         mock_text_chunker_service.chunk_text.assert_called_once_with(
             "hello world\n\nfrom raggae",
             strategy=ChunkingStrategy.PARAGRAPH,
@@ -216,9 +210,7 @@ class TestDocumentIndexingService:
 
         # Then
         mock_embedding_service.embed_texts.assert_not_called()
-        mock_document_chunk_repository.replace_document_chunks.assert_called_once_with(
-            document.id, []
-        )
+        mock_document_chunk_repository.replace_document_chunks.assert_called_once_with(document.id, [])
         assert result.processing_strategy is not None
 
     async def test_run_pipeline_metadata_fields(
@@ -299,9 +291,7 @@ class TestDocumentIndexingService:
         await service.run_pipeline(pdf_document, project, b"%PDF-1.7")
 
         # Then
-        mock_embedding_service.embed_texts.assert_called_once_with(
-            ["Décision A", "Suite \nDécision B"]
-        )
+        mock_embedding_service.embed_texts.assert_called_once_with(["Décision A", "Suite \nDécision B"])
         saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert saved_chunks[0].content == "Décision A"
         assert saved_chunks[0].metadata_json["pages"] == [1]
@@ -351,9 +341,7 @@ class TestDocumentIndexingService:
         mock_language_detector.detect_language.assert_called_once_with(
             "hello\x00 world\r\n\r\nfrom raggae   "
         )
-        mock_keyword_extractor.extract_keywords.assert_called_once_with(
-            "hello world\n\nfrom raggae"
-        )
+        mock_keyword_extractor.extract_keywords.assert_called_once_with("hello world\n\nfrom raggae")
 
     async def test_run_pipeline_metadata_extractor_failure_does_not_block_pipeline(
         self,

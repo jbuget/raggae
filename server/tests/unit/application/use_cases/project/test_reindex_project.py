@@ -65,9 +65,7 @@ class TestReindexProject:
         file_storage_service = AsyncMock()
         file_storage_service.download_file.return_value = (b"hello", "text/plain")
         indexing_service = AsyncMock()
-        indexing_service.run_pipeline.return_value = replace(
-            document, status=DocumentStatus.PROCESSING
-        )
+        indexing_service.run_pipeline.return_value = replace(document, status=DocumentStatus.PROCESSING)
 
         use_case = ReindexProject(
             project_repository=project_repository,
@@ -106,9 +104,7 @@ class TestReindexProject:
             FileNotFoundError("missing"),
         ]
         indexing_service = AsyncMock()
-        indexing_service.run_pipeline.return_value = replace(
-            document, status=DocumentStatus.PROCESSING
-        )
+        indexing_service.run_pipeline.return_value = replace(document, status=DocumentStatus.PROCESSING)
 
         use_case = ReindexProject(
             project_repository=project_repository,
@@ -135,9 +131,7 @@ class TestReindexProject:
         with pytest.raises(ProjectNotFoundError):
             await use_case.execute(project_id=project_id, user_id=uuid4())
 
-    async def test_reindex_project_already_in_progress_raises(
-        self, project_id, user_id, project
-    ) -> None:
+    async def test_reindex_project_already_in_progress_raises(self, project_id, user_id, project) -> None:
         in_progress = replace(project, reindex_status="in_progress")
         use_case = ReindexProject(
             project_repository=AsyncMock(find_by_id=AsyncMock(return_value=in_progress)),
@@ -183,9 +177,7 @@ class TestReindexProject:
         file_storage_service = AsyncMock()
         file_storage_service.download_file.return_value = (b"hello", "text/plain")
         indexing_service = AsyncMock()
-        indexing_service.run_pipeline.return_value = replace(
-            document, status=DocumentStatus.PROCESSING
-        )
+        indexing_service.run_pipeline.return_value = replace(document, status=DocumentStatus.PROCESSING)
         resolver = Mock()
         embedding_service = AsyncMock()
         resolver.resolve.return_value = embedding_service

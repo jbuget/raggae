@@ -1,13 +1,5 @@
 import { http, HttpResponse } from "msw";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   deleteConversation,
   listConversations,
@@ -16,10 +8,6 @@ import {
   streamMessage,
 } from "@/lib/api/chat";
 import { server } from "../../../helpers/msw-server";
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 describe("sendMessage", () => {
   it("should send a message and return response", async () => {

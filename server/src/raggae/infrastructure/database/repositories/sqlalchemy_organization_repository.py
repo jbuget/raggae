@@ -59,9 +59,7 @@ class SQLAlchemyOrganizationRepository:
 
     async def find_by_slug(self, slug: str) -> Organization | None:
         async with self._session_factory() as session:
-            result = await session.execute(
-                select(OrganizationModel).where(OrganizationModel.slug == slug)
-            )
+            result = await session.execute(select(OrganizationModel).where(OrganizationModel.slug == slug))
             model = result.scalar_one_or_none()
             if model is None:
                 return None
@@ -79,9 +77,7 @@ class SQLAlchemyOrganizationRepository:
                     OrganizationInvitationModel.organization_id == organization_id
                 )
             )
-            await session.execute(
-                delete(OrganizationModel).where(OrganizationModel.id == organization_id)
-            )
+            await session.execute(delete(OrganizationModel).where(OrganizationModel.id == organization_id))
             await session.commit()
 
     @staticmethod

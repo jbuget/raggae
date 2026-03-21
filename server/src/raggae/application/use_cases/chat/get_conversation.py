@@ -53,11 +53,7 @@ class GetConversation:
                     raise ProjectNotFoundError(f"Project {project_id} not found")
 
         conversation = await self._conversation_repository.find_by_id(conversation_id)
-        if (
-            conversation is None
-            or conversation.project_id != project_id
-            or conversation.user_id != user_id
-        ):
+        if conversation is None or conversation.project_id != project_id or conversation.user_id != user_id:
             raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
 
         message_count = await self._message_repository.count_by_conversation_id(conversation.id)

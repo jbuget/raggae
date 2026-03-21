@@ -68,8 +68,6 @@ class Organization:
             raise LastOrganizationOwnerError("Cannot demote the last owner of the organization")
 
     @staticmethod
-    def ensure_can_leave(
-        leaving_member: OrganizationMember, members: list[OrganizationMember]
-    ) -> None:
+    def ensure_can_leave(leaving_member: OrganizationMember, members: list[OrganizationMember]) -> None:
         """Raise when leaving would leave the organization without owner."""
         Organization.ensure_can_remove_member(target_member=leaving_member, members=members)

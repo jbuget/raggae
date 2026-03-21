@@ -147,17 +147,14 @@ class TestBenchmarkEmbedding:
             # Baseline retrieval
             q_emb_plain = (await plain_emb.embed_texts([query]))[0]
             plain_scores = [
-                (str(i), cosine_similarity(q_emb_plain, emb))
-                for i, emb in enumerate(plain_embeddings)
+                (str(i), cosine_similarity(q_emb_plain, emb)) for i, emb in enumerate(plain_embeddings)
             ]
             plain_scores.sort(key=lambda x: x[1], reverse=True)
             plain_retrieved = [s[0] for s in plain_scores]
 
             # Optimized retrieval
             q_emb_ctx = await ctx_emb.embed_query(query)
-            ctx_scores = [
-                (str(i), cosine_similarity(q_emb_ctx, emb)) for i, emb in enumerate(ctx_embeddings)
-            ]
+            ctx_scores = [(str(i), cosine_similarity(q_emb_ctx, emb)) for i, emb in enumerate(ctx_embeddings)]
             ctx_scores.sort(key=lambda x: x[1], reverse=True)
             ctx_retrieved = [s[0] for s in ctx_scores]
 

@@ -126,7 +126,7 @@ export function LoginForm({ entraEnabled = false }: { entraEnabled?: boolean }) 
               {t("register")}
             </a>
           </p>
-          {ENTRA_ENABLED && (
+          {entraEnabled && (
             <>
               <div className="flex items-center gap-3">
                 <Separator className="flex-1" />

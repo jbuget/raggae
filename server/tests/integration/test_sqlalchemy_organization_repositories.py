@@ -95,9 +95,7 @@ class TestSQLAlchemyOrganizationRepositories:
         invited_user_id = await self._create_user(session_factory, "member@example.com")
         org_repo = SQLAlchemyOrganizationRepository(session_factory=session_factory)
         member_repo = SQLAlchemyOrganizationMemberRepository(session_factory=session_factory)
-        invitation_repo = SQLAlchemyOrganizationInvitationRepository(
-            session_factory=session_factory
-        )
+        invitation_repo = SQLAlchemyOrganizationInvitationRepository(session_factory=session_factory)
         now = datetime.now(UTC)
 
         organization = Organization(
@@ -135,9 +133,7 @@ class TestSQLAlchemyOrganizationRepositories:
         )
         await invitation_repo.save(invitation)
 
-        found_member = await member_repo.find_by_organization_and_user(
-            organization.id, invited_user_id
-        )
+        found_member = await member_repo.find_by_organization_and_user(organization.id, invited_user_id)
         found_pending = await invitation_repo.find_pending_by_organization_and_email(
             organization.id, "invitee@example.com"
         )

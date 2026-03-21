@@ -54,9 +54,7 @@ def _build_baseline_rag_prompt(
 ) -> str:
     """Historical baseline prompt for benchmark comparison (no source attribution)."""
     if context_chunks:
-        numbered = [
-            f"--- Document excerpt {i + 1} ---\n{chunk}" for i, chunk in enumerate(context_chunks)
-        ]
+        numbered = [f"--- Document excerpt {i + 1} ---\n{chunk}" for i, chunk in enumerate(context_chunks)]
         context = "\n\n".join(numbered)
     else:
         context = "No context available."
@@ -167,9 +165,7 @@ async def _run_pipeline(
         query = q_info["query"]
         expected_kw = q_info["expected_doc"]
 
-        relevant_ids = {
-            str(i) for i, src in enumerate(chunk_sources) if _doc_matches(src, expected_kw)
-        }
+        relevant_ids = {str(i) for i, src in enumerate(chunk_sources) if _doc_matches(src, expected_kw)}
 
         # Embed query
         q_emb = await query_embed_fn(query)
@@ -238,8 +234,7 @@ async def _run_pipeline(
             "mrr": mrr(retrieved_ids, relevant_ids),
             "ndcg@5": ndcg_at_k(retrieved_ids, relevant_ids, TOP_K),
             "ctx_diversity": context_diversity(retrieved_embs) if retrieved_embs else 0.0,
-            "ctx_relevance": sum(1 for r in retrieved_ids if r in relevant_ids)
-            / max(len(retrieved_ids), 1),
+            "ctx_relevance": sum(1 for r in retrieved_ids if r in relevant_ids) / max(len(retrieved_ids), 1),
             "ctx_redundancy": context_redundancy(retrieved_embs) if retrieved_embs else 0.0,
         }
         results_per_query.append(metrics)
@@ -256,9 +251,7 @@ class TestBenchmarkEndToEnd:
         assert sanitized_texts, "No test documents found"
 
         # --- Baseline pipeline ---
-        baseline_chunker = SimpleTextChunkerService(
-            chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
-        )
+        baseline_chunker = SimpleTextChunkerService(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
         baseline_emb = InMemoryEmbeddingService(dimension=32)
 
         async def baseline_query_embed(query: str) -> list[float]:
