@@ -17,9 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
 function MicrosoftIcon() {
   return (
     <svg
@@ -38,7 +35,7 @@ function MicrosoftIcon() {
   );
 }
 
-export function LoginForm({ entraEnabled = false }: { entraEnabled?: boolean }) {
+export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost:8000" }: { entraEnabled?: boolean; backendUrl?: string }) {
   const t = useTranslations("auth.login");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -140,7 +137,7 @@ export function LoginForm({ entraEnabled = false }: { entraEnabled?: boolean }) 
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  window.location.href = `${BACKEND_URL}/api/v1/auth/entra/login?redirect_url=/projects`;
+                  window.location.href = `${backendUrl}/api/v1/auth/entra/login?redirect_url=/projects`;
                 }}
               >
                 <MicrosoftIcon />
