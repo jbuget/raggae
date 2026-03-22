@@ -43,6 +43,10 @@ def _reset_repositories() -> None:
         dependencies._organization_invitation_repository, "_invitations"
     ):
         dependencies._organization_invitation_repository._invitations.clear()
+    if hasattr(dependencies, "_project_snapshot_repository") and hasattr(
+        dependencies._project_snapshot_repository, "_snapshots"
+    ):
+        dependencies._project_snapshot_repository._snapshots.clear()
 
 
 @pytest.fixture

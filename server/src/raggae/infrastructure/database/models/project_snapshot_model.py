@@ -1,0 +1,76 @@
+from datetime import datetime
+from uuid import UUID
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from raggae.infrastructure.database.models.base import Base
+
+
+class ProjectSnapshotModel(Base):
+    __tablename__ = "project_snapshots"
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    version_number: Mapped[int] = mapped_column(Integer(), nullable=False)
+    label: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_by_user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=False,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text(), nullable=False, default="")
+    system_prompt: Mapped[str] = mapped_column(Text(), nullable=False, default="")
+    is_published: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False)
+    chunking_strategy: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="auto", server_default="auto"
+    )
+    parent_child_chunking: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    organization_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
+    embedding_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    org_embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True
+    )
+    llm_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    llm_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    org_llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    retrieval_strategy: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="hybrid", server_default="hybrid"
+    )
+    retrieval_top_k: Mapped[int] = mapped_column(Integer(), nullable=False, default=8, server_default="8")
+    retrieval_min_score: Mapped[float] = mapped_column(
+        Float(), nullable=False, default=0.3, server_default="0.3"
+    )
+    chat_history_window_size: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=8, server_default="8"
+    )
+    chat_history_max_chars: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=4000, server_default="4000"
+    )
+    reranking_enabled: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    reranker_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    reranker_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reranker_candidate_multiplier: Mapped[int] = mapped_column(
+        Integer(), nullable=False, default=3, server_default="3"
+    )
+    restored_from_version: Mapped[int | None] = mapped_column(Integer(), nullable=True)

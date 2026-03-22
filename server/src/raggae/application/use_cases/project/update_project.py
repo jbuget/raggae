@@ -26,12 +26,16 @@ from raggae.application.interfaces.repositories.organization_member_repository i
 from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
 )
+from raggae.application.interfaces.repositories.project_snapshot_repository import (
+    ProjectSnapshotRepository,
+)
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
 )
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
 )
+from raggae.domain.entities.project_snapshot import ProjectSnapshot
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectChatHistoryMaxCharsError,
     InvalidProjectChatHistoryWindowSizeError,
@@ -67,12 +71,14 @@ class UpdateProject:
         organization_member_repository: OrganizationMemberRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
         org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
+        snapshot_repository: ProjectSnapshotRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._organization_member_repository = organization_member_repository
         self._provider_credential_repository = provider_credential_repository
         self._org_provider_credential_repository = org_provider_credential_repository
         self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
+        self._snapshot_repository = snapshot_repository
 
     def with_crypto_service(
         self,
@@ -310,6 +316,16 @@ class UpdateProject:
             ),
         )
         await self._project_repository.save(updated_project)
+
+        if self._snapshot_repository is not None:
+            version_number = await self._snapshot_repository.get_next_version_number(updated_project.id)
+            snapshot = ProjectSnapshot.from_project(
+                project=updated_project,
+                version_number=version_number,
+                created_by_user_id=user_id,
+            )
+            await self._snapshot_repository.save(snapshot)
+
         return ProjectDTO.from_entity(updated_project)
 
     def _resolve_encrypted_api_key(

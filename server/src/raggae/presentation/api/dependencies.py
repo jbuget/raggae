@@ -28,6 +28,9 @@ from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.project_snapshot_repository import (
+    ProjectSnapshotRepository,
+)
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
 )
@@ -156,6 +159,11 @@ from raggae.application.use_cases.project.publish_project import PublishProject
 from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.unpublish_project import UnpublishProject
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.application.use_cases.project_snapshot.get_project_snapshot import GetProjectSnapshot
+from raggae.application.use_cases.project_snapshot.list_project_snapshots import ListProjectSnapshots
+from raggae.application.use_cases.project_snapshot.restore_project_snapshot import (
+    RestoreProjectSnapshot,
+)
 from raggae.application.use_cases.provider_credentials.activate_provider_api_key import (
     ActivateProviderApiKey,
 )
@@ -210,6 +218,9 @@ from raggae.infrastructure.database.repositories.in_memory_organization_reposito
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_project_snapshot_repository import (
+    InMemoryProjectSnapshotRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_provider_credential_repository import (
     InMemoryProviderCredentialRepository,
 )
@@ -242,6 +253,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_organization_reposit
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_project_snapshot_repository import (
+    SQLAlchemyProjectSnapshotRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_repository import (
     SQLAlchemyProviderCredentialRepository,
@@ -369,6 +383,9 @@ def _build_embedding_service() -> EmbeddingService:
 if settings.persistence_backend == "postgres":
     _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
     _project_repository: ProjectRepository = SQLAlchemyProjectRepository(session_factory=SessionFactory)
+    _project_snapshot_repository: ProjectSnapshotRepository = SQLAlchemyProjectSnapshotRepository(
+        session_factory=SessionFactory
+    )
     _document_repository: DocumentRepository = SQLAlchemyDocumentRepository(session_factory=SessionFactory)
     _document_chunk_repository: DocumentChunkRepository = SQLAlchemyDocumentChunkRepository(
         session_factory=SessionFactory
@@ -402,6 +419,7 @@ if settings.persistence_backend == "postgres":
 else:
     _user_repository = InMemoryUserRepository()
     _project_repository = InMemoryProjectRepository()
+    _project_snapshot_repository = InMemoryProjectSnapshotRepository()
     _document_repository = InMemoryDocumentRepository()
     _document_chunk_repository = InMemoryDocumentChunkRepository()
     _conversation_repository = InMemoryConversationRepository()
@@ -640,6 +658,7 @@ def get_update_project_use_case() -> UpdateProject:
         organization_member_repository=_organization_member_repository,
         provider_credential_repository=_provider_credential_repository,
         org_provider_credential_repository=_org_credential_repository,
+        snapshot_repository=_project_snapshot_repository,
     ).with_crypto_service(_provider_api_key_crypto_service)
 
 
@@ -998,6 +1017,30 @@ def get_delete_org_provider_api_key_use_case() -> DeleteOrgProviderApiKey:
         org_credential_repository=_org_credential_repository,
         organization_member_repository=_organization_member_repository,
         project_repository=_project_repository,
+    )
+
+
+def get_list_project_snapshots_use_case() -> ListProjectSnapshots:
+    return ListProjectSnapshots(
+        project_repository=_project_repository,
+        snapshot_repository=_project_snapshot_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_get_project_snapshot_use_case() -> GetProjectSnapshot:
+    return GetProjectSnapshot(
+        project_repository=_project_repository,
+        snapshot_repository=_project_snapshot_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_restore_project_snapshot_use_case() -> RestoreProjectSnapshot:
+    return RestoreProjectSnapshot(
+        project_repository=_project_repository,
+        snapshot_repository=_project_snapshot_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 

@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentRow } from "@/components/documents/document-row";
 import { DocumentUpload } from "@/components/documents/document-upload";
+import { ProjectSnapshotsList } from "@/components/projects/project-snapshots-list";
 import {
   useDeleteDocument,
   useDocuments,
@@ -58,6 +59,7 @@ const SETTINGS_TABS = [
   "Context retrieval",
   "Context augmentation",
   "Answer generation",
+  "History",
 ] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
 
@@ -122,6 +124,7 @@ export default function ProjectSettingsPage() {
     "Context retrieval": t("tabs.contextRetrieval"),
     "Context augmentation": t("tabs.contextAugmentation"),
     "Answer generation": t("tabs.answerGeneration"),
+    "History": t("tabs.history"),
   };
 
   if (isLoading) {
@@ -1038,7 +1041,13 @@ export default function ProjectSettingsPage() {
         </div>
       )}
 
-      {activeTab !== "Document ingestion" && activeTab !== "General" && activeTab !== "Knowledge indexing" && activeTab !== "Publication" ? (
+      {activeTab === "History" && (
+        <div className="max-w-3xl space-y-6">
+          <ProjectSnapshotsList projectId={params.projectId} />
+        </div>
+      )}
+
+      {activeTab !== "Document ingestion" && activeTab !== "General" && activeTab !== "Knowledge indexing" && activeTab !== "Publication" && activeTab !== "History" ? (
         <Button className="cursor-pointer" disabled={isDisabled} onClick={handleSave}>
           {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
         </Button>
