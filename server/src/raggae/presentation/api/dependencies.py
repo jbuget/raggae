@@ -124,6 +124,9 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
 from raggae.application.use_cases.organization.get_organization import GetOrganization
+from raggae.application.use_cases.organization.get_organization_default_config import (
+    GetOrganizationDefaultConfig,
+)
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
 )
@@ -149,9 +152,6 @@ from raggae.application.use_cases.organization.resend_organization_invitation im
 )
 from raggae.application.use_cases.organization.revoke_organization_invitation import (
     RevokeOrganizationInvitation,
-)
-from raggae.application.use_cases.organization.get_organization_default_config import (
-    GetOrganizationDefaultConfig,
 )
 from raggae.application.use_cases.organization.update_organization import UpdateOrganization
 from raggae.application.use_cases.organization.update_organization_member_role import (
@@ -254,14 +254,14 @@ from raggae.infrastructure.database.repositories.sqlalchemy_message_repository i
 from raggae.infrastructure.database.repositories.sqlalchemy_org_provider_credential_repository import (
     SQLAlchemyOrgProviderCredentialRepository,
 )
+from raggae.infrastructure.database.repositories.sqlalchemy_organization_default_config_repository import (
+    SQLAlchemyOrganizationDefaultConfigRepository,
+)
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_invitation_repository import (
     SQLAlchemyOrganizationInvitationRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_member_repository import (
     SQLAlchemyOrganizationMemberRepository,
-)
-from raggae.infrastructure.database.repositories.sqlalchemy_organization_default_config_repository import (
-    SQLAlchemyOrganizationDefaultConfigRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_repository import (
     SQLAlchemyOrganizationRepository,

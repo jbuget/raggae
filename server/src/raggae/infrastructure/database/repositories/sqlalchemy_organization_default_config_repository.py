@@ -43,13 +43,18 @@ class SQLAlchemyOrganizationDefaultConfigRepository:
                 )
                 session.add(model)
             model.embedding_backend = config.embedding_backend
+            model.embedding_model = config.embedding_model
             model.llm_backend = config.llm_backend
+            model.llm_model = config.llm_model
             model.chunking_strategy = config.chunking_strategy.value if config.chunking_strategy else None
+            model.parent_child_chunking = config.parent_child_chunking
             model.retrieval_strategy = config.retrieval_strategy
             model.retrieval_top_k = config.retrieval_top_k
             model.retrieval_min_score = config.retrieval_min_score
             model.reranking_enabled = config.reranking_enabled
             model.reranker_backend = config.reranker_backend
+            model.reranker_model = config.reranker_model
+            model.reranker_candidate_multiplier = config.reranker_candidate_multiplier
             model.org_embedding_api_key_credential_id = config.org_embedding_api_key_credential_id
             model.org_llm_api_key_credential_id = config.org_llm_api_key_credential_id
             model.updated_at = config.updated_at
@@ -61,13 +66,18 @@ class SQLAlchemyOrganizationDefaultConfigRepository:
             id=model.id,
             organization_id=model.organization_id,
             embedding_backend=model.embedding_backend,
+            embedding_model=model.embedding_model,
             llm_backend=model.llm_backend,
+            llm_model=model.llm_model,
             chunking_strategy=ChunkingStrategy(model.chunking_strategy) if model.chunking_strategy else None,
+            parent_child_chunking=model.parent_child_chunking,
             retrieval_strategy=model.retrieval_strategy,
             retrieval_top_k=model.retrieval_top_k,
             retrieval_min_score=model.retrieval_min_score,
             reranking_enabled=model.reranking_enabled,
             reranker_backend=model.reranker_backend,
+            reranker_model=model.reranker_model,
+            reranker_candidate_multiplier=model.reranker_candidate_multiplier,
             org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
             org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
             updated_at=model.updated_at,

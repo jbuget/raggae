@@ -83,13 +83,18 @@ class AcceptOrganizationInvitationRequest(BaseModel):
 
 class UpsertOrganizationDefaultConfigRequest(BaseModel):
     embedding_backend: str | None = None
+    embedding_model: str | None = None
     llm_backend: str | None = None
+    llm_model: str | None = None
     chunking_strategy: str | None = None
+    parent_child_chunking: bool | None = None
     retrieval_strategy: str | None = None
     retrieval_top_k: int | None = None
     retrieval_min_score: float | None = None
     reranking_enabled: bool | None = None
     reranker_backend: str | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int | None = None
     org_embedding_api_key_credential_id: UUID | None = None
     org_llm_api_key_credential_id: UUID | None = None
 
@@ -98,13 +103,18 @@ class OrganizationDefaultConfigResponse(BaseModel):
     id: UUID
     organization_id: UUID
     embedding_backend: str | None
+    embedding_model: str | None
     llm_backend: str | None
+    llm_model: str | None
     chunking_strategy: str | None
+    parent_child_chunking: bool | None
     retrieval_strategy: str | None
     retrieval_top_k: int | None
     retrieval_min_score: float | None
     reranking_enabled: bool | None
     reranker_backend: str | None
+    reranker_model: str | None
+    reranker_candidate_multiplier: int | None
     org_embedding_api_key_credential_id: UUID | None
     org_llm_api_key_credential_id: UUID | None
     updated_at: datetime
