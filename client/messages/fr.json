@@ -153,7 +153,8 @@
         "documentIngestion": "Documents",
         "contextRetrieval": "Retrieval",
         "contextAugmentation": "Augmentation",
-        "answerGeneration": "Génération"
+        "answerGeneration": "Génération",
+        "history": "Historique"
       },
       "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
       "saveChanges": "Enregistrer",
