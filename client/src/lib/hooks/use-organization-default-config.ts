@@ -14,6 +14,7 @@ export function useOrganizationDefaultConfig(organizationId: string) {
     queryKey: ["organization-default-config", organizationId],
     queryFn: () => getOrganizationDefaultConfig(token!, organizationId),
     enabled: !!token && !!organizationId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
