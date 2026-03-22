@@ -226,13 +226,18 @@ export interface OrganizationDefaultConfigResponse {
   id: string;
   organization_id: string;
   embedding_backend: string | null;
+  embedding_model: string | null;
   llm_backend: string | null;
+  llm_model: string | null;
   chunking_strategy: ChunkingStrategy | null;
+  parent_child_chunking: boolean | null;
   retrieval_strategy: RetrievalStrategy | null;
   retrieval_top_k: number | null;
   retrieval_min_score: number | null;
   reranking_enabled: boolean | null;
   reranker_backend: string | null;
+  reranker_model: string | null;
+  reranker_candidate_multiplier: number | null;
   org_embedding_api_key_credential_id: string | null;
   org_llm_api_key_credential_id: string | null;
   updated_at: string;
@@ -240,13 +245,18 @@ export interface OrganizationDefaultConfigResponse {
 
 export interface UpsertOrganizationDefaultConfigRequest {
   embedding_backend?: string | null;
+  embedding_model?: string | null;
   llm_backend?: string | null;
+  llm_model?: string | null;
   chunking_strategy?: ChunkingStrategy | null;
+  parent_child_chunking?: boolean | null;
   retrieval_strategy?: RetrievalStrategy | null;
   retrieval_top_k?: number | null;
   retrieval_min_score?: number | null;
   reranking_enabled?: boolean | null;
   reranker_backend?: string | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
   org_embedding_api_key_credential_id?: string | null;
   org_llm_api_key_credential_id?: string | null;
 }
