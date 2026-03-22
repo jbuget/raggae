@@ -163,7 +163,7 @@ function OrgDefaultConfigForm({
         {/* Embedding */}
         <div className="space-y-3 rounded-md border p-4">
           <SubSectionTitle title={t("sectionEmbedding")} />
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="cfg-embedding-backend">{t("embeddingBackendLabel")}</Label>
               <select
@@ -211,7 +211,7 @@ function OrgDefaultConfigForm({
         {/* RAG / LLM */}
         <div className="space-y-3 rounded-md border p-4">
           <SubSectionTitle title={t("sectionLlm")} />
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="cfg-llm-backend">{t("llmBackendLabel")}</Label>
               <select
@@ -264,7 +264,7 @@ function OrgDefaultConfigForm({
       <div className="space-y-4">
         <SectionTitle title={t("sectionIndexation")} />
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="cfg-chunking">{t("chunkingStrategyLabel")}</Label>
             <select
@@ -303,7 +303,7 @@ function OrgDefaultConfigForm({
       <div className="space-y-4">
         <SectionTitle title={t("sectionRetrieval")} />
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="cfg-retrieval">{t("retrievalStrategyLabel")}</Label>
             <select
@@ -369,7 +369,7 @@ function OrgDefaultConfigForm({
           <p className="text-xs text-muted-foreground">{t("rerankingHint")}</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="cfg-reranker-backend">{t("rerankerBackendLabel")}</Label>
             <select
