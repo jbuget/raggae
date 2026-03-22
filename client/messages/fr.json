@@ -378,7 +378,8 @@
       "descriptionLabel": "Description",
       "logoLabel": "URL du logo",
       "updateSuccess": "Organisation mise à jour",
-      "updateError": "Erreur lors de la mise à jour"
+      "updateError": "Erreur lors de la mise à jour",
+      "tabConfig": "Configuration"
     },
     "members": {
       "title": "Membres",
@@ -410,6 +411,24 @@
       "providerLabel": "Fournisseur",
       "apiKeyLabel": "Clé API",
       "saveKey": "Enregistrer la clé"
+    },
+    "defaultConfig": {
+      "title": "Configuration par défaut des assistants",
+      "description": "Ces valeurs seront pré-remplies lors de la création d'un nouvel assistant dans cette organisation.",
+      "embeddingBackendLabel": "Backend d'embedding",
+      "llmBackendLabel": "Backend LLM",
+      "orgEmbeddingCredLabel": "Clé API embedding (org)",
+      "orgLlmCredLabel": "Clé API LLM (org)",
+      "chunkingStrategyLabel": "Stratégie de découpage",
+      "retrievalStrategyLabel": "Stratégie de recherche",
+      "retrievalTopKLabel": "Nombre de résultats (top-k)",
+      "retrievalMinScoreLabel": "Score minimum",
+      "rerankingLabel": "Reclassement (reranking)",
+      "rerankingHint": "Améliore la pertinence des résultats via un modèle de reclassement.",
+      "rerankerBackendLabel": "Backend de reclassement",
+      "noDefault": "— Aucune valeur par défaut —",
+      "saveSuccess": "Configuration enregistrée",
+      "saveError": "Erreur lors de l'enregistrement"
     }
   },
   "invitations": {

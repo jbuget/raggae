@@ -378,7 +378,8 @@
       "descriptionLabel": "Description",
       "logoLabel": "Logo URL",
       "updateSuccess": "Organization updated",
-      "updateError": "Failed to update organization"
+      "updateError": "Failed to update organization",
+      "tabConfig": "Configuration"
     },
     "members": {
       "title": "Members",
@@ -410,6 +411,24 @@
       "providerLabel": "Provider",
       "apiKeyLabel": "API key",
       "saveKey": "Save key"
+    },
+    "defaultConfig": {
+      "title": "Default assistant configuration",
+      "description": "These values will be pre-filled when creating a new assistant in this organization.",
+      "embeddingBackendLabel": "Embedding backend",
+      "llmBackendLabel": "LLM backend",
+      "orgEmbeddingCredLabel": "Embedding API key (org)",
+      "orgLlmCredLabel": "LLM API key (org)",
+      "chunkingStrategyLabel": "Chunking strategy",
+      "retrievalStrategyLabel": "Retrieval strategy",
+      "retrievalTopKLabel": "Top-k results",
+      "retrievalMinScoreLabel": "Minimum score",
+      "rerankingLabel": "Reranking",
+      "rerankingHint": "Improves result relevance using a reranking model.",
+      "rerankerBackendLabel": "Reranker backend",
+      "noDefault": "— No default —",
+      "saveSuccess": "Configuration saved",
+      "saveError": "Failed to save configuration"
     }
   },
   "invitations": {
