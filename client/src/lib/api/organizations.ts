@@ -2,13 +2,15 @@ import type {
   AcceptOrganizationInvitationRequest,
   CreateOrganizationRequest,
   InviteOrganizationMemberRequest,
+  OrganizationDefaultConfigResponse,
   OrganizationInvitationResponse,
   OrganizationMemberResponse,
-  UserPendingOrganizationInvitationResponse,
-  ProjectResponse,
   OrganizationResponse,
+  ProjectResponse,
   UpdateOrganizationMemberRoleRequest,
   UpdateOrganizationRequest,
+  UpsertOrganizationDefaultConfigRequest,
+  UserPendingOrganizationInvitationResponse,
 } from "@/lib/types/api";
 import { apiFetch } from "./client";
 
@@ -188,6 +190,31 @@ export function acceptUserOrganizationInvitation(
     `/organizations/invitations/${invitationId}/accept`,
     {
       method: "POST",
+      token,
+    },
+  );
+}
+
+export function getOrganizationDefaultConfig(
+  token: string,
+  organizationId: string,
+): Promise<OrganizationDefaultConfigResponse | null> {
+  return apiFetch<OrganizationDefaultConfigResponse | null>(
+    `/organizations/${organizationId}/default-config`,
+    { token },
+  );
+}
+
+export function upsertOrganizationDefaultConfig(
+  token: string,
+  organizationId: string,
+  data: UpsertOrganizationDefaultConfigRequest,
+): Promise<OrganizationDefaultConfigResponse> {
+  return apiFetch<OrganizationDefaultConfigResponse>(
+    `/organizations/${organizationId}/default-config`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
       token,
     },
   );

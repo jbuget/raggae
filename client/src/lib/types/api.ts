@@ -222,6 +222,35 @@ export interface AcceptOrganizationInvitationRequest {
   token: string;
 }
 
+export interface OrganizationDefaultConfigResponse {
+  id: string;
+  organization_id: string;
+  embedding_backend: string | null;
+  llm_backend: string | null;
+  chunking_strategy: ChunkingStrategy | null;
+  retrieval_strategy: RetrievalStrategy | null;
+  retrieval_top_k: number | null;
+  retrieval_min_score: number | null;
+  reranking_enabled: boolean | null;
+  reranker_backend: string | null;
+  org_embedding_api_key_credential_id: string | null;
+  org_llm_api_key_credential_id: string | null;
+  updated_at: string;
+}
+
+export interface UpsertOrganizationDefaultConfigRequest {
+  embedding_backend?: string | null;
+  llm_backend?: string | null;
+  chunking_strategy?: ChunkingStrategy | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: string | null;
+  org_embedding_api_key_credential_id?: string | null;
+  org_llm_api_key_credential_id?: string | null;
+}
+
 // Documents
 export interface DocumentResponse {
   id: string;
