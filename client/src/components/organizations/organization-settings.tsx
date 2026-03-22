@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { OrgCredentialsPanel } from "@/components/organizations/org-credentials-panel";
+import { OrgDefaultConfigPanel } from "@/components/organizations/org-default-config-panel";
 import { OrganizationMembersPanel } from "@/components/organizations/organization-members-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,7 @@ import {
   useUpdateOrganization,
 } from "@/lib/hooks/use-organization";
 
-const ORG_SETTINGS_TABS = ["General", "Members", "API Keys"] as const;
+const ORG_SETTINGS_TABS = ["General", "Members", "API Keys", "Configuration"] as const;
 type OrgSettingsTab = (typeof ORG_SETTINGS_TABS)[number];
 
 type OrganizationSettingsProps = {
@@ -45,6 +46,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
     General: t("tabGeneral"),
     Members: t("tabMembers"),
     "API Keys": t("tabApiKeys"),
+    Configuration: t("tabConfig"),
   };
 
   if (isLoading) {
@@ -149,6 +151,10 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
       {activeTab === "API Keys" && <OrgCredentialsPanel organizationId={organizationId} />}
 
       {activeTab === "Members" && <OrganizationMembersPanel organizationId={organizationId} />}
+
+      {activeTab === "Configuration" && (
+        <OrgDefaultConfigPanel organizationId={organizationId} />
+      )}
     </div>
   );
 }
