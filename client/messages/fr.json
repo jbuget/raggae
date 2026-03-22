@@ -154,7 +154,7 @@
         "contextRetrieval": "Retrieval",
         "contextAugmentation": "Augmentation",
         "answerGeneration": "Génération",
-        "history": "Historique"
+        "history": "Versions"
       },
       "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
       "saveChanges": "Enregistrer",
