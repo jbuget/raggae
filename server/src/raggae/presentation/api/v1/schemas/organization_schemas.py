@@ -79,3 +79,32 @@ class UserPendingOrganizationInvitationResponse(BaseModel):
 
 class AcceptOrganizationInvitationRequest(BaseModel):
     token: str = Field(min_length=8, max_length=255)
+
+
+class UpsertOrganizationDefaultConfigRequest(BaseModel):
+    embedding_backend: str | None = None
+    llm_backend: str | None = None
+    chunking_strategy: str | None = None
+    retrieval_strategy: str | None = None
+    retrieval_top_k: int | None = None
+    retrieval_min_score: float | None = None
+    reranking_enabled: bool | None = None
+    reranker_backend: str | None = None
+    org_embedding_api_key_credential_id: UUID | None = None
+    org_llm_api_key_credential_id: UUID | None = None
+
+
+class OrganizationDefaultConfigResponse(BaseModel):
+    id: UUID
+    organization_id: UUID
+    embedding_backend: str | None
+    llm_backend: str | None
+    chunking_strategy: str | None
+    retrieval_strategy: str | None
+    retrieval_top_k: int | None
+    retrieval_min_score: float | None
+    reranking_enabled: bool | None
+    reranker_backend: str | None
+    org_embedding_api_key_credential_id: UUID | None
+    org_llm_api_key_credential_id: UUID | None
+    updated_at: datetime

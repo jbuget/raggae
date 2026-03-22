@@ -13,6 +13,9 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
 from raggae.application.use_cases.organization.get_organization import GetOrganization
+from raggae.application.use_cases.organization.get_organization_default_config import (
+    GetOrganizationDefaultConfig,
+)
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
 )
@@ -43,18 +46,23 @@ from raggae.application.use_cases.organization.update_organization import Update
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
 )
+from raggae.application.use_cases.organization.upsert_organization_default_config import (
+    UpsertOrganizationDefaultConfig,
+)
 from raggae.domain.exceptions.organization_exceptions import (
     LastOrganizationOwnerError,
     OrganizationAccessDeniedError,
     OrganizationInvitationInvalidError,
     OrganizationNotFoundError,
 )
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.presentation.api.dependencies import (
     get_accept_organization_invitation_use_case,
     get_accept_user_organization_invitation_use_case,
     get_create_organization_use_case,
     get_current_user_id,
     get_delete_organization_use_case,
+    get_get_organization_default_config_use_case,
     get_get_organization_use_case,
     get_invite_organization_member_use_case,
     get_leave_organization_use_case,
@@ -68,16 +76,19 @@ from raggae.presentation.api.dependencies import (
     get_revoke_organization_invitation_use_case,
     get_update_organization_member_role_use_case,
     get_update_organization_use_case,
+    get_upsert_organization_default_config_use_case,
 )
 from raggae.presentation.api.v1.schemas.organization_schemas import (
     AcceptOrganizationInvitationRequest,
     CreateOrganizationRequest,
     InviteOrganizationMemberRequest,
+    OrganizationDefaultConfigResponse,
     OrganizationInvitationResponse,
     OrganizationMemberResponse,
     OrganizationResponse,
     UpdateOrganizationMemberRoleRequest,
     UpdateOrganizationRequest,
+    UpsertOrganizationDefaultConfigRequest,
     UserPendingOrganizationInvitationResponse,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import ProjectResponse
@@ -450,6 +461,62 @@ async def revoke_organization_invitation(
         },
     )
     return OrganizationInvitationResponse(**invitation.__dict__)
+
+
+@router.get("/{organization_id}/default-config", dependencies=[Depends(get_current_user_id)])
+async def get_organization_default_config(
+    organization_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[GetOrganizationDefaultConfig, Depends(get_get_organization_default_config_use_case)],
+) -> OrganizationDefaultConfigResponse | None:
+    try:
+        config = await use_case.execute(organization_id=organization_id, user_id=user_id)
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    if config is None:
+        return None
+    return OrganizationDefaultConfigResponse(**config.__dict__)
+
+
+@router.put(
+    "/{organization_id}/default-config",
+    dependencies=[Depends(get_current_user_id)],
+)
+async def upsert_organization_default_config(
+    organization_id: UUID,
+    data: UpsertOrganizationDefaultConfigRequest,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[
+        UpsertOrganizationDefaultConfig, Depends(get_upsert_organization_default_config_use_case)
+    ],
+) -> OrganizationDefaultConfigResponse:
+    try:
+        chunking_strategy = ChunkingStrategy(data.chunking_strategy) if data.chunking_strategy else None
+        config = await use_case.execute(
+            organization_id=organization_id,
+            user_id=user_id,
+            embedding_backend=data.embedding_backend,
+            llm_backend=data.llm_backend,
+            chunking_strategy=chunking_strategy,
+            retrieval_strategy=data.retrieval_strategy,
+            retrieval_top_k=data.retrieval_top_k,
+            retrieval_min_score=data.retrieval_min_score,
+            reranking_enabled=data.reranking_enabled,
+            reranker_backend=data.reranker_backend,
+            org_embedding_api_key_credential_id=data.org_embedding_api_key_credential_id,
+            org_llm_api_key_credential_id=data.org_llm_api_key_credential_id,
+        )
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_default_config_upserted",
+        extra={"organization_id": str(organization_id), "user_id": str(user_id)},
+    )
+    return OrganizationDefaultConfigResponse(**config.__dict__)
 
 
 @router.post("/invitations/accept", dependencies=[Depends(get_current_user_id)])

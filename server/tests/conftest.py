@@ -47,6 +47,10 @@ def _reset_repositories() -> None:
         dependencies._project_snapshot_repository, "_snapshots"
     ):
         dependencies._project_snapshot_repository._snapshots.clear()
+    if hasattr(dependencies, "_organization_default_config_repository") and hasattr(
+        dependencies._organization_default_config_repository, "_configs"
+    ):
+        dependencies._organization_default_config_repository._configs.clear()
 
 
 @pytest.fixture

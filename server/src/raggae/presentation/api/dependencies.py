@@ -18,6 +18,9 @@ from raggae.application.interfaces.repositories.message_repository import Messag
 from raggae.application.interfaces.repositories.org_provider_credential_repository import (
     OrgProviderCredentialRepository,
 )
+from raggae.application.interfaces.repositories.organization_default_config_repository import (
+    OrganizationDefaultConfigRepository,
+)
 from raggae.application.interfaces.repositories.organization_invitation_repository import (
     OrganizationInvitationRepository,
 )
@@ -147,9 +150,15 @@ from raggae.application.use_cases.organization.resend_organization_invitation im
 from raggae.application.use_cases.organization.revoke_organization_invitation import (
     RevokeOrganizationInvitation,
 )
+from raggae.application.use_cases.organization.get_organization_default_config import (
+    GetOrganizationDefaultConfig,
+)
 from raggae.application.use_cases.organization.update_organization import UpdateOrganization
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
+)
+from raggae.application.use_cases.organization.upsert_organization_default_config import (
+    UpsertOrganizationDefaultConfig,
 )
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
@@ -206,6 +215,9 @@ from raggae.infrastructure.database.repositories.in_memory_message_repository im
 from raggae.infrastructure.database.repositories.in_memory_org_provider_credential_repository import (
     InMemoryOrgProviderCredentialRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_organization_default_config_repository import (
+    InMemoryOrganizationDefaultConfigRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_organization_invitation_repository import (
     InMemoryOrganizationInvitationRepository,
 )
@@ -247,6 +259,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_organization_invitat
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_member_repository import (
     SQLAlchemyOrganizationMemberRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_organization_default_config_repository import (
+    SQLAlchemyOrganizationDefaultConfigRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_repository import (
     SQLAlchemyOrganizationRepository,
@@ -409,6 +424,9 @@ if settings.persistence_backend == "postgres":
     _organization_invitation_repository: OrganizationInvitationRepository = (
         SQLAlchemyOrganizationInvitationRepository(session_factory=SessionFactory)
     )
+    _organization_default_config_repository: OrganizationDefaultConfigRepository = (
+        SQLAlchemyOrganizationDefaultConfigRepository(session_factory=SessionFactory)
+    )
     _chunk_retrieval_service: ChunkRetrievalService = SQLAlchemyChunkRetrievalService(
         session_factory=SessionFactory,
         vector_weight=settings.retrieval_vector_weight,
@@ -429,6 +447,7 @@ else:
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
     _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
+    _organization_default_config_repository = InMemoryOrganizationDefaultConfigRepository()
     _chunk_retrieval_service = InMemoryChunkRetrievalService(
         document_repository=_document_repository,
         document_chunk_repository=_document_chunk_repository,
@@ -1041,6 +1060,22 @@ def get_restore_project_snapshot_use_case() -> RestoreProjectSnapshot:
         project_repository=_project_repository,
         snapshot_repository=_project_snapshot_repository,
         organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_get_organization_default_config_use_case() -> GetOrganizationDefaultConfig:
+    return GetOrganizationDefaultConfig(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_default_config_repository=_organization_default_config_repository,
+    )
+
+
+def get_upsert_organization_default_config_use_case() -> UpsertOrganizationDefaultConfig:
+    return UpsertOrganizationDefaultConfig(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        organization_default_config_repository=_organization_default_config_repository,
     )
 
 
