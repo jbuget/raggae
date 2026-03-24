@@ -5,9 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Suspense } from "react";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
 function EntraCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +24,7 @@ function EntraCallback() {
 
     async function exchange() {
       try {
-        const tokenResp = await fetch(`${BACKEND_URL}/api/v1/auth/entra/token`, {
+        const tokenResp = await fetch(`/api/v1/auth/entra/token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code }),
@@ -54,7 +51,7 @@ function EntraCallback() {
         const session = await getSession();
         if (session?.accessToken) {
           const meResp = await fetch(
-            `${BACKEND_URL}/api/v1/auth/me`,
+            `/api/v1/auth/me`,
             { headers: { Authorization: `Bearer ${session.accessToken}` } },
           );
           if (meResp.ok) {
