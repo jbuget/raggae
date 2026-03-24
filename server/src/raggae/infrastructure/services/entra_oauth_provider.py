@@ -1,8 +1,5 @@
 import asyncio
-import base64
-import hashlib
 import logging
-import secrets
 
 import msal
 
@@ -12,13 +9,7 @@ from raggae.domain.exceptions.user_exceptions import OAuthProviderError
 
 logger = logging.getLogger(__name__)
 
-_SCOPES = ["openid", "profile", "email", "User.Read"]
-
-
-def _generate_pkce() -> tuple[str, str]:
-    verifier = secrets.token_urlsafe(32)
-    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
-    return verifier, challenge
+_SCOPES = ["User.Read"]
 
 
 def _resolve_email(claims: dict[str, object]) -> str:
@@ -44,17 +35,18 @@ class EntraOAuthProvider:
     """OAuth 2.0 provider implementation for Microsoft Entra ID.
 
     Uses MSAL (Microsoft Authentication Library) for token acquisition
-    and validation. PKCE is handled internally: the code_verifier is
-    generated at authorization URL time and stored in-memory keyed by
-    the CSRF token for retrieval during code exchange.
+    and validation. PKCE is handled internally by MSAL via
+    initiate_auth_code_flow / acquire_token_by_auth_code_flow.
+    The auth_code_flow dict is stored in-memory keyed by the CSRF token
+    for retrieval during code exchange.
 
-    NOTE: The in-memory PKCE store is not suitable for multi-instance
-    deployments. Migration path: extract _pkce_store behind a Protocol
+    NOTE: The in-memory flow store is not suitable for multi-instance
+    deployments. Migration path: extract _flow_store behind a Protocol
     and provide a Redis-backed implementation.
     """
 
     def __init__(self) -> None:
-        self._pkce_store: dict[str, str] = {}
+        self._flow_store: dict[str, dict[str, object]] = {}
 
     def _build_msal_app(self, config: EntraConfig) -> msal.ConfidentialClientApplication:
         return msal.ConfidentialClientApplication(
@@ -64,29 +56,26 @@ class EntraOAuthProvider:
         )
 
     async def get_authorization_url(self, state: str, config: EntraConfig) -> str:
-        verifier, challenge = _generate_pkce()
-        self._pkce_store[state] = verifier
         app = self._build_msal_app(config)
-        url: str = await asyncio.to_thread(
-            lambda: app.get_authorization_request_url(
+        flow: dict[str, object] = await asyncio.to_thread(
+            lambda: app.initiate_auth_code_flow(
                 scopes=_SCOPES,
-                state=state,
                 redirect_uri=config.redirect_uri,
-                code_challenge=challenge,
-                code_challenge_method="S256",
+                state=state,
             )
         )
-        return url
+        self._flow_store[state] = flow
+        return str(flow["auth_uri"])
 
     async def exchange_code(self, code: str, state: str, config: EntraConfig) -> OAuthUserInfo:
-        verifier = self._pkce_store.pop(state, None)
+        flow = self._flow_store.pop(state, None)
+        if flow is None:
+            raise OAuthProviderError("OAuth flow not found. The session may have expired.")
         app = self._build_msal_app(config)
         result: dict[str, object] = await asyncio.to_thread(
-            lambda: app.acquire_token_by_authorization_code(
-                code=code,
-                scopes=_SCOPES,
-                redirect_uri=config.redirect_uri,
-                **({"code_verifier": verifier} if verifier else {}),
+            lambda: app.acquire_token_by_auth_code_flow(
+                auth_code_flow=flow,
+                auth_response={"code": code, "state": state},
             )
         )
 

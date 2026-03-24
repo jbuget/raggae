@@ -7,7 +7,7 @@ from raggae.domain.exceptions.user_exceptions import OAuthProviderError
 from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 
 AUTHORITY = "https://login.microsoftonline.com/tenant-id"
-SCOPES = ["openid", "profile", "email", "User.Read"]
+SCOPES = ["User.Read"]
 
 
 @pytest.fixture
@@ -26,9 +26,16 @@ def provider() -> EntraOAuthProvider:
     return EntraOAuthProvider()
 
 
-def make_msal_app(auth_url: str = "https://login.microsoftonline.com/authorize") -> MagicMock:
+def make_msal_app(auth_uri: str = "https://login.microsoftonline.com/authorize") -> MagicMock:
     app = MagicMock()
-    app.get_authorization_request_url.return_value = auth_url
+    app.initiate_auth_code_flow.return_value = {
+        "auth_uri": auth_uri,
+        "state": "csrf-token",
+        "code_verifier": "fake-verifier",
+        "nonce": "fake-nonce",
+        "scope": SCOPES,
+        "redirect_uri": "https://app.example.com/callback",
+    }
     return app
 
 
@@ -110,12 +117,12 @@ class TestEntraOAuthProviderGetAuthorizationUrl:
             await provider.get_authorization_url(state="csrf-token", config=config)
 
         # Then
-        call_kwargs = mock_app.get_authorization_request_url.call_args
+        call_kwargs = mock_app.initiate_auth_code_flow.call_args
         assert call_kwargs.kwargs["scopes"] == SCOPES
         assert call_kwargs.kwargs["redirect_uri"] == config.redirect_uri
         assert call_kwargs.kwargs["state"] == "csrf-token"
 
-    async def test_includes_pkce_code_challenge_in_request(
+    async def test_stores_flow_for_later_code_exchange(
         self, provider: EntraOAuthProvider, config: EntraConfig
     ) -> None:
         # Given
@@ -127,20 +134,17 @@ class TestEntraOAuthProviderGetAuthorizationUrl:
             # When
             await provider.get_authorization_url(state="csrf-token", config=config)
 
-        # Then — PKCE challenge present and method is S256
-        call_kwargs = mock_app.get_authorization_request_url.call_args.kwargs
-        assert "code_challenge" in call_kwargs
-        assert call_kwargs["code_challenge_method"] == "S256"
-        assert len(call_kwargs["code_challenge"]) > 0
+        # Then — flow stored keyed by state
+        assert "csrf-token" in provider._flow_store
 
 
 class TestEntraOAuthProviderExchangeCode:
     async def test_returns_oauth_user_info_with_oid_as_provider_id(
         self, provider: EntraOAuthProvider, config: EntraConfig
     ) -> None:
-        # Given — initiate first to store PKCE verifier
+        # Given — initiate first to store flow
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(make_claims())
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(make_claims())
         with patch(
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,
@@ -157,7 +161,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(
             make_claims(mail="mail@waat.fr", preferred_username="pref@waat.fr")
         )
         with patch(
@@ -175,7 +179,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given — no mail claim
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(
             make_claims(mail=None, preferred_username="pref@waat.fr", upn="upn@waat.fr")
         )
         with patch(
@@ -190,7 +194,7 @@ class TestEntraOAuthProviderExchangeCode:
     async def test_email_falls_back_to_upn(self, provider: EntraOAuthProvider, config: EntraConfig) -> None:
         # Given — no mail, no preferred_username
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(
             make_claims(mail=None, preferred_username=None, upn="upn@waat.fr")
         )
         with patch(
@@ -207,7 +211,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(
             make_claims(given_name="Jérémy", surname="Buget", display_name="Jérémy Buget")
         )
         with patch(
@@ -224,7 +228,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given — no given_name / surname
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(
             make_claims(given_name=None, surname=None, display_name="Jérémy Buget")
         )
         with patch(
@@ -241,7 +245,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given — no name claims at all
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(
             make_claims(given_name=None, surname=None, display_name=None)
         )
         with patch(
@@ -258,7 +262,7 @@ class TestEntraOAuthProviderExchangeCode:
     ) -> None:
         # Given
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = {
+        mock_app.acquire_token_by_auth_code_flow.return_value = {
             "error": "invalid_grant",
             "error_description": "Code expired",
         }
@@ -272,12 +276,23 @@ class TestEntraOAuthProviderExchangeCode:
             with pytest.raises(OAuthProviderError):
                 await provider.exchange_code(code="bad-code", state="csrf-token", config=config)
 
-    async def test_exchange_code_passes_pkce_verifier_to_msal(
+    async def test_exchange_code_raises_when_flow_not_found(
+        self, provider: EntraOAuthProvider, config: EntraConfig
+    ) -> None:
+        # Given — no prior get_authorization_url call
+        with patch(
+            "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
+        ):
+            # When / Then
+            with pytest.raises(OAuthProviderError, match="OAuth flow not found"):
+                await provider.exchange_code(code="auth-code", state="unknown-state", config=config)
+
+    async def test_exchange_code_passes_flow_and_auth_response_to_msal(
         self, provider: EntraOAuthProvider, config: EntraConfig
     ) -> None:
         # Given
         mock_app = make_msal_app()
-        mock_app.acquire_token_by_authorization_code.return_value = make_token_result(make_claims())
+        mock_app.acquire_token_by_auth_code_flow.return_value = make_token_result(make_claims())
         with patch(
             "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
             return_value=mock_app,
@@ -285,7 +300,8 @@ class TestEntraOAuthProviderExchangeCode:
             await provider.get_authorization_url(state="csrf-token", config=config)
             await provider.exchange_code(code="auth-code", state="csrf-token", config=config)
 
-        # Then — code_verifier passed to MSAL token request
-        call_kwargs = mock_app.acquire_token_by_authorization_code.call_args.kwargs
-        assert "code_verifier" in call_kwargs
-        assert len(call_kwargs["code_verifier"]) > 0
+        # Then — flow and auth_response passed to MSAL
+        call_kwargs = mock_app.acquire_token_by_auth_code_flow.call_args.kwargs
+        assert "auth_code_flow" in call_kwargs
+        assert call_kwargs["auth_response"]["code"] == "auth-code"
+        assert call_kwargs["auth_response"]["state"] == "csrf-token"
