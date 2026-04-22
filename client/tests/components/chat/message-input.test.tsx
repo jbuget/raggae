@@ -77,8 +77,7 @@ describe("MessageInput", () => {
       <MessageInput onSend={vi.fn()} disabled isThinking />,
     );
 
-    expect(
-      screen.getByRole("button", { name: /send/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /stop/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/message/i)).toBeDisabled();
   });
 });

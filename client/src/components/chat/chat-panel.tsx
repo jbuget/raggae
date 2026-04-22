@@ -238,7 +238,8 @@ export function ChatPanel({
             <Button
               variant="outline"
               size="icon"
-              className="h-9 w-9 rounded-full border border-border bg-background shadow-sm hover:bg-muted"
+              className="h-9 w-9 rounded-full border border-border shadow-sm hover:bg-muted"
+              style={{ backgroundColor: "var(--message-input-bg)" }}
               onClick={scrollToBottom}
               aria-label={t("scrollToBottom")}
             >

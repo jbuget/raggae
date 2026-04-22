@@ -52,12 +52,13 @@ export function MessageInput({
     <div className="space-y-2">
       <div
         className={cn(
-          "rounded-2xl border border-border bg-background",
+          "rounded-2xl border border-border",
           "transition-[border-color] duration-500",
           "hover:border-foreground/15",
           "focus-within:border-foreground/25",
           "px-4 pt-3",
         )}
+        style={{ backgroundColor: "var(--message-input-bg)" }}
       >
         <textarea
           ref={textareaRef}
