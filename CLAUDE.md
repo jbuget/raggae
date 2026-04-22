@@ -90,6 +90,9 @@ Tests mirror source: `server/tests/{unit,integration,e2e}/`
 
 ### Git Workflow
 
+> **RÈGLE ABSOLUE** : ne jamais commiter ni pusher directement sur `main`.
+> Toujours passer par une branche + Pull Request, sans exception.
+
 1. **Feature branching** — never commit directly to `main`. Always create a branch:
 
    ```bash
@@ -112,7 +115,8 @@ Tests mirror source: `server/tests/{unit,integration,e2e}/`
 
 4. **Quality gate before push**: run the full pre-push checklist (see below) before every `git push`.
 
-5. **Pull Request**: one PR per feature/fix/refactor. Use the PR format below.
+5. **Pull Request** : one PR per feature/fix/refactor. Use the PR format below.
+   **Never merge to `main` without a PR** — even for small or cosmetic changes.
 
 ### Pull Request Format
 
