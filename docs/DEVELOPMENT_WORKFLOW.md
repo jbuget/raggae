@@ -4,68 +4,96 @@
 
 Ce document décrit le workflow quotidien pour développer Raggae en TDD, Clean Architecture et baby steps.
 
-## Découpage validé Sprint 4 (Documents)
+## Conventions de langue
 
-Avant de coder, appliquer ce découpage en tâches atomiques :
+| Ce qui est écrit | Langue |
+|-----------------|--------|
+| Code source (variables, fonctions, classes, commentaires inline) | **Anglais** |
+| Documentation (fichiers `docs/`, docstrings) | **Français** |
+| Messages de commit | **Français** |
+| Titres et descriptions de PR | **Français** |
 
-- [ ] Domain: ajouter l'entité `Document`
-- [ ] Domain: ajouter exceptions (`InvalidDocumentTypeError`, `DocumentTooLargeError`, `DocumentNotFoundError`)
-- [ ] Application: définir le port `DocumentRepository`
-- [ ] Application: définir le port `FileStorageService`
-- [ ] Application: implémenter `UploadDocument` (sans processing/indexing)
-- [ ] Application: implémenter `ListProjectDocuments`
-- [ ] Application: implémenter `DeleteDocument`
-- [ ] Infrastructure: repository in-memory document
-- [ ] Infrastructure: adapter S3-compatible (MinIO local)
-- [ ] Presentation: endpoint `POST /projects/{project_id}/documents`
-- [ ] Presentation: endpoint `GET /projects/{project_id}/documents`
-- [ ] Presentation: endpoint `DELETE /projects/{project_id}/documents/{document_id}`
-- [ ] Tests E2E: upload/list/delete + sécurité ownership
+## PLAN_IN_PROGRESS.md
 
-Contraintes Sprint 4A :
-- formats autorisés : `txt`, `md`, `pdf`, `doc`, `docx`
-- taille max : `100 Mo`
-- binaire stocké en S3-compatible (MinIO)
-- aucun chunking/embedding/indexing dans cette phase
+Le fichier `PLAN_IN_PROGRESS.md` à la racine du projet est le **document de travail courant**.
+Il est lu par Claude Code au début de chaque session.
 
-## Découpage validé Sprint 4C (Chunking adaptatif)
+**Cycle de vie** :
 
-Avant de coder, appliquer ce découpage en tâches atomiques :
+1. **Début de feature** : remplir le template (fonctionnalité, branche, découpage en tâches)
+2. **Pendant l'implémentation** : cocher les tâches au fur et à mesure, noter les décisions
+3. **PR mergée** : remettre le fichier au template vide
 
-- [ ] Application: ajouter le port `DocumentStructureAnalyzer`
-- [ ] Application: ajouter `ChunkingStrategySelector` (règles simples, déterministes)
-- [ ] Domain/Application: définir un enum/VO `ChunkingStrategy` (`fixed_window`, `paragraph`, `heading_section`)
-- [ ] Infrastructure: implémenter `HeuristicDocumentStructureAnalyzer`
-- [ ] Infrastructure: implémenter `ParagraphTextChunkerService`
-- [ ] Infrastructure: implémenter `HeadingSectionTextChunkerService`
-- [ ] Infrastructure: conserver `SimpleTextChunkerService` comme fallback `fixed_window`
-- [ ] Application: intégrer selector + routeur de stratégie dans le pipeline upload processing
-- [ ] Tests unitaires: selector + analyzer + chunkers par stratégie
-- [ ] Tests d'intégration: vérifier la stratégie choisie sur documents représentatifs
+Il n'est pas destiné à archiver l'historique (c'est le rôle du git log) — uniquement à décrire
+**ce qui est en train d'être fait maintenant**.
 
-Contraintes Sprint 4C :
-- priorité à la robustesse déterministe (pas de LLM dans la sélection de stratégie)
-- fallback systématique vers `fixed_window` en cas d'ambiguïté
-- aucun couplage direct de la couche Application à une lib de parsing spécifique
+## Workflow Git
 
-## Découpage validé Sprint 4D (Metadata JSON sur chunks)
+### 1. Créer une branche
 
-Avant de coder, appliquer ce découpage en tâches atomiques :
+Ne jamais committer directement sur `main`. Créer une branche par fonctionnalité, correction ou refactoring :
 
-- [ ] Domain: ajouter `metadata_json` sur `DocumentChunk`
-- [ ] Infrastructure DB: ajouter colonne `metadata_json` (`JSONB`) sur `document_chunks`
-- [ ] Alembic: migration dédiée non destructive (`nullable=True`)
-- [ ] Repositories: mapper `metadata_json` (save/find)
-- [ ] Application: enrichir `UploadDocument` pour renseigner le noyau metadata minimal
-- [ ] DTO/API: exposer `metadata_json` dans le listing des chunks
-- [ ] Tests unitaires: use case + mapping DTO/schema
-- [ ] Tests d'intégration: repository SQLAlchemy (persist/load JSON)
-- [ ] Tests E2E: endpoint chunks retourne `metadata_json`
+```bash
+git checkout main && git pull origin main
 
-Contraintes Sprint 4D :
-- metadata flexible mais avec noyau commun obligatoire (`metadata_version`, `processing_strategy`, `source_type`)
-- backward compatible (chunks historiques sans metadata acceptés)
-- pas de logique métier domaine spécifique codée en dur dans la couche Domain
+git checkout -b feat/register-user      # nouvelle fonctionnalité
+git checkout -b fix/login-token-expiry  # correction de bug
+git checkout -b refactor/user-entity    # refactoring
+git checkout -b test/project-use-cases  # ajout de tests
+git checkout -b docs/architecture       # documentation
+```
+
+Convention de nommage : `<type>/<description-en-kebab-case>`.
+
+### 2. Committer en baby steps
+
+Chaque commit doit :
+
+- compiler et passer tous les tests
+- représenter un changement atomique (max 50–100 lignes)
+- suivre les **Conventional Commits** avec message en **français** :
+
+```
+feat(domain): ajouter l'entité User
+fix(auth): corriger l'expiration du token JWT
+test(application): ajouter les tests du use case RegisterUser
+refactor(infrastructure): extraire la conversion entité/modèle
+```
+
+Types autorisés : `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, `build`.
+
+Ne jamais ajouter de mention de Claude ou co-auteur dans les commits.
+
+### 3. Vérifier la qualité avant de pousser
+
+Avant tout `git push`, exécuter depuis `server/` :
+
+```bash
+pytest                   # tous les tests passent
+ruff format src/ tests/  # formatage
+ruff check src/ tests/   # pas d'erreur de lint
+mypy src/                # pas d'erreur de typage
+```
+
+Aucun push tant qu'un contrôle échoue.
+
+### 4. Ouvrir une Pull Request
+
+Une PR par fonctionnalité/correction. Description obligatoirement en **français**, avec ce format :
+
+```markdown
+## Problème
+Décrire le problème ou le besoin que cette PR adresse.
+
+## Solution
+Expliquer l'approche choisie et pourquoi.
+
+## Implémentation
+Lister les changements techniques principaux (fichiers, couches, patterns utilisés).
+
+## Recette
+Étapes ou scénarios pour valider manuellement que la fonctionnalité fonctionne correctement.
+```
 
 ## Cycle de développement
 
@@ -899,13 +927,13 @@ git commit -m "feat(api): add create project endpoint"
 
 ```bash
 # Mise à jour
-git pull origin main
+git checkout main && git pull origin main
 
-# Créer une branche (optionnel)
-git checkout -b feature/create-project
+# Créer la branche de travail
+git checkout -b feat/ma-fonctionnalite
 
 # Installer les dépendances
-pip install -e ".[dev]"
+pip install -e ".[dev,test]"
 
 # Vérifier que les tests passent
 pytest
@@ -917,20 +945,17 @@ docker-compose up -d postgres
 ### Pendant le dev
 
 ```bash
-# Lancer les tests en continu (watch mode)
-pytest-watch
-
-# Ou lancer manuellement
-pytest tests/unit  # Rapide
-pytest tests/integration  # Moyen
-pytest tests/e2e  # Lent
-pytest  # Tout
+# Lancer les tests
+pytest tests/unit         # Rapide (unitaires)
+pytest tests/integration  # Moyen (intégration)
+pytest tests/e2e          # Lent (end-to-end)
+pytest                    # Tout
 
 # Coverage
 pytest --cov=src --cov-report=html
 open htmlcov/index.html
 
-# Linting
+# Linting et formatage
 ruff check src/ tests/
 ruff format src/ tests/
 
@@ -938,73 +963,75 @@ ruff format src/ tests/
 mypy src/
 ```
 
-### Avant chaque commit
+### Avant chaque push
 
 ```bash
-# Checklist automatique
-./scripts/pre-commit-check.sh
-```
-
-```bash
-# scripts/pre-commit-check.sh
-#!/bin/bash
-set -e
-
-echo "🧪 Running tests..."
+# Contrôles qualité obligatoires (depuis server/)
 pytest
-
-echo "🎨 Formatting code..."
 ruff format src/ tests/
-
-echo "🔍 Linting..."
 ruff check src/ tests/
-
-echo "🏷️  Type checking..."
 mypy src/
 
-echo "✅ All checks passed!"
+# Si tout passe :
+git push origin feat/ma-fonctionnalite
 ```
 
-### Après un commit
+### Ouvrir la Pull Request
 
 ```bash
-# Push
-git push origin feature/create-project
+# Via GitHub CLI
+gh pr create --title "feat(domain): description courte en français" --body "$(cat <<'EOF'
+## Problème
+...
 
-# Ou si c'est main
-git push origin main
+## Solution
+...
+
+## Implémentation
+...
+
+## Recette
+...
+EOF
+)"
 ```
 
 ## Organisation des sessions de dev
 
 ### Session type (2-3h)
 
-**9h00 - 9h15 : Setup**
-- Pull latest
-- Vérifier les tests passent
-- Choisir la prochaine tâche
+#### 9h00 - 9h15 : Setup
 
-**9h15 - 11h00 : TDD Red-Green-Refactor**
-- Écrire 1 test
-- Implémenter
+- Pull latest + créer la branche de travail
+- Vérifier que les tests passent
+- Choisir la prochaine tâche atomique
+
+#### 9h15 - 11h00 : TDD Red-Green-Refactor
+
+- Écrire 1 test (RED)
+- Implémenter (GREEN)
 - Refactor
-- Commit
+- Commit (baby step)
 - Répéter 5-10 fois
 
-**11h00 - 11h15 : Review & Cleanup**
+#### 11h00 - 11h15 : Review & Cleanup
+
 - Relire les commits
 - Vérifier la coverage
-- Push
+- Lancer les contrôles qualité (`pytest`, `ruff`, `mypy`)
+- Push + ouvrir la PR
 
 ### Metrics de productivité
 
-**Objectifs quotidiens** :
+#### Objectifs quotidiens
+
 - 10-20 commits (baby steps)
 - Coverage > 80%
 - 0 erreur mypy
 - 0 erreur ruff
 
-**Red flags** :
+#### Red flags
+
 - Commits > 200 lignes
 - Tests qui échouent en CI
 - Coverage qui baisse
@@ -1091,9 +1118,5 @@ from asyncmock import AsyncMock
 
 ---
 
-**Rappels importants** :
-- RED → GREEN → REFACTOR (toujours)
-- Un commit = un changement atomique
-- Tests avant code (TDD strict)
-- Baby steps (petits changements)
-- Conventional Commits
+**Rappels importants** : RED → GREEN → REFACTOR — un commit = un changement atomique — tests avant code —
+baby steps — Conventional Commits en français — contrôles qualité avant push.
