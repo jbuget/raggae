@@ -46,9 +46,10 @@ export function MessageBubble({
           className={cn(
             "rounded-lg px-4 py-2",
             isUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-foreground",
+              ? "text-foreground"
+              : "bg-transparent text-foreground",
           )}
+          style={isUser ? { backgroundColor: "hsl(var(--bg-300) / var(--tw-bg-opacity, 1))" } : undefined}
         >
         {isUser ? (
           <p className="whitespace-pre-wrap text-sm">{content}</p>
@@ -74,7 +75,7 @@ export function MessageBubble({
             className={cn(
               "mt-1 text-xs",
               isUser
-                ? "text-primary-foreground/70"
+                ? "text-foreground/50"
                 : "text-muted-foreground",
             )}
           >
