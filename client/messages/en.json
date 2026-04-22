@@ -429,15 +429,19 @@
   },
   "chat": {
     "input": {
-      "placeholder": "Type a message...",
+      "placeholder": "Reply...",
+      "placeholderEmpty": "How can I help you?",
       "ariaLabel": "Message",
-      "send": "Send"
+      "send": "Send",
+      "stop": "Stop generating",
+      "disclaimer": "RAGGAE is an AI and can make mistakes. Please verify the responses."
     },
     "panel": {
       "hideSources": "Hide",
       "showSources": "Show",
       "sources": "sources",
       "source": "Source",
+      "scrollToBottom": "Scroll to latest message",
       "disabledDefault": "Chat is temporarily disabled for this project.",
       "unableToLoadDocument": "Unable to load this document.",
       "documentPreview": "Document preview",

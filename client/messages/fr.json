@@ -429,15 +429,19 @@
   },
   "chat": {
     "input": {
-      "placeholder": "Écrire un message...",
+      "placeholder": "Répondre...",
+      "placeholderEmpty": "Comment puis-je vous aider ?",
       "ariaLabel": "Message",
-      "send": "Envoyer"
+      "send": "Envoyer",
+      "stop": "Arrêter la génération",
+      "disclaimer": "RAGGAE est une IA et peut faire des erreurs. Veuillez vérifier les réponses."
     },
     "panel": {
       "hideSources": "Masquer",
       "showSources": "Afficher",
       "sources": "sources",
       "source": "Source",
+      "scrollToBottom": "Aller au dernier message",
       "disabledDefault": "Le chat est temporairement désactivé pour ce projet.",
       "unableToLoadDocument": "Impossible de charger ce document.",
       "documentPreview": "Aperçu du document",

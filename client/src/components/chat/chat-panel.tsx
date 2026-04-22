@@ -11,6 +11,7 @@ import { useMessages, useSendMessage } from "@/lib/hooks/use-chat";
 import { useAuth } from "@/lib/hooks/use-auth";
 import type { MessageResponse } from "@/lib/types/api";
 import { Button } from "@/components/ui/button";
+import { ArrowDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,8 @@ export function ChatPanel({
   const [isSelectedDocumentLoading, setIsSelectedDocumentLoading] = useState(false);
   const [selectedDocumentError, setSelectedDocumentError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottomRef = useRef(true);
 
   useEffect(() => {
     setCurrentConversationId(conversationId);
@@ -82,14 +85,33 @@ export function ChatPanel({
     return [...unique.values()];
   }, [chunks]);
 
-  useEffect(() => {
+  function scrollToBottom() {
     const viewport = scrollRef.current?.querySelector<HTMLElement>(
       "[data-slot='scroll-area-viewport']",
     );
     if (viewport) {
       viewport.scrollTop = viewport.scrollHeight;
     }
+  }
+
+  useEffect(() => {
+    if (isAtBottomRef.current) scrollToBottom();
   }, [messages, streamedContent]);
+
+  useEffect(() => {
+    const viewport = scrollRef.current?.querySelector<HTMLElement>(
+      "[data-slot='scroll-area-viewport']",
+    );
+    if (!viewport) return;
+    function handleScroll() {
+      const { scrollTop, scrollHeight, clientHeight } = viewport!;
+      const atBottom = scrollHeight - scrollTop - clientHeight < 50;
+      isAtBottomRef.current = atBottom;
+      setIsAtBottom(atBottom);
+    }
+    viewport.addEventListener("scroll", handleScroll);
+    return () => viewport.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -176,76 +198,92 @@ export function ChatPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <ScrollArea className="min-h-0 flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {messages.map((msg) => {
-            const messageSourceDocuments = getMessageSourceDocuments(msg);
-            return (
-              <div key={msg.id} className="space-y-2">
+      <div className="relative min-h-0 flex-1">
+        <ScrollArea className="h-full" ref={scrollRef}>
+          <div className="space-y-4 px-8 pt-4 pb-36">
+            {messages.map((msg) => {
+              const messageSourceDocuments = getMessageSourceDocuments(msg);
+              return (
+                <div key={msg.id} className="space-y-2">
+                  <MessageBubble
+                    role={msg.role as "user" | "assistant"}
+                    content={msg.content}
+                    sourceDocuments={
+                      msg.role === "assistant" ? messageSourceDocuments : []
+                    }
+                    onSourceClick={handleSourceClick}
+                    timestamp={msg.created_at}
+                  />
+                </div>
+              );
+            })}
+
+            {state === "sending" && <StreamingIndicator />}
+
+            {shouldRenderTransientAssistant && (
+              <div className="space-y-2">
                 <MessageBubble
-                  role={msg.role as "user" | "assistant"}
-                  content={msg.content}
-                  sourceDocuments={
-                    msg.role === "assistant" ? messageSourceDocuments : []
-                  }
+                  role="assistant"
+                  content={streamedContent}
+                  sourceDocuments={citedDocuments}
                   onSourceClick={handleSourceClick}
-                  timestamp={msg.created_at}
                 />
               </div>
-            );
-          })}
+            )}
+          </div>
+        </ScrollArea>
 
-          {state === "sending" && <StreamingIndicator />}
-
-          {shouldRenderTransientAssistant && (
-            <div className="space-y-2">
-              <MessageBubble
-                role="assistant"
-                content={streamedContent}
-                sourceDocuments={citedDocuments}
-                onSourceClick={handleSourceClick}
-              />
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      {chunks.length > 0 && (
-        <div className="border-t px-4 py-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowChunks(!showChunks)}
-          >
-            {showChunks ? t("hideSources") : t("showSources")} {t("sources")} ({citedDocuments.length})
-          </Button>
-          {showChunks && (
-            <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
-              {citedDocuments.map((document, i) => (
-                <div
-                  key={document.documentId}
-                  className="rounded-md bg-muted p-2 text-xs"
-                >
-                  <p className="font-medium">{t("source")} {i + 1}</p>
-                  <p className="mt-1 line-clamp-1">{document.documentName}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="sticky bottom-0 border-t bg-background p-4">
-        {disabled && (
-          <p className="mb-2 text-xs text-amber-700">
-            {disabledMessage || t("disabledDefault")}
-          </p>
+        {!isAtBottom && (
+          <div className="absolute bottom-34 left-1/2 z-20 -translate-x-1/2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-full border border-border bg-background shadow-sm hover:bg-muted"
+              onClick={scrollToBottom}
+              aria-label={t("scrollToBottom")}
+            >
+              <ArrowDown className="size-4" />
+            </Button>
+          </div>
         )}
-        <MessageInput
-          onSend={handleSend}
-          disabled={disabled || state !== "idle"}
-          isThinking={!disabled && state !== "idle"}
-        />
+
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-4 bg-background">
+          {chunks.length > 0 && (
+            <div className="mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowChunks(!showChunks)}
+              >
+                {showChunks ? t("hideSources") : t("showSources")} {t("sources")} ({citedDocuments.length})
+              </Button>
+              {showChunks && (
+                <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
+                  {citedDocuments.map((document, i) => (
+                    <div
+                      key={document.documentId}
+                      className="rounded-md bg-muted p-2 text-xs"
+                    >
+                      <p className="font-medium">{t("source")} {i + 1}</p>
+                      <p className="mt-1 line-clamp-1">{document.documentName}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {disabled && (
+            <p className="mb-2 text-xs text-amber-700">
+              {disabledMessage || t("disabledDefault")}
+            </p>
+          )}
+          <MessageInput
+            onSend={handleSend}
+            disabled={disabled || state !== "idle"}
+            isThinking={!disabled && state !== "idle"}
+            hasMessages={messages.length > 0}
+          />
+        </div>
       </div>
 
       <Dialog
