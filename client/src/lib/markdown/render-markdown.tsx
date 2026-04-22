@@ -77,37 +77,37 @@ export function renderMarkdown(markdown: string): ReactNode {
       const content = parseInline(heading[2]);
       if (level === 1) {
         blocks.push(
-          <h1 key={`h-${i}`} className="font-semibold">
+          <h1 key={`h-${i}`} className="mt-6 text-base font-bold">
             {content}
           </h1>,
         );
       } else if (level === 2) {
         blocks.push(
-          <h2 key={`h-${i}`} className="font-semibold">
+          <h2 key={`h-${i}`} className="mt-6 text-base font-bold">
             {content}
           </h2>,
         );
       } else if (level === 3) {
         blocks.push(
-          <h3 key={`h-${i}`} className="font-semibold">
+          <h3 key={`h-${i}`} className="mt-7 text-xl font-semibold">
             {content}
           </h3>,
         );
       } else if (level === 4) {
         blocks.push(
-          <h4 key={`h-${i}`} className="font-semibold">
+          <h4 key={`h-${i}`} className="mt-4 text-base font-semibold">
             {content}
           </h4>,
         );
       } else if (level === 5) {
         blocks.push(
-          <h5 key={`h-${i}`} className="font-semibold">
+          <h5 key={`h-${i}`} className="mt-3 text-base font-semibold">
             {content}
           </h5>,
         );
       } else {
         blocks.push(
-          <h6 key={`h-${i}`} className="font-semibold">
+          <h6 key={`h-${i}`} className="mt-3 text-base font-semibold">
             {content}
           </h6>,
         );
@@ -156,5 +156,5 @@ export function renderMarkdown(markdown: string): ReactNode {
     i += 1;
   }
 
-  return <div className="space-y-2 text-sm">{blocks}</div>;
+  return <div className="space-y-3 leading-normal text-base">{blocks}</div>;
 }

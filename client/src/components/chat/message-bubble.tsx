@@ -52,7 +52,7 @@ export function MessageBubble({
           style={isUser ? { backgroundColor: "hsl(var(--bg-300) / var(--tw-bg-opacity, 1))" } : undefined}
         >
         {isUser ? (
-          <p className="whitespace-pre-wrap text-sm">{content}</p>
+          <p className="whitespace-pre-wrap text-base">{content}</p>
         ) : (
           renderMarkdown(content)
         )}
