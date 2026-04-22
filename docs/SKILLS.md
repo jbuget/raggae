@@ -811,11 +811,50 @@ class UnitOfWork:
             await self._session.rollback()
 ```
 
+## 10. Conventions de langue et Git
+
+### Langue
+
+| Ce qui est écrit | Langue |
+|-----------------|--------|
+| Code source (variables, fonctions, classes, commentaires inline) | **Anglais** |
+| Documentation (fichiers `docs/`, docstrings) | **Français** |
+| Messages de commit | **Français** |
+| Titres et descriptions de PR | **Français** |
+
+### Workflow Git
+
+```bash
+# 1. Créer une branche (jamais committer sur main directement)
+git checkout -b feat/my-feature
+
+# 2. Committer en baby steps (message en français)
+git commit -m "feat(domain): ajouter l'entité User"
+git commit -m "test(application): tester le use case RegisterUser"
+
+# 3. Contrôles qualité avant push
+pytest && ruff format src/ tests/ && ruff check src/ tests/ && mypy src/
+
+# 4. Pousser et ouvrir une PR
+git push origin feat/my-feature
+```
+
+### Format de PR (en français)
+
+```markdown
+## Problème
+## Solution
+## Implémentation
+## Recette
+```
+
 ---
 
 **Points clés** :
-- Clean Architecture = séparation stricte des couches
+
+- Clean Architecture + DDD = séparation stricte des couches, langage ubiquitaire
 - TDD = Red → Green → Refactor
 - Tests = 70% unit, 20% integration, 10% E2E
 - Type hints partout
 - Async/await pour I/O
+- Code en anglais, commits/docs/PR en français
