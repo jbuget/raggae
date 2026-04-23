@@ -1,8 +1,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Sidebar } from "@/components/layout/sidebar";
-import { renderWithProviders } from "../../helpers/render";
+import { Sidebar } from "@/components/organisms/sidebar";
+import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects/proj-1",
