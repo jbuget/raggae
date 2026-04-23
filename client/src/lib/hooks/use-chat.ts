@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import {
   deleteConversation,
+  getConversation,
   listConversations,
   listMessages,
   sendMessage,
@@ -24,6 +25,16 @@ export function useConversations(projectId: string) {
     queryKey: ["conversations", projectId],
     queryFn: () => listConversations(token!, projectId),
     enabled: !!token && !!projectId,
+  });
+}
+
+export function useConversation(projectId: string, conversationId: string) {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["conversation", projectId, conversationId],
+    queryFn: () => getConversation(token!, projectId, conversationId),
+    enabled: !!token && !!projectId && !!conversationId,
   });
 }
 

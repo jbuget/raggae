@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChatPanel } from "@/components/chat/chat-panel";
-import { ConversationSidebar } from "@/components/chat/conversation-sidebar";
 import { useProject } from "@/lib/hooks/use-projects";
 
 export default function ChatPage() {
@@ -14,10 +13,11 @@ export default function ChatPage() {
 
   return (
     <div className="-m-6 flex h-[calc(100vh-3.5rem)]">
-      <div className="hidden h-full lg:block">
-        <ConversationSidebar />
-      </div>
-      <div className="flex-1">
+<div className="flex flex-1 flex-col">
+        <div className="flex h-14 shrink-0 items-center border-b px-6">
+          <span className="text-sm font-bold">{project?.name}</span>
+        </div>
+        <div className="min-h-0 flex-1">
         <ChatPanel
           projectId={params.projectId}
           conversationId={null}
@@ -28,6 +28,7 @@ export default function ChatPage() {
               : undefined
           }
         />
+        </div>
       </div>
     </div>
   );
