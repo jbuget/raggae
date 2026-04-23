@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { Check, Github, Languages, LogOut, Monitor, Moon, MoreHorizontal, Plus, Settings, Sun } from "lucide-react";
+import { Building2, Check, FolderOpen, Github, Languages, LogOut, Mail, Monitor, Moon, MoreHorizontal, Plus, Settings, Sun } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
@@ -65,9 +65,9 @@ export function Sidebar() {
   }
 
   const navItems = [
-    { href: "/projects", label: tNav("projects"), icon: "folder" },
-    { href: "/organizations", label: tNav("organizations"), icon: "building" },
-    { href: "/invitations", label: tNav("invitations"), icon: "mail" },
+    { href: "/projects", label: tNav("projects"), icon: <FolderOpen size={16} /> },
+    { href: "/organizations", label: tNav("organizations"), icon: <Building2 size={16} /> },
+    { href: "/invitations", label: tNav("invitations"), icon: <Mail size={16} /> },
   ];
   const { token, user } = useAuth();
   const { data: projects, isLoading } = useProjects();
@@ -117,23 +117,24 @@ export function Sidebar() {
           Raggae
         </Link>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               pathname.startsWith(item.href)
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
+            {item.icon}
             {item.label}
           </Link>
         ))}
-        <div className="mt-4 border-t pt-3">
-          <div className="flex h-7 items-center justify-between px-1 pb-2">
+        <div className="mt-2 border-t pt-2">
+          <div className="flex h-6 items-center justify-between px-1 pb-1">
             <p className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t("myProjects")}
             </p>
@@ -156,7 +157,7 @@ export function Sidebar() {
               <div
                 key={project.id}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
+                  "flex items-center gap-1 rounded-md px-1 text-sm transition-colors",
                   pathname.startsWith(`/projects/${project.id}`)
                     ? "bg-primary/10"
                     : "hover:bg-muted",
@@ -165,7 +166,7 @@ export function Sidebar() {
                 <Link
                   href={`/projects/${project.id}/chat`}
                   className={cn(
-                    "min-w-0 flex-1 truncate rounded-md px-2 py-1",
+                    "min-w-0 flex-1 truncate rounded-md px-2",
                     pathname.startsWith(`/projects/${project.id}`)
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground",
@@ -198,8 +199,8 @@ export function Sidebar() {
               ))}
         </div>
         {sortedOrganizations.map((organization) => (
-          <div key={organization.id} className="mt-4 border-t pt-3">
-            <div className="flex h-7 items-center justify-between px-1 pb-2">
+          <div key={organization.id} className="mt-2 border-t pt-2">
+            <div className="flex h-6 items-center justify-between px-1 pb-1">
               <p
                 className="truncate px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 title={organization.name}
@@ -224,7 +225,7 @@ export function Sidebar() {
                 <div
                   key={project.id}
                   className={cn(
-                    "flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
+                    "flex items-center gap-1 rounded-md px-1 text-sm transition-colors",
                     pathname.startsWith(`/projects/${project.id}`)
                       ? "bg-primary/10"
                       : "hover:bg-muted",
@@ -233,7 +234,7 @@ export function Sidebar() {
                   <Link
                     href={`/projects/${project.id}/chat`}
                     className={cn(
-                      "min-w-0 flex-1 truncate rounded-md px-2 py-1",
+                      "min-w-0 flex-1 truncate rounded-md px-2",
                       pathname.startsWith(`/projects/${project.id}`)
                         ? "text-primary"
                         : "text-muted-foreground hover:text-foreground",
