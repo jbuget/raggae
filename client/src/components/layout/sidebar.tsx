@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { Building2, Check, FolderOpen, Github, Languages, LogOut, Mail, Monitor, Moon, MoreHorizontal, Plus, Settings, Sun } from "lucide-react";
+import { Building2, Check, FolderOpen, Github, Languages, LogOut, Mail, Monitor, Moon, MoreVertical, Plus, Settings, Sun } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
@@ -157,7 +157,7 @@ export function Sidebar() {
               <div
                 key={project.id}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-1 text-sm transition-colors",
+                  "group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
                   pathname.startsWith(`/projects/${project.id}`)
                     ? "bg-primary/10"
                     : "hover:bg-muted",
@@ -180,10 +180,13 @@ export function Sidebar() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 cursor-pointer"
+                      className={cn(
+                        "h-5 w-5 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100",
+                        !pathname.startsWith(`/projects/${project.id}`) && "hover:bg-primary/10",
+                      )}
                       aria-label={t("projectMenu", { projectName: project.name })}
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -225,7 +228,7 @@ export function Sidebar() {
                 <div
                   key={project.id}
                   className={cn(
-                    "flex items-center gap-1 rounded-md px-1 text-sm transition-colors",
+                    "group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
                     pathname.startsWith(`/projects/${project.id}`)
                       ? "bg-primary/10"
                       : "hover:bg-muted",
@@ -248,10 +251,13 @@ export function Sidebar() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 cursor-pointer"
+                        className={cn(
+                          "h-5 w-5 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100",
+                          !pathname.startsWith(`/projects/${project.id}`) && "hover:bg-primary/10",
+                        )}
                         aria-label={t("projectMenu", { projectName: project.name })}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
