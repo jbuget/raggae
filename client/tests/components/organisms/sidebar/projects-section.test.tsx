@@ -5,6 +5,16 @@ import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects",
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
+}));
+
+vi.mock("@/lib/hooks/use-chat", () => ({
+  useConversations: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeleteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+vi.mock("@/lib/hooks/use-auth", () => ({
+  useAuth: vi.fn(() => ({ token: "fake-token" })),
 }));
 
 const projects = [
@@ -34,19 +44,19 @@ describe("ProjectsSection", () => {
     expect(screen.getByText(/no projects/i)).toBeInTheDocument();
   });
 
-  it("should render project links in desktop variant", () => {
+  it("should render project toggle buttons in desktop variant", () => {
     renderWithProviders(
       <ProjectsSection {...baseProps} variant="desktop" projects={projects} />,
     );
-    expect(screen.getByRole("link", { name: "Project Alpha" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Project Beta" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Project Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Project Beta" })).toBeInTheDocument();
   });
 
-  it("should render project links in mobile variant without dropdown buttons", () => {
+  it("should render project toggle buttons in mobile variant without dropdown", () => {
     renderWithProviders(
       <ProjectsSection {...baseProps} variant="mobile" projects={projects} />,
     );
-    expect(screen.getByRole("link", { name: "Project Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Project Alpha" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /project menu/i })).not.toBeInTheDocument();
   });
 
