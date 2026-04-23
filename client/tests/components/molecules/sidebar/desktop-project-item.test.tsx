@@ -1,8 +1,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { DesktopProjectItem } from "@/components/layout/sidebar/molecules/desktop-project-item";
-import { renderWithProviders } from "../../../../helpers/render";
+import { DesktopProjectItem } from "@/components/molecules/sidebar/desktop-project-item";
+import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects/proj-1/chat",

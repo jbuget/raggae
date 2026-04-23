@@ -2,7 +2,7 @@
 
 import { Building2, FolderOpen, Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { SidebarNavLink } from "../atoms/sidebar-nav-link";
+import { SidebarNavLink } from "@/components/atoms/sidebar/sidebar-nav-link";
 
 interface SidebarNavProps {
   showIcons?: boolean;

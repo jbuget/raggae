@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MobileProjectItem } from "@/components/layout/sidebar/molecules/mobile-project-item";
-import { renderWithProviders } from "../../../../helpers/render";
+import { MobileProjectItem } from "@/components/molecules/sidebar/mobile-project-item";
+import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects/proj-1/chat",

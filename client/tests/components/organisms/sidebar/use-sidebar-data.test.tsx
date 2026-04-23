@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { useQueries } from "@tanstack/react-query";
-import { useSidebarData } from "@/components/layout/sidebar/use-sidebar-data";
+import { useSidebarData } from "@/components/organisms/sidebar/use-sidebar-data";
 
 vi.mock("@/lib/hooks/use-auth", () => ({
   useAuth: () => ({ token: "token", user: { id: "user-1" } }),

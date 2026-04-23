@@ -1,13 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { SidebarLogo } from "./atoms/sidebar-logo";
-import { SidebarNav } from "./organisms/sidebar-nav";
-import { ProjectsSection } from "./organisms/projects-section";
-import { OrganizationSection } from "./organisms/organization-section";
+import { SidebarLogo } from "@/components/atoms/sidebar/sidebar-logo";
+import { SidebarNav } from "./sidebar-nav";
+import { ProjectsSection } from "./projects-section";
+import { OrganizationSection } from "./organization-section";
+import { UserMenu } from "./user-menu";
 import { useSidebarData } from "./use-sidebar-data";
 
-export function MobileSidebar() {
+export function Sidebar() {
   const t = useTranslations("sidebar");
   const {
     personalProjects,
@@ -18,12 +19,12 @@ export function MobileSidebar() {
   } = useSidebarData();
 
   return (
-    <div>
+    <aside className="hidden h-full w-64 border-r bg-white dark:bg-muted/30 md:flex md:flex-col">
       <SidebarLogo />
-      <nav className="space-y-1 p-4">
-        <SidebarNav matchPrefix />
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <SidebarNav showIcons />
         <ProjectsSection
-          variant="mobile"
+          variant="desktop"
           title={t("myProjects")}
           projects={personalProjects}
           isLoading={isLoadingProjects}
@@ -34,13 +35,14 @@ export function MobileSidebar() {
         {sortedOrganizations.map((org) => (
           <OrganizationSection
             key={org.id}
-            variant="mobile"
+            variant="desktop"
             organization={org}
             projects={organizationProjectsMap.get(org.id) ?? []}
             canCreate={editableOrganizationIds.has(org.id)}
           />
         ))}
       </nav>
-    </div>
+      <UserMenu />
+    </aside>
   );
 }

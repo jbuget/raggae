@@ -1,7 +1,7 @@
 # Refactoring front — Atomic Design (Sidebar)
 
 **Branche** : `refactor/sidebar-atomic-design`  
-**Statut** : En cours de planification
+**Statut** : ✅ Terminé — commit `0d641ae`
 
 ---
 
@@ -49,23 +49,27 @@ Très similaires mais avec une différence : le bouton `+` de création est touj
 Pas de convention atomic design existante dans le projet. Proposition :
 
 ```
-client/src/components/layout/sidebar/
+client/src/components/
+├── ui/                          # Design system atoms (shadcn/ui, inchangé)
 ├── atoms/
-│   ├── sidebar-logo.tsx          # Lien "Raggae" + styles
-│   ├── sidebar-nav-link.tsx      # Lien de navigation avec état actif
-│   └── sidebar-section-header.tsx # Titre de section + bouton optionnel
+│   └── sidebar/
+│       ├── sidebar-logo.tsx
+│       ├── sidebar-nav-link.tsx
+│       └── sidebar-section-header.tsx
 ├── molecules/
-│   ├── desktop-project-item.tsx  # Lien projet + DropdownMenu (desktop)
-│   └── mobile-project-item.tsx   # Lien projet simple (mobile)
-├── organisms/
-│   ├── sidebar-nav.tsx            # Section de navigation principale
-│   ├── projects-section.tsx       # Section de projets (perso ou org)
-│   ├── organization-section.tsx   # Section d'une organisation (wraps projects-section)
-│   └── user-menu.tsx              # Menu utilisateur du bas (desktop only)
-├── use-sidebar-data.ts            # Hook partagé : fetch projets, orgs, membres, permissions
-├── sidebar.tsx                    # Sidebar desktop (assemble les organisms)
-├── mobile-sidebar.tsx             # Sidebar mobile (assemble les organisms, sans UserMenu)
-└── index.ts                       # Re-exports publics
+│   └── sidebar/
+│       ├── desktop-project-item.tsx
+│       └── mobile-project-item.tsx
+└── organisms/
+    └── sidebar/
+        ├── sidebar-nav.tsx
+        ├── projects-section.tsx
+        ├── organization-section.tsx
+        ├── user-menu.tsx
+        ├── sidebar.tsx
+        ├── mobile-sidebar.tsx
+        ├── use-sidebar-data.ts
+        └── index.ts
 ```
 
 **La convention `ui/` reste inchangée** (shadcn/ui, considérés comme atoms du design system).
@@ -94,48 +98,48 @@ Chaque composant extrait doit avoir son test. Ordre de priorité :
 
 ### Branche : `refactor/sidebar-atomic-design`
 
-#### Tâche 1 — Préparer la structure de dossiers
+#### ✅ Tâche 1 — Préparer la structure de dossiers
 - Créer `client/src/components/layout/sidebar/` avec les sous-dossiers `atoms/`, `molecules/`, `organisms/`
 - Créer `sidebar/index.ts` vide (sera rempli au fil des tâches)
 - Mettre à jour l'import de `MobileSidebar` dans `header.tsx` en avance pour éviter la régression
 
-#### Tâche 2 — Extraire le hook `useSidebarData`
+#### ✅ Tâche 2 — Extraire le hook `useSidebarData`
 > TDD : écrire le test d'abord
 - Déplacer toute la logique de fetch (projets, organisations, queries d'org, membres, `editableOrganizationIds`) dans `use-sidebar-data.ts`
 - Le hook renvoie : `{ projects, isLoadingProjects, sortedOrganizations, organizationProjectsMap, editableOrganizationIds }`
 - Tests avec `renderHook` + données mockées
 
-#### Tâche 3 — Atoms
+#### ✅ Tâche 3 — Atoms
 > TDD : écrire les tests d'abord
 - **`sidebar-logo.tsx`** : `<SidebarLogo />` — lien vers `/projects` avec le nom "Raggae"
 - **`sidebar-nav-link.tsx`** : `<SidebarNavLink href icon label />` — lien avec état actif basé sur `usePathname()`
 - **`sidebar-section-header.tsx`** : `<SidebarSectionHeader title canCreate createHref createAriaLabel />` — titre + bouton `+` optionnel
 
-#### Tâche 4 — Molecules : `DesktopProjectItem` et `MobileProjectItem`
+#### ✅ Tâche 4 — Molecules : `DesktopProjectItem` et `MobileProjectItem`
 > TDD : écrire les tests d'abord
 - **`desktop-project-item.tsx`** : `<DesktopProjectItem project canAccessSettings />` — lien tronqué + `DropdownMenu` au hover
 - **`mobile-project-item.tsx`** : `<MobileProjectItem project />` — lien simple tronqué
 - Tests desktop : état actif, menu visible au hover, item settings conditionnel
 - Tests mobile : état actif, rendu sans dropdown
 
-#### Tâche 5 — Organisms
+#### ✅ Tâche 5 — Organisms
 > TDD : écrire les tests d'abord
 - **`sidebar-nav.tsx`** : `<SidebarNav />` — liste de `SidebarNavLink` (projets, organisations, invitations)
 - **`projects-section.tsx`** : `<ProjectsSection title projects canCreate createHref showActions />` — utilise `SidebarSectionHeader` + liste de `ProjectItem`
 - **`organization-section.tsx`** : `<OrganizationSection organization projects canCreate showActions />` — wraps `ProjectsSection`
 - **`user-menu.tsx`** : `<UserMenu />` — extrait tel quel du bas de `sidebar.tsx`
 
-#### Tâche 6 — Réécrire `Sidebar` (desktop) et `MobileSidebar`
+#### ✅ Tâche 6 — Réécrire `Sidebar` (desktop) et `MobileSidebar`
 - `sidebar.tsx` : composition d'organisms + `useSidebarData()`, sans logique propre
 - `mobile-sidebar.tsx` : idem, sans `UserMenu`
 - `index.ts` : re-exporte `Sidebar` et `MobileSidebar`
 
-#### Tâche 7 — Mettre à jour les imports dans l'app
+#### ✅ Tâche 7 — Mettre à jour les imports dans l'app
 - `app/(dashboard)/layout.tsx` → vérifier que l'import `@/components/layout/sidebar` fonctionne via `index.ts`
 - `components/layout/header.tsx` → mettre à jour l'import de `MobileSidebar`
 - Supprimer les anciens fichiers `layout/sidebar.tsx` et `layout/mobile-sidebar.tsx` si déplacés
 
-#### Tâche 8 — Validation
+#### ✅ Tâche 8 — Validation
 - `npm run build` : zéro erreur TypeScript
 - `npm test` : tous les tests passent
 - Vérification manuelle dans le navigateur (desktop + mobile)

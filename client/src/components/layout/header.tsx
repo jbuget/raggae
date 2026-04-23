@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { MobileSidebar } from "./sidebar";
+import { MobileSidebar } from "@/components/organisms/sidebar";
 
 export function Header() {
   const t = useTranslations("header");

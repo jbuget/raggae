@@ -2,9 +2,99 @@
 
 ## Vue d'ensemble
 
-Raggae est développé selon les principes de **Clean Architecture** avec une séparation stricte entre les couches métier, application et infrastructure.
+Raggae est développé selon les principes de **Clean Architecture** (backend) et d'**Atomic Design** (frontend), avec une séparation stricte des responsabilités à chaque couche.
 
-## Principes directeurs
+---
+
+## Architecture Frontend — Atomic Design
+
+### Principes
+
+Le frontend suit les principes d'**Atomic Design** (Brad Frost), organisés du plus petit composant au plus grand :
+
+| Couche | Rôle | Dépendances |
+|--------|------|-------------|
+| **`ui/`** | Primitives du design system (shadcn/ui, Radix UI) | Aucune locale |
+| **`atoms/`** | Composants présentationnels purs, sans état | `ui/` uniquement |
+| **`molecules/`** | Combinaisons d'atoms avec comportement minimal | `ui/`, `atoms/` |
+| **`organisms/`** | Blocs complexes, avec logique métier et data fetching | Toutes les couches inférieures |
+| **`layout/`** | Conteneurs de mise en page (non encore migrés) | `organisms/` |
+
+**Règle** : une couche peut importer des couches inférieures, jamais supérieures.
+
+### Structure source
+
+```
+client/src/components/
+├── ui/                          # Design system — shadcn/ui (atoms, non touchés)
+├── atoms/
+│   └── sidebar/
+│       ├── sidebar-logo.tsx         # Lien brand vers /projects
+│       ├── sidebar-nav-link.tsx     # Lien de navigation avec état actif
+│       └── sidebar-section-header.tsx # Titre de section + bouton optionnel
+├── molecules/
+│   └── sidebar/
+│       ├── desktop-project-item.tsx  # Lien projet + dropdown menu (desktop)
+│       └── mobile-project-item.tsx   # Lien projet simple (mobile)
+├── organisms/
+│   └── sidebar/
+│       ├── sidebar-nav.tsx           # Section de navigation principale
+│       ├── projects-section.tsx      # Liste de projets (desktop ou mobile)
+│       ├── organization-section.tsx  # Section d'une organisation
+│       ├── user-menu.tsx             # Menu utilisateur (settings, langue, thème)
+│       ├── sidebar.tsx               # Sidebar desktop — compose les organisms
+│       ├── mobile-sidebar.tsx        # Sidebar mobile — compose les organisms
+│       ├── use-sidebar-data.ts       # Hook partagé (projects, orgs, permissions)
+│       └── index.ts                  # Re-exports publics
+└── layout/                       # Composants non encore migrés vers Atomic Design
+    ├── header.tsx
+    ├── locale-selector.tsx
+    └── theme-toggle.tsx
+```
+
+### Structure des tests
+
+Les tests mirrorent la structure source :
+
+```
+client/tests/components/
+├── atoms/sidebar/
+├── molecules/sidebar/
+├── organisms/sidebar/
+└── layout/               # Tests des composants non encore migrés
+```
+
+### Hooks associés aux organisms
+
+Les hooks spécifiques à un organism vivent à côté de lui (ex: `use-sidebar-data.ts` dans `organisms/sidebar/`). Les hooks partagés entre plusieurs features restent dans `lib/hooks/`.
+
+### Convention d'import entre couches
+
+Utiliser les chemins absolus (`@/components/...`) pour les imports cross-couches :
+
+```tsx
+// ✅ Correct — organism importe un atom
+import { SidebarNavLink } from "@/components/atoms/sidebar/sidebar-nav-link";
+
+// ✅ Correct — organism importe une molecule
+import { DesktopProjectItem } from "@/components/molecules/sidebar/desktop-project-item";
+
+// ✅ Correct — organism importe un autre organism du même feature
+import { SidebarNav } from "./sidebar-nav";
+
+// ❌ Interdit — atom importe un organism
+import { UserMenu } from "@/components/organisms/sidebar/user-menu";
+```
+
+### Migration progressive
+
+L'adoption d'Atomic Design est **progressive par feature**. La sidebar a été la première feature migrée pour établir la convention. Les futures features (`auth/`, `chat/`, `projects/`, etc.) seront migrées au fil du temps vers `atoms/`, `molecules/` et `organisms/`.
+
+---
+
+## Architecture Backend — Clean Architecture
+
+## Principes directeurs (Backend)
 
 ### 1. Dependency Rule
 

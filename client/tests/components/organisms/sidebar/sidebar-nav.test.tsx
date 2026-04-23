@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { SidebarNav } from "@/components/layout/sidebar/organisms/sidebar-nav";
-import { renderWithProviders } from "../../../../helpers/render";
+import { SidebarNav } from "@/components/organisms/sidebar/sidebar-nav";
+import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects",

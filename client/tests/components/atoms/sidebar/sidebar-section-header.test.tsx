@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { SidebarSectionHeader } from "@/components/layout/sidebar/atoms/sidebar-section-header";
-import { renderWithProviders } from "../../../../helpers/render";
+import { SidebarSectionHeader } from "@/components/atoms/sidebar/sidebar-section-header";
+import { renderWithProviders } from "../../../helpers/render";
 
 describe("SidebarSectionHeader", () => {
   it("should render the section title", () => {

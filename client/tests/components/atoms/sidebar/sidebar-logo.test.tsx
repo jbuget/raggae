@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { SidebarLogo } from "@/components/layout/sidebar/atoms/sidebar-logo";
-import { renderWithProviders } from "../../../../helpers/render";
+import { SidebarLogo } from "@/components/atoms/sidebar/sidebar-logo";
+import { renderWithProviders } from "../../../helpers/render";
 
 describe("SidebarLogo", () => {
   it("should render a link to /projects with Raggae text", () => {
