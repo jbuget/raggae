@@ -511,7 +511,8 @@
     "chat": "Chat",
     "settings": "Paramètres",
     "snapshots": "Historique",
-    "githubProject": "Projet GitHub"
+    "githubProject": "Projet GitHub",
+    "sourceCode": "Code source"
   },
   "layout": {
     "themeToggle": {
