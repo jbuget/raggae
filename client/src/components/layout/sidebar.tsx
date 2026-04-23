@@ -111,7 +111,7 @@ export function Sidebar() {
   const shortCommit = gitCommit === "unknown" ? gitCommit : gitCommit.slice(0, 7);
 
   return (
-    <aside className="hidden h-full w-64 border-r bg-muted/30 md:flex md:flex-col">
+    <aside className="hidden h-full w-64 border-r bg-white dark:bg-muted/30 md:flex md:flex-col">
       <div className="flex h-14 items-center border-b px-6">
         <Link href="/projects" className="text-xl font-bold">
           Raggae
