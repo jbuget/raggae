@@ -158,6 +158,17 @@ Read these before coding:
 - **docs/SKILLS.md** — Technical examples (Python, FastAPI, SQLAlchemy patterns)
 - **docs/TESTING_STRATEGY.md** — Testing philosophy and fixtures
 
+## Commande "envoie en prod"
+
+Quand l'utilisateur dit **"envoie en prod"**, exécuter dans l'ordre :
+
+1. Tirer une branche depuis `main` en respectant les conventions de nommage
+2. Faire le ou les commits unitaires (Conventional Commits, messages en français)
+3. Lancer les tests et les checks qualité (voir Pre-Push Checklist ci-dessous)
+4. `git push` vers le remote
+5. Créer la PR en respectant le template (titre et description en français)
+6. Merger la PR
+
 ## Pre-Push Checklist
 
 Run all of the following before every `git push`. All must pass with zero errors:
