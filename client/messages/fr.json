@@ -477,6 +477,7 @@
       "selectFiles": "Sélectionner des fichiers",
       "filesSelected": "fichier(s) sélectionné(s)",
       "uploading": "Téléversement...",
+      "processing": "Traitement...",
       "upload": "Téléverser"
     },
     "row": {

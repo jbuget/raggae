@@ -551,6 +551,8 @@ export default function ProjectSettingsPage() {
             {t("documentIngestion.indexedTotal", { indexed: indexedCount, total: totalCount })}
           </p>
           <DocumentUpload
+            isUploading={uploadDocument.isPending}
+            uploadProgress={uploadDocument.progress}
             onUpload={(files) => {
               uploadDocument.mutate(files, {
                 onSuccess: (result) =>
@@ -558,7 +560,6 @@ export default function ProjectSettingsPage() {
                 onError: () => toast.error(t("documentIngestion.uploadError")),
               });
             }}
-            isUploading={uploadDocument.isPending}
             disabled={isProjectReindexing}
           />
           {isDocumentsLoading ? (

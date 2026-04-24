@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,10 +10,11 @@ import { formatFileSize } from "@/lib/utils/format";
 interface DocumentUploadProps {
   onUpload: (files: File[]) => void;
   isUploading: boolean;
+  uploadProgress?: number;
   disabled?: boolean;
 }
 
-export function DocumentUpload({ onUpload, isUploading, disabled = false }: DocumentUploadProps) {
+export function DocumentUpload({ onUpload, isUploading, uploadProgress = 0, disabled = false }: DocumentUploadProps) {
   const t = useTranslations("documents.upload");
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -91,6 +93,21 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
           </Button>
         </div>
 
+        {isUploading && (
+          <div className="mt-4 space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{uploadProgress >= 95 ? t("processing") : t("uploading")}</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {selectedFiles.length > 0 && (
           <div className="mt-4 flex items-center justify-between gap-4">
             <div>
@@ -111,6 +128,7 @@ export function DocumentUpload({ onUpload, isUploading, disabled = false }: Docu
               onClick={handleUpload}
               disabled={isUploading || disabled}
             >
+              {isUploading && <Loader2 className="animate-spin" />}
               {isUploading ? t("uploading") : t("upload")}
             </Button>
           </div>

@@ -19,20 +19,38 @@ export function uploadDocuments(
   token: string,
   projectId: string,
   files: File[],
+  onProgress?: (percent: number) => void,
 ): Promise<UploadDocumentsResponse> {
-  const formData = new FormData();
-  for (const file of files) {
-    formData.append("files", file);
-  }
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
 
-  return apiFetch<UploadDocumentsResponse>(
-    `/projects/${projectId}/documents`,
-    {
-      method: "POST",
-      body: formData,
-      token,
-    },
-  );
+    const xhr = new XMLHttpRequest();
+
+    if (onProgress) {
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          // Cap at 95 — the remaining 5% represents server-side processing
+          onProgress(Math.min(95, Math.round((e.loaded / e.total) * 100)));
+        }
+      });
+    }
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText) as UploadDocumentsResponse);
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`));
+      }
+    });
+    xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+
+    xhr.open("POST", `/api/v1/projects/${projectId}/documents`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.send(formData);
+  });
 }
 
 export function deleteDocument(
