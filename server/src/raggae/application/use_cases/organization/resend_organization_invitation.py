@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -11,12 +12,16 @@ from raggae.application.interfaces.repositories.organization_member_repository i
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
 )
+from raggae.application.interfaces.repositories.user_repository import UserRepository
+from raggae.application.interfaces.services.invitation_email_service import InvitationEmailService
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationInvitationInvalidError,
     OrganizationNotFoundError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+
+logger = logging.getLogger(__name__)
 
 
 class ResendOrganizationInvitation:
@@ -27,11 +32,15 @@ class ResendOrganizationInvitation:
         organization_repository: OrganizationRepository,
         organization_member_repository: OrganizationMemberRepository,
         organization_invitation_repository: OrganizationInvitationRepository,
+        user_repository: UserRepository,
+        invitation_email_service: InvitationEmailService,
         invitation_ttl_days: int = 7,
     ) -> None:
         self._organization_repository = organization_repository
         self._organization_member_repository = organization_member_repository
         self._organization_invitation_repository = organization_invitation_repository
+        self._user_repository = user_repository
+        self._invitation_email_service = invitation_email_service
         self._invitation_ttl_days = invitation_ttl_days
 
     async def execute(
@@ -59,4 +68,22 @@ class ResendOrganizationInvitation:
             updated_at=now,
         )
         await self._organization_invitation_repository.save(renewed)
+
+        inviter = await self._user_repository.find_by_id(renewed.invited_by_user_id)
+        inviter_name = inviter.full_name if inviter is not None else str(renewed.invited_by_user_id)
+        try:
+            await self._invitation_email_service.send_invitation_email(
+                to_email=renewed.email,
+                organization_name=organization.name,
+                inviter_name=inviter_name,
+                invitation_token=renewed.token_hash,
+                expires_at=renewed.expires_at,
+            )
+        except Exception:
+            logger.warning(
+                "resend_invitation_email_send_failed",
+                extra={"invitation_id": str(renewed.id)},
+                exc_info=True,
+            )
+
         return OrganizationInvitationDTO.from_entity(renewed)

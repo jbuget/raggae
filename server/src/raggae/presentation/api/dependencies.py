@@ -315,11 +315,17 @@ from raggae.infrastructure.services.llamaindex_text_chunker_service import (
 from raggae.infrastructure.services.llm_conversation_title_generator import (
     LLMConversationTitleGenerator,
 )
+from raggae.infrastructure.services.mailgun_invitation_email_service import (
+    MailgunInvitationEmailService,
+)
 from raggae.infrastructure.services.minio_file_storage_service import (
     MinioFileStorageService,
 )
 from raggae.infrastructure.services.multiformat_document_text_extractor import (
     MultiFormatDocumentTextExtractor,
+)
+from raggae.infrastructure.services.noop_invitation_email_service import (
+    NoopInvitationEmailService,
 )
 from raggae.infrastructure.services.ollama_embedding_service import OllamaEmbeddingService
 from raggae.infrastructure.services.ollama_llm_service import OllamaLLMService
@@ -569,6 +575,18 @@ _conversation_title_generator: ConversationTitleGenerator = LLMConversationTitle
 )
 _entra_oauth_provider = EntraOAuthProvider()
 _oauth_code_store = InMemoryOAuthCodeStore()
+if settings.email_backend == "mailgun":
+    from raggae.application.interfaces.services.invitation_email_service import InvitationEmailService as _IES
+
+    _invitation_email_service: _IES = MailgunInvitationEmailService(
+        api_key=settings.mailgun_api_key,
+        domain=settings.mailgun_domain,
+        from_email=settings.mailgun_from_email,
+        frontend_url=settings.frontend_url,
+        api_base=settings.mailgun_api_base,
+    )
+else:
+    _invitation_email_service = NoopInvitationEmailService()
 
 
 def get_entra_config() -> EntraConfig:
@@ -929,6 +947,8 @@ def get_invite_organization_member_use_case() -> InviteOrganizationMember:
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         organization_invitation_repository=_organization_invitation_repository,
+        user_repository=_user_repository,
+        invitation_email_service=_invitation_email_service,
     )
 
 
@@ -945,6 +965,8 @@ def get_resend_organization_invitation_use_case() -> ResendOrganizationInvitatio
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         organization_invitation_repository=_organization_invitation_repository,
+        user_repository=_user_repository,
+        invitation_email_service=_invitation_email_service,
     )
 
 

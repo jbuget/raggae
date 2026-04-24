@@ -47,6 +47,29 @@ from raggae.infrastructure.database.repositories.in_memory_organization_reposito
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
 )
+from raggae.infrastructure.services.noop_invitation_email_service import NoopInvitationEmailService
+
+
+class SpyInvitationEmailService:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    async def send_invitation_email(
+        self,
+        to_email: str,
+        organization_name: str,
+        inviter_name: str,
+        invitation_token: str,
+        expires_at: object,
+    ) -> None:
+        self.calls.append(
+            {
+                "to_email": to_email,
+                "organization_name": organization_name,
+                "inviter_name": inviter_name,
+                "invitation_token": invitation_token,
+            }
+        )
 
 
 class TestOrganizationInvitationUseCases:
@@ -55,8 +78,17 @@ class TestOrganizationInvitationUseCases:
         org_repo = InMemoryOrganizationRepository()
         member_repo = InMemoryOrganizationMemberRepository()
         invitation_repo = InMemoryOrganizationInvitationRepository()
+        user_repo = InMemoryUserRepository()
         now = datetime.now(UTC)
         owner_id = uuid4()
+        owner_user = User(
+            id=owner_id,
+            email="owner@example.com",
+            hashed_password="hashed",
+            full_name="Alice Owner",
+            is_active=True,
+            created_at=now,
+        )
         org = Organization(
             id=uuid4(),
             name="Acme",
@@ -76,14 +108,18 @@ class TestOrganizationInvitationUseCases:
         )
         await org_repo.save(org)
         await member_repo.save(owner)
-        return org_repo, member_repo, invitation_repo, org, owner
+        await user_repo.save(owner_user)
+        return org_repo, member_repo, invitation_repo, user_repo, org, owner, owner_user
 
     async def test_invite_and_list_and_resend_and_revoke(self, setup_data) -> None:
-        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
+        email_service = NoopInvitationEmailService()
         invite = InviteOrganizationMember(
             organization_repository=org_repo,
             organization_member_repository=member_repo,
             organization_invitation_repository=invitation_repo,
+            user_repository=user_repo,
+            invitation_email_service=email_service,
             invitation_ttl_days=7,
         )
         list_use_case = ListOrganizationInvitations(
@@ -95,6 +131,8 @@ class TestOrganizationInvitationUseCases:
             organization_repository=org_repo,
             organization_member_repository=member_repo,
             organization_invitation_repository=invitation_repo,
+            user_repository=user_repo,
+            invitation_email_service=email_service,
             invitation_ttl_days=7,
         )
         revoke = RevokeOrganizationInvitation(
@@ -125,8 +163,98 @@ class TestOrganizationInvitationUseCases:
         assert renewed.status == OrganizationInvitationStatus.PENDING
         assert revoked.status == OrganizationInvitationStatus.REVOKED
 
+    async def test_invite_sends_email_with_correct_data(self, setup_data) -> None:
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, owner_user = setup_data
+        spy = SpyInvitationEmailService()
+        use_case = InviteOrganizationMember(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
+            user_repository=user_repo,
+            invitation_email_service=spy,
+            invitation_ttl_days=7,
+        )
+
+        await use_case.execute(
+            organization_id=org.id,
+            requester_user_id=owner.user_id,
+            email="invitee@example.com",
+            role=OrganizationMemberRole.USER,
+        )
+
+        assert len(spy.calls) == 1
+        call = spy.calls[0]
+        assert call["to_email"] == "invitee@example.com"
+        assert call["organization_name"] == org.name
+        assert call["inviter_name"] == owner_user.full_name
+
+    async def test_resend_sends_email_with_correct_data(self, setup_data) -> None:
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, owner_user = setup_data
+        spy = SpyInvitationEmailService()
+        invite = InviteOrganizationMember(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
+            user_repository=user_repo,
+            invitation_email_service=NoopInvitationEmailService(),
+            invitation_ttl_days=7,
+        )
+        resend = ResendOrganizationInvitation(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
+            user_repository=user_repo,
+            invitation_email_service=spy,
+            invitation_ttl_days=7,
+        )
+
+        created = await invite.execute(
+            organization_id=org.id,
+            requester_user_id=owner.user_id,
+            email="invitee@example.com",
+            role=OrganizationMemberRole.USER,
+        )
+        await resend.execute(
+            organization_id=org.id,
+            requester_user_id=owner.user_id,
+            invitation_id=created.id,
+        )
+
+        assert len(spy.calls) == 1
+        call = spy.calls[0]
+        assert call["to_email"] == "invitee@example.com"
+        assert call["organization_name"] == org.name
+        assert call["inviter_name"] == owner_user.full_name
+
+    async def test_invite_succeeds_even_if_email_raises(self, setup_data) -> None:
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
+
+        class FailingEmailService:
+            async def send_invitation_email(self, **_: object) -> None:
+                raise RuntimeError("SMTP error")
+
+        use_case = InviteOrganizationMember(
+            organization_repository=org_repo,
+            organization_member_repository=member_repo,
+            organization_invitation_repository=invitation_repo,
+            user_repository=user_repo,
+            invitation_email_service=FailingEmailService(),
+            invitation_ttl_days=7,
+        )
+
+        result = await use_case.execute(
+            organization_id=org.id,
+            requester_user_id=owner.user_id,
+            email="invitee@example.com",
+            role=OrganizationMemberRole.USER,
+        )
+
+        saved = await invitation_repo.find_by_id(result.id)
+        assert saved is not None
+        assert saved.status == OrganizationInvitationStatus.PENDING
+
     async def test_accept_invitation(self, setup_data) -> None:
-        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
         now = datetime.now(UTC)
         invitation = OrganizationInvitation(
             id=uuid4(),
@@ -155,7 +283,7 @@ class TestOrganizationInvitationUseCases:
         assert saved_invitation.status == OrganizationInvitationStatus.ACCEPTED
 
     async def test_accept_expired_invitation_raises(self, setup_data) -> None:
-        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
         now = datetime.now(UTC)
         invitation = OrganizationInvitation(
             id=uuid4(),
@@ -183,8 +311,7 @@ class TestOrganizationInvitationUseCases:
         self,
         setup_data,
     ) -> None:
-        org_repo, member_repo, invitation_repo, org, owner = setup_data
-        user_repo = InMemoryUserRepository()
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
         user_id = uuid4()
         now = datetime.now(UTC)
         user = User(
@@ -237,8 +364,7 @@ class TestOrganizationInvitationUseCases:
         assert invitations[0].email == "invitee@example.com"
 
     async def test_accept_user_invitation_by_id(self, setup_data) -> None:
-        org_repo, member_repo, invitation_repo, org, owner = setup_data
-        user_repo = InMemoryUserRepository()
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
         user_id = uuid4()
         now = datetime.now(UTC)
         user = User(
@@ -278,7 +404,7 @@ class TestOrganizationInvitationUseCases:
         assert saved_invitation.status == OrganizationInvitationStatus.ACCEPTED
 
     async def test_list_organization_invitations_returns_only_pending(self, setup_data) -> None:
-        org_repo, member_repo, invitation_repo, org, owner = setup_data
+        org_repo, member_repo, invitation_repo, user_repo, org, owner, _ = setup_data
         now = datetime.now(UTC)
         await invitation_repo.save(
             OrganizationInvitation(

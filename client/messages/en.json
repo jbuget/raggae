@@ -425,6 +425,14 @@
       "accept": "Accept",
       "acceptSuccess": "Invitation accepted",
       "acceptError": "Failed to accept invitation"
+    },
+    "accept": {
+      "loading": "Accepting invitation…",
+      "success": "Invitation accepted! You have joined the organization.",
+      "goToOrganizations": "View my organizations",
+      "invalidToken": "This invitation link is invalid or has expired.",
+      "missingToken": "Invalid link: missing token.",
+      "error": "An error occurred while accepting the invitation."
     }
   },
   "chat": {
