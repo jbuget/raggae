@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -66,6 +66,7 @@ type SettingsTab = (typeof SETTINGS_TABS)[number];
 export default function ProjectSettingsPage() {
   const params = useParams<{ projectId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: project, isLoading } = useProject(params.projectId);
   const { data: documents, isLoading: isDocumentsLoading } = useDocuments(params.projectId);
   const { data: modelCatalog } = useModelCatalog();
@@ -85,7 +86,17 @@ export default function ProjectSettingsPage() {
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [reindexWarningOpen, setReindexWarningOpen] = useState(false);
   const [pendingData, setPendingData] = useState<UpdateProjectRequest | null>(null);
-  const [activeTab, setActiveTab] = useState<SettingsTab>("General");
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    SETTINGS_TABS.find((t) => t === tabFromUrl) ?? "General",
+  );
+
+  function handleTabChange(tab: SettingsTab) {
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("tab", tab);
+    router.replace(`?${next.toString()}`, { scroll: false });
+  }
   const [name, setName] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
@@ -301,7 +312,7 @@ export default function ProjectSettingsPage() {
                     ? "border-primary text-foreground font-medium"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 ].join(" ")}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
               >
                 {tabLabels[tab]}
               </button>
