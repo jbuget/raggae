@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -497,8 +498,10 @@ class TestDocumentIndexingService:
             parent_child_chunking_service=ParentChildChunkingService(),
         )
 
+        project_without_parent_child = replace(project, parent_child_chunking=False)
+
         # When
-        await service.run_pipeline(document, project, b"hello world from raggae")
+        await service.run_pipeline(document, project_without_parent_child, b"hello world from raggae")
 
         # Then — all chunks are STANDARD
         saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
