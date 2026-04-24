@@ -39,7 +39,7 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1 truncate rounded-md px-2 text-left",
+            "flex min-w-0 flex-1 cursor-pointer items-center gap-1 truncate rounded-md px-2 text-left",
             isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
           )}
           title={project.name}

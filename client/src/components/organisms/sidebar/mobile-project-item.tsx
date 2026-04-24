@@ -22,7 +22,7 @@ export function MobileProjectItem({ project }: MobileProjectItemProps) {
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          "flex w-full items-center gap-1 truncate rounded-md px-3 py-2 text-sm transition-colors",
+          "flex w-full cursor-pointer items-center gap-1 truncate rounded-md px-3 py-2 text-sm transition-colors",
           isActive
             ? "bg-primary/10 text-primary"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",

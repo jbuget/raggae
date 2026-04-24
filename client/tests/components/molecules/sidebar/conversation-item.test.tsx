@@ -6,10 +6,8 @@ import { renderWithProviders } from "../../../helpers/render";
 import type { ConversationResponse } from "@/lib/types/api";
 
 vi.mock("next/navigation", () => ({
-  usePathname: vi.fn(),
+  usePathname: vi.fn(() => "/projects/proj-1/chat"),
 }));
-
-const { usePathname } = await import("next/navigation");
 
 const conversation: ConversationResponse = {
   id: "conv-1",
@@ -21,7 +19,6 @@ const conversation: ConversationResponse = {
 
 describe("ConversationItem", () => {
   it("should render the conversation link", () => {
-    vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat");
     const onDelete = vi.fn();
     renderWithProviders(
       <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
@@ -30,7 +27,6 @@ describe("ConversationItem", () => {
   });
 
   it("should show context menu button", () => {
-    vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat");
     const onDelete = vi.fn();
     renderWithProviders(
       <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
@@ -40,7 +36,6 @@ describe("ConversationItem", () => {
 
   it("should open delete confirmation dialog when delete is clicked", async () => {
     const user = userEvent.setup();
-    vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat");
     const onDelete = vi.fn();
     renderWithProviders(
       <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
@@ -52,7 +47,6 @@ describe("ConversationItem", () => {
 
   it("should call onDelete when confirming deletion", async () => {
     const user = userEvent.setup();
-    vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat");
     const onDelete = vi.fn();
     renderWithProviders(
       <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
@@ -66,7 +60,6 @@ describe("ConversationItem", () => {
 
   it("should not call onDelete when cancel is clicked", async () => {
     const user = userEvent.setup();
-    vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat");
     const onDelete = vi.fn();
     renderWithProviders(
       <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,

@@ -18,7 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ConversationLink } from "@/components/atoms/sidebar/conversation-link";
+import { ConversationLink, useConversationActive } from "@/components/atoms/sidebar/conversation-link";
+import { cn } from "@/lib/utils";
 import type { ConversationResponse } from "@/lib/types/api";
 
 interface ConversationItemProps {
@@ -29,20 +30,24 @@ interface ConversationItemProps {
 
 export function ConversationItem({ conversation, projectId, onDelete }: ConversationItemProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const isActive = useConversationActive(conversation.id);
   const t = useTranslations("chat.sidebar");
 
   return (
     <>
-      <div className="group flex items-center gap-1">
-        <div className="min-w-0 flex-1">
-          <ConversationLink conversation={conversation} projectId={projectId} />
-        </div>
-        <DropdownMenu>
+      <div
+        className={cn(
+          "group flex items-center rounded-md transition-colors",
+          isActive ? "bg-primary/10" : "hover:bg-muted",
+        )}
+      >
+        <ConversationLink conversation={conversation} projectId={projectId} isActive={isActive} />
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100 focus:opacity-100"
+              className="mr-1 h-5 w-5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100 focus:opacity-100"
               aria-label={t("deleteTitle")}
             >
               <MoreVertical className="h-3 w-3" />

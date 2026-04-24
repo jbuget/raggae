@@ -8,11 +8,10 @@ import type { ConversationResponse } from "@/lib/types/api";
 interface ConversationLinkProps {
   conversation: ConversationResponse;
   projectId: string;
+  isActive: boolean;
 }
 
-export function ConversationLink({ conversation, projectId }: ConversationLinkProps) {
-  const pathname = usePathname();
-  const isActive = pathname.includes(conversation.id);
+export function ConversationLink({ conversation, projectId, isActive }: ConversationLinkProps) {
   const href = `/projects/${projectId}/chat/${conversation.id}`;
 
   const label =
@@ -28,14 +27,17 @@ export function ConversationLink({ conversation, projectId }: ConversationLinkPr
     <Link
       href={href}
       className={cn(
-        "block truncate rounded-md px-3 py-1.5 text-sm transition-colors",
-        isActive
-          ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        "block min-w-0 flex-1 truncate px-3 py-1 text-sm",
+        isActive ? "text-primary" : "text-muted-foreground",
       )}
       title={label}
     >
       {label}
     </Link>
   );
+}
+
+export function useConversationActive(conversationId: string) {
+  const pathname = usePathname();
+  return pathname.includes(conversationId);
 }
