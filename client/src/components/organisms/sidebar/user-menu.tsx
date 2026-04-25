@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { Check, Github, Languages, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { BarChart2, Check, Github, Languages, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -128,6 +128,13 @@ export function UserMenu() {
           </DropdownMenuSub>
 
           <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <Link href="/stats" className="flex cursor-pointer items-center gap-2">
+              <BarChart2 size={14} />
+              {t("stats")}
+            </Link>
+          </DropdownMenuItem>
 
           <DropdownMenuItem asChild>
             <a

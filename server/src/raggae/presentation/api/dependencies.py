@@ -34,6 +34,7 @@ from raggae.application.interfaces.repositories.project_snapshot_repository impo
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
 )
+from raggae.application.interfaces.repositories.stats_repository import StatsRepository
 from raggae.application.interfaces.repositories.user_repository import UserRepository
 from raggae.application.interfaces.services.chunk_retrieval_service import (
     ChunkRetrievalService,
@@ -183,6 +184,7 @@ from raggae.application.use_cases.provider_credentials.list_provider_api_keys im
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
+from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.handle_oauth_callback import HandleOAuthCallback
 from raggae.application.use_cases.user.initiate_oauth_login import InitiateOAuthLogin
@@ -225,6 +227,9 @@ from raggae.infrastructure.database.repositories.in_memory_project_snapshot_repo
 from raggae.infrastructure.database.repositories.in_memory_provider_credential_repository import (
     InMemoryProviderCredentialRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_stats_repository import (
+    InMemoryStatsRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
 )
@@ -260,6 +265,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_project_snapshot_rep
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_repository import (
     SQLAlchemyProviderCredentialRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_stats_repository import (
+    SQLAlchemyStatsRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
@@ -388,6 +396,7 @@ def _build_embedding_service() -> EmbeddingService:
 
 
 if settings.persistence_backend == "postgres":
+    _stats_repository: StatsRepository = SQLAlchemyStatsRepository(session_factory=SessionFactory)
     _user_repository: UserRepository = SQLAlchemyUserRepository(session_factory=SessionFactory)
     _project_repository: ProjectRepository = SQLAlchemyProjectRepository(session_factory=SessionFactory)
     _project_snapshot_repository: ProjectSnapshotRepository = SQLAlchemyProjectSnapshotRepository(
@@ -424,6 +433,7 @@ if settings.persistence_backend == "postgres":
         fulltext_language=settings.retrieval_fulltext_language,
     )
 else:
+    _stats_repository = InMemoryStatsRepository()
     _user_repository = InMemoryUserRepository()
     _project_repository = InMemoryProjectRepository()
     _project_snapshot_repository = InMemoryProjectSnapshotRepository()
@@ -1065,6 +1075,10 @@ def get_restore_project_snapshot_use_case() -> RestoreProjectSnapshot:
         snapshot_repository=_project_snapshot_repository,
         organization_member_repository=_organization_member_repository,
     )
+
+
+def get_get_public_stats_use_case() -> GetPublicStats:
+    return GetPublicStats(stats_repository=_stats_repository)
 
 
 def get_current_user_id(
