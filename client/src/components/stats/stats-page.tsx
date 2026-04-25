@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getStats } from "@/lib/api/stats";
 import type { StatsResponse } from "@/lib/api/stats";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 function StatCard({
   label,
@@ -170,9 +171,11 @@ function StatsContent({ stats }: { stats: StatsResponse }) {
 
 export function StatsPage() {
   const t = useTranslations("stats");
+  const { token } = useAuth();
   const { data, isLoading, error } = useQuery({
     queryKey: ["stats"],
-    queryFn: getStats,
+    queryFn: () => getStats(token!),
+    enabled: !!token,
     staleTime: 5 * 60 * 1000,
   });
 

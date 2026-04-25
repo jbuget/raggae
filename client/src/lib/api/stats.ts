@@ -34,6 +34,6 @@ export interface StatsResponse {
   impact: StatsImpact;
 }
 
-export function getStats(): Promise<StatsResponse> {
-  return apiFetch<StatsResponse>("/stats");
+export function getStats(token: string): Promise<StatsResponse> {
+  return apiFetch<StatsResponse>("/stats", { token });
 }

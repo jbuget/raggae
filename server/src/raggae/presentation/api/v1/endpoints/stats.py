@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
-from raggae.presentation.api.dependencies import get_get_public_stats_use_case
+from raggae.presentation.api.dependencies import get_current_user_id, get_get_public_stats_use_case
 from raggae.presentation.api.v1.schemas.stats_schemas import (
     StatsFonctionnementResponse,
     StatsImpactResponse,
@@ -11,14 +11,14 @@ from raggae.presentation.api.v1.schemas.stats_schemas import (
     StatsUsageResponse,
 )
 
-router = APIRouter(prefix="/stats", tags=["stats"])
+router = APIRouter(prefix="/stats", tags=["stats"], dependencies=[Depends(get_current_user_id)])
 
 
 @router.get("", response_model=StatsResponse)
-async def get_public_stats(
+async def get_stats(
     use_case: Annotated[GetPublicStats, Depends(get_get_public_stats_use_case)],
 ) -> StatsResponse:
-    """Public endpoint — returns aggregated platform statistics. No authentication required."""
+    """Returns aggregated platform statistics. Authentication required."""
     dto = await use_case.execute()
     return StatsResponse(
         generated_at=dto.generated_at,
