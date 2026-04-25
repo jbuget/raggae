@@ -205,6 +205,7 @@ export interface OrganizationInvitationResponse {
   expires_at: string;
   created_at: string;
   updated_at: string;
+  token_hash: string;
 }
 
 export interface UserPendingOrganizationInvitationResponse {

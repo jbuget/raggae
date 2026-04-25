@@ -177,10 +177,20 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       )}
                     </div>
                     <p className="text-muted-foreground">
-                      {invitation.role} - {invitation.status}
+                      {t("sentOn")} {new Date(invitation.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const url = `${window.location.origin}/invitations/accept?token=${invitation.token_hash}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success(t("copyLinkSuccess"));
+                      }}
+                    >
+                      {t("copyLink")}
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() =>

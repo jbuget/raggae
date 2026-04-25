@@ -64,6 +64,7 @@ class OrganizationInvitationResponse(BaseModel):
     expires_at: datetime
     created_at: datetime
     updated_at: datetime
+    token_hash: str
 
 
 class UserPendingOrganizationInvitationResponse(BaseModel):
