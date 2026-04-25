@@ -80,4 +80,16 @@ describe("MessageInput", () => {
     expect(screen.getByRole("button", { name: /stop/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/message/i)).toBeDisabled();
   });
+
+  it("should call onStop when stop button is clicked while thinking", async () => {
+    const onStop = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <MessageInput onSend={vi.fn()} onStop={onStop} disabled isThinking />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /stop/i }));
+
+    expect(onStop).toHaveBeenCalledOnce();
+  });
 });

@@ -1,4 +1,6 @@
 import json
+from collections.abc import AsyncIterator
+from unittest.mock import patch
 from uuid import uuid4
 
 from httpx import AsyncClient
@@ -215,6 +217,43 @@ class TestChatEndpoints:
             first_chunk = done_events[0]["chunks"][0]
             assert "content" in first_chunk
             assert "document_file_name" in first_chunk
+
+    async def test_stream_message_emits_error_event_with_done_on_llm_failure(
+        self, client: AsyncClient
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+
+        async def failing_execute_stream(self: object, **kwargs: object) -> AsyncIterator[object]:
+            raise LLMGenerationError("LLM unavailable")
+            yield  # makes this an async generator (unreachable)
+
+        with patch(
+            "raggae.application.use_cases.chat.send_message.SendMessage.execute_stream",
+            new=failing_execute_stream,
+        ):
+            # When
+            async with client.stream(
+                "POST",
+                f"/api/v1/projects/{project_id}/chat/messages/stream",
+                json={"message": "hello", "limit": 3},
+                headers=headers,
+            ) as response:
+                payload = ""
+                async for chunk in response.aiter_text():
+                    payload += chunk
+
+        # Then
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+        data_events = [
+            line.removeprefix("data: ").strip() for line in payload.splitlines() if line.startswith("data: ")
+        ]
+        parsed_events = [json.loads(raw) for raw in data_events if raw]
+        error_events = [e for e in parsed_events if "error" in e]
+        assert len(error_events) == 1
+        assert error_events[0]["done"] is True
+        assert "LLM unavailable" in error_events[0]["error"]
 
     async def test_stream_message_other_user_project_returns_404(
         self,

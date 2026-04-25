@@ -105,9 +105,7 @@ class TestStatsEndpoints:
         assert "multi_turn_conversations_rate_percent" in impact
         assert "average_sources_per_answer" in impact
 
-    async def test_e2e_stats_north_star_equals_reliable_answers_total(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_e2e_stats_north_star_equals_reliable_answers_total(self, client: AsyncClient) -> None:
         # Given
         headers = await self._auth_headers(client)
 
@@ -118,9 +116,7 @@ class TestStatsEndpoints:
         data = response.json()
         assert data["north_star_reliable_answers"] == data["impact"]["reliable_answers_total"]
 
-    async def test_e2e_stats_returns_zero_values_on_empty_database(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_e2e_stats_returns_zero_values_on_empty_database(self, client: AsyncClient) -> None:
         # Given — empty in-memory database (default test setup)
         headers = await self._auth_headers(client)
 
