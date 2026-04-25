@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +79,13 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                     setRole("user");
                     toast.success(t("inviteSuccess"));
                   },
-                  onError: () => toast.error(t("inviteError")),
+                  onError: (err) => {
+                    if (err instanceof ApiError && err.status === 409) {
+                      toast.error(t("inviteAlreadyPending"));
+                    } else {
+                      toast.error(t("inviteError"));
+                    }
+                  },
                 },
               )
             }
