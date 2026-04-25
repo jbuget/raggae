@@ -387,6 +387,7 @@
       "invitePlaceholder": "user@example.com",
       "inviteSuccess": "Invitation sent",
       "inviteError": "Failed to invite member",
+      "inviteAlreadyPending": "An invitation is already pending for this email.",
       "currentMembers": "Current members",
       "joined": "Joined",
       "remove": "Remove",
