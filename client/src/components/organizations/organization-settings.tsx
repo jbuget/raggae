@@ -25,6 +25,8 @@ import {
   useOrganization,
   useUpdateOrganization,
 } from "@/lib/hooks/use-organization";
+import { useOrganizationMembers } from "@/lib/hooks/use-organization-members";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 const ORG_SETTINGS_TABS = ["General", "Members", "API Keys"] as const;
 type OrgSettingsTab = (typeof ORG_SETTINGS_TABS)[number];
@@ -38,7 +40,9 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
   const tCommon = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const { data, isLoading, error } = useOrganization(organizationId);
+  const { data: members, isLoading: isMembersLoading } = useOrganizationMembers(organizationId);
   const deleteOrganization = useDeleteOrganization(organizationId);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const tabFromUrl = searchParams.get("tab");
@@ -58,7 +62,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
     "API Keys": t("tabApiKeys"),
   };
 
-  if (isLoading) {
+  if (isLoading || isMembersLoading) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-10 w-96" />
@@ -69,6 +73,12 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
 
   if (error || !data) {
     return <div className="text-destructive">{t("loadError")}</div>;
+  }
+
+  const currentMember = members?.find((m) => m.user_id === user?.id);
+  if (currentMember?.role !== "owner") {
+    router.replace("/organizations");
+    return null;
   }
 
   return (
