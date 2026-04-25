@@ -19,6 +19,7 @@ class OrganizationInvitationDTO:
     role: OrganizationMemberRole
     status: OrganizationInvitationStatus
     invited_by_user_id: UUID
+    token_hash: str
     expires_at: datetime
     created_at: datetime
     updated_at: datetime
@@ -32,6 +33,7 @@ class OrganizationInvitationDTO:
             role=invitation.role,
             status=invitation.status,
             invited_by_user_id=invitation.invited_by_user_id,
+            token_hash=invitation.token_hash,
             expires_at=invitation.expires_at,
             created_at=invitation.created_at,
             updated_at=invitation.updated_at,
