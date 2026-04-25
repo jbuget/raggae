@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface MessageInputProps {
   onSend: (message: string) => void;
+  onStop?: () => void;
   disabled?: boolean;
   isThinking?: boolean;
   hasMessages?: boolean;
@@ -15,6 +16,7 @@ interface MessageInputProps {
 
 export function MessageInput({
   onSend,
+  onStop,
   disabled = false,
   isThinking = false,
   hasMessages = false,
@@ -87,7 +89,7 @@ export function MessageInput({
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-default",
             )}
-            onClick={handleSubmit}
+            onClick={isThinking ? onStop : handleSubmit}
             disabled={!isThinking && !canSend}
             aria-label={isThinking ? t("stop") : t("send")}
           >

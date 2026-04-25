@@ -335,7 +335,16 @@ export interface StreamDoneEvent {
   chunks: RetrievedChunkResponse[];
 }
 
-export type StreamEvent = StreamTokenEvent | StreamDoneEvent;
+export interface StreamErrorEvent {
+  error: string;
+  done: true;
+}
+
+export interface StreamPingEvent {
+  ping: true;
+}
+
+export type StreamEvent = StreamTokenEvent | StreamDoneEvent | StreamErrorEvent | StreamPingEvent;
 
 // User model provider credentials
 export type ModelProvider = "openai" | "gemini" | "anthropic";

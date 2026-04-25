@@ -152,26 +152,55 @@ async def stream_message(
     from raggae.application.dto.chat_stream_event import ChatStreamDone, ChatStreamToken
 
     async def event_stream() -> AsyncIterator[str]:
+        import asyncio
+
         started_at = perf_counter()
+
+        async def _stream_to_queue(
+            stream: AsyncIterator[object],
+            queue: asyncio.Queue[object],
+        ) -> None:
+            try:
+                async for event in stream:
+                    await queue.put(event)
+            except Exception as exc:
+                await queue.put(exc)
+            finally:
+                await queue.put(None)  # sentinel
+
+        queue: asyncio.Queue[object] = asyncio.Queue()
+        stream = use_case.execute_stream(
+            project_id=project_id,
+            user_id=user_id,
+            message=data.message,
+            limit=data.limit,
+            offset=data.offset,
+            conversation_id=data.conversation_id,
+            start_new_conversation=data.start_new_conversation,
+            retrieval_filters=(
+                data.retrieval_filters.model_dump(exclude_none=True)
+                if data.retrieval_filters is not None
+                else None
+            ),
+        )
+        producer = asyncio.create_task(_stream_to_queue(stream, queue))
+
         try:
-            stream = use_case.execute_stream(
-                project_id=project_id,
-                user_id=user_id,
-                message=data.message,
-                limit=data.limit,
-                offset=data.offset,
-                conversation_id=data.conversation_id,
-                start_new_conversation=data.start_new_conversation,
-                retrieval_filters=(
-                    data.retrieval_filters.model_dump(exclude_none=True)
-                    if data.retrieval_filters is not None
-                    else None
-                ),
-            )
-            async for event in stream:
-                if isinstance(event, ChatStreamToken):
-                    yield f"data: {json.dumps({'token': event.token})}\n\n"
-                elif isinstance(event, ChatStreamDone):
+            _KEEPALIVE_INTERVAL = 15.0
+            while True:
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=_KEEPALIVE_INTERVAL)
+                except TimeoutError:
+                    yield f"data: {json.dumps({'ping': True})}\n\n"
+                    continue
+
+                if item is None:
+                    break
+                if isinstance(item, Exception):
+                    raise item
+                if isinstance(item, ChatStreamToken):
+                    yield f"data: {json.dumps({'token': item.token})}\n\n"
+                elif isinstance(item, ChatStreamDone):
                     chunks_payload = [
                         {
                             "chunk_id": str(chunk.chunk_id),
@@ -182,18 +211,18 @@ async def stream_message(
                             "vector_score": chunk.vector_score,
                             "fulltext_score": chunk.fulltext_score,
                         }
-                        for chunk in event.chunks
+                        for chunk in item.chunks
                     ]
                     yield (
                         "data: "
                         + json.dumps(
                             {
                                 "done": True,
-                                "conversation_id": str(event.conversation_id),
-                                "retrieval_strategy_used": event.retrieval_strategy_used,
-                                "retrieval_execution_time_ms": event.retrieval_execution_time_ms,
-                                "history_messages_used": event.history_messages_used,
-                                "chunks_used": event.chunks_used,
+                                "conversation_id": str(item.conversation_id),
+                                "retrieval_strategy_used": item.retrieval_strategy_used,
+                                "retrieval_execution_time_ms": item.retrieval_execution_time_ms,
+                                "history_messages_used": item.history_messages_used,
+                                "chunks_used": item.chunks_used,
                                 "chunks": chunks_payload,
                             }
                         )
@@ -206,19 +235,21 @@ async def stream_message(
                             "project_id": str(project_id),
                             "user_id": str(user_id),
                             "limit": data.limit,
-                            "chunks_count": len(event.chunks),
+                            "chunks_count": len(item.chunks),
                             "llm_backend": settings.default_llm_provider,
                             "elapsed_ms": round(elapsed_ms, 2),
                         },
                     )
         except ProjectNotFoundError:
-            yield f"data: {json.dumps({'error': 'Project not found'})}\n\n"
+            yield f"data: {json.dumps({'error': 'Project not found', 'done': True})}\n\n"
         except ProjectReindexInProgressError:
-            yield f"data: {json.dumps({'error': 'Project reindex already in progress'})}\n\n"
+            yield f"data: {json.dumps({'error': 'Project reindex already in progress', 'done': True})}\n\n"
         except ConversationNotFoundError:
-            yield f"data: {json.dumps({'error': 'Conversation not found'})}\n\n"
+            yield f"data: {json.dumps({'error': 'Conversation not found', 'done': True})}\n\n"
         except LLMGenerationError as exc:
-            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+            yield f"data: {json.dumps({'error': str(exc), 'done': True})}\n\n"
+        finally:
+            producer.cancel()
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

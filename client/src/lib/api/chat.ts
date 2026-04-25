@@ -23,10 +23,25 @@ export function sendMessage(
   );
 }
 
+export class StreamAbortedError extends Error {
+  constructor() {
+    super("Stream aborted");
+    this.name = "StreamAbortedError";
+  }
+}
+
+export class StreamServerError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StreamServerError";
+  }
+}
+
 export async function* streamMessage(
   token: string,
   projectId: string,
   data: SendMessageRequest,
+  signal?: AbortSignal,
 ): AsyncGenerator<StreamEvent> {
   const response = await fetch(
     `/api/v1/projects/${projectId}/chat/messages/stream`,
@@ -37,6 +52,7 @@ export async function* streamMessage(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+      signal,
     },
   );
 
@@ -53,6 +69,10 @@ export async function* streamMessage(
 
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new StreamAbortedError();
+      }
+
       const { done, value } = await reader.read();
       if (done) break;
 
@@ -62,13 +82,21 @@ export async function* streamMessage(
 
       for (const line of lines) {
         if (line.startsWith("data: ")) {
-          const data = line.slice(6).trim();
-          if (data) {
+          const raw = line.slice(6).trim();
+          if (raw) {
+            let parsed: StreamEvent;
             try {
-              yield JSON.parse(data) as StreamEvent;
+              parsed = JSON.parse(raw) as StreamEvent;
             } catch {
-              // skip unparseable lines
+              continue;
             }
+            if ("error" in parsed) {
+              throw new StreamServerError(parsed.error);
+            }
+            if ("ping" in parsed) {
+              continue;
+            }
+            yield parsed;
           }
         }
       }

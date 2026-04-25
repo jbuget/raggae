@@ -1,6 +1,8 @@
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import {
+  StreamAbortedError,
+  StreamServerError,
   deleteConversation,
   listConversations,
   listMessages,
@@ -136,6 +138,96 @@ describe("streamMessage", () => {
       conversation_id: "conv-1",
       chunks: [],
     });
+    fetchMock.mockRestore();
+  });
+
+  it("should throw StreamServerError when an error event is received", async () => {
+    const payload = 'data: {"error":"LLM failed","done":true}\n\n';
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(payload));
+        controller.close();
+      },
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }),
+      );
+
+    await expect(async () => {
+      for await (const _ of streamMessage("token", "proj-1", { message: "hi" })) {
+        // should throw before yielding
+      }
+    }).rejects.toThrow(StreamServerError);
+
+    fetchMock.mockRestore();
+  });
+
+  it("should skip ping events and not yield them", async () => {
+    const payload =
+      'data: {"ping":true}\n\n' +
+      'data: {"token":"hello"}\n\n' +
+      'data: {"done":true,"conversation_id":"conv-1","chunks":[]}\n\n';
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(payload));
+        controller.close();
+      },
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }),
+      );
+
+    const events = [];
+    for await (const event of streamMessage("token", "proj-1", { message: "hi" })) {
+      events.push(event);
+    }
+
+    // ping must not appear in yielded events
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({ token: "hello" });
+    expect(events[1]).toMatchObject({ done: true, conversation_id: "conv-1" });
+
+    fetchMock.mockRestore();
+  });
+
+  it("should throw StreamAbortedError when signal is pre-aborted", async () => {
+    const abortController = new AbortController();
+    abortController.abort();
+
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"token":"hi"}\n\n'));
+        controller.close();
+      },
+    });
+
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        }),
+      );
+
+    await expect(async () => {
+      for await (const _ of streamMessage("token", "proj-1", { message: "hi" }, abortController.signal)) {
+        // should throw before yielding
+      }
+    }).rejects.toThrow(StreamAbortedError);
+
     fetchMock.mockRestore();
   });
 });

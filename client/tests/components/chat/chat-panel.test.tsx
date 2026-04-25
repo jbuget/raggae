@@ -1,3 +1,5 @@
+"use client";
+
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -13,6 +15,15 @@ vi.stubGlobal("ResizeObserver", ResizeObserverMock);
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+}));
+
+const mockSendMessageResult = vi.hoisted(() => ({
+  send: vi.fn(),
+  cancel: vi.fn(),
+  state: "idle" as "idle" | "sending" | "streaming",
+  streamedContent: "",
+  chunks: [] as never[],
+  error: null as string | null,
 }));
 
 vi.mock("@/lib/hooks/use-chat", () => ({
@@ -46,12 +57,7 @@ vi.mock("@/lib/hooks/use-chat", () => ({
       },
     ],
   }),
-  useSendMessage: () => ({
-    send: vi.fn(),
-    state: "idle",
-    streamedContent: "",
-    chunks: [],
-  }),
+  useSendMessage: () => mockSendMessageResult,
 }));
 
 vi.mock("@/lib/hooks/use-auth", () => ({
@@ -115,5 +121,18 @@ describe("ChatPanel", () => {
       (btn) => btn.getAttribute("title") === "Copy chunk ID",
     );
     expect(chunkCopyButtons).toHaveLength(2);
+  });
+
+  it("displays stream error message when state is idle and error is set", () => {
+    mockSendMessageResult.error = "Stream connection failed";
+    mockSendMessageResult.state = "idle";
+
+    renderWithProviders(
+      <ChatPanel projectId="proj-1" conversationId="conv-1" />,
+    );
+
+    expect(screen.getByText("Stream connection failed")).toBeInTheDocument();
+
+    mockSendMessageResult.error = null;
   });
 });

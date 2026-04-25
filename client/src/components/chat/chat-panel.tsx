@@ -46,7 +46,7 @@ export function ChatPanel({
     conversationId,
   );
   const { data: existingMessages } = useMessages(projectId, currentConversationId);
-  const { send, state, streamedContent, chunks } = useSendMessage(projectId);
+  const { send, cancel, state, streamedContent, chunks, error: streamError } = useSendMessage(projectId);
   const [optimisticMessages, setOptimisticMessages] = useState<MessageResponse[]>([]);
   const [showChunks, setShowChunks] = useState(false);
   const [selectedSourceDocument, setSelectedSourceDocument] =
@@ -218,7 +218,13 @@ export function ChatPanel({
               );
             })}
 
-            {state === "sending" && <StreamingIndicator />}
+            {(state === "sending" || (state === "streaming" && streamedContent.length === 0)) && (
+              <StreamingIndicator />
+            )}
+
+            {streamError && state === "idle" && (
+              <p className="text-sm text-destructive">{streamError}</p>
+            )}
 
             {shouldRenderTransientAssistant && (
               <div className="space-y-2">
@@ -280,6 +286,7 @@ export function ChatPanel({
           )}
           <MessageInput
             onSend={handleSend}
+            onStop={cancel}
             disabled={disabled || state !== "idle"}
             isThinking={!disabled && state !== "idle"}
             hasMessages={messages.length > 0}

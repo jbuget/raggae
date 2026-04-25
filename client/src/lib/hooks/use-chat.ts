@@ -1,14 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
+  StreamAbortedError,
   deleteConversation,
   getConversation,
   listConversations,
   listMessages,
   renameConversation,
-  sendMessage,
   streamMessage,
 } from "@/lib/api/chat";
 import type {
@@ -85,6 +85,12 @@ export function useSendMessage(projectId: string) {
   const [state, setState] = useState<ChatState>("idle");
   const [streamedContent, setStreamedContent] = useState("");
   const [chunks, setChunks] = useState<RetrievedChunkResponse[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const cancel = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
 
   const send = useCallback(
     async (
@@ -93,78 +99,52 @@ export function useSendMessage(projectId: string) {
     ) => {
       if (!token) return;
 
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       setState("sending");
       setStreamedContent("");
       setChunks([]);
+      setError(null);
 
       try {
         setState("streaming");
         let accumulated = "";
 
-        try {
-          for await (const event of streamMessage(token, projectId, data)) {
-            if ("token" in event) {
-              accumulated += (event as StreamTokenEvent).token;
-              setStreamedContent(accumulated);
-            } else if ("done" in event) {
-              const doneEvent = event as StreamDoneEvent;
-              setChunks(doneEvent.chunks);
-              const effectiveConversationId =
-                doneEvent.conversation_id || data.conversation_id;
-              if (effectiveConversationId) {
-                onConversationId?.(effectiveConversationId);
-                queryClient.invalidateQueries({
-                  queryKey: ["conversations", projectId],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: [
-                    "messages",
-                    projectId,
-                    effectiveConversationId,
-                  ],
-                });
-              }
+        for await (const event of streamMessage(token, projectId, data, abortController.signal)) {
+          if ("token" in event) {
+            accumulated += (event as StreamTokenEvent).token;
+            setStreamedContent(accumulated);
+          } else if ("done" in event) {
+            const doneEvent = event as StreamDoneEvent;
+            setChunks(doneEvent.chunks);
+            const effectiveConversationId =
+              doneEvent.conversation_id || data.conversation_id;
+            if (effectiveConversationId) {
+              onConversationId?.(effectiveConversationId);
+              queryClient.invalidateQueries({
+                queryKey: ["conversations", projectId],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["messages", projectId, effectiveConversationId],
+              });
             }
           }
-        } catch {
-          let retryConversationId = data.conversation_id ?? null;
-          if (!retryConversationId) {
-            const latestConversations = await listConversations(
-              token,
-              projectId,
-              1,
-              0,
-            );
-            const latest = latestConversations[0];
-            if (latest) {
-              retryConversationId = latest.id;
-            }
-          }
-
-          const response = await sendMessage(token, projectId, {
-            ...data,
-            conversation_id: retryConversationId,
-          });
-          setStreamedContent(response.answer);
-          setChunks(response.chunks);
-          onConversationId?.(response.conversation_id);
-          queryClient.invalidateQueries({
-            queryKey: ["conversations", projectId],
-          });
-          queryClient.invalidateQueries({
-            queryKey: [
-              "messages",
-              projectId,
-              response.conversation_id,
-            ],
-          });
+        }
+      } catch (err) {
+        if (err instanceof StreamAbortedError) {
+          // Annulation volontaire — pas d'affichage d'erreur
+        } else {
+          const message = err instanceof Error ? err.message : "Une erreur est survenue";
+          setError(message);
         }
       } finally {
+        abortControllerRef.current = null;
         setState("idle");
       }
     },
     [token, projectId, queryClient],
   );
 
-  return { send, state, streamedContent, chunks };
+  return { send, cancel, state, streamedContent, chunks, error };
 }
