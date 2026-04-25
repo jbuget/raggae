@@ -100,11 +100,16 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
               >
                 <div className="text-sm">
-                  <p className="font-medium">
-                    {[member.user_first_name, member.user_last_name]
-                      .filter(Boolean)
-                      .join(" ") || member.user_id}
-                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-medium">
+                      {[member.user_first_name, member.user_last_name]
+                        .filter(Boolean)
+                        .join(" ") || member.user_id}
+                    </p>
+                    {member.user_email && (
+                      <p className="text-muted-foreground">{member.user_email}</p>
+                    )}
+                  </div>
                   <p className="text-muted-foreground">{t("joined")} {member.joined_at}</p>
                 </div>
                 <div className="flex items-center gap-2">
