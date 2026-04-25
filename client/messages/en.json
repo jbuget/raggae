@@ -468,6 +468,7 @@
     },
     "sidebar": {
       "newConversation": "New Conversation",
+      "loading": "Loading conversations...",
       "noConversations": "No conversations yet",
       "deleteTitle": "Delete Conversation",
       "deleteConfirm": "Are you sure you want to delete this conversation?"

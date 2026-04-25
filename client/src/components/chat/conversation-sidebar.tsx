@@ -31,12 +31,7 @@ export function ConversationSidebar() {
   const { data: conversations, isLoading } = useConversations(params.projectId);
   const deleteConversation = useDeleteConversation(params.projectId);
 
-  const sorted = conversations
-    ? [...conversations].sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
-    : [];
+  const sorted = conversations ?? [];
 
   return (
     <div className="flex h-full min-h-0 w-64 flex-col border-r">
