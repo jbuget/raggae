@@ -105,6 +105,9 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       .filter(Boolean)
                       .join(" ") || member.user_id}
                   </p>
+                  {member.user_email && (
+                    <p className="text-muted-foreground">{member.user_email}</p>
+                  )}
                   <p className="text-muted-foreground">{t("joined")} {member.joined_at}</p>
                 </div>
                 <div className="flex items-center gap-2">

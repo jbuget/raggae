@@ -48,6 +48,7 @@ class ListOrganizationMembers:
                 first_name, last_name = self._split_full_name(user.full_name)
                 dto.user_first_name = first_name
                 dto.user_last_name = last_name
+                dto.user_email = user.email
             results.append(dto)
         return results
 

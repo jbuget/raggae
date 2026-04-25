@@ -181,6 +181,7 @@ export interface OrganizationMemberResponse {
   user_id: string;
   user_first_name: string | null;
   user_last_name: string | null;
+  user_email: string | null;
   role: OrganizationMemberRole;
   joined_at: string;
 }
