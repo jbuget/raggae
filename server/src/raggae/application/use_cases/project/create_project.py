@@ -217,7 +217,7 @@ class CreateProject:
             is_published=False,
             created_at=datetime.now(UTC),
             chunking_strategy=chunking_strategy or ChunkingStrategy.AUTO,
-            parent_child_chunking=parent_child_chunking or False,
+            parent_child_chunking=parent_child_chunking if parent_child_chunking is not None else True,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_encrypted=encrypted_embedding_api_key,
