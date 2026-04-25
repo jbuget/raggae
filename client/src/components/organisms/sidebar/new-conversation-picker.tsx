@@ -74,8 +74,8 @@ export function NewConversationPicker({ showIcon = false }: NewConversationPicke
                 className={cn(
                   "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm",
                   isCurrent
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "hover:bg-accent hover:text-accent-foreground",
+                    ? "bg-accent text-accent-foreground font-medium cursor-pointer"
+                    : "hover:bg-accent hover:text-accent-foreground cursor-pointer",
                 )}
                 aria-label={project.name}
               >
