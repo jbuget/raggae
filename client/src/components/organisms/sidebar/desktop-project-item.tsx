@@ -69,6 +69,9 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/projects/${project.id}/chat`}>{t("newConversation")}</Link>
+            </DropdownMenuItem>
             {canAccessSettings && (
               <DropdownMenuItem asChild className="cursor-pointer">
                 <Link href={`/projects/${project.id}/settings`}>{t("settings")}</Link>
