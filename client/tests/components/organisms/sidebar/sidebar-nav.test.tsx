@@ -5,6 +5,18 @@ import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects",
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock("@/components/organisms/sidebar/use-sidebar-data", () => ({
+  useSidebarData: () => ({
+    allProjects: [],
+    personalProjects: [],
+    isLoadingProjects: false,
+    sortedOrganizations: [],
+    organizationProjectsMap: new Map(),
+    editableOrganizationIds: new Set(),
+  }),
 }));
 
 describe("SidebarNav", () => {
@@ -19,5 +31,12 @@ describe("SidebarNav", () => {
     renderWithProviders(<SidebarNav />);
     expect(screen.getByRole("link", { name: /projects/i })).toHaveClass("bg-primary/10");
     expect(screen.getByRole("link", { name: /organizations/i })).not.toHaveClass("bg-primary/10");
+  });
+
+  it("should render the new conversation picker button", () => {
+    renderWithProviders(<SidebarNav />);
+    expect(
+      screen.getByRole("button", { name: /new conversation/i }),
+    ).toBeInTheDocument();
   });
 });

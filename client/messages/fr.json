@@ -534,6 +534,8 @@
     "noProjects": "Aucun projet",
     "projectMenu": "Menu du projet {projectName}",
     "newConversation": "Nouvelle conversation",
+    "searchProjects": "Rechercher un projet...",
+    "noProjectsFound": "Aucun projet trouvé",
     "chat": "Chat",
     "settings": "Paramètres",
     "snapshots": "Historique",
