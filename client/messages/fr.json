@@ -398,7 +398,8 @@
       "resendSuccess": "Invitation renvoyée",
       "resendError": "Erreur lors du renvoi",
       "revokeSuccess": "Invitation révoquée",
-      "revokeError": "Erreur lors de la révocation"
+      "revokeError": "Erreur lors de la révocation",
+      "expired": "Expirée"
     },
     "credentials": {
       "title": "Clés API des fournisseurs IA",
@@ -425,6 +426,14 @@
       "accept": "Accepter",
       "acceptSuccess": "Invitation acceptée",
       "acceptError": "Erreur lors de l'acceptation"
+    },
+    "accept": {
+      "loading": "Acceptation de l'invitation en cours…",
+      "success": "Invitation acceptée ! Vous avez rejoint l'organisation.",
+      "goToOrganizations": "Voir mes organisations",
+      "invalidToken": "Ce lien d'invitation est invalide ou a expiré.",
+      "missingToken": "Lien invalide : token manquant.",
+      "error": "Une erreur est survenue lors de l'acceptation de l'invitation."
     }
   },
   "chat": {
@@ -509,6 +518,7 @@
     "createProjectIn": "Créer un projet dans {orgName}",
     "noProjects": "Aucun projet",
     "projectMenu": "Menu du projet {projectName}",
+    "newConversation": "Nouvelle conversation",
     "chat": "Chat",
     "settings": "Paramètres",
     "snapshots": "Historique",

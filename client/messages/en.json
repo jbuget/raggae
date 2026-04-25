@@ -398,7 +398,8 @@
       "resendSuccess": "Invitation resent",
       "resendError": "Failed to resend invitation",
       "revokeSuccess": "Invitation revoked",
-      "revokeError": "Failed to revoke invitation"
+      "revokeError": "Failed to revoke invitation",
+      "expired": "Expired"
     },
     "credentials": {
       "title": "AI provider API keys",
@@ -425,6 +426,14 @@
       "accept": "Accept",
       "acceptSuccess": "Invitation accepted",
       "acceptError": "Failed to accept invitation"
+    },
+    "accept": {
+      "loading": "Accepting invitation…",
+      "success": "Invitation accepted! You have joined the organization.",
+      "goToOrganizations": "View my organizations",
+      "invalidToken": "This invitation link is invalid or has expired.",
+      "missingToken": "Invalid link: missing token.",
+      "error": "An error occurred while accepting the invitation."
     }
   },
   "chat": {
@@ -509,6 +518,7 @@
     "createProjectIn": "Create project in {orgName}",
     "noProjects": "No projects",
     "projectMenu": "Project menu {projectName}",
+    "newConversation": "New conversation",
     "chat": "Chat",
     "settings": "Settings",
     "snapshots": "History",

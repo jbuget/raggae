@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     entra_allowed_domains: list[str] = Field(default_factory=list)
     entra_single_logout: bool = False
     entra_client_secret_expires_at: datetime | None = None
+    email_backend: str = "noop"
+    mailgun_api_key: str = ""
+    mailgun_domain: str = ""
+    mailgun_from_email: str = "noreply@raggae.app"
+    mailgun_api_base: str = "https://api.mailgun.net/v3"
+    mailgun_app_name: str = "Raggae"
 
     @field_validator("entra_allowed_domains", mode="before")
     @classmethod

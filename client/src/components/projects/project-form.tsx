@@ -55,7 +55,7 @@ export function ProjectForm({
     initialData?.chunking_strategy ?? "auto"
   );
   const [parentChildChunking, setParentChildChunking] = useState<boolean>(
-    initialData?.parent_child_chunking ?? false
+    initialData?.parent_child_chunking ?? true
   );
   const [reindexWarningOpen, setReindexWarningOpen] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<ProjectFormData | null>(null);

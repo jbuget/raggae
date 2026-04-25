@@ -25,6 +25,7 @@ from raggae.presentation.api.v1.endpoints.project_snapshots import (
 )
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
 
+logging.getLogger("raggae").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 

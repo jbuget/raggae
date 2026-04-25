@@ -40,6 +40,7 @@ class OrganizationMemberResponse(BaseModel):
     user_id: UUID
     user_first_name: str | None = None
     user_last_name: str | None = None
+    user_email: str | None = None
     role: OrganizationMemberRole
     joined_at: datetime
 
