@@ -3,6 +3,7 @@
 import { Building2, FolderOpen, Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SidebarNavLink } from "@/components/atoms/sidebar/sidebar-nav-link";
+import { NewConversationPicker } from "./new-conversation-picker";
 
 interface SidebarNavProps {
   showIcons?: boolean;
@@ -20,6 +21,7 @@ export function SidebarNav({ showIcons = false, matchPrefix = false }: SidebarNa
 
   return (
     <div className="space-y-1">
+      <NewConversationPicker showIcon={showIcons} />
       {navItems.map((item) => (
         <SidebarNavLink
           key={item.href}

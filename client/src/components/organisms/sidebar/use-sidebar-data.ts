@@ -64,6 +64,7 @@ export function useSidebarData() {
 
   return {
     personalProjects,
+    allProjects,
     isLoadingProjects,
     sortedOrganizations,
     organizationProjectsMap,

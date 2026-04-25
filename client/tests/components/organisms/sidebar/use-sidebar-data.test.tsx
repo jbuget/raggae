@@ -69,4 +69,12 @@ describe("useSidebarData", () => {
     const { result } = renderHook(() => useSidebarData());
     expect(result.current.isLoadingProjects).toBe(false);
   });
+
+  it("should return allProjects merging personal and org projects", () => {
+    const { result } = renderHook(() => useSidebarData());
+    // personal: p1 | org projects mocked as [] → allProjects = [p1]
+    expect(result.current.allProjects).toBeDefined();
+    expect(result.current.allProjects).toHaveLength(1);
+    expect(result.current.allProjects[0].id).toBe("p1");
+  });
 });

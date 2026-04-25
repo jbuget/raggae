@@ -15,6 +15,10 @@ vi.mock("@/components/organisms/sidebar/use-sidebar-data", () => ({
       { id: "proj-1", name: "Project One", organization_id: null },
       { id: "proj-2", name: "Project Two", organization_id: null },
     ],
+    allProjects: [
+      { id: "proj-1", name: "Project One", organization_id: null },
+      { id: "proj-2", name: "Project Two", organization_id: null },
+    ],
     isLoadingProjects: false,
     sortedOrganizations: [],
     organizationProjectsMap: new Map(),
