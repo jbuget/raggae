@@ -41,7 +41,7 @@ export function NewConversationPicker({ showIcon = false }: NewConversationPicke
         <button
           type="button"
           className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            "flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
             "text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
           aria-label={t("newConversation")}
