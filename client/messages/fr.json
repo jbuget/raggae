@@ -554,6 +554,42 @@
       "fr": "Français"
     }
   },
+  "stats": {
+    "pageTitle": "Statistiques",
+    "pageDescription": "Mesures de fonctionnement, d'usage et d'impact de la plateforme.",
+    "loadError": "Impossible de charger les statistiques.",
+    "generatedAt": "Données générées le {date}",
+    "northStar": {
+      "label": "Réponses fiables",
+      "description": "Nombre total de réponses générées avec un score de fiabilité supérieur à 70 %."
+    },
+    "fonctionnement": {
+      "title": "Fonctionnement",
+      "indexingSuccessRate": "Taux d'indexation réussi",
+      "projectsWithDocuments": "Projets avec documents",
+      "totalDocumentSize": "Volume documentaire",
+      "totalChunks": "Chunks indexés"
+    },
+    "usage": {
+      "title": "Usage",
+      "usersTotal": "Utilisateurs",
+      "usersActive30d": "Actifs (30j)",
+      "organizationsTotal": "Organisations",
+      "projectsTotal": "Projets",
+      "projectsPublished": "Projets publiés",
+      "conversationsTotal": "Conversations",
+      "messagesTotal": "Messages",
+      "documentsTotal": "Documents"
+    },
+    "impact": {
+      "title": "Impact",
+      "reliableAnswersTotal": "Réponses fiables",
+      "averageReliability": "Fiabilité moyenne",
+      "relevantAnswersRate": "Taux de pertinence",
+      "multiTurnRate": "Conversations multi-tours",
+      "averageSources": "Sources / réponse"
+    }
+  },
   "errors": {
     "notFound": {
       "title": "404",
