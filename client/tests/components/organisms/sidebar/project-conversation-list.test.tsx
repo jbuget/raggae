@@ -58,7 +58,7 @@ const mockDeleteMutation = {
 describe("ProjectConversationList", () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat");
-    vi.mocked(useDeleteConversation).mockReturnValue(mockDeleteMutation);
+    vi.mocked(useDeleteConversation).mockReturnValue(mockDeleteMutation as unknown as ReturnType<typeof useDeleteConversation>);
   });
 
   it("should show loading state", () => {
@@ -68,7 +68,7 @@ describe("ProjectConversationList", () => {
       isError: false,
       error: null,
       status: "pending",
-    } as ReturnType<typeof useConversations>);
+    } as unknown as ReturnType<typeof useConversations>);
     renderWithProviders(<ProjectConversationList projectId="proj-1" />);
     expect(screen.getByText(/no conversations/i)).toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe("ProjectConversationList", () => {
       isError: false,
       error: null,
       status: "success",
-    } as ReturnType<typeof useConversations>);
+    } as unknown as ReturnType<typeof useConversations>);
     renderWithProviders(<ProjectConversationList projectId="proj-1" />);
     expect(screen.getByText(/no conversations/i)).toBeInTheDocument();
   });
@@ -95,7 +95,7 @@ describe("ProjectConversationList", () => {
       isError: false,
       error: null,
       status: "success",
-    } as ReturnType<typeof useConversations>);
+    } as unknown as ReturnType<typeof useConversations>);
     renderWithProviders(<ProjectConversationList projectId="proj-1" />);
     const links = screen.getAllByRole("link");
     expect(links.length).toBe(10);
@@ -108,7 +108,7 @@ describe("ProjectConversationList", () => {
       isError: false,
       error: null,
       status: "success",
-    } as ReturnType<typeof useConversations>);
+    } as unknown as ReturnType<typeof useConversations>);
     renderWithProviders(<ProjectConversationList projectId="proj-1" />);
     expect(screen.getByText("First conversation")).toBeInTheDocument();
     expect(screen.getByText("Second conversation")).toBeInTheDocument();
