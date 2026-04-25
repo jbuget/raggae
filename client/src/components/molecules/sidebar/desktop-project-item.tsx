@@ -26,16 +26,13 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
 
   return (
     <div
-      className={cn(
-        "group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
-        isActive ? "bg-primary/10" : "hover:bg-muted",
-      )}
+      className="group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors hover:bg-muted"
     >
       <Link
         href={`/projects/${project.id}/chat`}
         className={cn(
           "min-w-0 flex-1 truncate rounded-md px-2",
-          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          isActive ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
         title={project.name}
       >

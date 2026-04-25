@@ -25,8 +25,9 @@ describe("DesktopProjectItem", () => {
 
   it("should apply active styles when pathname is under the project path", () => {
     renderWithProviders(<DesktopProjectItem project={project} />);
-    const container = screen.getByRole("link", { name: "My Project" }).closest("div");
-    expect(container).toHaveClass("bg-primary/10");
+    const link = screen.getByRole("link", { name: "My Project" });
+    expect(link).toHaveClass("font-semibold");
+    expect(link).toHaveClass("text-foreground");
   });
 
   it("should show chat and settings links when dropdown is opened", async () => {

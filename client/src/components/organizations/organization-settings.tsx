@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { OrgCredentialsPanel } from "@/components/organizations/org-credentials-panel";
@@ -37,10 +37,21 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
   const t = useTranslations("organizations.settings");
   const tCommon = useTranslations("common");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data, isLoading, error } = useOrganization(organizationId);
   const deleteOrganization = useDeleteOrganization(organizationId);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<OrgSettingsTab>("General");
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<OrgSettingsTab>(
+    ORG_SETTINGS_TABS.find((t) => t === tabFromUrl) ?? "General",
+  );
+
+  function handleTabChange(tab: OrgSettingsTab) {
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("tab", tab);
+    router.replace(`?${next.toString()}`, { scroll: false });
+  }
   const tabLabels: Record<OrgSettingsTab, string> = {
     General: t("tabGeneral"),
     Members: t("tabMembers"),
@@ -82,7 +93,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
                   ? "border-primary text-foreground font-medium"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               ].join(" ")}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabChange(tab)}
             >
               {tabLabels[tab]}
             </button>

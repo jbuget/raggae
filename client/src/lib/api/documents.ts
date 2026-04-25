@@ -3,7 +3,7 @@ import type {
   DocumentResponse,
   UploadDocumentsResponse,
 } from "@/lib/types/api";
-import { apiFetch } from "./client";
+import { ApiError, apiFetch } from "./client";
 
 export function listDocuments(
   token: string,
@@ -19,20 +19,45 @@ export function uploadDocuments(
   token: string,
   projectId: string,
   files: File[],
+  onProgress?: (percent: number) => void,
 ): Promise<UploadDocumentsResponse> {
-  const formData = new FormData();
-  for (const file of files) {
-    formData.append("files", file);
-  }
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
 
-  return apiFetch<UploadDocumentsResponse>(
-    `/projects/${projectId}/documents`,
-    {
-      method: "POST",
-      body: formData,
-      token,
-    },
-  );
+    const xhr = new XMLHttpRequest();
+
+    if (onProgress) {
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          // Cap at 95 — the remaining 5% represents server-side processing
+          onProgress(Math.min(95, Math.round((e.loaded / e.total) * 100)));
+        }
+      });
+    }
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText) as UploadDocumentsResponse);
+      } else {
+        let message: string;
+        try {
+          const json = JSON.parse(xhr.responseText);
+          message = json.detail || json.message || xhr.responseText;
+        } catch {
+          message = xhr.responseText || `Upload failed: ${xhr.status}`;
+        }
+        reject(new ApiError(xhr.status, message));
+      }
+    });
+    xhr.addEventListener("error", () => reject(new ApiError(0, "Network error during upload")));
+
+    xhr.open("POST", `/api/v1/projects/${projectId}/documents`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.send(formData);
+  });
 }
 
 export function deleteDocument(

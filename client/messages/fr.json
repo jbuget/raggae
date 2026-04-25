@@ -468,6 +468,7 @@
     },
     "sidebar": {
       "newConversation": "Nouvelle conversation",
+      "loading": "Chargement des conversations...",
       "noConversations": "Aucune conversation pour le moment",
       "deleteTitle": "Supprimer la conversation",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?"
@@ -486,6 +487,7 @@
       "selectFiles": "Sélectionner des fichiers",
       "filesSelected": "fichier(s) sélectionné(s)",
       "uploading": "Téléversement...",
+      "processing": "Traitement...",
       "upload": "Téléverser"
     },
     "row": {

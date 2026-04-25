@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
+import { listConversations } from "@/lib/api/chat";
 import { listOrganizationMembers, listOrganizationProjects } from "@/lib/api/organizations";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useOrganizations } from "@/lib/hooks/use-organizations";
@@ -49,6 +50,17 @@ export function useSidebarData() {
   );
 
   const personalProjects = (projects ?? []).filter((p) => !p.organization_id);
+
+  const allOrgProjects = Array.from(organizationProjectsMap.values()).flat();
+  const allProjects = [...personalProjects, ...allOrgProjects];
+
+  useQueries({
+    queries: allProjects.map((project) => ({
+      queryKey: ["conversations", project.id, 10],
+      queryFn: () => listConversations(token!, project.id, 10),
+      enabled: !!token,
+    })),
+  });
 
   return {
     personalProjects,

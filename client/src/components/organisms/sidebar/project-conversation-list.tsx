@@ -13,13 +13,10 @@ export function ProjectConversationList({ projectId }: ProjectConversationListPr
   const t = useTranslations("chat.sidebar");
   const router = useRouter();
   const pathname = usePathname();
-  const { data: conversations, isLoading } = useConversations(projectId);
+  const { data: conversations, isLoading } = useConversations(projectId, 10);
   const { mutate: deleteConversation } = useDeleteConversation(projectId);
 
-  const sorted = [...(conversations ?? [])].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
-  const recent = sorted.slice(0, 10);
+  const recent = conversations ?? [];
 
   const handleDelete = (conversationId: string) => {
     deleteConversation(conversationId);
@@ -28,7 +25,13 @@ export function ProjectConversationList({ projectId }: ProjectConversationListPr
     }
   };
 
-  if (isLoading || recent.length === 0) {
+  if (isLoading) {
+    return (
+      <p className="px-3 py-1 text-xs text-muted-foreground">{t("loading")}</p>
+    );
+  }
+
+  if (recent.length === 0) {
     return (
       <p className="px-3 py-1 text-xs text-muted-foreground">{t("noConversations")}</p>
     );

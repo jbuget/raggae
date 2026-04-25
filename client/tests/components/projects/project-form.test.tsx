@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ProjectForm } from "@/components/projects/project-form";
 import { renderWithProviders } from "../../helpers/render";
+import type { ProjectResponse } from "@/lib/types/api";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -23,7 +24,7 @@ describe("ProjectForm", () => {
       reindex_status: "idle",
       reindex_progress: 0,
       reindex_total: 0,
-    };
+    } as ProjectResponse;
     renderWithProviders(<ProjectForm initialData={initialData} onSubmit={vi.fn()} submitLabel="Save" />);
 
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -77,7 +78,7 @@ describe("ProjectForm", () => {
       reindex_status: "idle",
       reindex_progress: 0,
       reindex_total: 0,
-    };
+    } as ProjectResponse;
 
     renderWithProviders(
       <ProjectForm
@@ -109,7 +110,7 @@ describe("ProjectForm", () => {
       reindex_status: "idle",
       reindex_progress: 0,
       reindex_total: 0,
-    };
+    } as ProjectResponse;
 
     renderWithProviders(
       <ProjectForm
@@ -154,7 +155,7 @@ describe("ProjectForm", () => {
       reindex_status: "idle",
       reindex_progress: 0,
       reindex_total: 0,
-    };
+    } as ProjectResponse;
 
     renderWithProviders(
       <ProjectForm

@@ -155,7 +155,7 @@ describe("PATCH /api/v1/[...path]", () => {
   it("should forward PATCH body to the backend", async () => {
     server.use(
       http.patch(`${BACKEND_URL}/api/v1/projects/1`, async ({ request }) => {
-        const body = await request.json();
+        const body = await request.json() as Record<string, unknown>;
         return HttpResponse.json({ ...body, id: 1 });
       }),
     );

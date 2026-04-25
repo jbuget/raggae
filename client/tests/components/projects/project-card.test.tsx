@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ProjectCard } from "@/components/projects/project-card";
 import { renderWithProviders } from "../../helpers/render";
+import type { ProjectResponse } from "@/lib/types/api";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -16,7 +17,7 @@ const mockProject = {
   system_prompt: "",
   is_published: false,
   created_at: "2026-01-15T00:00:00Z",
-};
+} as ProjectResponse;
 
 describe("ProjectCard", () => {
   it("should display project name", () => {

@@ -18,12 +18,12 @@ import type {
 } from "@/lib/types/api";
 import { useAuth } from "./use-auth";
 
-export function useConversations(projectId: string) {
+export function useConversations(projectId: string, limit = 50) {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: ["conversations", projectId],
-    queryFn: () => listConversations(token!, projectId),
+    queryKey: ["conversations", projectId, limit],
+    queryFn: () => listConversations(token!, projectId, limit),
     enabled: !!token && !!projectId,
   });
 }

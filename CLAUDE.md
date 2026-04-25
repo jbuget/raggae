@@ -76,6 +76,7 @@ Tests mirror source: `server/tests/{unit,integration,e2e}/`
 3. **DDD + Clean Architecture**: Respect layer boundaries strictly. Domain has zero external dependencies.
    No ORM models in domain. Use ubiquitous language in entity and use case naming.
 4. **Test coverage > 80%**: Pyramid — 70% unit, 20% integration, 10% E2E.
+   Do not write style-only tests (e.g. asserting CSS class names). Test behaviour, not presentation.
 5. **Clean Code**: Meaningful names, small focused functions, no magic values, no dead code.
    Follow Software Craftsmanship principles (SOLID, DRY, YAGNI, KISS).
 

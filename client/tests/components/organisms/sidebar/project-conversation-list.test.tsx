@@ -70,7 +70,7 @@ describe("ProjectConversationList", () => {
       status: "pending",
     } as unknown as ReturnType<typeof useConversations>);
     renderWithProviders(<ProjectConversationList projectId="proj-1" />);
-    expect(screen.getByText(/no conversations/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading conversations/i)).toBeInTheDocument();
   });
 
   it("should show empty state when no conversations", () => {
@@ -85,12 +85,24 @@ describe("ProjectConversationList", () => {
     expect(screen.getByText(/no conversations/i)).toBeInTheDocument();
   });
 
-  it("should render up to 10 conversations sorted by most recent first", () => {
-    const manyConversations = Array.from({ length: 12 }, (_, i) =>
+  it("should call useConversations with limit 10", () => {
+    vi.mocked(useConversations).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      status: "success",
+    } as unknown as ReturnType<typeof useConversations>);
+    renderWithProviders(<ProjectConversationList projectId="proj-1" />);
+    expect(useConversations).toHaveBeenCalledWith("proj-1", 10);
+  });
+
+  it("should render all conversations returned by the hook", () => {
+    const tenConversations = Array.from({ length: 10 }, (_, i) =>
       makeConversation(`conv-${i}`, `Conversation ${i}`, `2024-01-${String(i + 1).padStart(2, "0")}T10:00:00Z`),
     );
     vi.mocked(useConversations).mockReturnValue({
-      data: manyConversations,
+      data: tenConversations,
       isLoading: false,
       isError: false,
       error: null,
