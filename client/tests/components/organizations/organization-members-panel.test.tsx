@@ -23,7 +23,33 @@ vi.mock("@/lib/hooks/use-organization-members", () => ({
     ],
     isLoading: false,
   }),
-  useOrganizationInvitations: () => ({ data: [], isLoading: false }),
+  useOrganizationInvitations: () => ({
+    data: [
+      {
+        id: "inv-pending",
+        organization_id: "org-1",
+        email: "pending@example.com",
+        role: "user",
+        status: "pending",
+        invited_by_user_id: "user-1",
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      },
+      {
+        id: "inv-expired",
+        organization_id: "org-1",
+        email: "expired@example.com",
+        role: "user",
+        status: "pending",
+        invited_by_user_id: "user-1",
+        expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      },
+    ],
+    isLoading: false,
+  }),
   useInviteOrganizationMember: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateOrganizationMemberRole: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveOrganizationMember: () => ({ mutate: vi.fn(), isPending: false }),
@@ -42,8 +68,15 @@ describe("OrganizationMembersPanel", () => {
     expect(screen.getByText("john.owner@example.com")).toBeInTheDocument();
   });
 
-  it("should show no pending invitations message when list is empty", () => {
+  it("should not show expired badge for a pending invitation within validity", () => {
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
-    expect(screen.getByText("No pending invitations.")).toBeInTheDocument();
+    const pendingRow = screen.getByText("pending@example.com").closest("div");
+    expect(pendingRow?.querySelector("[data-variant=destructive]")).toBeNull();
+  });
+
+  it("should show expired badge when invitation expires_at is in the past", () => {
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const expiredRow = screen.getByText("expired@example.com").closest("div");
+    expect(expiredRow).toHaveTextContent("Expired");
   });
 });

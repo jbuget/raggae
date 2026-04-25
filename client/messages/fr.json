@@ -398,7 +398,8 @@
       "resendSuccess": "Invitation renvoyée",
       "resendError": "Erreur lors du renvoi",
       "revokeSuccess": "Invitation révoquée",
-      "revokeError": "Erreur lors de la révocation"
+      "revokeError": "Erreur lors de la révocation",
+      "expired": "Expirée"
     },
     "credentials": {
       "title": "Clés API des fournisseurs IA",
