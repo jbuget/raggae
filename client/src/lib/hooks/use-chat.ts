@@ -7,6 +7,7 @@ import {
   getConversation,
   listConversations,
   listMessages,
+  renameConversation,
   sendMessage,
   streamMessage,
 } from "@/lib/api/chat";
@@ -45,6 +46,19 @@ export function useMessages(projectId: string, conversationId: string | null) {
     queryKey: ["messages", projectId, conversationId],
     queryFn: () => listMessages(token!, projectId, conversationId!),
     enabled: !!token && !!projectId && !!conversationId,
+  });
+}
+
+export function useRenameConversation(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, title }: { conversationId: string; title: string }) =>
+      renameConversation(token!, projectId, conversationId, title),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+    },
   });
 }
 

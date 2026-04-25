@@ -470,6 +470,10 @@
       "newConversation": "New Conversation",
       "loading": "Loading conversations...",
       "noConversations": "No conversations yet",
+      "menuLabel": "Conversation options",
+      "renameTitle": "Rename Conversation",
+      "renameDescription": "Enter a new name for this conversation.",
+      "renamePlaceholder": "Conversation name",
       "deleteTitle": "Delete Conversation",
       "deleteConfirm": "Are you sure you want to delete this conversation?"
     }
