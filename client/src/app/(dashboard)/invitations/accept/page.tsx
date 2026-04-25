@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { ApiError } from "@/lib/api/client";
 import { acceptOrganizationInvitation } from "@/lib/api/organizations";
 import { useAuth } from "@/lib/hooks/use-auth";
 
@@ -15,17 +16,12 @@ function AcceptInvitationContent() {
   const searchParams = useSearchParams();
   const { token, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<Status>("loading");
+  const invitationToken = searchParams.get("token");
+  const [status, setStatus] = useState<Status>(invitationToken ? "loading" : "missing_token");
   const called = useRef(false);
 
   useEffect(() => {
-    if (authLoading || called.current) return;
-
-    const invitationToken = searchParams.get("token");
-    if (!invitationToken) {
-      setStatus("missing_token");
-      return;
-    }
+    if (authLoading || called.current || !invitationToken) return;
 
     if (!token) return;
 
@@ -36,8 +32,7 @@ function AcceptInvitationContent() {
         setStatus("success");
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "";
-        if (message.includes("422") || message.includes("invalid") || message.includes("expired")) {
+        if (err instanceof ApiError && err.status === 422) {
           setStatus("invalid_token");
         } else {
           setStatus("error");
