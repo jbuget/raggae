@@ -243,9 +243,9 @@ class TestSendMessage:
             limit=2,
         )
 
-        # Then
-        project_llm_service_resolver.resolve.assert_called_once()
-        resolved_llm_service.generate_answer.assert_awaited_once()
+        # Then — resolver called twice: once for the answer, once for the title
+        assert project_llm_service_resolver.resolve.call_count == 2
+        assert resolved_llm_service.generate_answer.await_count == 2
         assert result.answer == "resolved answer"
 
     async def test_send_message_resolves_provider_api_key_from_project_backend(
