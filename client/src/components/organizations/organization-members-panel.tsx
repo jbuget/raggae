@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,9 @@ type OrganizationMembersPanelProps = {
 export function OrganizationMembersPanel({ organizationId }: OrganizationMembersPanelProps) {
   const t = useTranslations("organizations.members");
   const tCommon = useTranslations("common");
+  const { user } = useAuth();
   const { data: members, isLoading: membersLoading } = useOrganizationMembers(organizationId);
+  const ownerCount = members?.filter((m) => m.role === "owner").length ?? 0;
   const { data: invitations, isLoading: invitationsLoading } =
     useOrganizationInvitations(organizationId);
   const inviteMember = useInviteOrganizationMember(organizationId);
@@ -130,12 +133,18 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                           role: e.target.value as OrganizationMemberRole,
                         },
                         {
-                          onError: () => toast.error("Failed to update role"),
+                          onError: (err) => {
+                            if (err instanceof ApiError && err.status === 409) {
+                              toast.error(t("lastOwnerError"));
+                            } else {
+                              toast.error(t("updateRoleError"));
+                            }
+                          },
                         },
                       )
                     }
                     className="h-9 rounded-md border bg-background px-3 text-sm"
-                    disabled={updateRole.isPending}
+                    disabled={updateRole.isPending || (ownerCount === 1 && member.role === "owner" && member.user_id === user?.id)}
                   >
                     {ROLE_OPTIONS.map((value) => (
                       <option key={value} value={value}>
@@ -147,11 +156,17 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                     variant="outline"
                     onClick={() =>
                       removeMember.mutate(member.id, {
-                        onSuccess: () => toast.success("Member removed"),
-                        onError: () => toast.error(t("removeError")),
+                        onSuccess: () => toast.success(t("removeSuccess")),
+                        onError: (err) => {
+                          if (err instanceof ApiError && err.status === 409) {
+                            toast.error(t("lastOwnerError"));
+                          } else {
+                            toast.error(t("removeError"));
+                          }
+                        },
                       })
                     }
-                    disabled={removeMember.isPending}
+                    disabled={removeMember.isPending || (ownerCount === 1 && member.role === "owner" && member.user_id === user?.id)}
                   >
                     {t("remove")}
                   </Button>
