@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { SidebarSectionHeader } from "@/components/atoms/sidebar/sidebar-section-header";
-import { DesktopProjectItem } from "@/components/molecules/sidebar/desktop-project-item";
-import { MobileProjectItem } from "@/components/molecules/sidebar/mobile-project-item";
+import { DesktopProjectItem } from "./desktop-project-item";
+import { MobileProjectItem } from "./mobile-project-item";
 import type { ProjectResponse } from "@/lib/types/api";
 
 interface ProjectsSectionProps {

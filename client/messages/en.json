@@ -508,6 +508,7 @@
     "createProjectIn": "Create project in {orgName}",
     "noProjects": "No projects",
     "projectMenu": "Project menu {projectName}",
+    "newConversation": "New conversation",
     "chat": "Chat",
     "settings": "Settings",
     "snapshots": "History",

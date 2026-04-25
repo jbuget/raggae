@@ -5,6 +5,16 @@ import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects",
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
+}));
+
+vi.mock("@/lib/hooks/use-chat", () => ({
+  useConversations: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeleteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+vi.mock("@/lib/hooks/use-auth", () => ({
+  useAuth: vi.fn(() => ({ token: "fake-token" })),
 }));
 
 const organization = {
@@ -63,7 +73,7 @@ describe("OrganizationSection", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should render project links", () => {
+  it("should render project toggle buttons", () => {
     renderWithProviders(
       <OrganizationSection
         variant="desktop"
@@ -72,6 +82,6 @@ describe("OrganizationSection", () => {
         canCreate={false}
       />,
     );
-    expect(screen.getByRole("link", { name: "Org Project" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Org Project" })).toBeInTheDocument();
   });
 });

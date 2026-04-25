@@ -6,40 +6,48 @@ import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/projects/proj-1",
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
 }));
 
-vi.mock("@/lib/hooks/use-projects", () => ({
-  useProjects: () => ({
-    data: [
-      { id: "proj-1", name: "Project One" },
-      { id: "proj-2", name: "Project Two" },
+vi.mock("@/components/organisms/sidebar/use-sidebar-data", () => ({
+  useSidebarData: () => ({
+    personalProjects: [
+      { id: "proj-1", name: "Project One", organization_id: null },
+      { id: "proj-2", name: "Project Two", organization_id: null },
     ],
-    isLoading: false,
+    isLoadingProjects: false,
+    sortedOrganizations: [],
+    organizationProjectsMap: new Map(),
+    editableOrganizationIds: new Set(),
   }),
 }));
 
-describe("Sidebar", () => {
-  it("should render project links in sidebar", () => {
-    renderWithProviders(<Sidebar />);
+vi.mock("@/lib/hooks/use-chat", () => ({
+  useConversations: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeleteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
 
-    expect(
-      screen.getByRole("link", { name: /project one/i }),
-    ).toHaveAttribute("href", "/projects/proj-1/chat");
-    expect(
-      screen.getByRole("link", { name: /project two/i }),
-    ).toHaveAttribute("href", "/projects/proj-2/chat");
+vi.mock("@/lib/hooks/use-auth", () => ({
+  useAuth: vi.fn(() => ({ token: "fake-token", user: { id: "user-1" } })),
+}));
+
+vi.mock("@/components/organisms/sidebar/user-menu", () => ({
+  UserMenu: () => <div data-testid="user-menu" />,
+}));
+
+describe("Sidebar", () => {
+  it("should render project toggle buttons in sidebar", () => {
+    renderWithProviders(<Sidebar />);
+    expect(screen.getAllByRole("button", { name: /project one/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /project two/i }).length).toBeGreaterThan(0);
   });
 
-  it("should open project contextual menu with chat and settings links", async () => {
+  it("should open project contextual menu with settings link", async () => {
     const user = userEvent.setup();
     renderWithProviders(<Sidebar />);
 
     await user.click(screen.getByRole("button", { name: /project menu project one/i }));
 
-    expect(screen.getByRole("menuitem", { name: /^chat$/i })).toHaveAttribute(
-      "href",
-      "/projects/proj-1/chat",
-    );
     expect(screen.getByRole("menuitem", { name: /^settings$/i })).toHaveAttribute(
       "href",
       "/projects/proj-1/settings",
