@@ -22,7 +22,7 @@ class Project:
     is_published: bool
     created_at: datetime
     chunking_strategy: ChunkingStrategy = ChunkingStrategy.AUTO
-    parent_child_chunking: bool = False
+    parent_child_chunking: bool = True
     reindex_status: str = "idle"
     reindex_progress: int = 0
     reindex_total: int = 0
