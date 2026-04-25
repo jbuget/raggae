@@ -492,6 +492,9 @@
     },
     "upload": {
       "dragAndDrop": "Glissez-déposez un fichier ici, ou cliquez pour sélectionner",
+      "supportedFormats": "Formats acceptés : {formats}",
+      "unsupportedFormat": "Format {ext} non supporté",
+      "unknownExtension": "inconnu",
       "selectFiles": "Sélectionner des fichiers",
       "filesSelected": "fichier(s) sélectionné(s)",
       "uploading": "Téléversement...",

@@ -1,15 +1,30 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import { DocumentUpload } from "@/components/documents/document-upload";
 import { renderWithProviders } from "../../helpers/render";
+
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }),
+}));
+
+function createDragEvent(files: File[]) {
+  return {
+    dataTransfer: {
+      files,
+      items: files.map((file) => ({ kind: "file", type: file.type, getAsFile: () => file })),
+      types: ["Files"],
+    },
+  };
+}
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
 describe("DocumentUpload", () => {
-  it("should render the drop zone", () => {
+  it("should render the drop zone with supported formats hint", () => {
     renderWithProviders(
       <DocumentUpload onUpload={vi.fn()} isUploading={false} />,
     );
@@ -18,8 +33,39 @@ describe("DocumentUpload", () => {
       screen.getByText(/drag and drop a file here/i),
     ).toBeInTheDocument();
     expect(
+      screen.getByText(/\.pdf, \.docx, \.txt, \.md/i),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: /select files/i }),
     ).toBeInTheDocument();
+  });
+
+  it("should reject unsupported file formats dropped and show an error toast", () => {
+    renderWithProviders(
+      <DocumentUpload onUpload={vi.fn()} isUploading={false} />,
+    );
+
+    const zipFile = new File(["content"], "archive.zip", { type: "application/zip" });
+    const dropZone = screen.getByTestId("drop-zone");
+    fireEvent.drop(dropZone, createDragEvent([zipFile]));
+
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining(".zip"));
+    expect(screen.queryByText(/1 file\(s\) selected/i)).not.toBeInTheDocument();
+  });
+
+  it("should accept supported files and reject unsupported ones in the same drop batch", () => {
+    renderWithProviders(
+      <DocumentUpload onUpload={vi.fn()} isUploading={false} />,
+    );
+
+    const pdfFile = new File(["content"], "doc.pdf", { type: "application/pdf" });
+    const zipFile = new File(["content"], "archive.zip", { type: "application/zip" });
+    const dropZone = screen.getByTestId("drop-zone");
+    fireEvent.drop(dropZone, createDragEvent([pdfFile, zipFile]));
+
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining(".zip"));
+    expect(screen.getByText(/1 file\(s\) selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/doc.pdf/i)).toBeInTheDocument();
   });
 
   it("should show file info after selecting a file", async () => {

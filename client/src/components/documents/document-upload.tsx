@@ -3,9 +3,18 @@
 import { useCallback, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatFileSize } from "@/lib/utils/format";
+
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md"] as const;
+const ACCEPT = SUPPORTED_EXTENSIONS.join(",");
+
+function isSupportedFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
 
 interface DocumentUploadProps {
   onUpload: (files: File[]) => void;
@@ -20,29 +29,39 @@ export function DocumentUpload({ onUpload, isUploading, uploadProgress = 0, disa
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleFiles = useCallback((files: File[]) => {
+  const handleFiles = useCallback((files: File[], toastFn: typeof toast) => {
+    const rejected = files.filter((f) => !isSupportedFile(f));
+    const accepted = files.filter(isSupportedFile);
+
+    for (const file of rejected) {
+      const ext = file.name.includes(".") ? `.${file.name.split(".").pop()}` : t("unknownExtension");
+      toastFn.error(t("unsupportedFormat", { ext }));
+    }
+
+    if (accepted.length === 0) return;
+
     setSelectedFiles((previous) => {
-      const merged = [...previous, ...files];
+      const merged = [...previous, ...accepted];
       const uniqueByName = new Map<string, File>();
       for (const file of merged) {
         uniqueByName.set(file.name, file);
       }
       return Array.from(uniqueByName.values());
     });
-  }, []);
+  }, [t]);
 
   function handleDrop(e: React.DragEvent) {
     if (disabled) return;
     e.preventDefault();
     setIsDragOver(false);
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) handleFiles(files);
+    if (files.length > 0) handleFiles(files, toast);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (disabled) return;
     const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) handleFiles(files);
+    if (files.length > 0) handleFiles(files, toast);
   }
 
   function handleUpload() {
@@ -71,13 +90,19 @@ export function DocumentUpload({ onUpload, isUploading, uploadProgress = 0, disa
           onDrop={handleDrop}
           data-testid="drop-zone"
         >
-          <p className="text-sm text-muted-foreground">
-            {t("dragAndDrop")}
-          </p>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              {t("dragAndDrop")}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("supportedFormats", { formats: SUPPORTED_EXTENSIONS.join(", ") })}
+            </p>
+          </div>
           <input
             ref={inputRef}
             type="file"
             multiple
+            accept={ACCEPT}
             onChange={handleChange}
             className="hidden"
             aria-label={t("selectFiles")}
