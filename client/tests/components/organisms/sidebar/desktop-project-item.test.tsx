@@ -79,6 +79,6 @@ describe("DesktopProjectItem", () => {
     vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat/conv-1");
     renderWithProviders(<DesktopProjectItem project={project} />);
     const button = screen.getByRole("button", { name: "My Project" });
-    expect(button).toHaveClass("text-primary");
+    expect(button).toHaveClass("font-semibold");
   });
 });

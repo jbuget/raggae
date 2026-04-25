@@ -70,7 +70,7 @@ describe("ProjectConversationList", () => {
       status: "pending",
     } as ReturnType<typeof useConversations>);
     renderWithProviders(<ProjectConversationList projectId="proj-1" />);
-    expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
+    expect(screen.getByText(/no conversations/i)).toBeInTheDocument();
   });
 
   it("should show empty state when no conversations", () => {
