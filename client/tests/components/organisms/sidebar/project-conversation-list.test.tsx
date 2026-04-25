@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/hooks/use-chat", () => ({
   useConversations: vi.fn(),
   useDeleteConversation: vi.fn(),
+  useRenameConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/lib/hooks/use-auth", () => ({
