@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, MoreVertical } from "lucide-react";
+import { ChevronRight, MoreVertical } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Collapsible } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,29 +29,31 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
   const isActive = pathname.startsWith(`/projects/${project.id}`);
 
   return (
-    <div>
+    <Collapsible.Root open={isOpen} onOpenChange={setIsOpen}>
       <div
         className={cn(
           "group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors",
           isActive ? "bg-primary/10" : "hover:bg-muted",
         )}
       >
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={cn(
-            "flex min-w-0 flex-1 cursor-pointer items-center gap-1 truncate rounded-md px-2 text-left",
-            isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
-          )}
-          title={project.name}
-        >
-          {isOpen ? (
-            <ChevronDown className="h-3 w-3 shrink-0" />
-          ) : (
-            <ChevronRight className="h-3 w-3 shrink-0" />
-          )}
-          <span className="truncate">{project.name}</span>
-        </button>
+        <Collapsible.Trigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex min-w-0 flex-1 cursor-pointer items-center gap-1 truncate rounded-md px-2 text-left",
+              isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+            title={project.name}
+          >
+            <ChevronRight
+              className={cn(
+                "h-3 w-3 shrink-0 transition-transform duration-200",
+                isOpen && "rotate-90",
+              )}
+            />
+            <span className="truncate">{project.name}</span>
+          </button>
+        </Collapsible.Trigger>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -74,11 +77,11 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {isOpen && (
+      <Collapsible.Content className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
         <div className="ml-2 mt-0.5">
           <ProjectConversationList projectId={project.id} />
         </div>
-      )}
-    </div>
+      </Collapsible.Content>
+    </Collapsible.Root>
   );
 }

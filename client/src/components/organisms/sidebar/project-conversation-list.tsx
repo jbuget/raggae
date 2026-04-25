@@ -2,7 +2,6 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ConversationItem } from "@/components/molecules/sidebar/conversation-item";
 import { useConversations, useDeleteConversation } from "@/lib/hooks/use-chat";
 
@@ -29,17 +28,7 @@ export function ProjectConversationList({ projectId }: ProjectConversationListPr
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-1 px-1">
-        <Skeleton className="h-7 w-full" />
-        <Skeleton className="h-7 w-full" />
-        <Skeleton className="h-7 w-3/4" />
-      </div>
-    );
-  }
-
-  if (recent.length === 0) {
+  if (isLoading || recent.length === 0) {
     return (
       <p className="px-3 py-1 text-xs text-muted-foreground">{t("noConversations")}</p>
     );

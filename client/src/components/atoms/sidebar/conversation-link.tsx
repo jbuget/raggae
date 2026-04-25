@@ -28,7 +28,7 @@ export function ConversationLink({ conversation, projectId, isActive }: Conversa
       href={href}
       className={cn(
         "block min-w-0 flex-1 truncate px-3 py-1 text-sm",
-        isActive ? "text-primary" : "text-muted-foreground",
+        isActive ? "font-semibold text-foreground" : "text-muted-foreground",
       )}
       title={label}
     >

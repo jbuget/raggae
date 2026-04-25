@@ -38,7 +38,7 @@ export function ConversationItem({ conversation, projectId, onDelete }: Conversa
       <div
         className={cn(
           "group flex items-center rounded-md transition-colors",
-          isActive ? "bg-primary/10" : "hover:bg-muted",
+          isActive ? "" : "hover:bg-muted",
         )}
       >
         <ConversationLink conversation={conversation} projectId={projectId} isActive={isActive} />
