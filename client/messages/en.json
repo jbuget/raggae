@@ -538,7 +538,8 @@
     "settings": "Settings",
     "snapshots": "History",
     "githubProject": "GitHub project",
-    "sourceCode": "Source code"
+    "sourceCode": "Source code",
+    "stats": "Statistics"
   },
   "layout": {
     "themeToggle": {
