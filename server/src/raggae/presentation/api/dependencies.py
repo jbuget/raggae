@@ -52,6 +52,7 @@ from raggae.application.interfaces.services.file_metadata_extractor import (
     FileMetadataExtractor,
 )
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
+from raggae.application.interfaces.services.invitation_email_service import InvitationEmailService
 from raggae.application.interfaces.services.keyword_extractor import KeywordExtractor
 from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.llm_service import LLMService
@@ -575,14 +576,14 @@ _conversation_title_generator: ConversationTitleGenerator = LLMConversationTitle
 )
 _entra_oauth_provider = EntraOAuthProvider()
 _oauth_code_store = InMemoryOAuthCodeStore()
+_invitation_email_service: InvitationEmailService
 if settings.email_backend == "mailgun":
-    from raggae.application.interfaces.services.invitation_email_service import InvitationEmailService as _IES
-
-    _invitation_email_service: _IES = MailgunInvitationEmailService(
+    _invitation_email_service = MailgunInvitationEmailService(
         api_key=settings.mailgun_api_key,
         domain=settings.mailgun_domain,
         from_email=settings.mailgun_from_email,
         frontend_url=settings.frontend_url,
+        app_name=settings.mailgun_app_name,
         api_base=settings.mailgun_api_base,
     )
 else:

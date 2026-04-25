@@ -10,4 +10,5 @@ class InvitationEmailService(Protocol):
         inviter_name: str,
         invitation_token: str,
         expires_at: datetime,
+        locale: str = "fr",
     ) -> None: ...

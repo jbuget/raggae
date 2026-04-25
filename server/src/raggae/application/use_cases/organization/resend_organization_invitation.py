@@ -71,6 +71,8 @@ class ResendOrganizationInvitation:
 
         inviter = await self._user_repository.find_by_id(renewed.invited_by_user_id)
         inviter_name = inviter.full_name if inviter is not None else str(renewed.invited_by_user_id)
+        # TODO: replace with organization.locale once the field exists on Organization
+        locale = "fr"
         try:
             await self._invitation_email_service.send_invitation_email(
                 to_email=renewed.email,
@@ -78,6 +80,7 @@ class ResendOrganizationInvitation:
                 inviter_name=inviter_name,
                 invitation_token=renewed.token_hash,
                 expires_at=renewed.expires_at,
+                locale=locale,
             )
         except Exception:
             logger.warning(

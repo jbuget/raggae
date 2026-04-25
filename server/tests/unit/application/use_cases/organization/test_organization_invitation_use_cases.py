@@ -60,7 +60,8 @@ class SpyInvitationEmailService:
         organization_name: str,
         inviter_name: str,
         invitation_token: str,
-        expires_at: object,
+        expires_at: datetime,
+        locale: str = "fr",
     ) -> None:
         self.calls.append(
             {

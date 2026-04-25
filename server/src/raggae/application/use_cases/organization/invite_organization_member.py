@@ -86,6 +86,8 @@ class InviteOrganizationMember:
 
         inviter = await self._user_repository.find_by_id(requester_user_id)
         inviter_name = inviter.full_name if inviter is not None else str(requester_user_id)
+        # TODO: replace with organization.locale once the field exists on Organization
+        locale = "fr"
         try:
             await self._invitation_email_service.send_invitation_email(
                 to_email=normalized_email,
@@ -93,6 +95,7 @@ class InviteOrganizationMember:
                 inviter_name=inviter_name,
                 invitation_token=invitation.token_hash,
                 expires_at=invitation.expires_at,
+                locale=locale,
             )
         except Exception:
             logger.warning(
