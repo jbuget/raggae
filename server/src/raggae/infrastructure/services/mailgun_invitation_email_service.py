@@ -23,8 +23,8 @@ def _obfuscate_email(email: str) -> str:
 
 _STRINGS: dict[str, dict[str, str]] = {
     "fr": {
-        "subject": "Invitation à rejoindre {organization_name}",
-        "heading": "Vous avez été invité(e) à rejoindre {organization_name}",
+        "subject": "Invitation à rejoindre l'organisation {organization_name}",
+        "heading": "Vous avez été invité(e) à rejoindre l'organisation {organization_name}",
         "body": "{inviter_name} vous invite à rejoindre {organization_name} sur {app_name}.",
         "cta": "Accepter l'invitation",
         "expires": "Ce lien expire le {expires_str}.",
@@ -33,8 +33,8 @@ _STRINGS: dict[str, dict[str, str]] = {
         "expires_format": "%d/%m/%Y à %H:%M UTC",
     },
     "en": {
-        "subject": "You've been invited to join {organization_name}",
-        "heading": "You've been invited to join {organization_name}",
+        "subject": "You've been invited to join the organization {organization_name}",
+        "heading": "You've been invited to join the organization {organization_name}",
         "body": "{inviter_name} has invited you to join {organization_name} on {app_name}.",
         "cta": "Accept invitation",
         "expires": "This link expires on {expires_str}.",
