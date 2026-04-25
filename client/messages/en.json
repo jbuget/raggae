@@ -491,6 +491,9 @@
     },
     "upload": {
       "dragAndDrop": "Drag and drop a file here, or click to select",
+      "supportedFormats": "Accepted formats: {formats}",
+      "unsupportedFormat": "Format {ext} is not supported",
+      "unknownExtension": "unknown",
       "selectFiles": "Select Files",
       "filesSelected": "file(s) selected",
       "uploading": "Uploading...",
