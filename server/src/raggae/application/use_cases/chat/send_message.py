@@ -174,6 +174,7 @@ class SendMessage:
                 title = await self._build_conversation_title(
                     user_message=message,
                     assistant_answer=refusal_answer,
+                    project=project,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             return ChatMessageResponseDTO(
@@ -219,6 +220,7 @@ class SendMessage:
                 title = await self._build_conversation_title(
                     user_message=message,
                     assistant_answer=fallback_answer,
+                    project=project,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             return ChatMessageResponseDTO(
@@ -283,6 +285,7 @@ class SendMessage:
             title = await self._build_conversation_title(
                 user_message=message,
                 assistant_answer=answer,
+                project=project,
             )
             await self._conversation_repository.update_title(conversation.id, title)
         return ChatMessageResponseDTO(
@@ -381,6 +384,7 @@ class SendMessage:
                 title = await self._build_conversation_title(
                     user_message=message,
                     assistant_answer=refusal_answer,
+                    project=project,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             yield ChatStreamToken(token=refusal_answer)
@@ -426,6 +430,7 @@ class SendMessage:
                 title = await self._build_conversation_title(
                     user_message=message,
                     assistant_answer=fallback_answer,
+                    project=project,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             yield ChatStreamToken(token=fallback_answer)
@@ -501,6 +506,7 @@ class SendMessage:
             title = await self._build_conversation_title(
                 user_message=message,
                 assistant_answer=accumulated_answer,
+                project=project,
             )
             await self._conversation_repository.update_title(conversation.id, title)
         yield ChatStreamDone(
@@ -513,13 +519,25 @@ class SendMessage:
             chunks_used=len(relevant_chunks),
         )
 
-    async def _build_conversation_title(self, user_message: str, assistant_answer: str) -> str:
+    async def _build_conversation_title(
+        self, user_message: str, assistant_answer: str, project: Project | None = None
+    ) -> str:
         fallback = self._normalize_title(user_message)
         try:
-            generated = await self._conversation_title_generator.generate_title(
-                user_message=user_message,
-                assistant_answer=assistant_answer,
-            )
+            if project is not None and self._project_llm_service_resolver is not None:
+                llm_service = self._project_llm_service_resolver.resolve(project)
+                title_prompt = (
+                    "Generate a short conversation title (max 8 words). "
+                    "Return only the title, no punctuation at the end."
+                    f"\n\nUser message: {user_message}"
+                    f"\nAssistant answer: {assistant_answer}"
+                )
+                generated = await llm_service.generate_answer(title_prompt)
+            else:
+                generated = await self._conversation_title_generator.generate_title(
+                    user_message=user_message,
+                    assistant_answer=assistant_answer,
+                )
         except Exception:
             return fallback
         normalized = self._normalize_title(generated)
