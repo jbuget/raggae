@@ -19,7 +19,12 @@ def make_msal_app(
     auth_url: str = "https://login.microsoftonline.com/authorize?foo=bar",
     token_claims: dict | None = None,
 ) -> MagicMock:
-    """Return a mock msal.ConfidentialClientApplication."""
+    """Return a mock msal.ConfidentialClientApplication.
+
+    Matches the actual MSAL API used by EntraOAuthProvider:
+    - initiate_auth_code_flow → renvoie un dict avec "auth_uri"
+    - acquire_token_by_auth_code_flow → renvoie un dict avec "id_token_claims"
+    """
     if token_claims is None:
         token_claims = {
             "oid": "oid-entra-abc",
@@ -27,8 +32,8 @@ def make_msal_app(
             "name": "Jérémy Buget",
         }
     app = MagicMock()
-    app.get_authorization_request_url.return_value = auth_url
-    app.acquire_token_by_authorization_code.return_value = {"id_token_claims": token_claims}
+    app.initiate_auth_code_flow.return_value = {"auth_uri": auth_url}
+    app.acquire_token_by_auth_code_flow.return_value = {"id_token_claims": token_claims}
     return app
 
 
@@ -62,7 +67,7 @@ async def _do_login(client: AsyncClient, mock_app: MagicMock) -> tuple[str, str]
             follow_redirects=False,
         )
     assert resp.status_code == 302
-    csrf_token: str = mock_app.get_authorization_request_url.call_args.kwargs["state"]
+    csrf_token: str = mock_app.initiate_auth_code_flow.call_args.kwargs["state"]
     raw_cookie: str = resp.cookies["oauth_state"]
     return csrf_token, raw_cookie
 
