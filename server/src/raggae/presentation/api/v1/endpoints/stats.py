@@ -41,6 +41,7 @@ async def get_stats(
         ),
         impact=StatsImpactResponse(
             reliable_answers_total=dto.impact.reliable_answers_total,
+            reliable_answers_rate_percent=dto.impact.reliable_answers_rate_percent,
             average_reliability_percent=dto.impact.average_reliability_percent,
             relevant_answers_rate_percent=dto.impact.relevant_answers_rate_percent,
             multi_turn_conversations_rate_percent=dto.impact.multi_turn_conversations_rate_percent,

@@ -165,6 +165,7 @@ class SQLAlchemyStatsRepository(StatsRepository):
             )
         ).scalar_one()
 
+        reliable_rate = (int(reliable_answers) / int(total_assistant) * 100.0) if total_assistant > 0 else 0.0
         relevant_rate = (relevant_answers / total_assistant * 100.0) if total_assistant > 0 else 0.0
 
         # Multi-turn: conversations with >= 3 user messages
@@ -200,6 +201,7 @@ class SQLAlchemyStatsRepository(StatsRepository):
 
         return StatsImpactDTO(
             reliable_answers_total=int(reliable_answers),
+            reliable_answers_rate_percent=round(reliable_rate, 1),
             average_reliability_percent=round(float(avg_reliability or 0), 1),
             relevant_answers_rate_percent=round(relevant_rate, 1),
             multi_turn_conversations_rate_percent=round(multi_turn_rate, 1),

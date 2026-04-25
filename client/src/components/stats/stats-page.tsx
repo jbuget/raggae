@@ -69,7 +69,10 @@ function StatsContent({ stats }: { stats: StatsResponse }) {
         <p className="text-6xl font-bold tabular-nums">
           {fmt(stats.north_star_reliable_answers)}
         </p>
-        <p className="max-w-md text-muted-foreground">{t("northStar.description")}</p>
+        <p className="text-lg font-medium text-muted-foreground">
+          {t("northStar.rate", { rate: fmt(stats.impact.reliable_answers_rate_percent, 1) })}
+        </p>
+        <p className="max-w-md text-sm text-muted-foreground">{t("northStar.description")}</p>
       </div>
 
       {/* Fonctionnement */}

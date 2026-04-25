@@ -562,6 +562,7 @@
     "generatedAt": "Data generated on {date}",
     "northStar": {
       "label": "Reliable answers",
+      "rate": "{rate}% of all generated answers",
       "description": "Total number of answers generated with a reliability score above 70%."
     },
     "fonctionnement": {

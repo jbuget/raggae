@@ -23,6 +23,7 @@ class StatsUsageResponse(BaseModel):
 
 class StatsImpactResponse(BaseModel):
     reliable_answers_total: int
+    reliable_answers_rate_percent: float
     average_reliability_percent: float
     relevant_answers_rate_percent: float
     multi_turn_conversations_rate_percent: float

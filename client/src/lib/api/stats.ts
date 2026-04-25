@@ -20,6 +20,7 @@ export interface StatsUsage {
 
 export interface StatsImpact {
   reliable_answers_total: number;
+  reliable_answers_rate_percent: number;
   average_reliability_percent: number;
   relevant_answers_rate_percent: number;
   multi_turn_conversations_rate_percent: number;

@@ -562,6 +562,7 @@
     "generatedAt": "Données générées le {date}",
     "northStar": {
       "label": "Réponses fiables",
+      "rate": "soit {rate} % des réponses générées",
       "description": "Nombre total de réponses générées avec un score de fiabilité supérieur à 70 %."
     },
     "fonctionnement": {

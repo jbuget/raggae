@@ -34,6 +34,7 @@ class InMemoryStatsRepository(StatsRepository):
             ),
             impact=StatsImpactDTO(
                 reliable_answers_total=0,
+                reliable_answers_rate_percent=0.0,
                 average_reliability_percent=0.0,
                 relevant_answers_rate_percent=0.0,
                 multi_turn_conversations_rate_percent=0.0,
