@@ -17,57 +17,83 @@ const conversation: ConversationResponse = {
   title: "Test conversation",
 };
 
+const defaultProps = {
+  conversation,
+  projectId: "proj-1",
+  onDelete: vi.fn(),
+  onRename: vi.fn(),
+};
+
 describe("ConversationItem", () => {
   it("should render the conversation link", () => {
-    const onDelete = vi.fn();
-    renderWithProviders(
-      <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
-    );
+    renderWithProviders(<ConversationItem {...defaultProps} />);
     expect(screen.getByText("Test conversation")).toBeInTheDocument();
   });
 
   it("should show context menu button", () => {
-    const onDelete = vi.fn();
-    renderWithProviders(
-      <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
-    );
+    renderWithProviders(<ConversationItem {...defaultProps} />);
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 
   it("should open delete confirmation dialog when delete is clicked", async () => {
     const user = userEvent.setup();
-    const onDelete = vi.fn();
-    renderWithProviders(
-      <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
-    );
+    renderWithProviders(<ConversationItem {...defaultProps} />);
     await user.click(screen.getByRole("button"));
-    await user.click(await screen.findByRole("menuitem"));
+    const menuItems = await screen.findAllByRole("menuitem");
+    const deleteItem = menuItems.find((item) => item.textContent?.match(/supprimer|delete/i));
+    await user.click(deleteItem!);
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
   it("should call onDelete when confirming deletion", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
-    renderWithProviders(
-      <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
-    );
+    renderWithProviders(<ConversationItem {...defaultProps} onDelete={onDelete} />);
     await user.click(screen.getByRole("button"));
-    await user.click(await screen.findByRole("menuitem"));
+    const menuItems = await screen.findAllByRole("menuitem");
+    const deleteItem = menuItems.find((item) => item.textContent?.match(/supprimer|delete/i));
+    await user.click(deleteItem!);
     await screen.findByRole("dialog");
-    await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: /supprimer|delete/i }));
     expect(onDelete).toHaveBeenCalledWith("conv-1");
   });
 
   it("should not call onDelete when cancel is clicked", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
-    renderWithProviders(
-      <ConversationItem conversation={conversation} projectId="proj-1" onDelete={onDelete} />,
-    );
+    renderWithProviders(<ConversationItem {...defaultProps} onDelete={onDelete} />);
     await user.click(screen.getByRole("button"));
-    await user.click(await screen.findByRole("menuitem"));
+    const menuItems = await screen.findAllByRole("menuitem");
+    const deleteItem = menuItems.find((item) => item.textContent?.match(/supprimer|delete/i));
+    await user.click(deleteItem!);
     await screen.findByRole("dialog");
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await user.click(screen.getByRole("button", { name: /annuler|cancel/i }));
     expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it("should open rename dialog when rename is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ConversationItem {...defaultProps} />);
+    await user.click(screen.getByRole("button"));
+    const menuItems = await screen.findAllByRole("menuitem");
+    const renameItem = menuItems.find((item) => item.textContent?.match(/renommer|rename/i));
+    await user.click(renameItem!);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("should call onRename with trimmed value when confirming rename", async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+    renderWithProviders(<ConversationItem {...defaultProps} onRename={onRename} />);
+    await user.click(screen.getByRole("button"));
+    const menuItems = await screen.findAllByRole("menuitem");
+    const renameItem = menuItems.find((item) => item.textContent?.match(/renommer|rename/i));
+    await user.click(renameItem!);
+    await screen.findByRole("dialog");
+    const input = screen.getByRole("textbox");
+    await user.clear(input);
+    await user.type(input, "Nouveau nom");
+    await user.click(screen.getByRole("button", { name: /enregistrer|save/i }));
+    expect(onRename).toHaveBeenCalledWith("conv-1", "Nouveau nom");
   });
 });

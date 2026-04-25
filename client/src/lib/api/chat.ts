@@ -112,6 +112,18 @@ export function deleteConversation(
   );
 }
 
+export function renameConversation(
+  token: string,
+  projectId: string,
+  conversationId: string,
+  title: string,
+): Promise<void> {
+  return apiFetch<void>(
+    `/projects/${projectId}/chat/conversations/${conversationId}`,
+    { method: "PATCH", body: JSON.stringify({ title }), token },
+  );
+}
+
 export function listMessages(
   token: string,
   projectId: string,
