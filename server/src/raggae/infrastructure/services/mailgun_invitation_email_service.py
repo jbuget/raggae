@@ -5,6 +5,22 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+
+def _obfuscate_email(email: str) -> str:
+    """Return a partially masked email, e.g. j*****@g****.com."""
+    if "@" not in email:
+        return "***"
+    local, domain = email.split("@", 1)
+    obfuscated_local = local[0] + "*" * max(1, len(local) - 1)
+    domain_parts = domain.rsplit(".", 1)
+    if len(domain_parts) == 2:
+        masked = domain_parts[0][0] + "*" * max(1, len(domain_parts[0]) - 1)
+        obfuscated_domain = f"{masked}.{domain_parts[1]}"
+    else:
+        obfuscated_domain = domain[0] + "*" * max(1, len(domain) - 1)
+    return f"{obfuscated_local}@{obfuscated_domain}"
+
+
 _STRINGS: dict[str, dict[str, str]] = {
     "fr": {
         "subject": "Invitation à rejoindre {organization_name}",
@@ -66,6 +82,8 @@ class MailgunInvitationEmailService:
         text_body = self._text(
             strings, organization_name, inviter_name, acceptance_url, expires_str, self._app_name
         )
+        obfuscated = _obfuscate_email(to_email)
+        logger.info("invitation_email_sending to=%s organization=%s", obfuscated, organization_name)
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self._api_base}/{self._domain}/messages",
@@ -85,6 +103,7 @@ class MailgunInvitationEmailService:
                     response.text,
                 )
             response.raise_for_status()
+        logger.info("invitation_email_sent to=%s organization=%s", obfuscated, organization_name)
 
     @staticmethod
     def _html(
