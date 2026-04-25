@@ -32,7 +32,7 @@ class ProjectModel(Base):
         String(32), nullable=False, default="auto", server_default="auto"
     )
     parent_child_chunking: Mapped[bool] = mapped_column(
-        Boolean(), nullable=False, default=False, server_default="false"
+        Boolean(), nullable=False, default=True, server_default="true"
     )
     reindex_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="idle", server_default="idle"

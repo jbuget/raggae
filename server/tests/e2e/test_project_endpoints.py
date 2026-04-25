@@ -78,7 +78,7 @@ class TestProjectEndpoints:
         assert "user_id" in data
         assert data["is_published"] is False
         assert data["chunking_strategy"] == "auto"
-        assert data["parent_child_chunking"] is False
+        assert data["parent_child_chunking"] is True
         assert "id" in data
 
     async def test_create_project_with_chunking_settings_returns_201(self, client: AsyncClient) -> None:
