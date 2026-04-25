@@ -909,24 +909,13 @@ export default function ProjectSettingsPage() {
       {activeTab === "Context augmentation" && (
         <div className="max-w-3xl space-y-4 rounded-md">
           <p className="text-base font-semibold tracking-tight">{t("contextAugmentation.title")}</p>
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
-            <button
+          <div className="flex items-center gap-2">
+            <Switch
               id="rerankingEnabled"
-              type="button"
-              role="switch"
-              aria-checked={effectiveRerankingEnabled}
-              onClick={() => setRerankingEnabled(!effectiveRerankingEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                effectiveRerankingEnabled ? "bg-primary" : "bg-muted"
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-background transition-transform ${
-                  effectiveRerankingEnabled ? "translate-x-5" : "translate-x-1"
-                }`}
-              />
-            </button>
+              checked={effectiveRerankingEnabled}
+              onCheckedChange={setRerankingEnabled}
+            />
+            <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
           </div>
           {effectiveRerankingEnabled ? (
             <>
