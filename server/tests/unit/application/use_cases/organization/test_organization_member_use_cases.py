@@ -130,6 +130,9 @@ class TestOrganizationMemberUseCases:
         members = await use_case.execute(organization_id=org.id, user_id=owner.user_id)
         assert len(members) == 3
         assert members[0].user_first_name is not None
+        assert members[0].user_email is not None
+        emails = {m.user_email for m in members}
+        assert emails == {"owner@example.com", "maker@example.com", "user@example.com"}
 
         with pytest.raises(OrganizationAccessDeniedError):
             await use_case.execute(organization_id=org.id, user_id=uuid4())
