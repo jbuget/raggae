@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,7 +170,12 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
                 >
                   <div className="text-sm">
-                    <p className="font-medium">{invitation.email}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{invitation.email}</p>
+                      {(invitation.status === "expired" || new Date(invitation.expires_at) < new Date()) && (
+                        <Badge variant="destructive">{t("expired")}</Badge>
+                      )}
+                    </div>
                     <p className="text-muted-foreground">
                       {invitation.role} - {invitation.status}
                     </p>
