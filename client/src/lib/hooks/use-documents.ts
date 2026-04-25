@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteDocument,
@@ -25,17 +25,28 @@ export function useUploadDocument(projectId: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState(0);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mutation = useMutation({
+    onMutate: () => {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      setProgress(0);
+    },
     mutationFn: (files: File[]) =>
       uploadDocuments(token!, projectId, files, setProgress),
     onSuccess: () => {
       setProgress(100);
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
-      setTimeout(() => setProgress(0), 600);
+      resetTimerRef.current = setTimeout(() => setProgress(0), 600);
     },
     onError: () => setProgress(0),
   });
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    };
+  }, []);
 
   return { ...mutation, progress };
 }

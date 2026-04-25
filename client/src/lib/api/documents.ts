@@ -3,7 +3,7 @@ import type {
   DocumentResponse,
   UploadDocumentsResponse,
 } from "@/lib/types/api";
-import { apiFetch } from "./client";
+import { ApiError, apiFetch } from "./client";
 
 export function listDocuments(
   token: string,
@@ -42,10 +42,17 @@ export function uploadDocuments(
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText) as UploadDocumentsResponse);
       } else {
-        reject(new Error(`Upload failed: ${xhr.status}`));
+        let message: string;
+        try {
+          const json = JSON.parse(xhr.responseText);
+          message = json.detail || json.message || xhr.responseText;
+        } catch {
+          message = xhr.responseText || `Upload failed: ${xhr.status}`;
+        }
+        reject(new ApiError(xhr.status, message));
       }
     });
-    xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+    xhr.addEventListener("error", () => reject(new ApiError(0, "Network error during upload")));
 
     xhr.open("POST", `/api/v1/projects/${projectId}/documents`);
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
