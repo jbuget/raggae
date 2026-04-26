@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { OrganizationMembersPanel } from "@/components/organizations/organization-members-panel";
-import { renderWithProviders } from "../../helpers/render";
+import { OrganizationMembersPanel } from "@/components/organisms/organization/organization-members-panel";
+import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("@/lib/hooks/use-auth", () => ({
   useAuth: () => ({ token: "token-1" }),

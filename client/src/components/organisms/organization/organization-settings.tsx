@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { OrgCredentialsPanel } from "@/components/organizations/org-credentials-panel";
-import { OrganizationMembersPanel } from "@/components/organizations/organization-members-panel";
+import { OrganizationProfileForm } from "@/components/molecules/organization/organization-profile-form";
+import { OrgCredentialsPanel } from "@/components/organisms/organization/org-credentials-panel";
+import { OrganizationMembersPanel } from "@/components/organisms/organization/organization-members-panel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,14 +17,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   useDeleteOrganization,
   useOrganization,
-  useUpdateOrganization,
 } from "@/lib/hooks/use-organization";
 import { useOrganizationMembers } from "@/lib/hooks/use-organization-members";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -170,78 +167,6 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
       {activeTab === "API Keys" && <OrgCredentialsPanel organizationId={organizationId} />}
 
       {activeTab === "Members" && <OrganizationMembersPanel organizationId={organizationId} />}
-    </div>
-  );
-}
-
-type OrganizationProfileFormProps = {
-  organizationId: string;
-  initialName: string;
-  initialSlug: string | null;
-  initialDescription: string | null;
-  initialLogoUrl: string | null;
-};
-
-function OrganizationProfileForm({
-  organizationId,
-  initialName,
-  initialSlug,
-  initialDescription,
-  initialLogoUrl,
-}: OrganizationProfileFormProps) {
-  const t = useTranslations("organizations.settings");
-  const tCommon = useTranslations("common");
-  const updateOrganization = useUpdateOrganization(organizationId);
-  const [name, setName] = useState(initialName);
-  const [slug, setSlug] = useState(initialSlug ?? "");
-  const [description, setDescription] = useState(initialDescription ?? "");
-  const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? "");
-
-  return (
-    <div className="rounded-lg border p-5 space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="org-name">{t("nameLabel")}</Label>
-        <Input id="org-name" value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="org-slug">{t("slugLabel")}</Label>
-        <Input id="org-slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="org-description">{t("descriptionLabel")}</Label>
-        <Textarea
-          id="org-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="org-logo-url">{t("logoLabel")}</Label>
-        <Input
-          id="org-logo-url"
-          value={logoUrl}
-          onChange={(e) => setLogoUrl(e.target.value)}
-        />
-      </div>
-      <Button
-        onClick={() =>
-          updateOrganization.mutate(
-            {
-              name: name.trim(),
-              slug: slug.trim() || null,
-              description: description.trim() || null,
-              logo_url: logoUrl.trim() || null,
-            },
-            {
-              onSuccess: () => toast.success(t("updateSuccess")),
-              onError: () => toast.error(t("updateError")),
-            },
-          )
-        }
-        disabled={updateOrganization.isPending || !name.trim()}
-      >
-        {updateOrganization.isPending ? tCommon("saving") : tCommon("save")}
-      </Button>
     </div>
   );
 }

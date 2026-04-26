@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { UserInvitationsList } from "@/components/organizations/user-invitations-list";
+import { UserInvitationsList } from "@/components/organisms/organization/user-invitations-list";
 
 export default function InvitationsPage() {
   const t = useTranslations("invitations.page");
