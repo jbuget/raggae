@@ -6,12 +6,12 @@
 
 ## Fonctionnalité en cours
 
-Refactoring front-end — migration vers Atomic Design strict (vague 5 : organizations)
+Refactoring front-end — migration vers Atomic Design strict (vague 6 : documents)
 
 ## Branche Git
 
 ```
-refactor/atomic-design-organizations
+refactor/atomic-design-documents
 ```
 
 ## Problème / Contexte
@@ -82,15 +82,16 @@ d'autres surfaces (settings page, header alternatif, etc.).
 - [x] Supprimer l'ancien components/projects/ (ProjectForm était dead code)
 - [x] PR mergée
 
-### Vague 5 — Organizations (branche : refactor/atomic-design-organizations)
+### Vague 5 — Organizations ✅ (PR #87 mergée)
 
-- [ ] molecule/organization : UserInvitationsList (depuis organizations/user-invitations-list.tsx, 67 lignes)
-- [ ] molecule/organization : OrganizationProfileForm (à extraire de organization-settings.tsx)
-- [ ] organism/organization : OrganizationList (depuis organizations/organization-list.tsx, 153 lignes)
-- [ ] organism/organization : OrgCredentialsPanel (depuis organizations/org-credentials-panel.tsx, 225 lignes)
-- [ ] organism/organization : OrganizationMembersPanel (depuis organizations/organization-members-panel.tsx, 249 lignes)
-- [ ] template : OrganizationSettings (depuis organizations/organization-settings.tsx, 248 lignes)
-- [ ] Supprimer l'ancien components/organizations/
+- [x] molecule/organization : OrganizationProfileForm (extrait de organization-settings.tsx)
+- [x] organism/organization : UserInvitationsList (depuis organizations/user-invitations-list.tsx)
+- [x] organism/organization : OrganizationList (depuis organizations/organization-list.tsx)
+- [x] organism/organization : OrganizationMembersPanel (depuis organizations/organization-members-panel.tsx)
+- [x] organism/organization : OrgCredentialsPanel (depuis organizations/org-credentials-panel.tsx)
+- [x] organism/organization : OrganizationSettings (depuis organizations/organization-settings.tsx)
+- [x] Supprimer l'ancien components/organizations/
+- [x] PR mergée
 
 ### Vague 6 — Documents (branche : refactor/atomic-design-documents)
 
@@ -115,6 +116,6 @@ d'autres surfaces (settings page, header alternatif, etc.).
 
 ## Notes
 
-- Vague 5 (Organizations) est la prochaine : UserInvitationsList, OrganizationProfileForm (molecules), OrganizationList/OrgCredentialsPanel/OrganizationMembersPanel (organisms), OrganizationSettings (template).
+- Vague 6 (Documents) est la prochaine : DocumentUpload et DocumentRow (molecules ou organisms) depuis documents/.
 - document-row.tsx contient deux dialogs imbriqués (preview, delete) à extraire en molecules.
 - organization-settings.tsx contient un OrganizationProfileForm inline (67 lignes) à extraire.
