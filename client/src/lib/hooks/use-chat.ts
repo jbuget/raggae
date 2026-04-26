@@ -29,7 +29,7 @@ export function useConversations(projectId: string, limit = 50) {
   });
 }
 
-export function useConversation(projectId: string, conversationId: string) {
+export function useConversation(projectId: string | undefined, conversationId: string | undefined) {
   const { token } = useAuth();
 
   return useQuery({
