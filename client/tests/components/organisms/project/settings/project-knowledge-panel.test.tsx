@@ -27,22 +27,13 @@ const mockProject = {
 };
 
 describe("ProjectKnowledgePanel", () => {
-  it("should render the document upload section", async () => {
+  it("should render the document upload area", async () => {
     server.use(
       http.get("/api/v1/projects/proj-1", () => HttpResponse.json(mockProject)),
       http.get("/api/v1/projects/proj-1/documents", () => HttpResponse.json([])),
     );
     renderWithProviders(<ProjectKnowledgePanel projectId="proj-1" />);
-    expect(await screen.findByRole("heading", { name: /documents/i })).toBeInTheDocument();
-  });
-
-  it("should render the chunking strategy section", async () => {
-    server.use(
-      http.get("/api/v1/projects/proj-1", () => HttpResponse.json(mockProject)),
-      http.get("/api/v1/projects/proj-1/documents", () => HttpResponse.json([])),
-    );
-    renderWithProviders(<ProjectKnowledgePanel projectId="proj-1" />);
-    expect(await screen.findByRole("combobox")).toBeInTheDocument();
+    expect(await screen.findByText(/indexed/i)).toBeInTheDocument();
   });
 
   it("should show empty state when no documents", async () => {

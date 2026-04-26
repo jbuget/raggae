@@ -18,30 +18,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ProjectSnapshotsList } from "@/components/organisms/project/project-snapshots-list";
-import { useDeleteProject, useProject, useUpdateProject } from "@/lib/hooks/use-projects";
+import { useDeleteProject, useProject, useReindexProject, useUpdateProject } from "@/lib/hooks/use-projects";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
 import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
 import type {
+  ChunkingStrategy,
   ModelProvider,
   ProjectEmbeddingBackend,
   ProjectLLMBackend,
   ProjectRerankerBackend,
   RetrievalStrategy,
+  UpdateProjectRequest,
 } from "@/lib/types/api";
 
 export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const t = useTranslations("projects.settings");
   const tCommon = useTranslations("common");
+  const tForm = useTranslations("projects.form");
   const router = useRouter();
 
   const { data: project } = useProject(projectId);
   const updateProject = useUpdateProject(projectId);
+  const reindexProject = useReindexProject(projectId);
   const deleteProject = useDeleteProject();
   const { data: modelCatalog } = useModelCatalog();
   const { data: userCredentials } = useModelCredentials();
   const { data: orgCredentials } = useOrgModelCredentials(project?.organization_id);
   const credentials = project?.organization_id ? orgCredentials : userCredentials;
+
+  // Indexation state
+  const [chunkingStrategy, setChunkingStrategy] = useState<ChunkingStrategy | null>(null);
+  const [parentChildChunking, setParentChildChunking] = useState<boolean | null>(null);
+  const [reindexWarningOpen, setReindexWarningOpen] = useState(false);
+  const [pendingIndexingData, setPendingIndexingData] = useState<UpdateProjectRequest | null>(null);
 
   // Models state
   const [embeddingBackend, setEmbeddingBackend] = useState<ProjectEmbeddingBackend | "" | undefined>(undefined);
@@ -69,6 +79,33 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (!project) return null;
+
+  const isProjectReindexing = project.reindex_status === "in_progress";
+
+  // --- Indexation computed values ---
+  const effectiveChunkingStrategy = chunkingStrategy ?? project.chunking_strategy;
+  const effectiveParentChildChunking = parentChildChunking ?? project.parent_child_chunking;
+  const hasIndexingChanges =
+    effectiveChunkingStrategy !== project.chunking_strategy ||
+    effectiveParentChildChunking !== project.parent_child_chunking;
+  const isSemanticRecommended = effectiveParentChildChunking && effectiveChunkingStrategy !== "semantic";
+  const indexingPayload: UpdateProjectRequest = {
+    chunking_strategy: effectiveChunkingStrategy,
+    parent_child_chunking: effectiveParentChildChunking,
+  };
+
+  function handleIndexingSave() {
+    const parentChildChanged = effectiveParentChildChunking !== project?.parent_child_chunking;
+    if (parentChildChanged) {
+      setPendingIndexingData(indexingPayload);
+      setReindexWarningOpen(true);
+      return;
+    }
+    updateProject.mutate(indexingPayload, {
+      onSuccess: () => toast.success(t("updateSuccess")),
+      onError: () => toast.error(t("updateError")),
+    });
+  }
 
   // --- Models computed values ---
   const effectiveEmbeddingBackend = embeddingBackend === undefined ? (project.embedding_backend ?? "") : embeddingBackend;
@@ -138,6 +175,82 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   return (
     <div className="max-w-3xl space-y-10">
+
+      {/* Indexation */}
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</h2>
+
+        {isProjectReindexing && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
+          <select id="chunkingStrategy" value={effectiveChunkingStrategy}
+            onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
+            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="auto">{tForm("chunkingAuto")}</option>
+            <option value="fixed_window">{tForm("chunkingFixed")}</option>
+            <option value="paragraph">{tForm("chunkingParagraph")}</option>
+            <option value="heading_section">{tForm("chunkingHeading")}</option>
+            <option value="semantic">{tForm("chunkingSemantic")}</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
+          <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
+        {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
+        <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProject.isPending} onClick={handleIndexingSave}>
+          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+        </Button>
+        <div className="space-y-3 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.reindexTitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("knowledgeIndexing.reindexDescription")}</p>
+          <Button className="cursor-pointer" disabled={reindexProject.isPending || isProjectReindexing}
+            onClick={() => reindexProject.mutate(undefined, {
+              onSuccess: (result) => toast.success(t("knowledgeIndexing.reindexSuccess", { indexed: result.indexed_documents, total: result.total_documents, failed: result.failed_documents })),
+              onError: () => toast.error(t("knowledgeIndexing.reindexError")),
+            })}
+          >
+            {reindexProject.isPending ? t("knowledgeIndexing.reindexing") : t("knowledgeIndexing.reindexButton")}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{tForm("reindexTitle")}</DialogTitle>
+            <DialogDescription>
+              {tForm(effectiveParentChildChunking ? "reindexEnableDescription" : "reindexDisableDescription")}{" "}
+              {tForm("reindexDocumentsWarning")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="cursor-pointer" onClick={() => { setReindexWarningOpen(false); setPendingIndexingData(null); }}>
+              {tCommon("cancel")}
+            </Button>
+            <Button className="cursor-pointer" onClick={() => {
+              if (!pendingIndexingData) return;
+              updateProject.mutate(pendingIndexingData, {
+                onSuccess: () => toast.success(t("updateSuccess")),
+                onError: () => toast.error(t("updateError")),
+              });
+              setReindexWarningOpen(false);
+              setPendingIndexingData(null);
+            }}>
+              {tForm("confirmAndSave")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <hr className="border-border" />
 
       {/* Models */}
       <div className="space-y-4">
