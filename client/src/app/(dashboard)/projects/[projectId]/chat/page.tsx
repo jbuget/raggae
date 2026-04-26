@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChatPanel } from "@/components/chat/chat-panel";
+import { ChatPanel } from "@/components/organisms/chat/chat-panel";
 import { useProject } from "@/lib/hooks/use-projects";
 
 export default function ChatPage() {
