@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { StreamingDot } from "@/components/atoms/chat/streaming-dot";
 
 export function StreamingIndicator() {
   const t = useTranslations("chat.streamingIndicator");
@@ -8,9 +9,9 @@ export function StreamingIndicator() {
   return (
     <div className="flex items-center gap-2 px-4 py-2">
       <div className="flex gap-1">
-        <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
-        <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
-        <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+        <StreamingDot delay={0} />
+        <StreamingDot delay={150} />
+        <StreamingDot delay={300} />
       </div>
       <span className="text-sm text-muted-foreground">{t("thinking")}</span>
     </div>

@@ -3,8 +3,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { ChatPanel } from "@/components/chat/chat-panel";
-import { renderWithProviders } from "../../helpers/render";
+import { ChatPanel } from "@/components/organisms/chat/chat-panel";
+import { renderWithProviders } from "../../../helpers/render";
 
 class ResizeObserverMock {
   observe() {}
@@ -61,9 +61,7 @@ vi.mock("@/lib/hooks/use-chat", () => ({
 }));
 
 vi.mock("@/lib/hooks/use-auth", () => ({
-  useAuth: () => ({
-    token: "token-1",
-  }),
+  useAuth: () => ({ token: "token-1" }),
 }));
 
 const getDocumentFileBlobMock = vi.fn();
@@ -73,66 +71,45 @@ vi.mock("@/lib/api/documents", () => ({
 
 describe("ChatPanel", () => {
   it("should display unique document source badge for assistant response", () => {
-    renderWithProviders(
-      <ChatPanel projectId="proj-1" conversationId="conv-1" />,
-    );
-
+    renderWithProviders(<ChatPanel projectId="proj-1" conversationId="conv-1" />);
     expect(screen.getByText("atelier-migration-24-11-2025.md")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /show sources/i })).toBeNull();
   });
 
-  it("opens document popup when clicking source badge", async () => {
-    getDocumentFileBlobMock.mockResolvedValue(
-      new Blob(["hello"], { type: "text/plain" }),
-    );
+  it("should open document dialog when clicking a source badge", async () => {
+    getDocumentFileBlobMock.mockResolvedValue(new Blob(["hello"], { type: "text/plain" }));
     const user = userEvent.setup();
-    renderWithProviders(
-      <ChatPanel projectId="proj-1" conversationId="conv-1" />,
-    );
-
+    renderWithProviders(<ChatPanel projectId="proj-1" conversationId="conv-1" />);
     await user.click(screen.getByText("atelier-migration-24-11-2025.md"));
-
-    expect(getDocumentFileBlobMock).toHaveBeenCalledWith(
-      "token-1",
-      "proj-1",
-      "doc-1",
-    );
-    expect(
-      screen.getByRole("heading", { name: "atelier-migration-24-11-2025.md" }),
-    ).toBeInTheDocument();
+    expect(getDocumentFileBlobMock).toHaveBeenCalledWith("token-1", "proj-1", "doc-1");
+    expect(screen.getByRole("heading", { name: "atelier-migration-24-11-2025.md" })).toBeInTheDocument();
   });
 
-  it("displays chunk IDs in document popup with copy buttons", async () => {
-    getDocumentFileBlobMock.mockResolvedValue(
-      new Blob(["hello"], { type: "text/plain" }),
-    );
+  it("should display chunk IDs in document dialog with copy buttons", async () => {
+    getDocumentFileBlobMock.mockResolvedValue(new Blob(["hello"], { type: "text/plain" }));
     const user = userEvent.setup();
-    renderWithProviders(
-      <ChatPanel projectId="proj-1" conversationId="conv-1" />,
-    );
-
+    renderWithProviders(<ChatPanel projectId="proj-1" conversationId="conv-1" />);
     await user.click(screen.getByText("atelier-migration-24-11-2025.md"));
-
     expect(screen.getByText("chunk-aaa")).toBeInTheDocument();
     expect(screen.getByText("chunk-bbb")).toBeInTheDocument();
-    const copyButtons = screen.getAllByRole("button", { name: /copy/i });
-    // Subtract the Close button from the dialog
-    const chunkCopyButtons = copyButtons.filter(
-      (btn) => btn.getAttribute("title") === "Copy chunk ID",
-    );
+    const chunkCopyButtons = screen
+      .getAllByRole("button", { name: /copy/i })
+      .filter((btn) => btn.getAttribute("title") === "Copy chunk ID");
     expect(chunkCopyButtons).toHaveLength(2);
   });
 
-  it("displays stream error message when state is idle and error is set", () => {
+  it("should display stream error when state is idle", () => {
     mockSendMessageResult.error = "Stream connection failed";
     mockSendMessageResult.state = "idle";
-
-    renderWithProviders(
-      <ChatPanel projectId="proj-1" conversationId="conv-1" />,
-    );
-
+    renderWithProviders(<ChatPanel projectId="proj-1" conversationId="conv-1" />);
     expect(screen.getByText("Stream connection failed")).toBeInTheDocument();
-
     mockSendMessageResult.error = null;
+  });
+
+  it("should show disabled message when disabled prop is set", () => {
+    renderWithProviders(
+      <ChatPanel projectId="proj-1" conversationId="conv-1" disabled disabledMessage="Réindexation en cours" />,
+    );
+    expect(screen.getByText("Réindexation en cours")).toBeInTheDocument();
   });
 });

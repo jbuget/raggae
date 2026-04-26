@@ -1,8 +1,8 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { MessageInput } from "@/components/chat/message-input";
-import { renderWithProviders } from "../../helpers/render";
+import { MessageInput } from "@/components/molecules/chat/message-input";
+import { renderWithProviders } from "../../../helpers/render";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -11,25 +11,21 @@ vi.mock("next/navigation", () => ({
 describe("MessageInput", () => {
   it("should render textarea and send button", () => {
     renderWithProviders(<MessageInput onSend={vi.fn()} />);
-
     expect(screen.getByLabelText(/message/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /send/i })).toBeInTheDocument();
   });
 
-  it("should disable send button when empty", () => {
+  it("should disable send button when textarea is empty", () => {
     renderWithProviders(<MessageInput onSend={vi.fn()} />);
-
     expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();
   });
 
-  it("should call onSend when button is clicked", async () => {
+  it("should call onSend when button is clicked with text", async () => {
     const onSend = vi.fn();
     const user = userEvent.setup();
     renderWithProviders(<MessageInput onSend={onSend} />);
-
     await user.type(screen.getByLabelText(/message/i), "Hello");
     await user.click(screen.getByRole("button", { name: /send/i }));
-
     expect(onSend).toHaveBeenCalledWith("Hello");
   });
 
@@ -37,10 +33,7 @@ describe("MessageInput", () => {
     const onSend = vi.fn();
     const user = userEvent.setup();
     renderWithProviders(<MessageInput onSend={onSend} />);
-
-    const textarea = screen.getByLabelText(/message/i);
-    await user.type(textarea, "Hello{Enter}");
-
+    await user.type(screen.getByLabelText(/message/i), "Hello{Enter}");
     expect(onSend).toHaveBeenCalledWith("Hello");
   });
 
@@ -48,35 +41,26 @@ describe("MessageInput", () => {
     const onSend = vi.fn();
     const user = userEvent.setup();
     renderWithProviders(<MessageInput onSend={onSend} />);
-
-    const textarea = screen.getByLabelText(/message/i);
-    await user.type(textarea, "Hello{Shift>}{Enter}{/Shift}");
-
+    await user.type(screen.getByLabelText(/message/i), "Hello{Shift>}{Enter}{/Shift}");
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it("should clear input after sending", async () => {
+  it("should clear textarea after sending", async () => {
     const user = userEvent.setup();
     renderWithProviders(<MessageInput onSend={vi.fn()} />);
-
     const textarea = screen.getByLabelText(/message/i);
     await user.type(textarea, "Hello");
     await user.click(screen.getByRole("button", { name: /send/i }));
-
     expect(textarea).toHaveValue("");
   });
 
-  it("should disable when disabled prop is true", () => {
+  it("should disable textarea and button when disabled prop is true", () => {
     renderWithProviders(<MessageInput onSend={vi.fn()} disabled />);
-
     expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();
   });
 
-  it("should show a loader and be disabled while thinking", () => {
-    renderWithProviders(
-      <MessageInput onSend={vi.fn()} disabled isThinking />,
-    );
-
+  it("should show stop button while thinking", () => {
+    renderWithProviders(<MessageInput onSend={vi.fn()} disabled isThinking />);
     expect(screen.getByRole("button", { name: /stop/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/message/i)).toBeDisabled();
   });
@@ -84,12 +68,8 @@ describe("MessageInput", () => {
   it("should call onStop when stop button is clicked while thinking", async () => {
     const onStop = vi.fn();
     const user = userEvent.setup();
-    renderWithProviders(
-      <MessageInput onSend={vi.fn()} onStop={onStop} disabled isThinking />,
-    );
-
+    renderWithProviders(<MessageInput onSend={vi.fn()} onStop={onStop} disabled isThinking />);
     await user.click(screen.getByRole("button", { name: /stop/i }));
-
     expect(onStop).toHaveBeenCalledOnce();
   });
 });

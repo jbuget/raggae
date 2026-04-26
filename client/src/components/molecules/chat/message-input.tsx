@@ -79,7 +79,6 @@ export function MessageInput({
           )}
           aria-label={t("ariaLabel")}
         />
-
         <div className="flex items-center justify-end pb-3">
           <Button
             size="icon"
@@ -101,10 +100,7 @@ export function MessageInput({
           </Button>
         </div>
       </div>
-
-      <p className="text-center text-xs text-muted-foreground">
-        {t("disclaimer")}
-      </p>
+      <p className="text-center text-xs text-muted-foreground">{t("disclaimer")}</p>
     </div>
   );
 }
