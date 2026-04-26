@@ -19,8 +19,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { DocumentRow } from "@/components/documents/document-row";
-import { DocumentUpload } from "@/components/documents/document-upload";
+import { DocumentRow } from "@/components/molecules/document/document-row";
+import { DocumentUpload } from "@/components/molecules/document/document-upload";
 import { ProjectSnapshotsList } from "@/components/organisms/project/project-snapshots-list";
 import {
   useDeleteDocument,
