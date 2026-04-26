@@ -131,7 +131,8 @@
       "createFirst": "Créer votre premier projet"
     },
     "card": {
-      "created": "Créé le"
+      "created": "Créé le",
+      "settings": "Paramètres"
     },
     "page": {
       "chatTitle": "Chat",
