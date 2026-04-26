@@ -19,7 +19,7 @@ const LOCALE_FLAGS: Record<UpdateUserLocaleRequest["locale"], { flag: string; sh
 const LOCALE_VALUES: Array<UpdateUserLocaleRequest["locale"]> = ["en", "fr"];
 
 function setLocaleCookie(locale: string) {
-  const maxAge = 60 * 60 * 24 * 365; // 1 year
+  const maxAge = 60 * 60 * 24 * 365;
   document.cookie = `raggae_locale=${locale};path=/;max-age=${maxAge};SameSite=Lax`;
 }
 
@@ -32,12 +32,8 @@ export function LocaleSelector() {
 
   function handleSelect(locale: UpdateUserLocaleRequest["locale"]) {
     if (locale === currentLocale) return;
-
     setLocaleCookie(locale);
-    updateLocale.mutate(
-      { locale },
-      { onSettled: () => window.location.reload() },
-    );
+    updateLocale.mutate({ locale }, { onSettled: () => window.location.reload() });
   }
 
   return (
