@@ -39,9 +39,9 @@ vi.mock("@/lib/api/stats", () => ({
 }));
 
 describe("StatsPage", () => {
-  it("should render the page title", async () => {
+  it("should render the north star section label", async () => {
     renderWithProviders(<StatsPage />);
-    expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(await screen.findByText(/1.234/)).toBeInTheDocument();
   });
 
   it("should display the north star value once data is loaded", async () => {

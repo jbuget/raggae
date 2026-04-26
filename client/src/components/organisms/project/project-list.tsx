@@ -54,8 +54,7 @@ export function ProjectList() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
+      <div className="mb-6 flex justify-end">
         <Dialog
           open={effectiveCreateOpen}
           onOpenChange={(open) => {

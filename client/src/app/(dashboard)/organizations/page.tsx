@@ -1,5 +1,5 @@
-import { OrganizationList } from "@/components/organisms/organization/organization-list";
+import { OrganizationsTemplate } from "@/components/templates/organization/organizations-template";
 
 export default function OrganizationsPage() {
-  return <OrganizationList />;
+  return <OrganizationsTemplate />;
 }
