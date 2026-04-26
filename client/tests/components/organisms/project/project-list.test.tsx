@@ -68,14 +68,15 @@ describe("ProjectList", () => {
     expect(await screen.findByText(/no projects yet/i)).toBeInTheDocument();
   });
 
-  it("should open create dialog when 'New project' button is clicked", async () => {
+  it("should open create dialog when ?create=1 is in the URL", async () => {
+    vi.mock("next/navigation", () => ({
+      useRouter: () => ({ push: mockPush, replace: mockReplace }),
+      useSearchParams: () => ({ get: (key: string) => (key === "create" ? "1" : null) }),
+    }));
     server.use(
       http.get("/api/v1/projects", () => HttpResponse.json(mockProjects)),
     );
-    const user = userEvent.setup();
     renderWithProviders(<ProjectList />);
-    await screen.findByText("Alpha");
-    await user.click(screen.getByRole("button", { name: /new project/i }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 });

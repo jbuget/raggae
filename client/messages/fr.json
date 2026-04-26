@@ -119,6 +119,7 @@
   },
   "projects": {
     "title": "Projets",
+    "description": "Créez et gérez vos agents RAG.",
     "new": "Nouveau projet",
     "empty": "Aucun projet pour le moment.",
     "namePlaceholder": "Nom du projet",
@@ -344,6 +345,7 @@
   },
   "organizations": {
     "title": "Organisations",
+    "description": "Gérez vos équipes et espaces de travail partagés.",
     "new": "Nouvelle organisation",
     "list": {
       "createTitle": "Créer une organisation",
