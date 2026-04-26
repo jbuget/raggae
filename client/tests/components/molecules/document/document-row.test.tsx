@@ -1,8 +1,12 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { DocumentRow } from "@/components/documents/document-row";
-import { renderWithProviders } from "../../helpers/render";
+import { DocumentRow } from "@/components/molecules/document/document-row";
+import { renderWithProviders } from "../../../helpers/render";
+
+vi.mock("@/lib/hooks/use-auth", () => ({
+  useAuth: () => ({ token: "mock-token" }),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -52,12 +56,31 @@ describe("DocumentRow", () => {
     renderWithProviders(
       <DocumentRow document={mockDoc} {...defaultProps} onDelete={onDelete} />,
     );
-
     await user.click(screen.getByRole("button", { name: /delete/i }));
-    // Confirm in dialog
     const confirmButtons = screen.getAllByRole("button", { name: /delete/i });
     await user.click(confirmButtons[confirmButtons.length - 1]);
-
     expect(onDelete).toHaveBeenCalledWith("doc-1");
+  });
+
+  it("should call onReindex when reindex button is clicked", async () => {
+    const onReindex = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <DocumentRow document={mockDoc} {...defaultProps} onReindex={onReindex} />,
+    );
+    await user.click(screen.getByRole("button", { name: /reindex/i }));
+    expect(onReindex).toHaveBeenCalledWith("doc-1");
+  });
+
+  it("should disable reindex button when disableReindex is true", () => {
+    renderWithProviders(
+      <DocumentRow document={mockDoc} {...defaultProps} disableReindex={true} />,
+    );
+    expect(screen.getByRole("button", { name: /reindex/i })).toBeDisabled();
+  });
+
+  it("should display status badge", () => {
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
+    expect(screen.getByText("Indexed")).toBeInTheDocument();
   });
 });
