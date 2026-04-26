@@ -1,4 +1,4 @@
-import { OrganizationSettings } from "@/components/organizations/organization-settings";
+import { OrganizationSettings } from "@/components/organisms/organization/organization-settings";
 
 type OrganizationSettingsPageProps = {
   params: Promise<{

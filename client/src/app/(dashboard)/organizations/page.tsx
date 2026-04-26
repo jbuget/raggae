@@ -1,4 +1,4 @@
-import { OrganizationList } from "@/components/organizations/organization-list";
+import { OrganizationList } from "@/components/organisms/organization/organization-list";
 
 export default function OrganizationsPage() {
   return <OrganizationList />;
