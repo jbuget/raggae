@@ -6,12 +6,12 @@
 
 ## Fonctionnalité en cours
 
-Refactoring front-end — migration vers Atomic Design strict (vague 2 : layout)
+Refactoring front-end — migration vers Atomic Design strict (vague 4 : projects)
 
 ## Branche Git
 
 ```
-refactor/atomic-design-layout
+refactor/atomic-design-projects
 ```
 
 ## Problème / Contexte
@@ -53,24 +53,25 @@ components/ui/ (shadcn/Radix) n'est pas touché.
 - [x] Supprimer l'ancien components/chat/ + mettre à jour les pages
 - [x] PR mergée
 
-### Vague 2 — Layout ✅ (branche : refactor/atomic-design-layout)
+### Vague 2 — Layout ✅ (PR #84 mergée)
 
 - [x] atom/layout : ThemeToggle (depuis layout/theme-toggle.tsx)
 - [x] molecule/layout : LocaleSelector (depuis layout/locale-selector.tsx)
 - [x] organism/layout : Header (depuis layout/header.tsx)
 - [x] Mettre à jour l'import dans app/(dashboard)/layout.tsx
 - [x] Supprimer l'ancien components/layout/
-- [ ] Créer la PR et merger
+- [x] PR mergée
 
 Note : ThemeToggle et LocaleSelector ne sont pas injectés dans UserMenu car ce dernier
 utilise des sous-menus DropdownMenuSub (pattern différent). Ils restent disponibles pour
 d'autres surfaces (settings page, header alternatif, etc.).
 
-### Vague 3 — Auth (branche : refactor/atomic-design-auth)
+### Vague 3 — Auth ✅ (PR #85 mergée)
 
-- [ ] molecule/auth : LoginForm (depuis auth/login-form.tsx, 152 lignes)
-- [ ] molecule/auth : RegisterForm (depuis auth/register-form.tsx, 118 lignes)
-- [ ] Supprimer l'ancien components/auth/
+- [x] molecule/auth : LoginForm (depuis auth/login-form.tsx, 152 lignes)
+- [x] molecule/auth : RegisterForm (depuis auth/register-form.tsx, 118 lignes)
+- [x] Supprimer l'ancien components/auth/
+- [x] PR mergée
 
 ### Vague 4 — Projects (branche : refactor/atomic-design-projects)
 
@@ -114,6 +115,6 @@ d'autres surfaces (settings page, header alternatif, etc.).
 
 ## Notes
 
-- Vague 3 (Auth) est la prochaine : composants simples, migration rapide.
+- Vague 4 (Projects) est la prochaine : ProjectCard (atom), SnapshotCard (molecule), ProjectList/ProjectForm/ProjectSnapshotsList (organisms).
 - document-row.tsx contient deux dialogs imbriqués (preview, delete) à extraire en molecules.
 - organization-settings.tsx contient un OrganizationProfileForm inline (67 lignes) à extraire.
