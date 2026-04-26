@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { LoginForm } from "@/components/auth/login-form";
+import { LoginForm } from "@/components/molecules/auth/login-form";
 
 export default function LoginPage() {
   const entraEnabled = process.env.ENTRA_ENABLED === "true";
