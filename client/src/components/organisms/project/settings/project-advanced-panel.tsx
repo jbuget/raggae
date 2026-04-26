@@ -176,82 +176,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   return (
     <div className="max-w-3xl space-y-10">
 
-      {/* Indexation */}
-      <div className="space-y-4">
-        <h2 className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</h2>
-
-        {isProjectReindexing && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
-          <select id="chunkingStrategy" value={effectiveChunkingStrategy}
-            onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="auto">{tForm("chunkingAuto")}</option>
-            <option value="fixed_window">{tForm("chunkingFixed")}</option>
-            <option value="paragraph">{tForm("chunkingParagraph")}</option>
-            <option value="heading_section">{tForm("chunkingHeading")}</option>
-            <option value="semantic">{tForm("chunkingSemantic")}</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
-          <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
-        </div>
-        <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
-        {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
-        <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProject.isPending} onClick={handleIndexingSave}>
-          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-        </Button>
-        <div className="space-y-3 rounded-md border p-4">
-          <p className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.reindexTitle")}</p>
-          <p className="text-sm text-muted-foreground">{t("knowledgeIndexing.reindexDescription")}</p>
-          <Button className="cursor-pointer" disabled={reindexProject.isPending || isProjectReindexing}
-            onClick={() => reindexProject.mutate(undefined, {
-              onSuccess: (result) => toast.success(t("knowledgeIndexing.reindexSuccess", { indexed: result.indexed_documents, total: result.total_documents, failed: result.failed_documents })),
-              onError: () => toast.error(t("knowledgeIndexing.reindexError")),
-            })}
-          >
-            {reindexProject.isPending ? t("knowledgeIndexing.reindexing") : t("knowledgeIndexing.reindexButton")}
-          </Button>
-        </div>
-      </div>
-
-      <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{tForm("reindexTitle")}</DialogTitle>
-            <DialogDescription>
-              {tForm(effectiveParentChildChunking ? "reindexEnableDescription" : "reindexDisableDescription")}{" "}
-              {tForm("reindexDocumentsWarning")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" className="cursor-pointer" onClick={() => { setReindexWarningOpen(false); setPendingIndexingData(null); }}>
-              {tCommon("cancel")}
-            </Button>
-            <Button className="cursor-pointer" onClick={() => {
-              if (!pendingIndexingData) return;
-              updateProject.mutate(pendingIndexingData, {
-                onSuccess: () => toast.success(t("updateSuccess")),
-                onError: () => toast.error(t("updateError")),
-              });
-              setReindexWarningOpen(false);
-              setPendingIndexingData(null);
-            }}>
-              {tForm("confirmAndSave")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <hr className="border-border" />
-
       {/* Models */}
       <div className="space-y-4">
         <h2 className="text-base font-semibold tracking-tight">{t("models.embeddingTitle")}</h2>
@@ -345,6 +269,82 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
           {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
         </Button>
       </div>
+
+      <hr className="border-border" />
+
+      {/* Indexation */}
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</h2>
+
+        {isProjectReindexing && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
+          <select id="chunkingStrategy" value={effectiveChunkingStrategy}
+            onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
+            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="auto">{tForm("chunkingAuto")}</option>
+            <option value="fixed_window">{tForm("chunkingFixed")}</option>
+            <option value="paragraph">{tForm("chunkingParagraph")}</option>
+            <option value="heading_section">{tForm("chunkingHeading")}</option>
+            <option value="semantic">{tForm("chunkingSemantic")}</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
+          <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
+        {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
+        <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProject.isPending} onClick={handleIndexingSave}>
+          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+        </Button>
+        <div className="space-y-3 rounded-md border p-4">
+          <p className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.reindexTitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("knowledgeIndexing.reindexDescription")}</p>
+          <Button className="cursor-pointer" disabled={reindexProject.isPending || isProjectReindexing}
+            onClick={() => reindexProject.mutate(undefined, {
+              onSuccess: (result) => toast.success(t("knowledgeIndexing.reindexSuccess", { indexed: result.indexed_documents, total: result.total_documents, failed: result.failed_documents })),
+              onError: () => toast.error(t("knowledgeIndexing.reindexError")),
+            })}
+          >
+            {reindexProject.isPending ? t("knowledgeIndexing.reindexing") : t("knowledgeIndexing.reindexButton")}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{tForm("reindexTitle")}</DialogTitle>
+            <DialogDescription>
+              {tForm(effectiveParentChildChunking ? "reindexEnableDescription" : "reindexDisableDescription")}{" "}
+              {tForm("reindexDocumentsWarning")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="cursor-pointer" onClick={() => { setReindexWarningOpen(false); setPendingIndexingData(null); }}>
+              {tCommon("cancel")}
+            </Button>
+            <Button className="cursor-pointer" onClick={() => {
+              if (!pendingIndexingData) return;
+              updateProject.mutate(pendingIndexingData, {
+                onSuccess: () => toast.success(t("updateSuccess")),
+                onError: () => toast.error(t("updateError")),
+              });
+              setReindexWarningOpen(false);
+              setPendingIndexingData(null);
+            }}>
+              {tForm("confirmAndSave")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <hr className="border-border" />
 
