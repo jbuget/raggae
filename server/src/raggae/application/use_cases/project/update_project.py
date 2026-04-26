@@ -98,9 +98,9 @@ class UpdateProject:
         self,
         project_id: UUID,
         user_id: UUID,
-        name: str,
-        description: str,
-        system_prompt: str,
+        name: str | None = None,
+        description: str | None = None,
+        system_prompt: str | None = None,
         chunking_strategy: ChunkingStrategy | None = None,
         parent_child_chunking: bool | None = None,
         embedding_backend: str | None = None,
@@ -121,7 +121,7 @@ class UpdateProject:
         reranker_model: str | None = None,
         reranker_candidate_multiplier: int | None = None,
     ) -> ProjectDTO:
-        if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
+        if system_prompt is not None and len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
                 f"System prompt exceeds {MAX_PROJECT_SYSTEM_PROMPT_LENGTH} characters"
             )
@@ -274,9 +274,9 @@ class UpdateProject:
         next_reranker_backend = project.reranker_backend if reranker_backend is None else reranker_backend
         updated_project = replace(
             project,
-            name=name,
-            description=description,
-            system_prompt=system_prompt,
+            name=project.name if name is None else name,
+            description=project.description if description is None else description,
+            system_prompt=project.system_prompt if system_prompt is None else system_prompt,
             chunking_strategy=project.chunking_strategy if chunking_strategy is None else chunking_strategy,
             parent_child_chunking=project.parent_child_chunking
             if parent_child_chunking is None

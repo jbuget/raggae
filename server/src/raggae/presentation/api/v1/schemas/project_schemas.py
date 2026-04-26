@@ -67,9 +67,9 @@ class CreateProjectRequest(BaseModel):
 
 
 class UpdateProjectRequest(BaseModel):
-    name: str = Field(..., min_length=1)
-    description: str = ""
-    system_prompt: str = Field(default="", max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
+    name: str | None = Field(default=None, min_length=1)
+    description: str | None = None
+    system_prompt: str | None = Field(default=None, max_length=MAX_PROJECT_SYSTEM_PROMPT_LENGTH)
     chunking_strategy: ChunkingStrategy | None = None
     parent_child_chunking: bool | None = None
     embedding_backend: str | None = None

@@ -1198,3 +1198,35 @@ class TestUpdateProject:
 
         # Then — update works even without snapshot repo
         assert result.name == "New name"
+
+    async def test_update_project_partial_only_system_prompt_keeps_other_fields(
+        self,
+        use_case: UpdateProject,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        project_id = uuid4()
+        user_id = uuid4()
+        project = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Original name",
+            description="Original description",
+            system_prompt="Original prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        mock_project_repository.find_by_id.return_value = project
+
+        # When — only system_prompt is provided
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            system_prompt="Updated prompt",
+        )
+
+        # Then — name and description are preserved
+        assert result.system_prompt == "Updated prompt"
+        assert result.name == "Original name"
+        assert result.description == "Original description"
+        mock_project_repository.save.assert_called_once()
