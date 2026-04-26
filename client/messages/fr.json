@@ -201,6 +201,7 @@
         "publishError": "Erreur lors de la publication"
       },
       "documentIngestion": {
+        "title": "Documents",
         "description": "La base documentaire du projet est configurée via les options d'indexation.",
         "indexedTotal": "{indexed} indexés / {total} au total",
         "uploadSuccess": "{succeeded} téléversés, {failed} en erreur",

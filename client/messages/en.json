@@ -201,6 +201,7 @@
         "publishError": "Failed to publish project"
       },
       "documentIngestion": {
+        "title": "Documents",
         "description": "The project's document library is configured via indexing options.",
         "indexedTotal": "{indexed} indexed / {total} total",
         "uploadSuccess": "{succeeded} uploaded, {failed} failed",
