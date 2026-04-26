@@ -149,6 +149,9 @@
       "notFound": "Project not found",
       "tabs": {
         "general": "General",
+        "instructions": "Instructions",
+        "knowledge": "Knowledge",
+        "advanced": "Advanced",
         "publication": "Publication",
         "models": "Models",
         "knowledgeIndexing": "Knowledge indexing",
@@ -176,6 +179,7 @@
         "deleteError": "Failed to delete project"
       },
       "publication": {
+        "accessTitle": "Access",
         "statusLabel": "Status",
         "published": "Published",
         "unpublished": "Unpublished",

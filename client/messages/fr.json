@@ -149,6 +149,9 @@
       "notFound": "Projet introuvable",
       "tabs": {
         "general": "Général",
+        "instructions": "Instructions",
+        "knowledge": "Connaissances",
+        "advanced": "Avancé",
         "publication": "Publication",
         "models": "Modèles",
         "knowledgeIndexing": "Indexation",
@@ -176,6 +179,7 @@
         "deleteError": "Erreur lors de la suppression du projet"
       },
       "publication": {
+        "accessTitle": "Accès",
         "statusLabel": "Statut",
         "published": "Publié",
         "unpublished": "Non publié",

@@ -6,27 +6,12 @@ import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTemplate } from "@/components/templates/page-template";
 import { ProjectGeneralPanel } from "@/components/organisms/project/settings/project-general-panel";
-import { ProjectPublicationPanel } from "@/components/organisms/project/settings/project-publication-panel";
-import { ProjectModelsPanel } from "@/components/organisms/project/settings/project-models-panel";
-import { ProjectKnowledgeIndexingPanel } from "@/components/organisms/project/settings/project-knowledge-indexing-panel";
-import { ProjectDocumentIngestionPanel } from "@/components/organisms/project/settings/project-document-ingestion-panel";
-import { ProjectContextRetrievalPanel } from "@/components/organisms/project/settings/project-context-retrieval-panel";
-import { ProjectContextAugmentationPanel } from "@/components/organisms/project/settings/project-context-augmentation-panel";
-import { ProjectAnswerGenerationPanel } from "@/components/organisms/project/settings/project-answer-generation-panel";
-import { ProjectSnapshotsList } from "@/components/organisms/project/project-snapshots-list";
+import { ProjectInstructionsPanel } from "@/components/organisms/project/settings/project-instructions-panel";
+import { ProjectKnowledgePanel } from "@/components/organisms/project/settings/project-knowledge-panel";
+import { ProjectAdvancedPanel } from "@/components/organisms/project/settings/project-advanced-panel";
 import { useProject } from "@/lib/hooks/use-projects";
 
-const SETTINGS_TABS = [
-  "General",
-  "Publication",
-  "Models",
-  "Knowledge indexing",
-  "Document ingestion",
-  "Context retrieval",
-  "Context augmentation",
-  "Answer generation",
-  "History",
-] as const;
+const SETTINGS_TABS = ["General", "Instructions", "Knowledge", "Advanced"] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 interface ProjectSettingsTemplateProps {
@@ -47,14 +32,9 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
 
   const tabLabels: Record<SettingsTab, string> = {
     General: t("tabs.general"),
-    Publication: t("tabs.publication"),
-    Models: t("tabs.models"),
-    "Knowledge indexing": t("tabs.knowledgeIndexing"),
-    "Document ingestion": t("tabs.documentIngestion"),
-    "Context retrieval": t("tabs.contextRetrieval"),
-    "Context augmentation": t("tabs.contextAugmentation"),
-    "Answer generation": t("tabs.answerGeneration"),
-    History: t("tabs.history"),
+    Instructions: t("tabs.instructions"),
+    Knowledge: t("tabs.knowledge"),
+    Advanced: t("tabs.advanced"),
   };
 
   function handleTabChange(tab: SettingsTab) {
@@ -82,8 +62,6 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
       </PageTemplate>
     );
   }
-
-  const isProjectReindexing = project.reindex_status === "in_progress";
 
   return (
     <PageTemplate title={project.name}>
@@ -115,38 +93,10 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
           })}
         </div>
 
-        {isProjectReindexing && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {t("reindexingWarning", {
-              progress: project.reindex_progress,
-              total: project.reindex_total,
-            })}
-          </div>
-        )}
-
         {activeTab === "General" && <ProjectGeneralPanel projectId={projectId} />}
-        {activeTab === "Publication" && <ProjectPublicationPanel projectId={projectId} />}
-        {activeTab === "Models" && <ProjectModelsPanel projectId={projectId} />}
-        {activeTab === "Knowledge indexing" && (
-          <ProjectKnowledgeIndexingPanel projectId={projectId} />
-        )}
-        {activeTab === "Document ingestion" && (
-          <ProjectDocumentIngestionPanel projectId={projectId} />
-        )}
-        {activeTab === "Context retrieval" && (
-          <ProjectContextRetrievalPanel projectId={projectId} />
-        )}
-        {activeTab === "Context augmentation" && (
-          <ProjectContextAugmentationPanel projectId={projectId} />
-        )}
-        {activeTab === "Answer generation" && (
-          <ProjectAnswerGenerationPanel projectId={projectId} />
-        )}
-        {activeTab === "History" && (
-          <div className="max-w-3xl space-y-6">
-            <ProjectSnapshotsList projectId={projectId} />
-          </div>
-        )}
+        {activeTab === "Instructions" && <ProjectInstructionsPanel projectId={projectId} />}
+        {activeTab === "Knowledge" && <ProjectKnowledgePanel projectId={projectId} />}
+        {activeTab === "Advanced" && <ProjectAdvancedPanel projectId={projectId} />}
       </div>
     </PageTemplate>
   );
