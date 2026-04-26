@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQueries } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +25,8 @@ import { useCreateOrganization, useOrganizations } from "@/lib/hooks/use-organiz
 export function OrganizationList() {
   const t = useTranslations("organizations");
   const tCommon = useTranslations("common");
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { token, user } = useAuth();
   const { data, isLoading, error } = useOrganizations();
   const sortedOrganizations = [...(data ?? [])].sort((a, b) =>
@@ -47,7 +49,9 @@ export function OrganizationList() {
       .map((organization) => organization.id),
   );
   const createOrganization = useCreateOrganization();
+  const shouldOpenFromQuery = searchParams.get("create") === "1";
   const [open, setOpen] = useState(false);
+  const effectiveOpen = open || shouldOpenFromQuery;
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -67,10 +71,15 @@ export function OrganizationList() {
 
   return (
     <div className="space-y-6">
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button>{t("list.createTitle")}</Button>
-        </DialogTrigger>
+      <Dialog
+        open={effectiveOpen}
+        onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen && shouldOpenFromQuery) {
+            router.replace("/organizations");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("list.createTitle")}</DialogTitle>
@@ -109,6 +118,7 @@ export function OrganizationList() {
                   {
                     onSuccess: () => {
                       setOpen(false);
+                      if (shouldOpenFromQuery) router.replace("/organizations");
                       setName("");
                       setSlug("");
                       setDescription("");

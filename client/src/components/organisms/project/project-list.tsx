@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,20 +53,16 @@ export function ProjectList() {
 
   return (
     <div>
-      <div className="mb-6 flex justify-end">
-        <Dialog
-          open={effectiveCreateOpen}
-          onOpenChange={(open) => {
-            setCreateOpen(open);
-            if (!open && shouldOpenFromQuery) {
-              router.replace("/projects");
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>{t("new")}</Button>
-          </DialogTrigger>
-          <DialogContent>
+      <Dialog
+        open={effectiveCreateOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open && shouldOpenFromQuery) {
+            router.replace("/projects");
+          }
+        }}
+      >
+        <DialogContent>
             <DialogHeader>
               <DialogTitle>{t("list.createTitle")}</DialogTitle>
             </DialogHeader>
@@ -119,9 +114,8 @@ export function ProjectList() {
                 {createProject.isPending ? tCommon("creating") : t("list.createTitle")}
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       {projects && projects.length === 0 ? (
         <div className="text-center py-12">

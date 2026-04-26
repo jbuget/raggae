@@ -11,8 +11,9 @@ vi.mock("@/lib/hooks/use-auth", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => "/organizations",
+  useSearchParams: () => ({ get: () => null }),
 }));
 
 const mockOrgs = [
@@ -40,15 +41,17 @@ describe("OrganizationList", () => {
     expect(await screen.findByText(/no organizations/i)).toBeInTheDocument();
   });
 
-  it("should open create dialog when button is clicked", async () => {
+  it("should open create dialog when ?create=1 is in the URL", async () => {
+    vi.mock("next/navigation", () => ({
+      useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+      usePathname: () => "/organizations",
+      useSearchParams: () => ({ get: (key: string) => (key === "create" ? "1" : null) }),
+    }));
     server.use(
       http.get("/api/v1/organizations", () => HttpResponse.json(mockOrgs)),
       http.get("/api/v1/organizations/:id/members", () => HttpResponse.json([])),
     );
-    const user = userEvent.setup();
     renderWithProviders(<OrganizationList />);
-    await screen.findByText("Alpha Corp");
-    await user.click(screen.getByRole("button", { name: /create/i }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 });
