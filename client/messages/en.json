@@ -273,6 +273,7 @@
         "candidateMultiplierNote": "Number of candidates fetched before reranking = top-k * multiplier."
       },
       "answerGeneration": {
+        "historyTitle": "Chat history",
         "promptLabel": "Project prompt",
         "promptPlaceholder": "Instructions for the AI assistant...",
         "promptLimit": "Limit: 8000 characters. Beyond this, saving will be refused.",

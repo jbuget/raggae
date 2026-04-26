@@ -273,6 +273,7 @@
         "candidateMultiplierNote": "Nombre de candidats récupérés avant reranking = top-k × multiplicateur."
       },
       "answerGeneration": {
+        "historyTitle": "Historique de chat",
         "promptLabel": "Prompt du projet",
         "promptPlaceholder": "Instructions pour l'assistant IA...",
         "promptLimit": "Limite : 8 000 caractères. Au-delà, la sauvegarde sera refusée.",
