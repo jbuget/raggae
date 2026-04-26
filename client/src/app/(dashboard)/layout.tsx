@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/header";
+import { Header } from "@/components/organisms/layout/header";
 import { Sidebar } from "@/components/organisms/sidebar";
 
 export default function DashboardLayout({
