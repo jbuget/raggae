@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentRow } from "@/components/documents/document-row";
 import { DocumentUpload } from "@/components/documents/document-upload";
-import { ProjectSnapshotsList } from "@/components/projects/project-snapshots-list";
+import { ProjectSnapshotsList } from "@/components/organisms/project/project-snapshots-list";
 import {
   useDeleteDocument,
   useDocuments,
