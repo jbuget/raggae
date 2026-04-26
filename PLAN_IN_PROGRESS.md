@@ -6,12 +6,12 @@
 
 ## Fonctionnalité en cours
 
-Refactoring front-end — migration vers Atomic Design strict (vague 4 : projects)
+Refactoring front-end — migration vers Atomic Design strict (vague 5 : organizations)
 
 ## Branche Git
 
 ```
-refactor/atomic-design-projects
+refactor/atomic-design-organizations
 ```
 
 ## Problème / Contexte
@@ -73,14 +73,14 @@ d'autres surfaces (settings page, header alternatif, etc.).
 - [x] Supprimer l'ancien components/auth/
 - [x] PR mergée
 
-### Vague 4 — Projects (branche : refactor/atomic-design-projects)
+### Vague 4 — Projects ✅ (PR #86 mergée)
 
-- [ ] atom/project : ProjectCard (depuis projects/project-card.tsx, 37 lignes)
-- [ ] molecule/project : SnapshotCard (à extraire de project-snapshots-list.tsx)
-- [ ] organism/project : ProjectList (depuis projects/project-list.tsx, 142 lignes)
-- [ ] organism/project : ProjectForm (depuis projects/project-form.tsx, 293 lignes)
-- [ ] organism/project : ProjectSnapshotsList (depuis projects/project-snapshots-list.tsx, 272 lignes)
-- [ ] Supprimer l'ancien components/projects/
+- [x] molecule/project : ProjectCard (depuis projects/project-card.tsx)
+- [x] molecule/project : SnapshotCard (extrait de project-snapshots-list.tsx)
+- [x] organism/project : ProjectList (depuis projects/project-list.tsx)
+- [x] organism/project : ProjectSnapshotsList (depuis projects/project-snapshots-list.tsx)
+- [x] Supprimer l'ancien components/projects/ (ProjectForm était dead code)
+- [x] PR mergée
 
 ### Vague 5 — Organizations (branche : refactor/atomic-design-organizations)
 
@@ -115,6 +115,6 @@ d'autres surfaces (settings page, header alternatif, etc.).
 
 ## Notes
 
-- Vague 4 (Projects) est la prochaine : ProjectCard (atom), SnapshotCard (molecule), ProjectList/ProjectForm/ProjectSnapshotsList (organisms).
+- Vague 5 (Organizations) est la prochaine : UserInvitationsList, OrganizationProfileForm (molecules), OrganizationList/OrgCredentialsPanel/OrganizationMembersPanel (organisms), OrganizationSettings (template).
 - document-row.tsx contient deux dialogs imbriqués (preview, delete) à extraire en molecules.
 - organization-settings.tsx contient un OrganizationProfileForm inline (67 lignes) à extraire.
