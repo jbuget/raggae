@@ -163,12 +163,7 @@ export function StatsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <header className="mb-10 space-y-1">
-        <h1 className="text-3xl font-bold">{t("pageTitle")}</h1>
-        <p className="text-muted-foreground">{t("pageDescription")}</p>
-      </header>
-
+    <div className="mx-auto max-w-5xl">
       {isLoading && <StatsSkeleton />}
 
       {error && (

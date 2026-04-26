@@ -6,116 +6,85 @@
 
 ## Fonctionnalité en cours
 
-Refactoring front-end — migration vers Atomic Design strict (vague 6 : documents)
+Refactoring front-end — Vague 8 : introduction de la couche Templates (Atomic Design)
 
 ## Branche Git
 
 ```
-refactor/atomic-design-documents
+refactor/atomic-design-templates
 ```
 
 ## Problème / Contexte
 
-Le front-end mélange des composants à des niveaux d'abstraction différents
-dans des dossiers thématiques (`auth/`, `projects/`, `organizations/`, etc.)
-sans respecter la hiérarchie Atomic Design. Cela rend difficile la
-réutilisation, la lisibilité et la cohérence visuelle.
+Après les vagues 1–7, la hiérarchie atoms/molecules/organisms est en place, mais la couche
+"Template" (Atomic Design) est absente. Cela crée trois incohérences :
+
+1. Certains organisms contiennent des `<h1>` et headers de page (ex. `StatsPage`, `ProjectList`)
+   → ils empiètent sur la responsabilité des templates.
+2. Certains `page.tsx` contiennent des headers inline (`invitations/page.tsx`, `snapshots/page.tsx`)
+   → logique de présentation dans la couche route.
+3. Certains `page.tsx` sont monolithiques avec logique + UI (~300 lignes : `settings/page.tsx`,
+   `projects/[projectId]/page.tsx`, pages chat).
 
 ## Approche choisie
 
-Migration en vagues successives (une branche par domaine), en respectant
-TDD (test rouge → vert → refacto) et les Conventional Commits en français.
+Introduire deux templates génériques réutilisables, puis les appliquer page par page :
 
-Hiérarchie cible :
+### `PageTemplate` — pages "document" (listes, formulaires, settings)
+Props : `title`, `description?`, `actions?` (slot boutons CTA), `children`
+Layout : barre de titre + contenu scrollable.
 
-- atoms/      → éléments indivisibles, aucune logique métier
-- molecules/  → combinaisons d'atoms, logique locale auto-contenue
-- organisms/  → sections composites avec orchestration
-- templates/  → pages assemblant des organisms
+### `WorkspaceTemplate` — pages "outil" immersives (chat, éditeur…)
+Props : `breadcrumb` (items avec label + href?), `actions?`, `children`
+Layout : top bar sticky h-14 + contenu pleine hauteur (overflow géré en interne).
 
-components/ui/ (shadcn/Radix) n'est pas touché.
+### Règle cardinale
+- `page.tsx` : extrait les params URL uniquement, rend un template
+- Template : `<h1>`, description, CTAs — reçoit les params de route en props, ne fetche pas
+- Organism : fetche ses données, pas de `<h1>` de page
 
 ## Découpage en tâches atomiques
 
-### Vague 1 — Vue conversation ✅ (PR #83 mergée)
+### Étape 0 — Templates génériques (branche : refactor/atomic-design-templates)
 
-- [x] atom/chat : CopyButton
-- [x] atom/chat : StreamingDot
-- [x] atom/chat : SourceBadge
-- [x] atom/chat : ScrollToBottomButton
-- [x] molecule/chat : StreamingIndicator
-- [x] molecule/chat : MessageBubble
-- [x] molecule/chat : MessageInput
-- [x] organism/chat : MessageList
-- [x] organism/chat : DocumentPreviewDialog
-- [x] organism/chat : SourcesBar
-- [x] organism/chat : ChatPanel (orchestrateur)
-- [x] Supprimer l'ancien components/chat/ + mettre à jour les pages
-- [x] PR mergée
+- [x] docs: documenter PageTemplate / WorkspaceTemplate dans CLAUDE.md et PLAN_IN_PROGRESS.md
+- [ ] feat(templates): créer PageTemplate générique + tests
+- [ ] feat(templates): créer WorkspaceTemplate générique + tests
 
-### Vague 2 — Layout ✅ (PR #84 mergée)
+### Étape 1 — Pages simples (PageTemplate)
 
-- [x] atom/layout : ThemeToggle (depuis layout/theme-toggle.tsx)
-- [x] molecule/layout : LocaleSelector (depuis layout/locale-selector.tsx)
-- [x] organism/layout : Header (depuis layout/header.tsx)
-- [x] Mettre à jour l'import dans app/(dashboard)/layout.tsx
-- [x] Supprimer l'ancien components/layout/
-- [x] PR mergée
+- [ ] refactor(templates/stats): StatsPage → retirer `<header>` de l'organism, créer stats-template
+- [ ] refactor(templates/project): ProjectList → retirer `<h1>` de l'organism, créer projects-template
+- [ ] refactor(templates/organization): OrganizationList → retirer `<h1>`, créer organizations-template
+- [ ] refactor(templates/organization): invitations/page → créer invitations-template
+- [ ] refactor(templates/project): snapshots/page → créer project-snapshots-template
 
-Note : ThemeToggle et LocaleSelector ne sont pas injectés dans UserMenu car ce dernier
-utilise des sous-menus DropdownMenuSub (pattern différent). Ils restent disponibles pour
-d'autres surfaces (settings page, header alternatif, etc.).
+### Étape 2 — Pages complexes inline (PageTemplate + nouveaux organisms)
 
-### Vague 3 — Auth ✅ (PR #85 mergée)
+- [ ] refactor(templates/project): projects/[projectId]/page → créer project-detail-template + organism ProjectDetail
+- [ ] refactor(templates/settings): settings/page → créer user-settings-template + extraire organisms (UserProfilePanel, UserLocalePanel, UserApiKeysPanel)
+- [ ] refactor(templates/organization): invitations/accept/page → créer accept-invitation-template + organism AcceptInvitationContent
 
-- [x] molecule/auth : LoginForm (depuis auth/login-form.tsx, 152 lignes)
-- [x] molecule/auth : RegisterForm (depuis auth/register-form.tsx, 118 lignes)
-- [x] Supprimer l'ancien components/auth/
-- [x] PR mergée
+### Étape 3 — Pages workspace (WorkspaceTemplate)
 
-### Vague 4 — Projects ✅ (PR #86 mergée)
+- [ ] refactor(templates/project): chat/page + chat/[id]/page → créer chat-template (WorkspaceTemplate)
 
-- [x] molecule/project : ProjectCard (depuis projects/project-card.tsx)
-- [x] molecule/project : SnapshotCard (extrait de project-snapshots-list.tsx)
-- [x] organism/project : ProjectList (depuis projects/project-list.tsx)
-- [x] organism/project : ProjectSnapshotsList (depuis projects/project-snapshots-list.tsx)
-- [x] Supprimer l'ancien components/projects/ (ProjectForm était dead code)
-- [x] PR mergée
+## Décisions prises
 
-### Vague 5 — Organizations ✅ (PR #87 mergée)
+- `PageTemplate` et `WorkspaceTemplate` sont des composants génériques dans `templates/` (pas sous-dossier domaine).
+- Les organisms existants qui contiennent des `<h1>` sont refactorés pour les retirer : le header
+  appartient au template, pas à l'organism.
+- Chaque `page.tsx` devient une coquille ≤ 10 lignes après refactoring.
+- TDD strict : test RED → composant → GREEN → nettoyage → commit atomique.
 
-- [x] molecule/organization : OrganizationProfileForm (extrait de organization-settings.tsx)
-- [x] organism/organization : UserInvitationsList (depuis organizations/user-invitations-list.tsx)
-- [x] organism/organization : OrganizationList (depuis organizations/organization-list.tsx)
-- [x] organism/organization : OrganizationMembersPanel (depuis organizations/organization-members-panel.tsx)
-- [x] organism/organization : OrgCredentialsPanel (depuis organizations/org-credentials-panel.tsx)
-- [x] organism/organization : OrganizationSettings (depuis organizations/organization-settings.tsx)
-- [x] Supprimer l'ancien components/organizations/
-- [x] PR mergée
+## Vagues précédentes (terminées)
 
-### Vague 6 — Documents (branche : refactor/atomic-design-documents)
-
-- [ ] molecule/document : DocumentUpload (depuis documents/document-upload.tsx, 164 lignes)
-- [ ] molecule/document : DocumentRow (depuis documents/document-row.tsx, 257 lignes — extraire dialogs)
-- [ ] Supprimer l'ancien components/documents/
-
-### Vague 7 — Stats (branche : refactor/atomic-design-stats)
-
-- [ ] atom/stats : StatCard (à extraire de stats/stats-page.tsx)
-- [ ] template : StatsPage (depuis stats/stats-page.tsx, 201 lignes)
-- [ ] Supprimer l'ancien components/stats/
-
-## Décisions prises en cours de route
-
-- components/ui/ (shadcn/Radix) est exclu du refactoring : c'est la librairie UI de base.
-- Les anciens répertoires thématiques sont supprimés après migration complète de chaque vague.
-- Les tests existants sont mis à jour ou remplacés par de nouveaux tests dans les bons répertoires.
-- ThemeToggle et LocaleSelector ne remplacent pas les sous-menus dans UserMenu :
-  ce sont des variantes standalone (usage différent).
-- Le niveau "template" correspond aux composants-page qui assemblent des organisms sans logique propre.
-
-## Notes
-
-- Vague 6 (Documents) est la prochaine : DocumentUpload et DocumentRow (molecules ou organisms) depuis documents/.
-- document-row.tsx contient deux dialogs imbriqués (preview, delete) à extraire en molecules.
-- organization-settings.tsx contient un OrganizationProfileForm inline (67 lignes) à extraire.
+| Vague | Domaine | PR | Statut |
+|-------|---------|-----|--------|
+| 1 | Chat | #83 | ✅ |
+| 2 | Layout | #84 | ✅ |
+| 3 | Auth | #85 | ✅ |
+| 4 | Projects | #86 | ✅ |
+| 5 | Organizations | #87 | ✅ |
+| 6 | Documents | #88 | ✅ |
+| 7 | Stats | #89 | ✅ |

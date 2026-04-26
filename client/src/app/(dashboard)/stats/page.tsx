@@ -1,5 +1,5 @@
-import { StatsPage } from "@/components/organisms/stats/stats-page";
+import { StatsTemplate } from "@/components/templates/stats/stats-template";
 
 export default function StatsRoute() {
-  return <StatsPage />;
+  return <StatsTemplate />;
 }
