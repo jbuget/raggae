@@ -47,7 +47,78 @@ uvicorn src.raggae.presentation.main:app --reload
 
 ```bash
 cd client && npm install && npm run dev
+cd client && npx vitest run          # Run all frontend tests (MUST be run from client/)
+cd client && npx vitest run <file>   # Run a single test file
 ```
+
+## Frontend Architecture: Atomic Design (Strict)
+
+The frontend follows Atomic Design with five layers. Dependencies always point inward (atoms ← molecules ← organisms ← templates ← pages).
+
+```
+client/src/components/
+  atoms/       Pure UI elements — no data fetching, no business logic
+  molecules/   Atoms combinations — local state only (no hooks fetching remote data)
+  organisms/   Composite sections — fetch their own data via hooks, handle loading/error
+  templates/   Page skeletons — compose organisms into a layout, receive only route params
+client/src/app/
+  **/page.tsx  Next.js routes — extract URL params only, render one template
+```
+
+`components/ui/` (shadcn/Radix primitives) is NOT part of Atomic Design — treat it as a third-party library.
+
+### Layer rules (non-negotiable)
+
+| Layer | Fetches data? | Has `<h1>`? | Knows route params? |
+|-------|--------------|-------------|---------------------|
+| Atom | No | No | No |
+| Molecule | No | No | No |
+| Organism | Yes (own domain) | No | No |
+| Template | No | Yes | Yes (via props) |
+| Page (`page.tsx`) | No | No | Yes (useParams) |
+
+**Key rule**: organisms never contain page-level headers (`<h1>`, global description). Headers and page titles belong exclusively in templates.
+
+### Two template families
+
+#### 1. `PageTemplate` — document pages (list, settings, form…)
+Scrollable content with a title bar at the top.
+
+```
+┌─────────────────────────────────────────┐
+│ Page title                  [CTA button]│
+│ Short description                       │
+├─────────────────────────────────────────┤
+│  Scrollable content                     │
+│  (organisms, lists, forms…)             │
+└─────────────────────────────────────────┘
+```
+
+#### 2. `WorkspaceTemplate` — immersive/tool pages (chat, editor…)
+Full-height layout with a sticky top bar; internal content manages its own scroll.
+
+```
+┌─────────────────────────────────────────┐
+│ Breadcrumb (A › B)           [Actions]  │  ← sticky top bar, h-14
+├─────────────────────────────────────────┤
+│  Full-height content                    │
+│  (scroll managed internally)            │
+└─────────────────────────────────────────┘
+```
+
+Use `WorkspaceTemplate` when the page is an interactive tool that needs full viewport height (chat, document viewer, code editor, etc.).
+Use `PageTemplate` for everything else.
+
+### Naming conventions
+
+```
+atoms/<domain>/<ComponentName>.tsx           e.g. atoms/chat/copy-button.tsx
+molecules/<domain>/<ComponentName>.tsx       e.g. molecules/auth/login-form.tsx
+organisms/<domain>/<ComponentName>.tsx       e.g. organisms/project/project-list.tsx
+templates/<domain>/<name>-template.tsx       e.g. templates/project/projects-template.tsx
+```
+
+Templates are named with the `-template` suffix to make the layer explicit at import sites.
 
 ## Architecture: DDD + Clean Architecture (Strict)
 
