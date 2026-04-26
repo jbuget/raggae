@@ -13,7 +13,7 @@ type WorkspaceTemplateProps = {
 
 export function WorkspaceTemplate({ breadcrumb, actions, children }: WorkspaceTemplateProps) {
   return (
-    <div className="-m-6 flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="-m-6 flex h-screen flex-col">
       <div className="flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-2 text-sm">
           {breadcrumb.map((item, index) => (

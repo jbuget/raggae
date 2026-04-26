@@ -72,7 +72,7 @@ export function MessageInput({
           disabled={disabled}
           className={cn(
             "w-full resize-none bg-transparent pb-2",
-            "text-sm leading-relaxed placeholder:text-muted-foreground",
+            "text-base leading-relaxed placeholder:text-muted-foreground",
             "outline-none",
             "max-h-40 overflow-y-auto",
             "disabled:cursor-not-allowed disabled:opacity-50",
