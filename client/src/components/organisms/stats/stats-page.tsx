@@ -2,31 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatCard } from "@/components/atoms/stats/stat-card";
 import { getStats } from "@/lib/api/stats";
 import type { StatsResponse } from "@/lib/api/stats";
 import { useAuth } from "@/lib/hooks/use-auth";
-
-function StatCard({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-}) {
-  return (
-    <Card className="flex flex-col gap-1 p-5">
-      <span className="text-2xl font-bold tabular-nums">
-        {value}
-        {unit && <span className="ml-1 text-base font-normal text-muted-foreground">{unit}</span>}
-      </span>
-      <span className="text-sm text-muted-foreground">{label}</span>
-    </Card>
-  );
-}
 
 function StatsSkeleton() {
   return (
