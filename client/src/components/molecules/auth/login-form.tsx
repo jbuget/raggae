@@ -35,7 +35,12 @@ function MicrosoftIcon() {
   );
 }
 
-export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost:8000" }: { entraEnabled?: boolean; backendUrl?: string }) {
+interface LoginFormProps {
+  entraEnabled?: boolean;
+  backendUrl?: string;
+}
+
+export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost:8000" }: LoginFormProps) {
   const t = useTranslations("auth.login");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,11 +59,7 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
     setIsLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+      const result = await signIn("credentials", { email, password, redirect: false });
 
       if (result?.error) {
         setError(t("invalidCredentials"));
@@ -84,9 +85,7 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
     <Card>
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>
-          {t("subtitle")}
-        </CardDescription>
+        <CardDescription>{t("subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,26 +109,20 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
             />
           </div>
           {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
+            <p className="text-sm text-destructive" role="alert">{error}</p>
           )}
           <Button type="submit" className="w-full" disabled={isDisabled}>
             {isLoading ? t("signingIn") : t("signIn")}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
-            <a href="/register" className="text-primary hover:underline">
-              {t("register")}
-            </a>
+            <a href="/register" className="text-primary hover:underline">{t("register")}</a>
           </p>
           {entraEnabled && (
             <>
               <div className="flex items-center gap-3">
                 <Separator className="flex-1" />
-                <span className="text-xs text-muted-foreground">
-                  {t("orSeparator")}
-                </span>
+                <span className="text-xs text-muted-foreground">{t("orSeparator")}</span>
                 <Separator className="flex-1" />
               </div>
               <Button

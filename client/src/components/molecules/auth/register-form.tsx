@@ -56,9 +56,7 @@ export function RegisterForm() {
     <Card>
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>
-          {t("subtitle")}
-        </CardDescription>
+        <CardDescription>{t("subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,24 +89,18 @@ export function RegisterForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
             {password.length > 0 && password.length < 8 && (
-              <p className="text-sm text-muted-foreground">
-                {t("passwordMinLength")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("passwordMinLength")}</p>
             )}
           </div>
           {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
+            <p className="text-sm text-destructive" role="alert">{error}</p>
           )}
           <Button type="submit" className="w-full" disabled={isDisabled}>
             {isLoading ? t("creatingAccount") : t("createAccount")}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {t("alreadyHaveAccount")}{" "}
-            <a href="/login" className="text-primary hover:underline">
-              {t("signIn")}
-            </a>
+            <a href="/login" className="text-primary hover:underline">{t("signIn")}</a>
           </p>
         </form>
       </CardContent>
