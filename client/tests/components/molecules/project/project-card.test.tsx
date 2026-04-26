@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ProjectCard } from "@/components/projects/project-card";
-import { renderWithProviders } from "../../helpers/render";
+import { ProjectCard } from "@/components/molecules/project/project-card";
+import { renderWithProviders } from "../../../helpers/render";
 import type { ProjectResponse } from "@/lib/types/api";
 
 vi.mock("next/navigation", () => ({

@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ProjectCard } from "./project-card";
+import { ProjectCard } from "@/components/molecules/project/project-card";
 import { useCreateProject, useProjects } from "@/lib/hooks/use-projects";
 
 export function ProjectList() {

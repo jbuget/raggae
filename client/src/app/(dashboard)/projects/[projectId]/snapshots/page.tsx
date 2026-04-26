@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ProjectSnapshotsList } from "@/components/projects/project-snapshots-list";
+import { ProjectSnapshotsList } from "@/components/organisms/project/project-snapshots-list";
 
 export default function ProjectSnapshotsPage() {
   const t = useTranslations("projects.snapshots");
