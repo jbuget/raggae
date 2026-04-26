@@ -87,7 +87,7 @@ export function MessageList({
   return (
     <div className="relative h-full min-h-0">
       <ScrollArea className="h-full" ref={scrollRef}>
-        <div className="mx-auto w-full max-w-[800px] space-y-4 px-4 pt-4 pb-36">
+        <div className="mx-auto w-full max-w-190 space-y-4 px-4 pt-4 pb-36">
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-2">
               <MessageBubble

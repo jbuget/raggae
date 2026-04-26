@@ -146,7 +146,7 @@ export function ChatPanel({
         />
 
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-background">
-          <div className="mx-auto w-full max-w-[800px] px-4">
+          <div className="mx-auto w-full max-w-190 px-4">
           <SourcesBar sources={streamedSourceDocuments} onSourceClick={handleSourceClick} />
           {disabled && (
             <p className="mb-2 text-xs text-amber-700">
