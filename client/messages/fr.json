@@ -149,6 +149,9 @@
       "notFound": "Projet introuvable",
       "tabs": {
         "general": "Général",
+        "instructions": "Instructions",
+        "knowledge": "Connaissances",
+        "advanced": "Avancé",
         "publication": "Publication",
         "models": "Modèles",
         "knowledgeIndexing": "Indexation",
@@ -176,6 +179,7 @@
         "deleteError": "Erreur lors de la suppression du projet"
       },
       "publication": {
+        "accessTitle": "Accès",
         "statusLabel": "Statut",
         "published": "Publié",
         "unpublished": "Non publié",
@@ -201,6 +205,7 @@
         "publishError": "Erreur lors de la publication"
       },
       "documentIngestion": {
+        "title": "Documents",
         "description": "La base documentaire du projet est configurée via les options d'indexation.",
         "indexedTotal": "{indexed} indexés / {total} au total",
         "uploadSuccess": "{succeeded} téléversés, {failed} en erreur",
@@ -272,6 +277,7 @@
         "candidateMultiplierNote": "Nombre de candidats récupérés avant reranking = top-k × multiplicateur."
       },
       "answerGeneration": {
+        "historyTitle": "Historique de chat",
         "promptLabel": "Prompt du projet",
         "promptPlaceholder": "Instructions pour l'assistant IA...",
         "promptLimit": "Limite : 8 000 caractères. Au-delà, la sauvegarde sera refusée.",

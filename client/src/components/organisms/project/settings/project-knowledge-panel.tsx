@@ -13,7 +13,7 @@ import {
   useUploadDocument,
 } from "@/lib/hooks/use-documents";
 
-export function ProjectDocumentIngestionPanel({ projectId }: { projectId: string }) {
+export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
   const t = useTranslations("projects.settings");
 
   const { data: project } = useProject(projectId);
@@ -22,7 +22,9 @@ export function ProjectDocumentIngestionPanel({ projectId }: { projectId: string
   const reindexDocument = useReindexDocument(projectId);
   const deleteDocument = useDeleteDocument(projectId);
 
-  const isProjectReindexing = project?.reindex_status === "in_progress";
+  if (!project) return null;
+
+  const isProjectReindexing = project.reindex_status === "in_progress";
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
 
@@ -61,10 +63,10 @@ export function ProjectDocumentIngestionPanel({ projectId }: { projectId: string
             <DocumentRow
               key={doc.id}
               document={doc}
-              embeddingBackend={project?.embedding_backend}
-              embeddingModel={project?.embedding_model}
-              chunkingStrategy={project?.chunking_strategy}
-              parentChildChunking={project?.parent_child_chunking}
+              embeddingBackend={project.embedding_backend}
+              embeddingModel={project.embedding_model}
+              chunkingStrategy={project.chunking_strategy}
+              parentChildChunking={project.parent_child_chunking}
               onReindex={(id) => {
                 if (isProjectReindexing) return;
                 reindexDocument.mutate(id, {
