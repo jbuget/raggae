@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ConversationItem } from "@/components/molecules/sidebar/conversation-item";
+import { ConversationPageItem } from "@/components/molecules/project/conversation-page-item";
 import { useConversations, useDeleteConversation, useRenameConversation } from "@/lib/hooks/use-chat";
 
 interface ConversationListProps {
@@ -51,9 +51,9 @@ export function ConversationList({ projectId }: ConversationListProps) {
   }
 
   return (
-    <div className="space-y-0.5">
+    <div className="flex flex-col gap-2">
       {list.map((conversation) => (
-        <ConversationItem
+        <ConversationPageItem
           key={conversation.id}
           conversation={conversation}
           projectId={projectId}
