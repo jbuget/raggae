@@ -2,12 +2,20 @@ import logging
 from io import BytesIO
 
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
+from raggae.infrastructure.services.tabular_document_text_extractor import (
+    TabularDocumentTextExtractor,
+)
+
+_TABULAR_EXTENSIONS = frozenset({"csv", "xlsx", "xls"})
 
 logger = logging.getLogger(__name__)
 
 
 class MultiFormatDocumentTextExtractor:
-    """Extract text from txt/md/pdf/docx files with basic normalization."""
+    """Extract text from txt/md/pdf/docx/pptx/csv/xlsx/xls files with basic normalization."""
+
+    def __init__(self) -> None:
+        self._tabular_extractor = TabularDocumentTextExtractor()
 
     async def extract_text(self, file_name: str, content: bytes, content_type: str) -> str:
         _ = content_type
@@ -27,6 +35,8 @@ class MultiFormatDocumentTextExtractor:
             raise DocumentExtractionError(
                 "PPT (legacy binary format) is not supported. Convert to PPTX first."
             )
+        elif extension in _TABULAR_EXTENSIONS:
+            return await self._tabular_extractor.extract_text(file_name, content, content_type)
         else:
             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
 
@@ -67,10 +77,7 @@ class MultiFormatDocumentTextExtractor:
             document = DocxDocument(BytesIO(content))
             parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
             for table in document.tables:
-                for row in table.rows:
-                    row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                    if row_cells:
-                        parts.append(" | ".join(row_cells))
+                parts.extend(self._table_to_markdown(table))
             return "\n".join(parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract DOCX text: {exc}") from exc
@@ -122,6 +129,27 @@ class MultiFormatDocumentTextExtractor:
             return "\n".join(slide_parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract PPTX text: {exc}") from exc
+
+    def _table_to_markdown(self, table: object) -> list[str]:
+        from docx.table import Table as DocxTable
+
+        if not isinstance(table, DocxTable):
+            return []
+        markdown_rows = []
+        for row in table.rows:
+            cells = [cell.text.strip() for cell in row.cells]
+            if any(cells):
+                markdown_rows.append(cells)
+        if not markdown_rows:
+            return []
+        lines: list[str] = []
+        header = markdown_rows[0]
+        lines.append("| " + " | ".join(header) + " |")
+        lines.append("| " + " | ".join("---" for _ in header) + " |")
+        for row in markdown_rows[1:]:
+            padded = (list(row) + [""] * len(header))[: len(header)]
+            lines.append("| " + " | ".join(padded) + " |")
+        return lines
 
     def _normalize_text(self, text: str) -> str:
         return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").split("\n")).strip()

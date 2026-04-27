@@ -138,6 +138,33 @@ class TestMultiFormatDocumentTextExtractor:
         assert "Action item" in result
         assert "Prepare demo for next meeting" in result
 
+    async def test_extract_text_docx_tables_use_markdown_format(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+    ) -> None:
+        # Given
+        document = DocxDocument()
+        table = document.add_table(rows=2, cols=2)
+        table.cell(0, 0).text = "Header A"
+        table.cell(0, 1).text = "Header B"
+        table.cell(1, 0).text = "Value 1"
+        table.cell(1, 1).text = "Value 2"
+        buffer = BytesIO()
+        document.save(buffer)
+        content = buffer.getvalue()
+
+        # When
+        result = await extractor.extract_text(
+            file_name="report.docx",
+            content=content,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+        # Then — Markdown separator present
+        assert "---" in result
+        assert "| Header A |" in result
+        assert "| Value 1 |" in result
+
     async def test_extract_text_doc_raises_not_supported_error(
         self,
         extractor: MultiFormatDocumentTextExtractor,
@@ -148,18 +175,6 @@ class TestMultiFormatDocumentTextExtractor:
                 file_name="legacy.doc",
                 content=b"DOC",
                 content_type="application/msword",
-            )
-
-    async def test_extract_text_unknown_extension_raises_error(
-        self,
-        extractor: MultiFormatDocumentTextExtractor,
-    ) -> None:
-        # When / Then
-        with pytest.raises(DocumentExtractionError):
-            await extractor.extract_text(
-                file_name="file.bin",
-                content=b"binary",
-                content_type="application/octet-stream",
             )
 
     async def test_extract_text_pptx_uses_pptx_extractor(
@@ -187,10 +202,6 @@ class TestMultiFormatDocumentTextExtractor:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Given
-        import sys
-        import types
-        from io import BytesIO
-
         class _FakeTextFrame:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -247,10 +258,6 @@ class TestMultiFormatDocumentTextExtractor:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Given
-        import sys
-        import types
-        from io import BytesIO
-
         class _FakeTextFrame:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -301,10 +308,6 @@ class TestMultiFormatDocumentTextExtractor:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Given
-        import sys
-        import types
-        from io import BytesIO
-
         class _FakeTextFrame:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -357,10 +360,6 @@ class TestMultiFormatDocumentTextExtractor:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Given
-        import sys
-        import types
-        from io import BytesIO
-
         class _FakeTextFrame:
             def __init__(self, text: str) -> None:
                 self.text = text
@@ -415,4 +414,69 @@ class TestMultiFormatDocumentTextExtractor:
                 file_name="legacy.ppt",
                 content=b"binary",
                 content_type="application/vnd.ms-powerpoint",
+            )
+
+    async def test_extract_text_csv_delegates_to_tabular_extractor(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given
+        async def fake_tabular_extract(file_name: str, content: bytes, content_type: str) -> str:
+            return "[HEADERS]:A|B\n[ROW:1]:x|y"
+
+        monkeypatch.setattr(extractor._tabular_extractor, "extract_text", fake_tabular_extract)
+
+        # When
+        result = await extractor.extract_text("data.csv", b"A,B\nx,y\n", "text/csv")
+
+        # Then
+        assert "[HEADERS]:A|B" in result
+
+    async def test_extract_text_xlsx_delegates_to_tabular_extractor(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given
+        async def fake_tabular_extract(file_name: str, content: bytes, content_type: str) -> str:
+            return "[SHEET:S1]\n[HEADERS]:Col\n[ROW:1]:Val"
+
+        monkeypatch.setattr(extractor._tabular_extractor, "extract_text", fake_tabular_extract)
+
+        # When
+        result = await extractor.extract_text(
+            "file.xlsx", b"PK...", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        # Then
+        assert "[SHEET:S1]" in result
+
+    async def test_extract_text_xls_delegates_to_tabular_extractor(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given
+        async def fake_tabular_extract(file_name: str, content: bytes, content_type: str) -> str:
+            return "[HEADERS]:X|Y\n[ROW:1]:1|2"
+
+        monkeypatch.setattr(extractor._tabular_extractor, "extract_text", fake_tabular_extract)
+
+        # When
+        result = await extractor.extract_text("legacy.xls", b"XLS", "application/vnd.ms-excel")
+
+        # Then
+        assert "[HEADERS]:X|Y" in result
+
+    async def test_extract_text_unknown_extension_raises_error(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+    ) -> None:
+        # When / Then
+        with pytest.raises(DocumentExtractionError):
+            await extractor.extract_text(
+                file_name="file.bin",
+                content=b"binary",
+                content_type="application/octet-stream",
             )
