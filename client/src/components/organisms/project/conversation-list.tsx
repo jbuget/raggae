@@ -95,7 +95,7 @@ export function ConversationList({ projectId }: ConversationListProps) {
         </div>
       ) : (
         <>
-          <div className="mb-3 flex items-center gap-3 border-b pb-3">
+          <div className="mb-3 flex items-center gap-3 border-b pb-3 px-4">
             <Checkbox
               checked={allSelected ? true : someSelected ? "indeterminate" : false}
               onCheckedChange={handleToggleAll}
