@@ -83,7 +83,7 @@ export interface CreateProjectRequest {
 }
 
 export interface UpdateProjectRequest {
-  name: string;
+  name?: string;
   description?: string;
   system_prompt?: string;
   chunking_strategy?: ChunkingStrategy;

@@ -23,7 +23,7 @@ describe("ThemeToggle", () => {
     const setTheme = vi.fn();
     vi.mocked(
       await import("@/lib/providers/theme-provider"),
-    ).useTheme = () => ({ theme: "light", setTheme });
+    ).useTheme = vi.fn().mockReturnValue({ theme: "light", setTheme });
 
     const user = userEvent.setup();
     renderWithProviders(<ThemeToggle />);
