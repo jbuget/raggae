@@ -26,6 +26,8 @@ class DocumentFileMetadataExtractor:
             return self._extract_docx(content)
         if extension == "pptx":
             return self._extract_pptx(content)
+        if extension == "xlsx":
+            return self._extract_xlsx(content)
         return FileMetadata()
 
     def _extract_pdf(self, content: bytes) -> FileMetadata:
@@ -83,6 +85,26 @@ class DocumentFileMetadataExtractor:
             return FileMetadata(
                 title=self._clean_text(props.title),
                 authors=self._parse_authors(author),
+                document_date=created,
+            )
+        except Exception:
+            return FileMetadata()
+
+    def _extract_xlsx(self, content: bytes) -> FileMetadata:
+        try:
+            import openpyxl
+        except ModuleNotFoundError:
+            return FileMetadata()
+
+        try:
+            wb = openpyxl.load_workbook(BytesIO(content), data_only=True)
+            props = wb.properties
+            title = self._clean_text(props.title)
+            creator = self._clean_text(props.creator)
+            created = props.created.date() if props.created is not None else None
+            return FileMetadata(
+                title=title,
+                authors=self._parse_authors(creator),
                 document_date=created,
             )
         except Exception:
