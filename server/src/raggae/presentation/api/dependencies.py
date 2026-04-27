@@ -374,6 +374,7 @@ from raggae.infrastructure.services.simple_text_sanitizer_service import (
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
+from raggae.infrastructure.services.tabular_text_chunker_service import TabularTextChunkerService
 
 
 def _build_embedding_service() -> EmbeddingService:
@@ -493,6 +494,7 @@ if settings.persistence_backend != "postgres":
     _language_detector = InMemoryLanguageDetector(language="en")
     _keyword_extractor = InMemoryKeywordExtractor()
 _chunking_strategy_selector = DeterministicChunkingStrategySelector()
+_tabular_chunker: TextChunkerService = TabularTextChunkerService()
 if settings.text_chunker_backend == "llamaindex":
     _text_chunker_service: TextChunkerService = LlamaIndexTextChunkerService(
         chunk_size=settings.chunk_size,
@@ -516,6 +518,7 @@ elif settings.text_chunker_backend == "native":
         heading_section_chunker=_heading_section_chunker,
         semantic_chunker=_semantic_chunker,
         context_window_size=settings.chunk_overlap,
+        tabular_chunker=_tabular_chunker,
     )
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
