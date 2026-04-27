@@ -7,6 +7,7 @@ from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevan
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
+from raggae.application.use_cases.project.list_accessible_projects import ListAccessibleProjects
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.publish_project import PublishProject
 from raggae.application.use_cases.project.reindex_project import ReindexProject
@@ -33,6 +34,7 @@ from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_delete_project_use_case,
     get_get_project_use_case,
+    get_list_accessible_projects_use_case,
     get_list_projects_use_case,
     get_publish_project_use_case,
     get_query_relevant_chunks_use_case,
@@ -177,6 +179,51 @@ async def create_project(
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
     )
+
+
+@router.get("/accessible")
+async def list_accessible_projects(
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[ListAccessibleProjects, Depends(get_list_accessible_projects_use_case)],
+) -> list[ProjectResponse]:
+    project_dtos = await use_case.execute(user_id=user_id)
+    return [
+        ProjectResponse(
+            id=p.id,
+            user_id=p.user_id,
+            organization_id=p.organization_id,
+            name=p.name,
+            description=p.description,
+            system_prompt=p.system_prompt,
+            is_published=p.is_published,
+            created_at=p.created_at,
+            chunking_strategy=p.chunking_strategy,
+            parent_child_chunking=p.parent_child_chunking,
+            reindex_status=p.reindex_status,
+            reindex_progress=p.reindex_progress,
+            reindex_total=p.reindex_total,
+            embedding_backend=p.embedding_backend,
+            embedding_model=p.embedding_model,
+            embedding_api_key_masked=p.embedding_api_key_masked,
+            embedding_api_key_credential_id=p.embedding_api_key_credential_id,
+            org_embedding_api_key_credential_id=p.org_embedding_api_key_credential_id,
+            llm_backend=p.llm_backend,
+            llm_model=p.llm_model,
+            llm_api_key_masked=p.llm_api_key_masked,
+            llm_api_key_credential_id=p.llm_api_key_credential_id,
+            org_llm_api_key_credential_id=p.org_llm_api_key_credential_id,
+            retrieval_strategy=cast(ProjectRetrievalStrategy, p.retrieval_strategy),
+            retrieval_top_k=p.retrieval_top_k,
+            retrieval_min_score=p.retrieval_min_score,
+            chat_history_window_size=p.chat_history_window_size,
+            chat_history_max_chars=p.chat_history_max_chars,
+            reranking_enabled=p.reranking_enabled,
+            reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
+            reranker_model=p.reranker_model,
+            reranker_candidate_multiplier=p.reranker_candidate_multiplier,
+        )
+        for p in project_dtos
+    ]
 
 
 @router.get("/{project_id}")
