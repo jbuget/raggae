@@ -128,7 +128,10 @@
       "createTitle": "Create project",
       "createSuccess": "Project created",
       "createError": "Failed to create project",
-      "createFirst": "Create your first project"
+      "createFirst": "Create your first project",
+      "myProjects": "My projects",
+      "gridView": "Grid view",
+      "listView": "List view"
     },
     "card": {
       "created": "Created",
