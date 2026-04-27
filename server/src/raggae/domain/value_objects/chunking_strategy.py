@@ -9,3 +9,4 @@ class ChunkingStrategy(StrEnum):
     PARAGRAPH = "paragraph"
     HEADING_SECTION = "heading_section"
     SEMANTIC = "semantic"
+    TABULAR = "tabular"
