@@ -18,6 +18,12 @@ class MultiFormatDocumentTextExtractor:
             text = self._extract_docx(content)
         elif extension == "doc":
             raise DocumentExtractionError("DOC extraction is not supported in sync mode yet. Use DOCX.")
+        elif extension == "pptx":
+            text = self._extract_pptx(content)
+        elif extension == "ppt":
+            raise DocumentExtractionError(
+                "PPT (legacy binary format) is not supported. Convert to PPTX first."
+            )
         else:
             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
 
@@ -65,6 +71,53 @@ class MultiFormatDocumentTextExtractor:
             return "\n".join(parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract DOCX text: {exc}") from exc
+
+    def _extract_pptx(self, content: bytes) -> str:
+        try:
+            from pptx import Presentation
+        except ModuleNotFoundError as exc:  # pragma: no cover - dependency management
+            raise DocumentExtractionError("python-pptx is required for PPTX extraction") from exc
+
+        try:
+            prs = Presentation(BytesIO(content))
+            slide_parts: list[str] = []
+            for index, slide in enumerate(prs.slides):
+                parts: list[str] = [f"[SLIDE:{index + 1}]"]
+                title_shape = slide.shapes.title
+                title_text = (
+                    title_shape.text_frame.text.strip() if title_shape and title_shape.has_text_frame else ""
+                )
+                if title_text:
+                    parts.append(f"# {title_text}")
+
+                sorted_shapes = sorted(
+                    slide.shapes,
+                    key=lambda s: (getattr(s, "top", 0) or 0, getattr(s, "left", 0) or 0),
+                )
+                for shape in sorted_shapes:
+                    if shape is title_shape:
+                        continue
+                    if shape.has_text_frame:
+                        text = shape.text_frame.text.strip()
+                        if text:
+                            parts.append(text)
+                    elif shape.has_table:
+                        for row in shape.table.rows:
+                            cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                            if cells:
+                                parts.append("| " + " | ".join(cells) + " |")
+
+                try:
+                    notes_text = slide.notes_slide.notes_text_frame.text.strip()
+                except Exception:
+                    notes_text = ""
+                if notes_text:
+                    parts.append(f"[NOTES]\n{notes_text}")
+
+                slide_parts.append("\n".join(parts))
+            return "\n".join(slide_parts)
+        except Exception as exc:  # pragma: no cover - file dependent
+            raise DocumentExtractionError(f"Failed to extract PPTX text: {exc}") from exc
 
     def _normalize_text(self, text: str) -> str:
         return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").split("\n")).strip()
