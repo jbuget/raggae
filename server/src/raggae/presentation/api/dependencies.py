@@ -367,6 +367,7 @@ from raggae.infrastructure.services.simple_text_chunker_service import (
 from raggae.infrastructure.services.simple_text_sanitizer_service import (
     SimpleTextSanitizerService,
 )
+from raggae.infrastructure.services.slide_chunker import SlideChunker
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
@@ -516,6 +517,7 @@ elif settings.text_chunker_backend == "native":
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
 _parent_child_chunking_service = ParentChildChunkingService()
+_slide_chunker = SlideChunker()
 _document_indexing_service = DocumentIndexingService(
     document_chunk_repository=_document_chunk_repository,
     document_text_extractor=_document_text_extractor,
@@ -529,6 +531,7 @@ _document_indexing_service = DocumentIndexingService(
     chunking_strategy_selector=_chunking_strategy_selector,
     chunker_backend=settings.text_chunker_backend,
     parent_child_chunking_service=_parent_child_chunking_service,
+    slide_chunker=_slide_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
