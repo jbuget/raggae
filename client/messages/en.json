@@ -550,7 +550,8 @@
     "snapshots": "History",
     "githubProject": "GitHub project",
     "sourceCode": "Source code",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "conversations": "Conversations"
   },
   "layout": {
     "themeToggle": {
@@ -614,5 +615,11 @@
       "message": "An unexpected error occurred",
       "retry": "Try again"
     }
+  },
+  "conversations": {
+    "title": "Conversations",
+    "empty": "No conversations yet.",
+    "startNew": "Start a conversation",
+    "new": "New conversation"
   }
 }

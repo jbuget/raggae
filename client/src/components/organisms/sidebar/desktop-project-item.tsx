@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MessageSquarePlus, MoreVertical, Settings } from "lucide-react";
+import { ChevronRight, MessageSquare, MessageSquarePlus, MoreVertical, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Collapsible } from "radix-ui";
@@ -73,6 +73,12 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
               <Link href={`/projects/${project.id}/chat`}>
                 <MessageSquarePlus className="h-4 w-4" />
                 {t("newConversation")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/projects/${project.id}/conversations`}>
+                <MessageSquare className="h-4 w-4" />
+                {t("conversations")}
               </Link>
             </DropdownMenuItem>
             {canAccessSettings && (

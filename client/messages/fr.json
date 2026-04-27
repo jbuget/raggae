@@ -550,7 +550,8 @@
     "snapshots": "Historique",
     "githubProject": "Projet GitHub",
     "sourceCode": "Code source",
-    "stats": "Statistiques"
+    "stats": "Statistiques",
+    "conversations": "Conversations"
   },
   "layout": {
     "themeToggle": {
@@ -614,5 +615,11 @@
       "message": "Une erreur inattendue est survenue",
       "retry": "Réessayer"
     }
+  },
+  "conversations": {
+    "title": "Conversations",
+    "empty": "Aucune conversation pour le moment.",
+    "startNew": "Démarrer une conversation",
+    "new": "Nouvelle conversation"
   }
 }
