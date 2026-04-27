@@ -127,7 +127,9 @@ class DocumentIndexingService:
         document_chunks: list[DocumentChunk] = []
         if chunks:
             use_parent_child = (
-                project.parent_child_chunking and self._parent_child_chunking_service is not None
+                strategy != ChunkingStrategy.TABULAR
+                and project.parent_child_chunking
+                and self._parent_child_chunking_service is not None
             )
 
             if use_parent_child:
