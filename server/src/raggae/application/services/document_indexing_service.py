@@ -37,6 +37,7 @@ from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunk_level import ChunkLevel
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.infrastructure.services.slide_chunker import SlideChunker
 
 _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
 logger = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ class DocumentIndexingService:
         chunking_strategy_selector: ChunkingStrategySelector | None = None,
         chunker_backend: str = "native",
         parent_child_chunking_service: ParentChildChunkingService | None = None,
+        slide_chunker: SlideChunker | None = None,
     ) -> None:
         self._document_chunk_repository = document_chunk_repository
         self._document_text_extractor = document_text_extractor
@@ -76,6 +78,7 @@ class DocumentIndexingService:
             self._chunking_strategy_selector = chunking_strategy_selector
         self._chunker_backend = chunker_backend
         self._parent_child_chunking_service = parent_child_chunking_service
+        self._slide_chunker = slide_chunker
 
     async def run_pipeline(
         self,
@@ -90,6 +93,19 @@ class DocumentIndexingService:
             project=project,
             file_content=file_content,
         )
+
+        extension = (
+            document.file_name.rsplit(".", maxsplit=1)[-1].lower() if "." in document.file_name else ""
+        )
+        if extension == "pptx" and self._slide_chunker is not None:
+            slide_based_chunks = await self._build_slide_chunks(
+                text=sanitized_text,
+                document=document,
+                embedding_service=effective_embedding_service,
+            )
+            await self._document_chunk_repository.replace_document_chunks(document.id, slide_based_chunks)
+            return document
+
         chunks = await self._text_chunker_service.chunk_text(
             sanitized_text,
             strategy=strategy,
@@ -160,6 +176,37 @@ class DocumentIndexingService:
             )
 
         return replace(document, processing_strategy=strategy), sanitized_text, strategy
+
+    async def _build_slide_chunks(
+        self,
+        text: str,
+        document: Document,
+        embedding_service: EmbeddingService,
+    ) -> list[DocumentChunk]:
+        assert self._slide_chunker is not None
+        slide_chunks = self._slide_chunker.chunk(text)
+        if not slide_chunks:
+            return []
+
+        contents = [sc.content for sc in slide_chunks]
+        embeddings = await embedding_service.embed_texts(contents)
+        now = datetime.now(UTC)
+        return [
+            DocumentChunk(
+                id=uuid4(),
+                document_id=document.id,
+                chunk_index=sc.chunk_index,
+                content=sc.content,
+                embedding=embeddings[i],
+                created_at=now,
+                metadata_json={
+                    "metadata_version": 1,
+                    "slide_number": sc.slide_number,
+                    "slide_title": sc.slide_title,
+                },
+            )
+            for i, sc in enumerate(slide_chunks)
+        ]
 
     async def _build_standard_chunks(
         self,
