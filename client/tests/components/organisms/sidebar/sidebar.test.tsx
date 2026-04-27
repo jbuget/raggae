@@ -29,6 +29,9 @@ vi.mock("@/components/organisms/sidebar/use-sidebar-data", () => ({
 vi.mock("@/lib/hooks/use-chat", () => ({
   useConversations: vi.fn(() => ({ data: [], isLoading: false })),
   useDeleteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useRenameConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useToggleFavoriteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useFavoriteConversations: vi.fn(() => ({ data: [], isLoading: false })),
 }));
 
 vi.mock("@/lib/hooks/use-auth", () => ({

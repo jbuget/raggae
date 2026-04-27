@@ -12,5 +12,6 @@ class ConversationDetailDTO:
     user_id: UUID
     created_at: datetime
     title: str | None
+    is_favorite: bool
     message_count: int
     last_message: MessageDTO | None

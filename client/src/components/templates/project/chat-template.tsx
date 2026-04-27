@@ -1,11 +1,13 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { WorkspaceTemplate } from "@/components/templates/workspace-template";
 import { ChatPanel } from "@/components/organisms/chat/chat-panel";
-import { useConversation } from "@/lib/hooks/use-chat";
+import { Button } from "@/components/ui/button";
+import { useConversation, useToggleFavoriteConversation } from "@/lib/hooks/use-chat";
 import { useProject } from "@/lib/hooks/use-projects";
-import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 type ChatTemplateProps = {
   projectId: string;
@@ -18,23 +20,43 @@ export function ChatTemplate({ projectId, conversationId }: ChatTemplateProps) {
     conversationId ? projectId : undefined,
     conversationId ?? undefined,
   );
+  const { mutate: toggleFavorite } = useToggleFavoriteConversation(projectId);
   const isProjectReindexing = project?.reindex_status === "in_progress";
-  const t = useTranslations("projects.chatPage");
+  const t = useTranslations("chat.sidebar");
+  const tChat = useTranslations("projects.chatPage");
 
   const breadcrumb = [
     { label: project?.name ?? "" },
     ...(conversation?.title ? [{ label: conversation.title }] : []),
   ];
 
+  const actions = conversationId ? (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      aria-label={conversation?.is_favorite ? t("removeFromFavorites") : t("addToFavorites")}
+      title={conversation?.is_favorite ? t("removeFromFavorites") : t("addToFavorites")}
+      onClick={() => toggleFavorite(conversationId)}
+    >
+      <Star
+        className={cn(
+          "h-4 w-4",
+          conversation?.is_favorite && "fill-yellow-400 text-yellow-400",
+        )}
+      />
+    </Button>
+  ) : undefined;
+
   return (
-    <WorkspaceTemplate breadcrumb={breadcrumb}>
+    <WorkspaceTemplate breadcrumb={breadcrumb} actions={actions}>
       <ChatPanel
         projectId={projectId}
         conversationId={conversationId}
         disabled={isProjectReindexing}
         disabledMessage={
           isProjectReindexing
-            ? t("reindexingMessage", {
+            ? tChat("reindexingMessage", {
                 progress: project?.reindex_progress,
                 total: project?.reindex_total,
               })

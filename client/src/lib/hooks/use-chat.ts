@@ -7,9 +7,11 @@ import {
   deleteConversation,
   getConversation,
   listConversations,
+  listFavoriteConversations,
   listMessages,
   renameConversation,
   streamMessage,
+  toggleFavoriteConversation,
 } from "@/lib/api/chat";
 import type {
   RetrievedChunkResponse,
@@ -74,6 +76,30 @@ export function useDeleteConversation(projectId: string) {
         queryKey: ["conversations", projectId],
       });
     },
+  });
+}
+
+export function useToggleFavoriteConversation(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      toggleFavoriteConversation(token!, projectId, conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
+    },
+  });
+}
+
+export function useFavoriteConversations(limit = 50) {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["favorite-conversations", limit],
+    queryFn: () => listFavoriteConversations(token!, limit),
+    enabled: !!token,
   });
 }
 

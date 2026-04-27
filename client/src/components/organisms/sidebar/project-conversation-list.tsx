@@ -3,7 +3,12 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ConversationItem } from "@/components/molecules/sidebar/conversation-item";
-import { useConversations, useDeleteConversation, useRenameConversation } from "@/lib/hooks/use-chat";
+import {
+  useConversations,
+  useDeleteConversation,
+  useRenameConversation,
+  useToggleFavoriteConversation,
+} from "@/lib/hooks/use-chat";
 
 interface ProjectConversationListProps {
   projectId: string;
@@ -16,6 +21,7 @@ export function ProjectConversationList({ projectId }: ProjectConversationListPr
   const { data: conversations, isLoading } = useConversations(projectId, 10);
   const { mutate: deleteConversation } = useDeleteConversation(projectId);
   const { mutate: renameConversation } = useRenameConversation(projectId);
+  const { mutate: toggleFavorite } = useToggleFavoriteConversation(projectId);
 
   const recent = conversations ?? [];
 
@@ -47,6 +53,7 @@ export function ProjectConversationList({ projectId }: ProjectConversationListPr
           projectId={projectId}
           onDelete={handleDelete}
           onRename={(id, title) => renameConversation({ conversationId: id, title })}
+          onToggleFavorite={(id) => toggleFavorite(id)}
         />
       ))}
     </div>

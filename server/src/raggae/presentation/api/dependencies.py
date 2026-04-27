@@ -91,8 +91,10 @@ from raggae.application.use_cases.chat.list_conversation_messages import (
     ListConversationMessages,
 )
 from raggae.application.use_cases.chat.list_conversations import ListConversations
+from raggae.application.use_cases.chat.list_favorite_conversations import ListFavoriteConversations
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.application.use_cases.chat.send_message import SendMessage
+from raggae.application.use_cases.chat.toggle_favorite_conversation import ToggleFavoriteConversation
 from raggae.application.use_cases.chat.update_conversation import UpdateConversation
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.get_document_file import GetDocumentFile
@@ -881,6 +883,14 @@ def get_update_conversation_use_case() -> UpdateConversation:
         conversation_repository=_conversation_repository,
         organization_member_repository=_organization_member_repository,
     )
+
+
+def get_toggle_favorite_conversation_use_case() -> ToggleFavoriteConversation:
+    return ToggleFavoriteConversation(conversation_repository=_conversation_repository)
+
+
+def get_list_favorite_conversations_use_case() -> ListFavoriteConversations:
+    return ListFavoriteConversations(conversation_repository=_conversation_repository)
 
 
 def get_create_organization_use_case() -> CreateOrganization:

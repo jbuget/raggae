@@ -64,6 +64,7 @@ class GetConversation:
             user_id=conversation.user_id,
             created_at=conversation.created_at,
             title=conversation.title,
+            is_favorite=conversation.is_favorite,
             message_count=message_count,
             last_message=MessageDTO.from_entity(latest) if latest is not None else None,
         )

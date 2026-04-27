@@ -2,7 +2,9 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from raggae.application.interfaces.repositories.conversation_repository import FavoriteConversationResult
 from raggae.domain.entities.conversation import Conversation
+from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 
 
 class InMemoryConversationRepository:
@@ -55,3 +57,25 @@ class InMemoryConversationRepository:
         if conversation is None:
             return
         self._conversations[conversation_id] = replace(conversation, title=title)
+
+    async def toggle_favorite(self, conversation_id: UUID) -> Conversation:
+        conversation = self._conversations.get(conversation_id)
+        if conversation is None:
+            raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
+        updated = replace(conversation, is_favorite=not conversation.is_favorite)
+        self._conversations[conversation_id] = updated
+        return updated
+
+    async def find_favorites_by_user(
+        self,
+        user_id: UUID,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[FavoriteConversationResult]:
+        favorites = [
+            FavoriteConversationResult(conversation=c, project_name="")
+            for c in self._conversations.values()
+            if c.user_id == user_id and c.is_favorite
+        ]
+        favorites.sort(key=lambda r: r.conversation.created_at, reverse=True)
+        return favorites[offset : offset + limit]
