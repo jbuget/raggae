@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,8 @@ interface ConversationPageItemProps {
   projectId: string;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export function ConversationPageItem({
@@ -36,6 +39,8 @@ export function ConversationPageItem({
   projectId,
   onDelete,
   onRename,
+  isSelected = false,
+  onToggleSelect,
 }: ConversationPageItemProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -58,7 +63,15 @@ export function ConversationPageItem({
 
   return (
     <>
-      <div className={cn("group flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50")}>
+      <div className={cn("group flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50", isSelected && "bg-muted/50 border-primary/40")}>
+        {onToggleSelect && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(conversation.id)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Sélectionner ${title}`}
+          />
+        )}
         <Link
           href={`/projects/${projectId}/chat/${conversation.id}`}
           className="flex flex-1 items-center gap-4 min-w-0"

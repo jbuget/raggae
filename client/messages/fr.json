@@ -620,6 +620,11 @@
     "title": "Conversations",
     "empty": "Aucune conversation pour le moment.",
     "startNew": "Démarrer une conversation",
-    "new": "Nouvelle conversation"
+    "new": "Nouvelle conversation",
+    "selectAll": "Tout sélectionner",
+    "selectedCount": "{count} sélectionnée(s)",
+    "deleteSelected": "Supprimer ({count})",
+    "bulkDeleteTitle": "Supprimer {count} conversation(s)",
+    "bulkDeleteConfirm": "Cette action est irréversible. Les {count} conversation(s) sélectionnée(s) seront définitivement supprimées."
   }
 }
