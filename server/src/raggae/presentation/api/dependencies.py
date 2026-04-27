@@ -538,6 +538,7 @@ _document_indexing_service = DocumentIndexingService(
     chunker_backend=settings.text_chunker_backend,
     parent_child_chunking_service=_parent_child_chunking_service,
     slide_chunker=_slide_chunker,
+    tabular_chunker=_tabular_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)

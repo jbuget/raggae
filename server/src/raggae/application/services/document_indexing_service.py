@@ -62,6 +62,7 @@ class DocumentIndexingService:
         chunker_backend: str = "native",
         parent_child_chunking_service: ParentChildChunkingService | None = None,
         slide_chunker: SlideChunker | None = None,
+        tabular_chunker: TextChunkerService | None = None,
     ) -> None:
         self._document_chunk_repository = document_chunk_repository
         self._document_text_extractor = document_text_extractor
@@ -80,6 +81,7 @@ class DocumentIndexingService:
         self._chunker_backend = chunker_backend
         self._parent_child_chunking_service = parent_child_chunking_service
         self._slide_chunker = slide_chunker
+        self._tabular_chunker = tabular_chunker
 
     async def run_pipeline(
         self,
@@ -107,11 +109,14 @@ class DocumentIndexingService:
             await self._document_chunk_repository.replace_document_chunks(document.id, slide_based_chunks)
             return document
 
-        chunks = await self._text_chunker_service.chunk_text(
-            sanitized_text,
-            strategy=strategy,
-            embedding_service=effective_embedding_service,
-        )
+        if strategy == ChunkingStrategy.TABULAR and self._tabular_chunker is not None:
+            chunks = await self._tabular_chunker.chunk_text(sanitized_text, strategy=strategy)
+        else:
+            chunks = await self._text_chunker_service.chunk_text(
+                sanitized_text,
+                strategy=strategy,
+                embedding_service=effective_embedding_service,
+            )
 
         llamaindex_splitter = None
         if self._chunker_backend == "llamaindex":
