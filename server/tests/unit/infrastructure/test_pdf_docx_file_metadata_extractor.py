@@ -85,3 +85,66 @@ class TestPdfDocxFileMetadataExtractor:
 
         # Then
         assert result == FileMetadata()
+
+    async def test_extract_metadata_pptx_with_core_properties(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Given
+        import sys
+        import types
+        from io import BytesIO
+
+        extractor = PdfDocxFileMetadataExtractor()
+
+        class _FakeCoreProperties:
+            title = "Q3 Strategy"
+            author = "Alice; Bob"
+            created = datetime(2026, 3, 15)
+
+        class _FakePresentation:
+            def __init__(self, _buffer: BytesIO) -> None:
+                self.core_properties = _FakeCoreProperties()
+
+        fake_pptx = types.SimpleNamespace(Presentation=_FakePresentation)
+        monkeypatch.setitem(sys.modules, "pptx", fake_pptx)
+
+        # When
+        result = await extractor.extract_metadata(
+            "strategy.pptx",
+            b"PK...",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        )
+
+        # Then
+        assert result.title == "Q3 Strategy"
+        assert result.authors == ["Alice", "Bob"]
+        assert result.document_date is not None
+        assert result.document_date.isoformat() == "2026-03-15"
+
+    async def test_extract_metadata_pptx_with_missing_properties(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Given
+        import sys
+        import types
+        from io import BytesIO
+
+        extractor = PdfDocxFileMetadataExtractor()
+
+        class _FakeCoreProperties:
+            title = None
+            author = None
+            created = None
+
+        class _FakePresentation:
+            def __init__(self, _buffer: BytesIO) -> None:
+                self.core_properties = _FakeCoreProperties()
+
+        fake_pptx = types.SimpleNamespace(Presentation=_FakePresentation)
+        monkeypatch.setitem(sys.modules, "pptx", fake_pptx)
+
+        # When
+        result = await extractor.extract_metadata(
+            "deck.pptx", b"PK...", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
+
+        # Then
+        assert result == FileMetadata()
