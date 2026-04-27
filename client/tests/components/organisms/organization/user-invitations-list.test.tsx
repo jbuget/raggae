@@ -30,7 +30,7 @@ describe("UserInvitationsList", () => {
       data: mockInvitations,
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useUserPendingOrganizationInvitations>);
+    } as unknown as ReturnType<typeof useUserPendingOrganizationInvitations>);
 
     renderWithProviders(<UserInvitationsList />);
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("UserInvitationsList", () => {
       data: [],
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useUserPendingOrganizationInvitations>);
+    } as unknown as ReturnType<typeof useUserPendingOrganizationInvitations>);
 
     renderWithProviders(<UserInvitationsList />);
     expect(screen.getByText(/no pending invitations/i)).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe("UserInvitationsList", () => {
       data: mockInvitations,
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useUserPendingOrganizationInvitations>);
+    } as unknown as ReturnType<typeof useUserPendingOrganizationInvitations>);
 
     renderWithProviders(<UserInvitationsList />);
     expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument();

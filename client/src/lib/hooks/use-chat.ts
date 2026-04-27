@@ -34,7 +34,7 @@ export function useConversation(projectId: string | undefined, conversationId: s
 
   return useQuery({
     queryKey: ["conversation", projectId, conversationId],
-    queryFn: () => getConversation(token!, projectId, conversationId),
+    queryFn: () => getConversation(token!, projectId!, conversationId!),
     enabled: !!token && !!projectId && !!conversationId,
   });
 }
