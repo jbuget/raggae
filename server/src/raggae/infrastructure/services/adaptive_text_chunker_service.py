@@ -13,12 +13,14 @@ class AdaptiveTextChunkerService:
         heading_section_chunker: TextChunkerService,
         semantic_chunker: TextChunkerService | None = None,
         context_window_size: int = 0,
+        tabular_chunker: TextChunkerService | None = None,
     ) -> None:
         self._fixed_window_chunker = fixed_window_chunker
         self._paragraph_chunker = paragraph_chunker
         self._heading_section_chunker = heading_section_chunker
         self._semantic_chunker = semantic_chunker
         self._context_window_size = max(0, context_window_size)
+        self._tabular_chunker = tabular_chunker
 
     async def chunk_text(
         self,
@@ -26,6 +28,8 @@ class AdaptiveTextChunkerService:
         strategy: ChunkingStrategy = ChunkingStrategy.FIXED_WINDOW,
         embedding_service: EmbeddingService | None = None,
     ) -> list[str]:
+        if strategy == ChunkingStrategy.TABULAR and self._tabular_chunker is not None:
+            return await self._tabular_chunker.chunk_text(text, strategy, embedding_service=embedding_service)
         if strategy == ChunkingStrategy.PARAGRAPH:
             chunks = await self._paragraph_chunker.chunk_text(
                 text, strategy, embedding_service=embedding_service
