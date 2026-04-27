@@ -31,6 +31,7 @@ interface ConversationPageItemProps {
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   isSelected?: boolean;
+  anySelected?: boolean;
   onToggleSelect?: (id: string) => void;
 }
 
@@ -40,6 +41,7 @@ export function ConversationPageItem({
   onDelete,
   onRename,
   isSelected = false,
+  anySelected = false,
   onToggleSelect,
 }: ConversationPageItemProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -70,11 +72,12 @@ export function ConversationPageItem({
             onCheckedChange={() => onToggleSelect(conversation.id)}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Sélectionner ${title}`}
+            className={cn(!anySelected && !isSelected && "opacity-0 group-hover:opacity-100 transition-opacity")}
           />
         )}
         <Link
           href={`/projects/${projectId}/chat/${conversation.id}`}
-          className="flex flex-1 items-center gap-4 min-w-0"
+          className="flex flex-1 items-center gap-4 min-w-0 -my-3 py-3"
         >
           <span className="flex-1 truncate font-medium">{title}</span>
           <span className="shrink-0 text-xs text-muted-foreground">

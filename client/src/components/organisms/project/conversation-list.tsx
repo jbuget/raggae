@@ -126,6 +126,7 @@ export function ConversationList({ projectId }: ConversationListProps) {
                 onDelete={handleDelete}
                 onRename={(id, title) => renameConversation({ conversationId: id, title })}
                 isSelected={selected.has(conversation.id)}
+                anySelected={selected.size > 0}
                 onToggleSelect={handleToggleSelect}
               />
             ))}
