@@ -63,7 +63,7 @@ describe("DocumentChunksSheet", () => {
       ),
     );
     renderWithProviders(<DocumentChunksSheet {...defaultProps} />);
-    expect(await screen.findByText(/2/)).toBeInTheDocument();
+    expect(await screen.findByText("2 chunk(s)")).toBeInTheDocument();
   });
 
   it("should display all chunks", async () => {

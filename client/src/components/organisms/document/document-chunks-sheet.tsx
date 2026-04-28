@@ -5,6 +5,7 @@ import { ChunkAccordionItem } from "@/components/atoms/document/chunk-accordion-
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -38,11 +39,9 @@ export function DocumentChunksSheet({
       <SheetContent side="right" className="flex w-full flex-col sm:max-w-xl">
         <SheetHeader className="border-b pb-4">
           <SheetTitle className="truncate">{documentName}</SheetTitle>
-          {!isLoading && !error && (
-            <p className="text-sm text-muted-foreground">
-              {t("title", { count: chunks.length })}
-            </p>
-          )}
+          <SheetDescription>
+            {!isLoading && !error ? t("title", { count: chunks.length }) : ""}
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -64,7 +63,12 @@ export function DocumentChunksSheet({
           {!isLoading && !error && chunks.length > 0 && (
             <div>
               {chunks.map((chunk) => (
-                <ChunkAccordionItem key={chunk.id} chunk={chunk} />
+                <ChunkAccordionItem
+                  key={chunk.id}
+                  chunk={chunk}
+                  ariaLabel={t("chunkLabel", { index: chunk.chunk_index })}
+                  metadataLabel={t("metadata")}
+                />
               ))}
             </div>
           )}

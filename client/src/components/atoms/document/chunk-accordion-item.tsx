@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { useTranslations } from "next-intl";
 import type { DocumentChunkResponse } from "@/lib/types/api";
 
 const PREVIEW_LENGTH = 150;
 
 interface ChunkAccordionItemProps {
   chunk: DocumentChunkResponse;
+  ariaLabel: string;
+  metadataLabel: string;
 }
 
-export function ChunkAccordionItem({ chunk }: ChunkAccordionItemProps) {
+export function ChunkAccordionItem({ chunk, ariaLabel, metadataLabel }: ChunkAccordionItemProps) {
   const [expanded, setExpanded] = useState(false);
-  const t = useTranslations("documents.chunks");
 
   const preview =
     chunk.content.length > PREVIEW_LENGTH
@@ -24,7 +24,7 @@ export function ChunkAccordionItem({ chunk }: ChunkAccordionItemProps) {
     <div className="border-b last:border-b-0">
       <button
         type="button"
-        aria-label={t("chunkLabel", { index: chunk.chunk_index })}
+        aria-label={ariaLabel}
         aria-expanded={expanded}
         className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
         onClick={() => setExpanded((prev) => !prev)}
@@ -54,7 +54,7 @@ export function ChunkAccordionItem({ chunk }: ChunkAccordionItemProps) {
           {chunk.metadata_json && (
             <div data-testid="chunk-metadata">
               <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {t("metadata")}
+                {metadataLabel}
               </p>
               <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-3 text-xs font-mono">
                 {JSON.stringify(chunk.metadata_json, null, 2)}
