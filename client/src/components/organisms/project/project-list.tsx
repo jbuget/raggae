@@ -175,7 +175,12 @@ export function ProjectList() {
 
       {!isEmpty && (
         <div className="flex justify-end">
-          <ViewToggle value={viewMode} onChange={handleViewChange} />
+          <ViewToggle
+            value={viewMode}
+            onChange={handleViewChange}
+            gridLabel={t("list.gridView")}
+            listLabel={t("list.listView")}
+          />
         </div>
       )}
 
