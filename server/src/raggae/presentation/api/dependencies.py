@@ -280,6 +280,9 @@ from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPassword
 from raggae.infrastructure.services.contextual_embedding_service import (
     ContextualEmbeddingService,
 )
+from raggae.infrastructure.services.document_file_metadata_extractor import (
+    DocumentFileMetadataExtractor,
+)
 from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
     FernetProviderApiKeyCryptoService,
@@ -342,9 +345,6 @@ from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbedd
 from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
-)
-from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
-    PdfDocxFileMetadataExtractor,
 )
 from raggae.infrastructure.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
@@ -482,7 +482,7 @@ _semantic_embedding_service: EmbeddingService = _build_embedding_service()
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
-_file_metadata_extractor: FileMetadataExtractor = PdfDocxFileMetadataExtractor()
+_file_metadata_extractor: FileMetadataExtractor = DocumentFileMetadataExtractor()
 _language_detector: LanguageDetector = LangdetectLanguageDetector()
 _keyword_extractor: KeywordExtractor = KeybertKeywordExtractor()
 if settings.persistence_backend != "postgres":

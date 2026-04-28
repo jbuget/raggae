@@ -9,8 +9,8 @@ from raggae.application.interfaces.services.file_metadata_extractor import (
 _AUTHOR_SPLIT_RE = re.compile(r"[;,]")
 
 
-class PdfDocxFileMetadataExtractor:
-    """Extract metadata from PDF and DOCX properties."""
+class DocumentFileMetadataExtractor:
+    """Extract metadata from PDF, DOCX and PPTX document properties."""
 
     async def extract_metadata(
         self,
@@ -76,8 +76,8 @@ class PdfDocxFileMetadataExtractor:
             return FileMetadata()
 
         try:
-            prs = Presentation(BytesIO(content))
-            props = prs.core_properties
+            prez = Presentation(BytesIO(content))
+            props = prez.core_properties
             author = self._clean_text(props.author)
             created = props.created.date() if props.created is not None else None
             return FileMetadata(
