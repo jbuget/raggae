@@ -37,7 +37,7 @@ from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunk_level import ChunkLevel
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
-from raggae.infrastructure.services.slide_chunker import SlideChunker
+from raggae.application.services.slide_chunker import SlideChunker
 
 _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
 logger = logging.getLogger(__name__)

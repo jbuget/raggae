@@ -367,7 +367,7 @@ from raggae.infrastructure.services.simple_text_chunker_service import (
 from raggae.infrastructure.services.simple_text_sanitizer_service import (
     SimpleTextSanitizerService,
 )
-from raggae.infrastructure.services.slide_chunker import SlideChunker
+from raggae.application.services.slide_chunker import SlideChunker
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )

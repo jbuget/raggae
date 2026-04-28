@@ -1,6 +1,6 @@
 import pytest
 
-from raggae.infrastructure.services.slide_chunker import SlideChunk, SlideChunker
+from raggae.application.services.slide_chunker import SlideChunk, SlideChunker
 
 
 class TestSlideChunker:

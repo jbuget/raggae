@@ -518,7 +518,7 @@ class TestDocumentIndexingService:
         project: Project,
     ) -> None:
         # Given
-        from raggae.infrastructure.services.slide_chunker import SlideChunker
+        from raggae.application.services.slide_chunker import SlideChunker
 
         pptx_text = "[SLIDE:1]\n# Architecture\n\nBody one.\n[SLIDE:2]\n# Conclusion\n\nBody two."
         mock_document_text_extractor.extract_text.return_value = pptx_text
@@ -563,7 +563,7 @@ class TestDocumentIndexingService:
         project: Project,
     ) -> None:
         # Given
-        from raggae.infrastructure.services.slide_chunker import SlideChunker
+        from raggae.application.services.slide_chunker import SlideChunker
 
         pptx_text = "[SLIDE:1]\n# Architecture\n\nBody one.\n[SLIDE:2]\n# Conclusion\n\nBody two."
         mock_document_text_extractor.extract_text.return_value = pptx_text
