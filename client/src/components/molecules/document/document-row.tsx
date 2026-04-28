@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Eye, RefreshCw, Trash2 } from "lucide-react";
+import { Eye, Layers, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DocumentChunksSheet } from "@/components/organisms/document/document-chunks-sheet";
 import { getDocumentFileBlob } from "@/lib/api/documents";
 import { useAuth } from "@/lib/hooks/use-auth";
 import type {
@@ -54,6 +55,7 @@ export function DocumentRow({
   const { token } = useAuth();
   const isReindexing = reindexingId === document.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [chunksOpen, setChunksOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string | null>(null);
@@ -148,6 +150,17 @@ export function DocumentRow({
           title={t("previewTitle")}
         >
           <Eye />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="cursor-pointer rounded-none border-0"
+          disabled={document.status !== "indexed"}
+          onClick={() => setChunksOpen(true)}
+          aria-label={t("chunksAriaLabel")}
+          title={document.status === "indexed" ? t("chunksTitle") : t("chunksDisabledTitle")}
+        >
+          <Layers />
         </Button>
         <Button
           variant="ghost"
@@ -252,6 +265,14 @@ export function DocumentRow({
         </DialogContent>
       </Dialog>
       </div>
+
+      <DocumentChunksSheet
+        projectId={document.project_id}
+        documentId={document.id}
+        documentName={document.file_name}
+        open={chunksOpen}
+        onOpenChange={setChunksOpen}
+      />
     </div>
   );
 }
