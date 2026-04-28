@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,19 +20,16 @@ interface RenameConversationDialogProps {
   onConfirm: (title: string) => void;
 }
 
-export function RenameConversationDialog({
-  open,
-  onOpenChange,
-  initialTitle,
-  onConfirm,
-}: RenameConversationDialogProps) {
+interface DialogBodyProps {
+  initialTitle: string;
+  onConfirm: (title: string) => void;
+  onOpenChange: (open: boolean) => void;
+}
+
+function DialogBody({ initialTitle, onConfirm, onOpenChange }: DialogBodyProps) {
   const [value, setValue] = useState(initialTitle);
   const t = useTranslations("chat.sidebar");
   const tCommon = useTranslations("common");
-
-  useEffect(() => {
-    if (open) setValue(initialTitle);
-  }, [open, initialTitle]);
 
   function handleConfirm() {
     const trimmed = value.trim();
@@ -41,29 +38,48 @@ export function RenameConversationDialog({
   }
 
   return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t("renameTitle")}</DialogTitle>
+        <DialogDescription>{t("renameDescription")}</DialogDescription>
+      </DialogHeader>
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={t("renamePlaceholder")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleConfirm();
+        }}
+        autoFocus
+      />
+      <DialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          {tCommon("cancel")}
+        </Button>
+        <Button onClick={handleConfirm} disabled={!value.trim()}>
+          {tCommon("save")}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+export function RenameConversationDialog({
+  open,
+  onOpenChange,
+  initialTitle,
+  onConfirm,
+}: RenameConversationDialogProps) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{t("renameTitle")}</DialogTitle>
-          <DialogDescription>{t("renameDescription")}</DialogDescription>
-        </DialogHeader>
-        <Input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={t("renamePlaceholder")}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleConfirm();
-          }}
-          autoFocus
-        />
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {tCommon("cancel")}
-          </Button>
-          <Button onClick={handleConfirm} disabled={!value.trim()}>
-            {tCommon("save")}
-          </Button>
-        </DialogFooter>
+        {open && (
+          <DialogBody
+            initialTitle={initialTitle}
+            onConfirm={onConfirm}
+            onOpenChange={onOpenChange}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
