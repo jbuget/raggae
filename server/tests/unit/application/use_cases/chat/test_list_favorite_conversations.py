@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
-from raggae.application.interfaces.repositories.conversation_repository import FavoriteConversationResult
+from raggae.application.dto.favorite_conversation_dto import FavoriteConversationResult
 from raggae.application.use_cases.chat.list_favorite_conversations import ListFavoriteConversations
 from raggae.domain.entities.conversation import Conversation
 

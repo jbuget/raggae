@@ -4,8 +4,9 @@ from uuid import UUID, uuid4
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from raggae.application.interfaces.repositories.conversation_repository import FavoriteConversationResult
+from raggae.application.dto.favorite_conversation_dto import FavoriteConversationResult
 from raggae.domain.entities.conversation import Conversation
+from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 from raggae.infrastructure.database.models.conversation_model import ConversationModel
 from raggae.infrastructure.database.models.project_model import ProjectModel
 
@@ -114,8 +115,6 @@ class SQLAlchemyConversationRepository:
         async with self._session_factory() as session:
             model = await session.get(ConversationModel, conversation_id)
             if model is None:
-                from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
-
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
             model.is_favorite = not model.is_favorite
             await session.commit()

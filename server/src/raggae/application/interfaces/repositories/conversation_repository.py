@@ -1,15 +1,8 @@
 from typing import Protocol
 from uuid import UUID
 
+from raggae.application.dto.favorite_conversation_dto import FavoriteConversationResult
 from raggae.domain.entities.conversation import Conversation
-
-
-class FavoriteConversationResult:
-    """Conversation with its project name, for cross-project favorites listing."""
-
-    def __init__(self, conversation: Conversation, project_name: str) -> None:
-        self.conversation = conversation
-        self.project_name = project_name
 
 
 class ConversationRepository(Protocol):

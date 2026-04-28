@@ -2,7 +2,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from raggae.application.interfaces.repositories.conversation_repository import FavoriteConversationResult
+from raggae.application.dto.favorite_conversation_dto import FavoriteConversationResult
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
 
@@ -10,8 +10,9 @@ from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoun
 class InMemoryConversationRepository:
     """In-memory conversation repository for testing."""
 
-    def __init__(self) -> None:
+    def __init__(self, project_names: dict[UUID, str] | None = None) -> None:
         self._conversations: dict[UUID, Conversation] = {}
+        self._project_names: dict[UUID, str] = project_names or {}
 
     async def create(self, project_id: UUID, user_id: UUID) -> Conversation:
         created = Conversation(
@@ -73,7 +74,10 @@ class InMemoryConversationRepository:
         offset: int = 0,
     ) -> list[FavoriteConversationResult]:
         favorites = [
-            FavoriteConversationResult(conversation=c, project_name="")
+            FavoriteConversationResult(
+                conversation=c,
+                project_name=self._project_names.get(c.project_id, ""),
+            )
             for c in self._conversations.values()
             if c.user_id == user_id and c.is_favorite
         ]

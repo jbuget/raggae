@@ -1,9 +1,7 @@
 from uuid import UUID
 
-from raggae.application.interfaces.repositories.conversation_repository import (
-    ConversationRepository,
-    FavoriteConversationResult,
-)
+from raggae.application.dto.favorite_conversation_dto import FavoriteConversationResult
+from raggae.application.interfaces.repositories.conversation_repository import ConversationRepository
 
 
 class ListFavoriteConversations:
