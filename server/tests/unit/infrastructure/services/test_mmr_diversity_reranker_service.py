@@ -1,4 +1,3 @@
-import asyncio
 from uuid import uuid4
 
 import pytest
@@ -35,7 +34,9 @@ class TestMmrDiversityRerankerServiceLexical:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_rerank_fewer_chunks_than_top_k_returns_all(self, reranker: MmrDiversityRerankerService) -> None:
+    async def test_rerank_fewer_chunks_than_top_k_returns_all(
+        self, reranker: MmrDiversityRerankerService
+    ) -> None:
         chunks = [_chunk("CRAFT formalisme", 0.9), _chunk("autre sujet", 0.5)]
         result = await reranker.rerank("CRAFT", chunks, top_k=10)
         assert len(result) == 2
@@ -60,7 +61,9 @@ class TestMmrDiversityRerankerServiceLexical:
         assert generic_chunk.content not in selected_contents
 
     @pytest.mark.asyncio
-    async def test_rerank_high_score_chunk_selected_first(self, reranker: MmrDiversityRerankerService) -> None:
+    async def test_rerank_high_score_chunk_selected_first(
+        self, reranker: MmrDiversityRerankerService
+    ) -> None:
         """The highest-scored chunk should be selected first."""
         query = "CRAFT"
         high = _chunk("CRAFT est un formalisme de prompting.", 0.95)
@@ -69,7 +72,9 @@ class TestMmrDiversityRerankerServiceLexical:
         assert result[0].content == high.content
 
     @pytest.mark.asyncio
-    async def test_rerank_zero_score_fallback_to_word_overlap(self, reranker: MmrDiversityRerankerService) -> None:
+    async def test_rerank_zero_score_fallback_to_word_overlap(
+        self, reranker: MmrDiversityRerankerService
+    ) -> None:
         """When all chunks have score=0, word overlap is used as fallback."""
         query = "CRAFT formalisme"
         matching = _chunk("CRAFT formalisme de prompt", 0.0)

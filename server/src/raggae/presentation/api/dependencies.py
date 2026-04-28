@@ -84,6 +84,7 @@ from raggae.application.services.document_indexing_service import DocumentIndexi
 from raggae.application.services.parent_child_chunking_service import (
     ParentChildChunkingService,
 )
+from raggae.application.services.slide_chunker import SlideChunker
 from raggae.application.use_cases.chat.delete_conversation import DeleteConversation
 from raggae.application.use_cases.chat.get_conversation import GetConversation
 from raggae.application.use_cases.chat.list_conversation_messages import (
@@ -367,7 +368,6 @@ from raggae.infrastructure.services.simple_text_chunker_service import (
 from raggae.infrastructure.services.simple_text_sanitizer_service import (
     SimpleTextSanitizerService,
 )
-from raggae.application.services.slide_chunker import SlideChunker
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
