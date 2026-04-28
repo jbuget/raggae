@@ -159,6 +159,7 @@ from raggae.application.use_cases.organization.update_organization_member_role i
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
+from raggae.application.use_cases.project.list_accessible_projects import ListAccessibleProjects
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.publish_project import PublishProject
 from raggae.application.use_cases.project.reindex_project import ReindexProject
@@ -680,6 +681,14 @@ def get_get_project_use_case() -> GetProject:
 
 def get_list_projects_use_case() -> ListProjects:
     return ListProjects(project_repository=_project_repository)
+
+
+def get_list_accessible_projects_use_case() -> ListAccessibleProjects:
+    return ListAccessibleProjects(
+        organization_member_repository=_organization_member_repository,
+        organization_repository=_organization_repository,
+        project_repository=_project_repository,
+    )
 
 
 def get_delete_project_use_case() -> DeleteProject:

@@ -122,13 +122,17 @@
     "description": "Create and manage your RAG agents.",
     "new": "New project",
     "empty": "No projects yet.",
+    "loadError": "Unable to load projects.",
     "namePlaceholder": "Project name",
     "notFound": "Project not found",
     "list": {
       "createTitle": "Create project",
       "createSuccess": "Project created",
       "createError": "Failed to create project",
-      "createFirst": "Create your first project"
+      "createFirst": "Create your first project",
+      "myProjects": "My projects",
+      "gridView": "Grid view",
+      "listView": "List view"
     },
     "card": {
       "created": "Created",

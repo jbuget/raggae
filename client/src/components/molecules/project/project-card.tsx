@@ -22,9 +22,10 @@ import { formatDate } from "@/lib/utils/format";
 
 interface ProjectCardProps {
   project: ProjectResponse;
+  showSettings?: boolean;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, showSettings = true }: ProjectCardProps) {
   const t = useTranslations("projects");
   const tCommon = useTranslations("common");
   const router = useRouter();
@@ -45,26 +46,28 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </Card>
       </Link>
 
-      <div className="absolute right-2 top-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={(e) => e.preventDefault()}
-            >
-              <MoreVertical className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/projects/${project.id}/settings`)}>
-              <Settings className="mr-2 size-4" />
-              {t("card.settings")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {showSettings && (
+        <div className="absolute right-2 top-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => e.preventDefault()}
+              >
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push(`/projects/${project.id}/settings`)}>
+                <Settings className="mr-2 size-4" />
+                {t("card.settings")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </div>
   );
 }

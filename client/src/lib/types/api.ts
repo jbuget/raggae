@@ -149,6 +149,18 @@ export interface ReindexProjectResponse {
   failed_documents: number;
 }
 
+export interface OrganizationSectionResponse {
+  organization_id: string;
+  organization_name: string;
+  projects: ProjectResponse[];
+  can_edit: boolean;
+}
+
+export interface AccessibleProjectsResponse {
+  personal_projects: ProjectResponse[];
+  organization_sections: OrganizationSectionResponse[];
+}
+
 // Organizations
 export interface CreateOrganizationRequest {
   name: string;
