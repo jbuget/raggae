@@ -113,7 +113,7 @@ class SQLAlchemyConversationRepository:
 
     async def toggle_favorite(self, conversation_id: UUID) -> Conversation:
         async with self._session_factory() as session:
-            model = await session.get(ConversationModel, conversation_id)
+            model = await session.get(ConversationModel, conversation_id, with_for_update=True)
             if model is None:
                 raise ConversationNotFoundError(f"Conversation {conversation_id} not found")
             model.is_favorite = not model.is_favorite
