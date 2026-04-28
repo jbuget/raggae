@@ -541,7 +541,18 @@
       "downloadDocument": "Download document",
       "indexedAt": "Indexed {date}",
       "deleteConfirm": "Are you sure you want to delete \"{name}\"?",
-      "unableToLoadPreview": "Unable to load preview for this document."
+      "unableToLoadPreview": "Unable to load preview for this document.",
+      "chunksAriaLabel": "View chunks",
+      "chunksTitle": "Chunks",
+      "chunksDisabledTitle": "Document must be indexed to view chunks"
+    },
+    "chunks": {
+      "title": "{count} chunk(s)",
+      "loading": "Loading chunks...",
+      "empty": "No chunks found for this document.",
+      "error": "Unable to load chunks.",
+      "chunkLabel": "Chunk #{index}",
+      "metadata": "Metadata"
     }
   },
   "sidebar": {

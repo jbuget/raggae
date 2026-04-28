@@ -541,7 +541,18 @@
       "downloadDocument": "Télécharger le document",
       "indexedAt": "Indexé le {date}",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer « {name} » ?",
-      "unableToLoadPreview": "Impossible de charger l'aperçu de ce document."
+      "unableToLoadPreview": "Impossible de charger l'aperçu de ce document.",
+      "chunksAriaLabel": "Voir les chunks",
+      "chunksTitle": "Chunks",
+      "chunksDisabledTitle": "Le document doit être indexé pour accéder aux chunks"
+    },
+    "chunks": {
+      "title": "{count} chunk(s)",
+      "loading": "Chargement des chunks...",
+      "empty": "Aucun chunk pour ce document.",
+      "error": "Impossible de charger les chunks.",
+      "chunkLabel": "Chunk #{index}",
+      "metadata": "Métadonnées"
     }
   },
   "sidebar": {
