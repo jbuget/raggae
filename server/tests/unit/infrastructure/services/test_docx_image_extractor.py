@@ -4,7 +4,6 @@ from io import BytesIO
 
 import pytest
 from docx import Document as DocxDocument
-from docx.shared import Inches
 
 from raggae.infrastructure.services.docx_image_extractor import DocxImageExtractor
 
@@ -21,9 +20,7 @@ class TestDocxImageExtractor:
         doc.save(buf)
         return buf.getvalue()
 
-    async def test_docx_without_images_returns_empty_list(
-        self, extractor: DocxImageExtractor
-    ) -> None:
+    async def test_docx_without_images_returns_empty_list(self, extractor: DocxImageExtractor) -> None:
         # Given
         content = self._make_docx_bytes()
 

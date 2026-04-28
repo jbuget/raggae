@@ -126,11 +126,14 @@ class TestUploadDocument:
                 content_type="application/octet-stream",
             )
 
-    @pytest.mark.parametrize("ext,ct", [
-        ("png", "image/png"),
-        ("jpg", "image/jpeg"),
-        ("webp", "image/webp"),
-    ])
+    @pytest.mark.parametrize(
+        "ext,ct",
+        [
+            ("png", "image/png"),
+            ("jpg", "image/jpeg"),
+            ("webp", "image/webp"),
+        ],
+    )
     async def test_upload_image_extension_accepted(
         self,
         use_case: UploadDocument,

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from raggae.infrastructure.services.pdf_image_extractor import ImageData, PdfImageExtractor
+from raggae.infrastructure.services.pdf_image_extractor import PdfImageExtractor
 
 
 @dataclass

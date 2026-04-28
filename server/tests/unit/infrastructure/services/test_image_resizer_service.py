@@ -1,6 +1,5 @@
 from io import BytesIO
 
-import pytest
 from PIL import Image
 
 from raggae.infrastructure.services.image_resizer_service import ImageResizerService
