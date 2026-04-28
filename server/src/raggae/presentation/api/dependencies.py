@@ -292,6 +292,7 @@ from raggae.infrastructure.services.heading_section_text_chunker_service import 
 from raggae.infrastructure.services.heuristic_document_structure_analyzer import (
     HeuristicDocumentStructureAnalyzer,
 )
+from raggae.infrastructure.services.image_resizer_service import ImageResizerService
 from raggae.infrastructure.services.in_memory_chunk_retrieval_service import (
     InMemoryChunkRetrievalService,
 )
@@ -333,6 +334,7 @@ from raggae.infrastructure.services.minio_file_storage_service import (
 from raggae.infrastructure.services.multiformat_document_text_extractor import (
     MultiFormatDocumentTextExtractor,
 )
+from raggae.infrastructure.services.noop_image_description_service import NoopImageDescriptionService
 from raggae.infrastructure.services.noop_invitation_email_service import (
     NoopInvitationEmailService,
 )
@@ -370,6 +372,22 @@ from raggae.infrastructure.services.simple_text_sanitizer_service import (
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
+from raggae.infrastructure.services.standalone_image_document_text_extractor import (
+    StandaloneImageDocumentTextExtractor,
+)
+
+
+def _build_image_description_service() -> NoopImageDescriptionService:
+    if settings.default_llm_provider == "openai":
+        from raggae.infrastructure.services.openai_image_description_service import (
+            OpenAIImageDescriptionService,
+        )
+
+        return OpenAIImageDescriptionService(  # type: ignore[return-value]
+            api_key=settings.default_llm_api_key,
+            model=settings.default_llm_model,
+        )
+    return NoopImageDescriptionService()
 
 
 def _build_embedding_service() -> EmbeddingService:
@@ -478,7 +496,15 @@ else:
     _file_storage_service = InMemoryFileStorageService()
 _embedding_service: EmbeddingService = _build_embedding_service()
 _semantic_embedding_service: EmbeddingService = _build_embedding_service()
-_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
+_image_description_service = _build_image_description_service()
+_image_resizer_service = ImageResizerService(max_bytes=settings.vision_max_image_bytes)
+_standalone_image_extractor = StandaloneImageDocumentTextExtractor(
+    image_description_service=_image_description_service,
+    image_resizer_service=_image_resizer_service,
+)
+_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor(
+    standalone_image_extractor=_standalone_image_extractor,
+)
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
 _file_metadata_extractor: FileMetadataExtractor = PdfDocxFileMetadataExtractor()
