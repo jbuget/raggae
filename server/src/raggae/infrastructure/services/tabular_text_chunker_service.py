@@ -7,7 +7,12 @@ _ROW_PREFIX = "[ROW:"
 
 
 class TabularTextChunkerService:
-    """Chunk tabular structured text into one Markdown table chunk per data row."""
+    """Chunk tabular structured text into one key-value chunk per data row.
+
+    Each chunk uses a readable "field: value" format that skips empty cells,
+    making it easy for LLMs to match questions to answers without parsing
+    wide Markdown tables with mostly-empty columns.
+    """
 
     async def chunk_text(
         self,
@@ -35,7 +40,9 @@ class TabularTextChunkerService:
                 colon_idx = line.index("]:")
                 row_num = line[len(_ROW_PREFIX) : colon_idx]
                 row_values = line[colon_idx + 2 :].split("|")
-                chunks.append(self._build_chunk(current_sheet, row_num, current_headers, row_values))
+                chunk = self._build_chunk(current_sheet, row_num, current_headers, row_values)
+                if chunk:
+                    chunks.append(chunk)
 
         return chunks
 
@@ -47,8 +54,11 @@ class TabularTextChunkerService:
         values: list[str],
     ) -> str:
         marker = f"[SHEET:{sheet}] [ROW:{row_num}]" if sheet is not None else f"[ROW:{row_num}]"
-        header_row = "| " + " | ".join(h.replace("&#124;", "|") for h in headers) + " |"
-        sep_row = "| " + " | ".join("---" for _ in headers) + " |"
         padded = (list(values) + [""] * len(headers))[: len(headers)]
-        data_row = "| " + " | ".join(v.replace("&#124;", "|") for v in padded) + " |"
-        return f"{marker}\n{header_row}\n{sep_row}\n{data_row}"
+        lines = [marker]
+        for header, value in zip(headers, padded, strict=False):
+            v = value.replace("&#124;", "|").strip()
+            if v:
+                h = header.replace("&#124;", "|").strip()
+                lines.append(f"{h}: {v}")
+        return "\n".join(lines) if len(lines) > 1 else ""

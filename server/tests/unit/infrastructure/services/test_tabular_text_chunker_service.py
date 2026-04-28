@@ -26,26 +26,6 @@ class TestTabularTextChunkerService:
         # Then
         assert len(chunks) == 2
 
-    async def test_chunk_text_headers_repeated_in_each_chunk(
-        self, chunker: TabularTextChunkerService
-    ) -> None:
-        # When
-        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
-
-        # Then
-        for chunk in chunks:
-            assert "| Produit |" in chunk
-            assert "| Région |" in chunk
-            assert "| Quantité |" in chunk
-
-    async def test_chunk_text_markdown_separator_present(self, chunker: TabularTextChunkerService) -> None:
-        # When
-        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
-
-        # Then
-        for chunk in chunks:
-            assert "| --- |" in chunk or "|---|" in chunk or "---" in chunk
-
     async def test_chunk_text_row_marker_present(self, chunker: TabularTextChunkerService) -> None:
         # When
         chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
@@ -80,6 +60,27 @@ class TestTabularTextChunkerService:
         assert "Gadget B" in chunks[1]
         assert "500" in chunks[1]
 
+    async def test_chunk_text_headers_as_field_names(self, chunker: TabularTextChunkerService) -> None:
+        # When
+        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
+
+        # Then — headers appear as "Header: value" lines
+        assert "Produit: Widget A" in chunks[0]
+        assert "Région: Nord" in chunks[0]
+        assert "Quantité: 1200" in chunks[0]
+
+    async def test_chunk_text_empty_cells_skipped(self, chunker: TabularTextChunkerService) -> None:
+        # Given — row with some empty cells
+        text = "[HEADERS]:A|B|C\n[ROW:1]:hello||world"
+
+        # When
+        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
+
+        # Then — only non-empty fields appear
+        assert "A: hello" in chunks[0]
+        assert "C: world" in chunks[0]
+        assert "B:" not in chunks[0]
+
     async def test_chunk_text_empty_text_returns_no_chunks(self, chunker: TabularTextChunkerService) -> None:
         # When
         chunks = await chunker.chunk_text("", ChunkingStrategy.TABULAR)
@@ -97,6 +98,18 @@ class TestTabularTextChunkerService:
         chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
 
         # Then
+        assert chunks == []
+
+    async def test_chunk_text_row_all_empty_values_returns_no_chunk(
+        self, chunker: TabularTextChunkerService
+    ) -> None:
+        # Given — row where all cells are empty
+        text = "[HEADERS]:A|B\n[ROW:1]:|"
+
+        # When
+        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
+
+        # Then — no content to index
         assert chunks == []
 
     async def test_chunk_text_pipe_in_cell_unescaped_in_output(
@@ -126,21 +139,19 @@ class TestTabularTextChunkerService:
 
         # Then
         assert len(chunks) == 2
-        assert "Name" in chunks[0] and "Value" in chunks[0]
-        assert "Key" in chunks[1] and "Data" in chunks[1]
+        assert "Name: Alpha" in chunks[0] and "Value: 1" in chunks[0]
+        assert "Key: X" in chunks[1] and "Data: Y" in chunks[1]
 
-    async def test_chunk_text_full_markdown_table_format(self, chunker: TabularTextChunkerService) -> None:
+    async def test_chunk_text_key_value_format(self, chunker: TabularTextChunkerService) -> None:
         # Given
         text = "[HEADERS]:H1|H2\n[ROW:1]:V1|V2"
 
         # When
         chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
 
-        # Then
+        # Then — each chunk is marker + "key: value" lines
         chunk = chunks[0]
         lines = chunk.split("\n")
-        assert len(lines) == 4  # marker + header row + sep row + data row
         assert lines[0] == "[ROW:1]"
-        assert lines[1] == "| H1 | H2 |"
-        assert "---" in lines[2]
-        assert lines[3] == "| V1 | V2 |"
+        assert lines[1] == "H1: V1"
+        assert lines[2] == "H2: V2"
