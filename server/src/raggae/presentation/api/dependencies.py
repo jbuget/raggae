@@ -122,6 +122,9 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 )
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
+from raggae.application.use_cases.organization.get_org_project_defaults import (
+    GetOrganizationProjectDefaults,
+)
 from raggae.application.use_cases.organization.get_organization import GetOrganization
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
@@ -152,6 +155,9 @@ from raggae.application.use_cases.organization.revoke_organization_invitation im
 from raggae.application.use_cases.organization.update_organization import UpdateOrganization
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
+)
+from raggae.application.use_cases.organization.upsert_org_project_defaults import (
+    UpsertOrganizationProjectDefaults,
 )
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
@@ -206,6 +212,9 @@ from raggae.infrastructure.database.repositories.in_memory_document_repository i
 from raggae.infrastructure.database.repositories.in_memory_message_repository import (
     InMemoryMessageRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
+    InMemoryOrgProjectDefaultsRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_org_provider_credential_repository import (
     InMemoryOrgProviderCredentialRepository,
 )
@@ -244,6 +253,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_document_repository 
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_message_repository import (
     SQLAlchemyMessageRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_org_project_defaults_repository import (
+    SQLAlchemyOrgProjectDefaultsRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_org_provider_credential_repository import (
     SQLAlchemyOrgProviderCredentialRepository,
@@ -416,6 +428,9 @@ if settings.persistence_backend == "postgres":
     _org_credential_repository: OrgProviderCredentialRepository = SQLAlchemyOrgProviderCredentialRepository(
         session_factory=SessionFactory
     )
+    _org_project_defaults_repository: (
+        InMemoryOrgProjectDefaultsRepository | SQLAlchemyOrgProjectDefaultsRepository
+    ) = SQLAlchemyOrgProjectDefaultsRepository(session_factory=SessionFactory)
     _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
         session_factory=SessionFactory
     )
@@ -443,6 +458,7 @@ else:
     _message_repository = InMemoryMessageRepository()
     _provider_credential_repository = InMemoryProviderCredentialRepository()
     _org_credential_repository = InMemoryOrgProviderCredentialRepository()
+    _org_project_defaults_repository = InMemoryOrgProjectDefaultsRepository()
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
     _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
@@ -663,6 +679,7 @@ def get_create_project_use_case() -> CreateProject:
         project_repository=_project_repository,
         organization_member_repository=_organization_member_repository,
         provider_credential_repository=_provider_credential_repository,
+        org_project_defaults_repository=_org_project_defaults_repository,
     ).with_crypto_service(_provider_api_key_crypto_service)
 
 
@@ -1074,6 +1091,22 @@ def get_restore_project_snapshot_use_case() -> RestoreProjectSnapshot:
         project_repository=_project_repository,
         snapshot_repository=_project_snapshot_repository,
         organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_get_org_project_defaults_use_case() -> GetOrganizationProjectDefaults:
+    return GetOrganizationProjectDefaults(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        org_project_defaults_repository=_org_project_defaults_repository,
+    )
+
+
+def get_upsert_org_project_defaults_use_case() -> UpsertOrganizationProjectDefaults:
+    return UpsertOrganizationProjectDefaults(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        org_project_defaults_repository=_org_project_defaults_repository,
     )
 
 

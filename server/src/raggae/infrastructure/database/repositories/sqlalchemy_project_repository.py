@@ -50,6 +50,11 @@ class SQLAlchemyProjectRepository:
                     reranker_candidate_multiplier=project.reranker_candidate_multiplier,
                     org_embedding_api_key_credential_id=project.org_embedding_api_key_credential_id,
                     org_llm_api_key_credential_id=project.org_llm_api_key_credential_id,
+                    overrides_models_from_org=project.overrides_models_from_org,
+                    overrides_indexing_from_org=project.overrides_indexing_from_org,
+                    overrides_retrieval_from_org=project.overrides_retrieval_from_org,
+                    overrides_reranking_from_org=project.overrides_reranking_from_org,
+                    overrides_chat_history_from_org=project.overrides_chat_history_from_org,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -75,6 +80,11 @@ class SQLAlchemyProjectRepository:
                 model.llm_api_key_credential_id = project.llm_api_key_credential_id
                 model.org_embedding_api_key_credential_id = project.org_embedding_api_key_credential_id
                 model.org_llm_api_key_credential_id = project.org_llm_api_key_credential_id
+                model.overrides_models_from_org = project.overrides_models_from_org
+                model.overrides_indexing_from_org = project.overrides_indexing_from_org
+                model.overrides_retrieval_from_org = project.overrides_retrieval_from_org
+                model.overrides_reranking_from_org = project.overrides_reranking_from_org
+                model.overrides_chat_history_from_org = project.overrides_chat_history_from_org
                 model.retrieval_strategy = project.retrieval_strategy
                 model.retrieval_top_k = project.retrieval_top_k
                 model.retrieval_min_score = project.retrieval_min_score
@@ -123,6 +133,11 @@ class SQLAlchemyProjectRepository:
                 reranker_candidate_multiplier=model.reranker_candidate_multiplier,
                 org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
                 org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
+                overrides_models_from_org=model.overrides_models_from_org,
+                overrides_indexing_from_org=model.overrides_indexing_from_org,
+                overrides_retrieval_from_org=model.overrides_retrieval_from_org,
+                overrides_reranking_from_org=model.overrides_reranking_from_org,
+                overrides_chat_history_from_org=model.overrides_chat_history_from_org,
                 created_at=model.created_at,
             )
 
@@ -163,6 +178,11 @@ class SQLAlchemyProjectRepository:
                     reranker_candidate_multiplier=model.reranker_candidate_multiplier,
                     org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
                     org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
+                    overrides_models_from_org=model.overrides_models_from_org,
+                    overrides_indexing_from_org=model.overrides_indexing_from_org,
+                    overrides_retrieval_from_org=model.overrides_retrieval_from_org,
+                    overrides_reranking_from_org=model.overrides_reranking_from_org,
+                    overrides_chat_history_from_org=model.overrides_chat_history_from_org,
                     created_at=model.created_at,
                 )
                 for model in models
@@ -207,6 +227,11 @@ class SQLAlchemyProjectRepository:
                     reranker_candidate_multiplier=model.reranker_candidate_multiplier,
                     org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
                     org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
+                    overrides_models_from_org=model.overrides_models_from_org,
+                    overrides_indexing_from_org=model.overrides_indexing_from_org,
+                    overrides_retrieval_from_org=model.overrides_retrieval_from_org,
+                    overrides_reranking_from_org=model.overrides_reranking_from_org,
+                    overrides_chat_history_from_org=model.overrides_chat_history_from_org,
                     created_at=model.created_at,
                 )
                 for model in models

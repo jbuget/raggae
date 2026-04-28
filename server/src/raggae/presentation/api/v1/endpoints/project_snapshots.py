@@ -214,4 +214,9 @@ async def restore_project_snapshot(
         reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+        overrides_models_from_org=project_dto.overrides_models_from_org,
+        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
+        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
+        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
+        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
     )

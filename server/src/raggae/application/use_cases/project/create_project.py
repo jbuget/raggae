@@ -20,6 +20,9 @@ from raggae.application.constants import (
     MIN_PROJECT_RETRIEVAL_TOP_K,
 )
 from raggae.application.dto.project_dto import ProjectDTO
+from raggae.application.interfaces.repositories.org_project_defaults_repository import (
+    OrgProjectDefaultsRepository,
+)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
@@ -64,10 +67,12 @@ class CreateProject:
         project_repository: ProjectRepository,
         organization_member_repository: OrganizationMemberRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
+        org_project_defaults_repository: OrgProjectDefaultsRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._organization_member_repository = organization_member_repository
         self._provider_credential_repository = provider_credential_repository
+        self._org_project_defaults_repository = org_project_defaults_repository
         self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
 
     def with_crypto_service(
@@ -198,6 +203,7 @@ class CreateProject:
             if llm_api_key_credential_id is not None and resolved_llm_api_key is not None
             else None
         )
+        org_defaults = None
         if organization_id is not None:
             if self._organization_member_repository is None:
                 raise OrganizationAccessDeniedError("Organization repository is not configured")
@@ -207,6 +213,90 @@ class CreateProject:
             )
             if member is None:
                 raise OrganizationAccessDeniedError("User is not a member of this organization")
+            if self._org_project_defaults_repository is not None:
+                org_defaults = await self._org_project_defaults_repository.find_by_organization_id(
+                    organization_id
+                )
+
+        overrides_models = True
+        overrides_indexing = True
+        overrides_retrieval = True
+        overrides_reranking = True
+        overrides_chat_history = True
+
+        effective_embedding_backend = embedding_backend
+        effective_embedding_model = embedding_model
+        effective_llm_backend = llm_backend
+        effective_llm_model = llm_model
+        effective_chunking_strategy = chunking_strategy or ChunkingStrategy.AUTO
+        effective_parent_child_chunking = parent_child_chunking if parent_child_chunking is not None else True
+        effective_retrieval_strategy = retrieval_strategy or "hybrid"
+        effective_retrieval_top_k = retrieval_top_k or DEFAULT_PROJECT_RETRIEVAL_TOP_K
+        effective_retrieval_min_score = (
+            retrieval_min_score if retrieval_min_score is not None else DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE
+        )
+        effective_reranking_enabled = reranking_enabled if reranking_enabled is not None else False
+        effective_reranker_backend = reranker_backend
+        effective_reranker_model = reranker_model
+        effective_reranker_candidate_multiplier = (
+            reranker_candidate_multiplier
+            if reranker_candidate_multiplier is not None
+            else DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
+        )
+        effective_chat_history_window_size = (
+            chat_history_window_size
+            if chat_history_window_size is not None
+            else DEFAULT_PROJECT_CHAT_HISTORY_WINDOW_SIZE
+        )
+        effective_chat_history_max_chars = (
+            chat_history_max_chars
+            if chat_history_max_chars is not None
+            else DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS
+        )
+
+        if org_defaults is not None:
+            if org_defaults.has_models_defaults():
+                overrides_models = False
+                effective_embedding_backend = org_defaults.embedding_backend
+                effective_embedding_model = org_defaults.embedding_model
+                effective_llm_backend = org_defaults.llm_backend
+                effective_llm_model = org_defaults.llm_model
+            if org_defaults.has_indexing_defaults():
+                overrides_indexing = False
+                if org_defaults.chunking_strategy is not None:
+                    effective_chunking_strategy = ChunkingStrategy(org_defaults.chunking_strategy)
+                if org_defaults.parent_child_chunking is not None:
+                    effective_parent_child_chunking = org_defaults.parent_child_chunking
+            if org_defaults.has_retrieval_defaults():
+                overrides_retrieval = False
+                effective_retrieval_strategy = org_defaults.retrieval_strategy or effective_retrieval_strategy
+                effective_retrieval_top_k = org_defaults.retrieval_top_k or effective_retrieval_top_k
+                effective_retrieval_min_score = (
+                    org_defaults.retrieval_min_score
+                    if org_defaults.retrieval_min_score is not None
+                    else effective_retrieval_min_score
+                )
+            if org_defaults.has_reranking_defaults():
+                overrides_reranking = False
+                effective_reranking_enabled = (
+                    org_defaults.reranking_enabled
+                    if org_defaults.reranking_enabled is not None
+                    else effective_reranking_enabled
+                )
+                effective_reranker_backend = org_defaults.reranker_backend
+                effective_reranker_model = org_defaults.reranker_model
+                effective_reranker_candidate_multiplier = (
+                    org_defaults.reranker_candidate_multiplier or effective_reranker_candidate_multiplier
+                )
+            if org_defaults.has_chat_history_defaults():
+                overrides_chat_history = False
+                effective_chat_history_window_size = (
+                    org_defaults.chat_history_window_size or effective_chat_history_window_size
+                )
+                effective_chat_history_max_chars = (
+                    org_defaults.chat_history_max_chars or effective_chat_history_max_chars
+                )
+
         project = Project(
             id=uuid4(),
             user_id=user_id,
@@ -216,41 +306,30 @@ class CreateProject:
             system_prompt=system_prompt,
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=chunking_strategy or ChunkingStrategy.AUTO,
-            parent_child_chunking=parent_child_chunking if parent_child_chunking is not None else True,
-            embedding_backend=embedding_backend,
-            embedding_model=embedding_model,
+            chunking_strategy=effective_chunking_strategy,
+            parent_child_chunking=effective_parent_child_chunking,
+            embedding_backend=effective_embedding_backend,
+            embedding_model=effective_embedding_model,
             embedding_api_key_encrypted=encrypted_embedding_api_key,
             embedding_api_key_credential_id=effective_embedding_api_key_credential_id,
-            llm_backend=llm_backend,
-            llm_model=llm_model,
+            llm_backend=effective_llm_backend,
+            llm_model=effective_llm_model,
             llm_api_key_encrypted=encrypted_llm_api_key,
             llm_api_key_credential_id=effective_llm_api_key_credential_id,
-            retrieval_strategy=retrieval_strategy or "hybrid",
-            retrieval_top_k=retrieval_top_k or DEFAULT_PROJECT_RETRIEVAL_TOP_K,
-            retrieval_min_score=(
-                retrieval_min_score
-                if retrieval_min_score is not None
-                else DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE
-            ),
-            chat_history_window_size=(
-                chat_history_window_size
-                if chat_history_window_size is not None
-                else DEFAULT_PROJECT_CHAT_HISTORY_WINDOW_SIZE
-            ),
-            chat_history_max_chars=(
-                chat_history_max_chars
-                if chat_history_max_chars is not None
-                else DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS
-            ),
-            reranking_enabled=reranking_enabled if reranking_enabled is not None else False,
-            reranker_backend=reranker_backend,
-            reranker_model=reranker_model,
-            reranker_candidate_multiplier=(
-                reranker_candidate_multiplier
-                if reranker_candidate_multiplier is not None
-                else DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
-            ),
+            retrieval_strategy=effective_retrieval_strategy,
+            retrieval_top_k=effective_retrieval_top_k,
+            retrieval_min_score=effective_retrieval_min_score,
+            chat_history_window_size=effective_chat_history_window_size,
+            chat_history_max_chars=effective_chat_history_max_chars,
+            reranking_enabled=effective_reranking_enabled,
+            reranker_backend=effective_reranker_backend,
+            reranker_model=effective_reranker_model,
+            reranker_candidate_multiplier=effective_reranker_candidate_multiplier,
+            overrides_models_from_org=overrides_models,
+            overrides_indexing_from_org=overrides_indexing,
+            overrides_retrieval_from_org=overrides_retrieval,
+            overrides_reranking_from_org=overrides_reranking,
+            overrides_chat_history_from_org=overrides_chat_history,
         )
 
         await self._project_repository.save(project)

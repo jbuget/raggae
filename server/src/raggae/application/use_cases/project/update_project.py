@@ -120,6 +120,11 @@ class UpdateProject:
         reranker_backend: str | None = None,
         reranker_model: str | None = None,
         reranker_candidate_multiplier: int | None = None,
+        overrides_models_from_org: bool | None = None,
+        overrides_indexing_from_org: bool | None = None,
+        overrides_retrieval_from_org: bool | None = None,
+        overrides_reranking_from_org: bool | None = None,
+        overrides_chat_history_from_org: bool | None = None,
     ) -> ProjectDTO:
         if system_prompt is not None and len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
@@ -313,6 +318,31 @@ class UpdateProject:
                 project.reranker_candidate_multiplier
                 if reranker_candidate_multiplier is None
                 else reranker_candidate_multiplier
+            ),
+            overrides_models_from_org=(
+                project.overrides_models_from_org
+                if overrides_models_from_org is None
+                else overrides_models_from_org
+            ),
+            overrides_indexing_from_org=(
+                project.overrides_indexing_from_org
+                if overrides_indexing_from_org is None
+                else overrides_indexing_from_org
+            ),
+            overrides_retrieval_from_org=(
+                project.overrides_retrieval_from_org
+                if overrides_retrieval_from_org is None
+                else overrides_retrieval_from_org
+            ),
+            overrides_reranking_from_org=(
+                project.overrides_reranking_from_org
+                if overrides_reranking_from_org is None
+                else overrides_reranking_from_org
+            ),
+            overrides_chat_history_from_org=(
+                project.overrides_chat_history_from_org
+                if overrides_chat_history_from_org is None
+                else overrides_chat_history_from_org
             ),
         )
         await self._project_repository.save(updated_project)

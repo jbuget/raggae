@@ -12,6 +12,9 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 )
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
+from raggae.application.use_cases.organization.get_org_project_defaults import (
+    GetOrganizationProjectDefaults,
+)
 from raggae.application.use_cases.organization.get_organization import GetOrganization
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
@@ -43,6 +46,9 @@ from raggae.application.use_cases.organization.update_organization import Update
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
 )
+from raggae.application.use_cases.organization.upsert_org_project_defaults import (
+    UpsertOrganizationProjectDefaults,
+)
 from raggae.domain.exceptions.organization_exceptions import (
     LastOrganizationOwnerError,
     OrganizationAccessDeniedError,
@@ -55,6 +61,7 @@ from raggae.presentation.api.dependencies import (
     get_create_organization_use_case,
     get_current_user_id,
     get_delete_organization_use_case,
+    get_get_org_project_defaults_use_case,
     get_get_organization_use_case,
     get_invite_organization_member_use_case,
     get_leave_organization_use_case,
@@ -68,6 +75,7 @@ from raggae.presentation.api.dependencies import (
     get_revoke_organization_invitation_use_case,
     get_update_organization_member_role_use_case,
     get_update_organization_use_case,
+    get_upsert_org_project_defaults_use_case,
 )
 from raggae.presentation.api.v1.schemas.organization_schemas import (
     AcceptOrganizationInvitationRequest,
@@ -75,9 +83,11 @@ from raggae.presentation.api.v1.schemas.organization_schemas import (
     InviteOrganizationMemberRequest,
     OrganizationInvitationResponse,
     OrganizationMemberResponse,
+    OrganizationProjectDefaultsResponse,
     OrganizationResponse,
     UpdateOrganizationMemberRoleRequest,
     UpdateOrganizationRequest,
+    UpsertOrganizationProjectDefaultsRequest,
     UserPendingOrganizationInvitationResponse,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import ProjectResponse
@@ -243,6 +253,11 @@ async def list_organization_projects(
             reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
             reranker_model=p.reranker_model,
             reranker_candidate_multiplier=p.reranker_candidate_multiplier,
+            overrides_models_from_org=p.overrides_models_from_org,
+            overrides_indexing_from_org=p.overrides_indexing_from_org,
+            overrides_retrieval_from_org=p.overrides_retrieval_from_org,
+            overrides_reranking_from_org=p.overrides_reranking_from_org,
+            overrides_chat_history_from_org=p.overrides_chat_history_from_org,
         )
         for p in projects
     ]
@@ -477,6 +492,47 @@ async def list_user_pending_organization_invitations(
 ) -> list[UserPendingOrganizationInvitationResponse]:
     invitations = await use_case.execute(user_id=user_id)
     return [UserPendingOrganizationInvitationResponse(**invitation.__dict__) for invitation in invitations]
+
+
+@router.get("/{organization_id}/project-defaults", dependencies=[Depends(get_current_user_id)])
+async def get_organization_project_defaults(
+    organization_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[GetOrganizationProjectDefaults, Depends(get_get_org_project_defaults_use_case)],
+) -> OrganizationProjectDefaultsResponse | None:
+    try:
+        result = await use_case.execute(organization_id=organization_id, user_id=user_id)
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    if result is None:
+        return None
+    return OrganizationProjectDefaultsResponse(**result.__dict__)
+
+
+@router.put("/{organization_id}/project-defaults", dependencies=[Depends(get_current_user_id)])
+async def upsert_organization_project_defaults(
+    organization_id: UUID,
+    data: UpsertOrganizationProjectDefaultsRequest,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[UpsertOrganizationProjectDefaults, Depends(get_upsert_org_project_defaults_use_case)],
+) -> OrganizationProjectDefaultsResponse:
+    try:
+        result = await use_case.execute(
+            organization_id=organization_id,
+            user_id=user_id,
+            **data.model_dump(),
+        )
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_project_defaults_upserted",
+        extra={"organization_id": str(organization_id), "user_id": str(user_id)},
+    )
+    return OrganizationProjectDefaultsResponse(**result.__dict__)
 
 
 @router.post(
