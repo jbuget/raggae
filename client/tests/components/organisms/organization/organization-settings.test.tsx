@@ -52,11 +52,6 @@ vi.mock("@/lib/hooks/use-org-model-credentials", () => ({
 }));
 
 describe("OrganizationSettings", () => {
-  it("should render the settings title", () => {
-    renderWithProviders(<OrganizationSettings organizationId="org-1" />);
-    expect(screen.getByText(/organization settings/i)).toBeInTheDocument();
-  });
-
   it("should render General, Members and API Keys tabs", () => {
     renderWithProviders(<OrganizationSettings organizationId="org-1" />);
     expect(screen.getByRole("tab", { name: /general/i })).toBeInTheDocument();

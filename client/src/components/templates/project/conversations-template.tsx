@@ -6,19 +6,18 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { PageTemplate } from "@/components/templates/page-template";
 import { ConversationList } from "@/components/organisms/project/conversation-list";
-import { useProject } from "@/lib/hooks/use-projects";
+import { ProjectName } from "@/components/organisms/project/project-name";
 
 type ConversationsTemplateProps = {
   projectId: string;
 };
 
 export function ConversationsTemplate({ projectId }: ConversationsTemplateProps) {
-  const { data: project } = useProject(projectId);
   const t = useTranslations("conversations");
 
   return (
     <PageTemplate
-      title={project?.name ?? ""}
+      title={<ProjectName projectId={projectId} />}
       description={t("title")}
       actions={
         <Button asChild>
