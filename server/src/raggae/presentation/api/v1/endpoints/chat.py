@@ -22,7 +22,7 @@ from raggae.domain.exceptions.conversation_exceptions import (
     ConversationAccessDeniedError,
     ConversationNotFoundError,
 )
-from raggae.domain.exceptions.document_exceptions import LLMGenerationError
+from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError, LLMGenerationError
 from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
@@ -251,8 +251,15 @@ async def stream_message(
             yield f"data: {json.dumps({'error': 'Project reindex already in progress', 'done': True})}\n\n"
         except ConversationNotFoundError:
             yield f"data: {json.dumps({'error': 'Conversation not found', 'done': True})}\n\n"
+        except EmbeddingGenerationError as exc:
+            logger.exception("embedding_error_in_stream", extra={"project_id": str(project_id)})
+            yield f"data: {json.dumps({'error': f'Embedding error: {exc}', 'done': True})}\n\n"
         except LLMGenerationError as exc:
             yield f"data: {json.dumps({'error': str(exc), 'done': True})}\n\n"
+        except Exception as exc:
+            logger.exception("unexpected_error_in_stream", extra={"project_id": str(project_id)})
+            err_name = type(exc).__name__
+            yield f"data: {json.dumps({'error': f'Unexpected error: {err_name}', 'done': True})}\n\n"
         finally:
             producer.cancel()
 
