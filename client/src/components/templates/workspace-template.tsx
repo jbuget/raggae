@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 type BreadcrumbItem = {
-  label: string;
+  label: ReactNode;
   href?: string;
 };
 

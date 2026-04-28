@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PageTemplate } from "@/components/templates/page-template";
 import { ProjectGeneralPanel } from "@/components/organisms/project/settings/project-general-panel";
 import { ProjectInstructionsPanel } from "@/components/organisms/project/settings/project-instructions-panel";
 import { ProjectKnowledgePanel } from "@/components/organisms/project/settings/project-knowledge-panel";
 import { ProjectAdvancedPanel } from "@/components/organisms/project/settings/project-advanced-panel";
-import { useProject } from "@/lib/hooks/use-projects";
+import { ProjectName } from "@/components/organisms/project/project-name";
 
 const SETTINGS_TABS = ["General", "Instructions", "Knowledge", "Advanced"] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
@@ -22,8 +21,6 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
   const t = useTranslations("projects.settings");
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const { data: project, isLoading } = useProject(projectId);
 
   const tabFromUrl = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<SettingsTab>(
@@ -44,27 +41,8 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
     router.replace(`?${next.toString()}`, { scroll: false });
   }
 
-  if (isLoading) {
-    return (
-      <PageTemplate title="">
-        <div className="w-full space-y-4">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </PageTemplate>
-    );
-  }
-
-  if (!project) {
-    return (
-      <PageTemplate title="">
-        <div className="text-center text-muted-foreground">{t("notFound")}</div>
-      </PageTemplate>
-    );
-  }
-
   return (
-    <PageTemplate title={project.name}>
+    <PageTemplate title={<ProjectName projectId={projectId} />}>
       <div className="w-full space-y-8">
         <div
           role="tablist"
