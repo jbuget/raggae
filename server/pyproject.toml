@@ -32,8 +32,8 @@ dependencies = [
     "scikit-learn>=1.5.0",
     "msal>=1.30.0",
     "itsdangerous>=2.1.0",
-    "openpyxl>=3.1",
-    "xlrd>=2.0",
+    "openpyxl>=3.1",  # XLSX support (xlrd 2.x dropped XLSX support)
+    "xlrd>=2.0",      # XLS (legacy binary) support only — do NOT use for XLSX
 ]
 
 [project.optional-dependencies]

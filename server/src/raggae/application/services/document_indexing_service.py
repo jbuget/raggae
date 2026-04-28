@@ -38,9 +38,9 @@ from raggae.domain.entities.document_chunk import DocumentChunk
 from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunk_level import ChunkLevel
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.tabular_extensions import TABULAR_EXTENSIONS
 
 _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
-TABULAR_EXTENSIONS = frozenset({"csv", "xlsx", "xls"})
 logger = logging.getLogger(__name__)
 
 

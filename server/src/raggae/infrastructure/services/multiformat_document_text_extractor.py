@@ -1,8 +1,8 @@
 import logging
 from io import BytesIO
 
-from raggae.application.services.document_indexing_service import TABULAR_EXTENSIONS
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
+from raggae.domain.value_objects.tabular_extensions import TABULAR_EXTENSIONS
 from raggae.infrastructure.services.tabular_document_text_extractor import (
     TabularDocumentTextExtractor,
 )

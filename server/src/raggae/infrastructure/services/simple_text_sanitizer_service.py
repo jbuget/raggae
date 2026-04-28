@@ -6,6 +6,7 @@ class SimpleTextSanitizerService:
 
     async def sanitize_text(self, text: str) -> str:
         normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\xa0", " ")
+        # Strip C1 control characters (U+0080–U+009F) that sometimes appear in XLSX exports.
         without_controls = "".join(
             char
             for char in normalized

@@ -114,6 +114,8 @@ class TabularDocumentTextExtractor:
 
     def _rows_to_structured_text(self, rows: list[list[str]], sheet_name: str | None) -> str:
         non_empty = [row for row in rows if any(v.strip() for v in row if v is not None)]
+        # Requires at least a header row + one data row; files without a header
+        # row are not supported and would silently treat the first data row as headers.
         if len(non_empty) < 2:
             return ""
 
