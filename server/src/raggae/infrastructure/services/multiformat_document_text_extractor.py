@@ -1,13 +1,28 @@
+from __future__ import annotations
+
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
 
+if TYPE_CHECKING:
+    from raggae.infrastructure.services.standalone_image_document_text_extractor import (
+        StandaloneImageDocumentTextExtractor,
+    )
+
+_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "tiff", "tif", "gif"}
+
 
 class MultiFormatDocumentTextExtractor:
-    """Extract text from txt/md/pdf/docx files with basic normalization."""
+    """Extract text from txt/md/pdf/docx/pptx/image files with basic normalization."""
+
+    def __init__(
+        self,
+        standalone_image_extractor: StandaloneImageDocumentTextExtractor | None = None,
+    ) -> None:
+        self._standalone_image_extractor = standalone_image_extractor
 
     async def extract_text(self, file_name: str, content: bytes, content_type: str) -> str:
-        _ = content_type
         extension = file_name.rsplit(".", maxsplit=1)[-1].lower() if "." in file_name else ""
 
         if extension in {"txt", "md"}:
@@ -18,6 +33,8 @@ class MultiFormatDocumentTextExtractor:
             text = self._extract_docx(content)
         elif extension == "doc":
             raise DocumentExtractionError("DOC extraction is not supported in sync mode yet. Use DOCX.")
+        elif extension in _IMAGE_EXTENSIONS:
+            text = await self._extract_standalone_image(content, content_type)
         else:
             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
 
@@ -25,6 +42,18 @@ class MultiFormatDocumentTextExtractor:
         if not normalized:
             raise DocumentExtractionError("No extractable text found in document")
         return normalized
+
+    async def _extract_standalone_image(self, content: bytes, content_type: str) -> str:
+        if self._standalone_image_extractor is None:
+            raise DocumentExtractionError(
+                "No vision service configured; standalone image indexing is unavailable."
+            )
+        result = await self._standalone_image_extractor.extract(content, content_type)
+        if not result:
+            raise DocumentExtractionError(
+                "Vision is not available for this project; image cannot be indexed."
+            )
+        return result
 
     def _decode_text(self, content: bytes) -> str:
         try:

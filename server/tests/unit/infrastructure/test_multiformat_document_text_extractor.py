@@ -161,3 +161,57 @@ class TestMultiFormatDocumentTextExtractor:
                 content=b"binary",
                 content_type="application/octet-stream",
             )
+
+    async def test_extract_png_delegates_to_standalone_extractor(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given
+        from unittest.mock import AsyncMock
+
+        mock_standalone = AsyncMock()
+        mock_standalone.extract.return_value = "[IMAGE]\n\nUne capture d'écran d'un tableau de bord."
+        extractor = MultiFormatDocumentTextExtractor(standalone_image_extractor=mock_standalone)
+
+        # When
+        result = await extractor.extract_text(
+            file_name="screenshot.png",
+            content=b"\x89PNG",
+            content_type="image/png",
+        )
+
+        # Then
+        assert "[IMAGE]" in result
+        assert "tableau de bord" in result
+        mock_standalone.extract.assert_called_once_with(b"\x89PNG", "image/png")
+
+    async def test_extract_image_no_vision_raises_extraction_error(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given: standalone extractor returns empty string (no vision)
+        from unittest.mock import AsyncMock
+
+        mock_standalone = AsyncMock()
+        mock_standalone.extract.return_value = ""
+        extractor = MultiFormatDocumentTextExtractor(standalone_image_extractor=mock_standalone)
+
+        # When / Then
+        with pytest.raises(DocumentExtractionError):
+            await extractor.extract_text(
+                file_name="photo.jpg",
+                content=b"\xff\xd8\xff",
+                content_type="image/jpeg",
+            )
+
+    async def test_extract_image_without_standalone_extractor_raises_error(self) -> None:
+        # Given: no standalone extractor injected
+        extractor = MultiFormatDocumentTextExtractor()
+
+        # When / Then
+        with pytest.raises(DocumentExtractionError):
+            await extractor.extract_text(
+                file_name="photo.jpg",
+                content=b"\xff\xd8\xff",
+                content_type="image/jpeg",
+            )
