@@ -162,6 +162,7 @@
         "history": "Versions"
       },
       "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
+      "overrideOrgDefaults": "Surcharger les valeurs par défaut de l'organisation",
       "saveChanges": "Enregistrer",
       "updateSuccess": "Projet mis à jour",
       "updateError": "Erreur lors de la mise à jour du projet",
@@ -372,6 +373,7 @@
       "tabGeneral": "Général",
       "tabMembers": "Membres",
       "tabApiKeys": "Clés API",
+      "tabProjects": "Projets",
       "dangerZone": "Zone dangereuse",
       "dangerDescription": "Supprimez cette organisation et toutes les données associées.",
       "deleteOrg": "Supprimer l'organisation",
@@ -427,6 +429,12 @@
       "providerLabel": "Fournisseur",
       "apiKeyLabel": "Clé API",
       "saveKey": "Enregistrer la clé"
+    },
+    "projectDefaults": {
+      "title": "Paramètres par défaut des projets",
+      "description": "Ces valeurs sont automatiquement appliquées lors de la création d'un nouveau projet dans cette organisation. Chaque projet peut les surcharger individuellement.",
+      "saveSuccess": "Paramètres par défaut enregistrés",
+      "saveError": "Erreur lors de l'enregistrement des paramètres par défaut"
     }
   },
   "invitations": {

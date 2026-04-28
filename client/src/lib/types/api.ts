@@ -105,6 +105,11 @@ export interface UpdateProjectRequest {
   reranker_backend?: ProjectRerankerBackend | null;
   reranker_model?: string | null;
   reranker_candidate_multiplier?: number | null;
+  overrides_models_from_org?: boolean;
+  overrides_indexing_from_org?: boolean;
+  overrides_retrieval_from_org?: boolean;
+  overrides_reranking_from_org?: boolean;
+  overrides_chat_history_from_org?: boolean;
 }
 
 export interface ProjectResponse {
@@ -140,6 +145,11 @@ export interface ProjectResponse {
   reranker_backend?: ProjectRerankerBackend | null;
   reranker_model?: string | null;
   reranker_candidate_multiplier: number;
+  overrides_models_from_org: boolean;
+  overrides_indexing_from_org: boolean;
+  overrides_retrieval_from_org: boolean;
+  overrides_reranking_from_org: boolean;
+  overrides_chat_history_from_org: boolean;
 }
 
 export interface ReindexProjectResponse {
@@ -222,6 +232,47 @@ export interface UserPendingOrganizationInvitationResponse {
 
 export interface AcceptOrganizationInvitationRequest {
   token: string;
+}
+
+export interface OrganizationProjectDefaultsResponse {
+  organization_id: string;
+  embedding_backend?: string | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: string | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: string | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: string | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: string | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+}
+
+export interface UpsertOrganizationProjectDefaultsRequest {
+  embedding_backend?: string | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: string | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: string | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: string | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: string | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
 }
 
 // Documents

@@ -22,6 +22,7 @@ import { useDeleteProject, useProject, useReindexProject, useUpdateProject } fro
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
 import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
+import { useOrganizationProjectDefaults } from "@/lib/hooks/use-org-project-defaults";
 import type {
   ChunkingStrategy,
   ModelProvider,
@@ -45,6 +46,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const { data: modelCatalog } = useModelCatalog();
   const { data: userCredentials } = useModelCredentials();
   const { data: orgCredentials } = useOrgModelCredentials(project?.organization_id);
+  const { data: orgDefaults } = useOrganizationProjectDefaults(project?.organization_id);
   const credentials = project?.organization_id ? orgCredentials : userCredentials;
 
   // Indexation state
@@ -81,6 +83,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   if (!project) return null;
 
   const isProjectReindexing = project.reindex_status === "in_progress";
+
+  // Org override helpers
+  const inOrg = !!project.organization_id;
+  const orgHasModels = inOrg && orgDefaults != null && (orgDefaults.embedding_backend != null || orgDefaults.llm_backend != null);
+  const orgHasIndexing = inOrg && orgDefaults != null && (orgDefaults.chunking_strategy != null || orgDefaults.parent_child_chunking != null);
+  const orgHasRetrieval = inOrg && orgDefaults != null && (orgDefaults.retrieval_strategy != null || orgDefaults.retrieval_top_k != null || orgDefaults.retrieval_min_score != null);
+  const orgHasReranking = inOrg && orgDefaults != null && (orgDefaults.reranking_enabled != null || orgDefaults.reranker_backend != null);
+  const orgHasChatHistory = inOrg && orgDefaults != null && (orgDefaults.chat_history_window_size != null || orgDefaults.chat_history_max_chars != null);
+
+  function handleToggleOverride(flag: string, currentValue: boolean) {
+    updateProject.mutate(
+      { [flag]: !currentValue },
+      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+    );
+  }
 
   // --- Indexation computed values ---
   const effectiveChunkingStrategy = chunkingStrategy ?? project.chunking_strategy;
@@ -178,6 +195,17 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
       {/* Models */}
       <div className="space-y-4">
+        {orgHasModels && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+            <Switch
+              id="overrides-models"
+              checked={project.overrides_models_from_org}
+              onCheckedChange={() => handleToggleOverride("overrides_models_from_org", project.overrides_models_from_org)}
+              disabled={updateProject.isPending}
+            />
+            <Label htmlFor="overrides-models" className="text-sm">{t("overrideOrgDefaults")}</Label>
+          </div>
+        )}
         <h2 className="text-base font-semibold tracking-tight">{t("models.embeddingTitle")}</h2>
         <p className="text-sm text-muted-foreground">{t("models.embeddingDescription")}</p>
         <div className="space-y-2">
@@ -274,6 +302,17 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
       {/* Indexation */}
       <div className="space-y-4">
+        {orgHasIndexing && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+            <Switch
+              id="overrides-indexing"
+              checked={project.overrides_indexing_from_org}
+              onCheckedChange={() => handleToggleOverride("overrides_indexing_from_org", project.overrides_indexing_from_org)}
+              disabled={updateProject.isPending}
+            />
+            <Label htmlFor="overrides-indexing" className="text-sm">{t("overrideOrgDefaults")}</Label>
+          </div>
+        )}
         <h2 className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</h2>
 
         {isProjectReindexing && (
@@ -350,6 +389,17 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
       {/* Retrieval */}
       <div className="space-y-4">
+        {orgHasRetrieval && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+            <Switch
+              id="overrides-retrieval"
+              checked={project.overrides_retrieval_from_org}
+              onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_org", project.overrides_retrieval_from_org)}
+              disabled={updateProject.isPending}
+            />
+            <Label htmlFor="overrides-retrieval" className="text-sm">{t("overrideOrgDefaults")}</Label>
+          </div>
+        )}
         <h2 className="text-base font-semibold tracking-tight">{t("contextRetrieval.title")}</h2>
         <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
         <div className="space-y-2">
@@ -391,6 +441,17 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
       {/* Augmentation */}
       <div className="space-y-4">
+        {orgHasReranking && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+            <Switch
+              id="overrides-reranking"
+              checked={project.overrides_reranking_from_org}
+              onCheckedChange={() => handleToggleOverride("overrides_reranking_from_org", project.overrides_reranking_from_org)}
+              disabled={updateProject.isPending}
+            />
+            <Label htmlFor="overrides-reranking" className="text-sm">{t("overrideOrgDefaults")}</Label>
+          </div>
+        )}
         <h2 className="text-base font-semibold tracking-tight">{t("contextAugmentation.title")}</h2>
         <div className="flex items-center gap-2">
           <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
@@ -444,6 +505,17 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
       {/* Chat history */}
       <div className="space-y-4">
+        {orgHasChatHistory && (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+            <Switch
+              id="overrides-chat-history"
+              checked={project.overrides_chat_history_from_org}
+              onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_org", project.overrides_chat_history_from_org)}
+              disabled={updateProject.isPending}
+            />
+            <Label htmlFor="overrides-chat-history" className="text-sm">{t("overrideOrgDefaults")}</Label>
+          </div>
+        )}
         <h2 className="text-base font-semibold tracking-tight">{t("answerGeneration.historyTitle")}</h2>
         <div className="space-y-2">
           <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
