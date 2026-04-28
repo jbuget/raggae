@@ -1,6 +1,7 @@
 import type {
   ConversationDetailResponse,
   ConversationResponse,
+  FavoriteConversationResponse,
   MessageResponse,
   SendMessageRequest,
   SendMessageResponse,
@@ -161,6 +162,28 @@ export function listMessages(
 ): Promise<MessageResponse[]> {
   return apiFetch<MessageResponse[]>(
     `/projects/${projectId}/chat/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`,
+    { token },
+  );
+}
+
+export function toggleFavoriteConversation(
+  token: string,
+  projectId: string,
+  conversationId: string,
+): Promise<ConversationResponse> {
+  return apiFetch<ConversationResponse>(
+    `/projects/${projectId}/chat/conversations/${conversationId}/favorite`,
+    { method: "PATCH", token },
+  );
+}
+
+export function listFavoriteConversations(
+  token: string,
+  limit = 50,
+  offset = 0,
+): Promise<FavoriteConversationResponse[]> {
+  return apiFetch<FavoriteConversationResponse[]>(
+    `/users/me/conversations/favorites?limit=${limit}&offset=${offset}`,
     { token },
   );
 }

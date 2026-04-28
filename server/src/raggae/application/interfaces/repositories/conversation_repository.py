@@ -1,6 +1,7 @@
 from typing import Protocol
 from uuid import UUID
 
+from raggae.application.dto.favorite_conversation_dto import FavoriteConversationResult
 from raggae.domain.entities.conversation import Conversation
 
 
@@ -24,3 +25,12 @@ class ConversationRepository(Protocol):
     async def delete(self, conversation_id: UUID) -> None: ...
 
     async def update_title(self, conversation_id: UUID, title: str) -> None: ...
+
+    async def toggle_favorite(self, conversation_id: UUID) -> Conversation: ...
+
+    async def find_favorites_by_user(
+        self,
+        user_id: UUID,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[FavoriteConversationResult]: ...

@@ -317,11 +317,16 @@ export interface ConversationResponse {
   user_id: string;
   created_at: string;
   title: string | null;
+  is_favorite: boolean;
 }
 
 export interface ConversationDetailResponse extends ConversationResponse {
   message_count: number;
   last_message: MessageResponse | null;
+}
+
+export interface FavoriteConversationResponse extends ConversationResponse {
+  project_name: string;
 }
 
 // Streaming SSE events

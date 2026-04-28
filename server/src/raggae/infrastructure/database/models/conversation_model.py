@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,3 +26,13 @@ class ConversationModel(Base):
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_favorite: Mapped[bool] = mapped_column(Boolean(), nullable=False, server_default="false")
+
+    __table_args__ = (
+        Index(
+            "ix_conversations_user_favorite",
+            "user_id",
+            "is_favorite",
+            postgresql_where=text("is_favorite = true"),
+        ),
+    )

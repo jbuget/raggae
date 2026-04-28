@@ -491,7 +491,11 @@
       "renameDescription": "Saisissez un nouveau nom pour cette conversation.",
       "renamePlaceholder": "Nom de la conversation",
       "deleteTitle": "Supprimer la conversation",
-      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?"
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?",
+      "favorites": "Mes favoris",
+      "noFavorites": "Aucun favori pour le moment",
+      "addToFavorites": "Ajouter aux favoris",
+      "removeFromFavorites": "Retirer des favoris"
     }
   },
   "documents": {

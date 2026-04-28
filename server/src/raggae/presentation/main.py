@@ -25,6 +25,7 @@ from raggae.presentation.api.v1.endpoints.project_snapshots import (
 )
 from raggae.presentation.api.v1.endpoints.projects import router as projects_router
 from raggae.presentation.api.v1.endpoints.stats import router as stats_router
+from raggae.presentation.api.v1.endpoints.users import router as users_router
 
 logging.getLogger("raggae").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -80,6 +81,7 @@ app.include_router(model_catalog_router, prefix="/api/v1")
 app.include_router(model_credentials_router, prefix="/api/v1")
 app.include_router(org_model_credentials_router, prefix="/api/v1")
 app.include_router(stats_router, prefix="/api/v1")
+app.include_router(users_router, prefix="/api/v1")
 
 
 @app.get("/health")

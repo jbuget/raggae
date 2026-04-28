@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,9 +21,16 @@ interface ConversationItemProps {
   projectId: string;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onToggleFavorite: (id: string) => void;
 }
 
-export function ConversationItem({ conversation, projectId, onDelete, onRename }: ConversationItemProps) {
+export function ConversationItem({
+  conversation,
+  projectId,
+  onDelete,
+  onRename,
+  onToggleFavorite,
+}: ConversationItemProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const isActive = useConversationActive(conversation.id);
@@ -52,6 +59,13 @@ export function ConversationItem({ conversation, projectId, onDelete, onRename }
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               className="cursor-pointer gap-2"
+              onSelect={() => onToggleFavorite(conversation.id)}
+            >
+              <Star className={cn("h-4 w-4", conversation.is_favorite && "fill-current")} />
+              {conversation.is_favorite ? t("removeFromFavorites") : t("addToFavorites")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer gap-2"
               onSelect={() => setRenameDialogOpen(true)}
             >
               <Pencil className="h-4 w-4" />
@@ -61,7 +75,7 @@ export function ConversationItem({ conversation, projectId, onDelete, onRename }
               className="cursor-pointer gap-2 text-destructive focus:text-destructive"
               onSelect={() => setDeleteDialogOpen(true)}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-destructive" />
               {t("deleteTitle")}
             </DropdownMenuItem>
           </DropdownMenuContent>

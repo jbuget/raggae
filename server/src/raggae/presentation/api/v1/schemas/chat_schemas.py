@@ -52,6 +52,7 @@ class ConversationResponse(BaseModel):
     user_id: UUID
     created_at: datetime
     title: str | None
+    is_favorite: bool
 
 
 class ConversationDetailResponse(BaseModel):
@@ -60,8 +61,13 @@ class ConversationDetailResponse(BaseModel):
     user_id: UUID
     created_at: datetime
     title: str | None
+    is_favorite: bool
     message_count: int
     last_message: MessageResponse | None
+
+
+class FavoriteConversationResponse(ConversationResponse):
+    project_name: str
 
 
 class UpdateConversationRequest(BaseModel):

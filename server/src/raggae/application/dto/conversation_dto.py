@@ -12,6 +12,7 @@ class ConversationDTO:
     user_id: UUID
     created_at: datetime
     title: str | None
+    is_favorite: bool = False
 
     @classmethod
     def from_entity(cls, conversation: Conversation) -> "ConversationDTO":
@@ -21,4 +22,5 @@ class ConversationDTO:
             user_id=conversation.user_id,
             created_at=conversation.created_at,
             title=conversation.title,
+            is_favorite=conversation.is_favorite,
         )
