@@ -686,6 +686,7 @@ def get_list_projects_use_case() -> ListProjects:
 def get_list_accessible_projects_use_case() -> ListAccessibleProjects:
     return ListAccessibleProjects(
         organization_member_repository=_organization_member_repository,
+        organization_repository=_organization_repository,
         project_repository=_project_repository,
     )
 

@@ -2,9 +2,12 @@ from uuid import UUID
 
 from raggae.application.dto.accessible_projects_dto import AccessibleProjectsDTO, OrganizationSectionDTO
 from raggae.application.dto.project_dto import ProjectDTO
-from raggae.application.interfaces.repositories.organization_member_repository import OrganizationMemberRepository
+from raggae.application.interfaces.repositories.organization_member_repository import (
+    OrganizationMemberRepository,
+)
 from raggae.application.interfaces.repositories.organization_repository import OrganizationRepository
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 
@@ -34,7 +37,7 @@ class ListAccessibleProjects:
         org_ids = [m.organization_id for m in memberships]
         all_org_projects = await self._project_repository.find_by_organization_ids(org_ids)
 
-        projects_by_org: dict[UUID, list] = {org_id: [] for org_id in org_ids}
+        projects_by_org: dict[UUID, list[Project]] = {org_id: [] for org_id in org_ids}
         for project in all_org_projects:
             if project.organization_id in projects_by_org:
                 projects_by_org[project.organization_id].append(project)
