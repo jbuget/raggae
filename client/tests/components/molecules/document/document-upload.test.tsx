@@ -27,7 +27,7 @@ describe("DocumentUpload", () => {
   it("should render the drop zone with supported formats hint", () => {
     renderWithProviders(<DocumentUpload onUpload={vi.fn()} isUploading={false} />);
     expect(screen.getByText(/drag and drop a file here/i)).toBeInTheDocument();
-    expect(screen.getByText(/\.pdf, \.docx, \.txt, \.md/i)).toBeInTheDocument();
+    expect(screen.getByText(/\.pdf, \.docx, \.pptx, \.txt, \.md/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /select files/i })).toBeInTheDocument();
   });
 
