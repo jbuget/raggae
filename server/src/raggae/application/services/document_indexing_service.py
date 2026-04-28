@@ -40,7 +40,7 @@ from raggae.domain.value_objects.chunk_level import ChunkLevel
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
-_TABULAR_EXTENSIONS = frozenset({"csv", "xlsx", "xls"})
+TABULAR_EXTENSIONS = frozenset({"csv", "xlsx", "xls"})
 logger = logging.getLogger(__name__)
 
 
@@ -177,7 +177,7 @@ class DocumentIndexingService:
         extension = (
             document.file_name.rsplit(".", maxsplit=1)[-1].lower() if "." in document.file_name else ""
         )
-        if extension in _TABULAR_EXTENSIONS:
+        if extension in TABULAR_EXTENSIONS:
             strategy = ChunkingStrategy.TABULAR
             return replace(document, processing_strategy=strategy), sanitized_text, strategy
 

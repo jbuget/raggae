@@ -518,7 +518,6 @@ elif settings.text_chunker_backend == "native":
         heading_section_chunker=_heading_section_chunker,
         semantic_chunker=_semantic_chunker,
         context_window_size=settings.chunk_overlap,
-        tabular_chunker=_tabular_chunker,
     )
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")

@@ -1,12 +1,11 @@
 import logging
 from io import BytesIO
 
+from raggae.application.services.document_indexing_service import TABULAR_EXTENSIONS
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
 from raggae.infrastructure.services.tabular_document_text_extractor import (
     TabularDocumentTextExtractor,
 )
-
-_TABULAR_EXTENSIONS = frozenset({"csv", "xlsx", "xls"})
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class MultiFormatDocumentTextExtractor:
             raise DocumentExtractionError(
                 "PPT (legacy binary format) is not supported. Convert to PPTX first."
             )
-        elif extension in _TABULAR_EXTENSIONS:
+        elif extension in TABULAR_EXTENSIONS:
             return await self._tabular_extractor.extract_text(file_name, content, content_type)
         else:
             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
@@ -131,6 +130,9 @@ class MultiFormatDocumentTextExtractor:
             raise DocumentExtractionError(f"Failed to extract PPTX text: {exc}") from exc
 
     def _table_to_markdown(self, table: object) -> list[str]:
+        # Intentionally uses Markdown format: DOCX is not auto-routed to TABULAR
+        # strategy, so tables land in paragraph/fixed-window chunkers that handle
+        # prose-mixed content — not in TabularTextChunkerService.
         from docx.table import Table as DocxTable
 
         if not isinstance(table, DocxTable):
