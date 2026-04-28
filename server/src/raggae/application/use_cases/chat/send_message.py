@@ -186,10 +186,15 @@ class SendMessage:
                 history_messages_used=0,
                 chunks_used=0,
             )
+        retrieval_query = await self._build_retrieval_query(
+            conversation_id=conversation.id,
+            current_message=message,
+            current_user_message_id=current_user_message_id,
+        )
         retrieval_result = await self._query_relevant_chunks_use_case.execute(
             project_id=project_id,
             user_id=user_id,
-            query=message,
+            query=retrieval_query,
             limit=effective_limit,
             offset=offset,
             strategy=effective_retrieval_strategy,
@@ -396,10 +401,15 @@ class SendMessage:
                 chunks_used=0,
             )
             return
+        retrieval_query = await self._build_retrieval_query(
+            conversation_id=conversation.id,
+            current_message=message,
+            current_user_message_id=current_user_message_id,
+        )
         retrieval_result = await self._query_relevant_chunks_use_case.execute(
             project_id=project_id,
             user_id=user_id,
-            query=message,
+            query=retrieval_query,
             limit=effective_limit,
             offset=offset,
             strategy=effective_retrieval_strategy,
@@ -648,6 +658,39 @@ class SendMessage:
         if latest_message is not None and latest_message.role == "user" and latest_message.content == message:
             return latest, True
         return latest, False
+
+    async def _build_retrieval_query(
+        self,
+        conversation_id: UUID,
+        current_message: str,
+        current_user_message_id: UUID | None,
+        context_chars: int = 300,
+    ) -> str:
+        """Return a retrieval query enriched with the last user message for context.
+
+        For follow-up questions that lack explicit keywords (e.g. "can you detail it?"),
+        prepending the previous user message gives the retrieval enough signal to find
+        the right chunks.
+        """
+        total = await self._message_repository.count_by_conversation_id(conversation_id)
+        if total == 0:
+            return current_message
+        window = 4
+        offset = max(0, total - window)
+        messages = await self._message_repository.find_by_conversation_id(
+            conversation_id=conversation_id,
+            limit=window,
+            offset=offset,
+        )
+        previous_user_messages = [
+            m.content
+            for m in messages
+            if m.role == "user" and (current_user_message_id is None or m.id != current_user_message_id)
+        ]
+        if not previous_user_messages:
+            return current_message
+        last_user_context = previous_user_messages[-1][:context_chars]
+        return f"{last_user_context} {current_message}"
 
     async def _build_conversation_history(
         self,
