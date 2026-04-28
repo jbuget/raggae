@@ -21,5 +21,9 @@ class InMemoryProjectRepository:
     async def find_by_organization_id(self, organization_id: UUID) -> list[Project]:
         return [p for p in self._projects.values() if p.organization_id == organization_id]
 
+    async def find_by_organization_ids(self, organization_ids: list[UUID]) -> list[Project]:
+        ids = set(organization_ids)
+        return [p for p in self._projects.values() if p.organization_id in ids]
+
     async def delete(self, project_id: UUID) -> None:
         self._projects.pop(project_id, None)
