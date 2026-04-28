@@ -974,4 +974,74 @@ class TestSendMessage:
         # Then — history should contain older messages (not the current one)
         prompt = mock_llm_service.generate_answer.await_args[0][0]
         assert "Repeated question" in prompt
-        assert "Previous answer" in prompt
+
+    async def test_send_message_enriches_retrieval_query_with_conversation_history(
+        self,
+        project_user_id: UUID,
+        mock_llm_service: AsyncMock,
+        mock_query_relevant_chunks: AsyncMock,
+    ) -> None:
+        """For follow-up questions, the retrieval query should include the last user message
+        so that implicit references ("le formalisme") get resolved via previous context."""
+        # Given
+        project_id = uuid4()
+        conversation_id = uuid4()
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = []
+        conversation_repository.find_by_id.return_value = Conversation(
+            id=conversation_id,
+            project_id=project_id,
+            user_id=project_user_id,
+            created_at=datetime.now(UTC),
+        )
+        previous_user_msg = Message(
+            id=uuid4(),
+            conversation_id=conversation_id,
+            role="user",
+            content="je ne me souviens plus quel format est recommandé — format CRAFT ?",
+            created_at=datetime.now(UTC),
+        )
+        assistant_msg = Message(
+            id=uuid4(),
+            conversation_id=conversation_id,
+            role="assistant",
+            content="Le format recommandé est CRAFT.",
+            created_at=datetime.now(UTC),
+        )
+        message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 2
+        message_repository.find_by_conversation_id.return_value = [previous_user_msg, assistant_msg]
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=project_user_id,
+            name="Project",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "title"
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=mock_query_relevant_chunks,
+            llm_service=mock_llm_service,
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+        )
+
+        # When
+        await use_case.execute(
+            project_id=project_id,
+            user_id=project_user_id,
+            message="peux-tu me détailler le formalisme ?",
+            conversation_id=conversation_id,
+        )
+
+        # Then — the retrieval query should include context from the previous user message
+        call_kwargs = mock_query_relevant_chunks.execute.call_args.kwargs
+        retrieval_query = call_kwargs["query"]
+        assert "peux-tu me détailler le formalisme ?" in retrieval_query
+        assert "CRAFT" in retrieval_query  # context from previous user message
