@@ -371,6 +371,88 @@ class TestCreateProject:
         assert result.llm_backend == "openai"
         assert result.llm_api_key_masked is not None
 
+    async def test_create_project_in_org_with_defaults_applies_them_and_sets_flags_false(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        from raggae.domain.entities.organization_project_defaults import OrganizationProjectDefaults
+        from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
+            InMemoryOrgProjectDefaultsRepository,
+        )
+
+        org_id = uuid4()
+        user_id = uuid4()
+        defaults_repo = InMemoryOrgProjectDefaultsRepository()
+        await defaults_repo.save(
+            OrganizationProjectDefaults(
+                organization_id=org_id,
+                llm_backend="openai",
+                llm_model="gpt-4o",
+                retrieval_top_k=12,
+            )
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = object()
+        use_case = CreateProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+            org_project_defaults_repository=defaults_repo,
+        )
+
+        # When
+        result = await use_case.execute(
+            user_id=user_id,
+            organization_id=org_id,
+            name="Inherited Project",
+            description="desc",
+            system_prompt="ok",
+        )
+
+        # Then
+        assert result.llm_backend == "openai"
+        assert result.llm_model == "gpt-4o"
+        assert result.retrieval_top_k == 12
+        assert result.overrides_models_from_org is False
+        assert result.overrides_retrieval_from_org is False
+        assert result.overrides_indexing_from_org is True  # no indexing defaults set
+        assert result.overrides_reranking_from_org is True
+        assert result.overrides_chat_history_from_org is True
+
+    async def test_create_project_in_org_without_defaults_keeps_flags_true(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given
+        from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
+            InMemoryOrgProjectDefaultsRepository,
+        )
+
+        org_id = uuid4()
+        mock_organization_member_repository.find_by_organization_and_user.return_value = object()
+        use_case = CreateProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+            org_project_defaults_repository=InMemoryOrgProjectDefaultsRepository(),
+        )
+
+        # When
+        result = await use_case.execute(
+            user_id=uuid4(),
+            organization_id=org_id,
+            name="No Defaults Project",
+            description="desc",
+            system_prompt="ok",
+        )
+
+        # Then — all flags stay True since no org defaults exist
+        assert result.overrides_models_from_org is True
+        assert result.overrides_indexing_from_org is True
+        assert result.overrides_retrieval_from_org is True
+        assert result.overrides_reranking_from_org is True
+        assert result.overrides_chat_history_from_org is True
+
     async def test_create_project_with_credential_id_resolves_key_and_succeeds(
         self,
         use_case: CreateProject,
