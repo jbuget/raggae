@@ -39,7 +39,7 @@ export function ConversationPageItem({
 }: ConversationPageItemProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const t = useTranslations("chat.sidebar");
+  const t = useTranslations("conversations");
 
   const title = conversation.title ?? formatDateTime(conversation.created_at);
 
@@ -51,7 +51,7 @@ export function ConversationPageItem({
             checked={isSelected}
             onCheckedChange={() => onToggleSelect(conversation.id)}
             onClick={(e) => e.stopPropagation()}
-            aria-label={`Sélectionner ${title}`}
+            aria-label={t("selectConversation", { title })}
             className={cn(!anySelected && !isSelected && "opacity-0 group-hover:opacity-100 transition-opacity")}
           />
         )}
