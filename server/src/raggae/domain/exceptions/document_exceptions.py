@@ -28,3 +28,7 @@ class ProjectDocumentLimitReachedError(Exception):
 
 class InvalidDocumentStatusTransitionError(Exception):
     """Raised when an invalid document status transition is attempted."""
+
+
+class VisionNotSupportedError(Exception):
+    """Raised when vision capabilities are requested but unavailable."""
