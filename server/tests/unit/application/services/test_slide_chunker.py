@@ -100,3 +100,10 @@ class TestSlideChunker:
         assert isinstance(result[0], SlideChunk)
         assert result[0].slide_number == 1
         assert result[0].slide_title == "Title"
+
+    def test_chunk_whitespace_only_text_returns_empty_list(self, chunker: SlideChunker) -> None:
+        # Given / When
+        result = chunker.chunk("   \n  \t  ")
+
+        # Then
+        assert result == []

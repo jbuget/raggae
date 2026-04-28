@@ -11,6 +11,7 @@ from raggae.application.services.document_indexing_service import DocumentIndexi
 from raggae.application.services.parent_child_chunking_service import (
     ParentChildChunkingService,
 )
+from raggae.application.services.slide_chunker import SlideChunker
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project
 from raggae.domain.value_objects.chunk_level import ChunkLevel
@@ -507,25 +508,13 @@ class TestDocumentIndexingService:
         saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
         assert all(c.chunk_level == ChunkLevel.STANDARD for c in saved_chunks)
 
-    async def test_run_pipeline_pptx_uses_slide_chunker(
-        self,
-        mock_document_chunk_repository: AsyncMock,
-        mock_document_text_extractor: AsyncMock,
-        mock_text_sanitizer_service: AsyncMock,
-        mock_document_structure_analyzer: AsyncMock,
-        mock_text_chunker_service: AsyncMock,
-        mock_embedding_service: AsyncMock,
-        project: Project,
-    ) -> None:
-        # Given
-        from raggae.application.services.slide_chunker import SlideChunker
+    @pytest.fixture
+    def pptx_text(self) -> str:
+        return "[SLIDE:1]\n# Architecture\n\nBody one.\n[SLIDE:2]\n# Conclusion\n\nBody two."
 
-        pptx_text = "[SLIDE:1]\n# Architecture\n\nBody one.\n[SLIDE:2]\n# Conclusion\n\nBody two."
-        mock_document_text_extractor.extract_text.return_value = pptx_text
-        mock_text_sanitizer_service.sanitize_text.return_value = pptx_text
-        mock_embedding_service.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
-
-        pptx_document = Document(
+    @pytest.fixture
+    def pptx_document(self, project: Project) -> Document:
+        return Document(
             id=uuid4(),
             project_id=project.id,
             file_name="deck.pptx",
@@ -534,7 +523,18 @@ class TestDocumentIndexingService:
             storage_key="projects/p/documents/d-deck.pptx",
             created_at=datetime.now(UTC),
         )
-        service = DocumentIndexingService(
+
+    @pytest.fixture
+    def pptx_service(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+    ) -> DocumentIndexingService:
+        return DocumentIndexingService(
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
             text_sanitizer_service=mock_text_sanitizer_service,
@@ -544,8 +544,25 @@ class TestDocumentIndexingService:
             slide_chunker=SlideChunker(),
         )
 
+    async def test_run_pipeline_pptx_uses_slide_chunker(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        pptx_text: str,
+        pptx_document: Document,
+        pptx_service: DocumentIndexingService,
+        project: Project,
+    ) -> None:
+        # Given
+        mock_document_text_extractor.extract_text.return_value = pptx_text
+        mock_text_sanitizer_service.sanitize_text.return_value = pptx_text
+        mock_embedding_service.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
+
         # When
-        await service.run_pipeline(pptx_document, project, b"PK...")
+        await pptx_service.run_pipeline(pptx_document, project, b"PK...")
 
         # Then — standard chunker not called, two slide chunks stored
         mock_text_chunker_service.chunk_text.assert_not_called()
@@ -557,28 +574,39 @@ class TestDocumentIndexingService:
         mock_document_chunk_repository: AsyncMock,
         mock_document_text_extractor: AsyncMock,
         mock_text_sanitizer_service: AsyncMock,
-        mock_document_structure_analyzer: AsyncMock,
-        mock_text_chunker_service: AsyncMock,
         mock_embedding_service: AsyncMock,
+        pptx_text: str,
+        pptx_document: Document,
+        pptx_service: DocumentIndexingService,
         project: Project,
     ) -> None:
         # Given
-        from raggae.application.services.slide_chunker import SlideChunker
-
-        pptx_text = "[SLIDE:1]\n# Architecture\n\nBody one.\n[SLIDE:2]\n# Conclusion\n\nBody two."
         mock_document_text_extractor.extract_text.return_value = pptx_text
         mock_text_sanitizer_service.sanitize_text.return_value = pptx_text
         mock_embedding_service.embed_texts.return_value = [[0.1, 0.2], [0.3, 0.4]]
 
-        pptx_document = Document(
-            id=uuid4(),
-            project_id=project.id,
-            file_name="deck.pptx",
-            content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            file_size=1000,
-            storage_key="projects/p/documents/d-deck.pptx",
-            created_at=datetime.now(UTC),
-        )
+        # When
+        await pptx_service.run_pipeline(pptx_document, project, b"PK...")
+
+        # Then — metadata contains slide_number and slide_title
+        saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
+        assert saved_chunks[0].metadata_json["slide_number"] == 1
+        assert saved_chunks[0].metadata_json["slide_title"] == "Architecture"
+        assert saved_chunks[1].metadata_json["slide_number"] == 2
+        assert saved_chunks[1].metadata_json["slide_title"] == "Conclusion"
+
+    async def test_run_pipeline_pptx_without_slide_chunker_uses_standard_chunker(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_document_structure_analyzer: AsyncMock,
+        mock_text_chunker_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        pptx_document: Document,
+        project: Project,
+    ) -> None:
+        # Given — service sans slide_chunker
         service = DocumentIndexingService(
             document_chunk_repository=mock_document_chunk_repository,
             document_text_extractor=mock_document_text_extractor,
@@ -586,16 +614,31 @@ class TestDocumentIndexingService:
             document_structure_analyzer=mock_document_structure_analyzer,
             text_chunker_service=mock_text_chunker_service,
             embedding_service=mock_embedding_service,
-            slide_chunker=SlideChunker(),
         )
 
         # When
         await service.run_pipeline(pptx_document, project, b"PK...")
 
-        # Then — metadata contains slide_number and slide_title
+        # Then — le chunker standard est utilisé
+        mock_text_chunker_service.chunk_text.assert_called_once()
+
+    async def test_run_pipeline_pptx_empty_presentation_stores_no_chunks(
+        self,
+        mock_document_chunk_repository: AsyncMock,
+        mock_document_text_extractor: AsyncMock,
+        mock_text_sanitizer_service: AsyncMock,
+        mock_embedding_service: AsyncMock,
+        pptx_document: Document,
+        pptx_service: DocumentIndexingService,
+        project: Project,
+    ) -> None:
+        # Given — pas de marqueurs [SLIDE:N] dans le texte extrait
+        mock_document_text_extractor.extract_text.return_value = "texte sans diapositive"
+        mock_text_sanitizer_service.sanitize_text.return_value = "texte sans diapositive"
+
+        # When
+        await pptx_service.run_pipeline(pptx_document, project, b"PK...")
+
+        # Then — aucun chunk stocké
         saved_chunks = mock_document_chunk_repository.replace_document_chunks.call_args.args[1]
-        assert saved_chunks[0].metadata_json is not None
-        assert saved_chunks[0].metadata_json["slide_number"] == 1
-        assert saved_chunks[0].metadata_json["slide_title"] == "Architecture"
-        assert saved_chunks[1].metadata_json["slide_number"] == 2
-        assert saved_chunks[1].metadata_json["slide_title"] == "Conclusion"
+        assert saved_chunks == []
