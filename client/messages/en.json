@@ -122,6 +122,7 @@
     "description": "Create and manage your RAG agents.",
     "new": "New project",
     "empty": "No projects yet.",
+    "loadError": "Unable to load projects.",
     "namePlaceholder": "Project name",
     "notFound": "Project not found",
     "list": {

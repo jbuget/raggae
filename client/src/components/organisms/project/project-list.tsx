@@ -58,7 +58,7 @@ export function ProjectList() {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { personalProjects, organizationSections, isLoading } = useAccessibleProjects();
+  const { personalProjects, organizationSections, isLoading, error } = useAccessibleProjects();
   const createProject = useCreateProject();
   const shouldOpenFromQuery = searchParams.get("create") === "1";
   const organizationIdFromQuery = searchParams.get("organizationId");
@@ -93,6 +93,10 @@ export function ProjectList() {
     if (shouldOpenFromQuery) {
       router.replace("/projects");
     }
+  }
+
+  if (error) {
+    return <p className="text-destructive">{t("loadError")}</p>;
   }
 
   if (isLoading) {

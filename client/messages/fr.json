@@ -122,6 +122,7 @@
     "description": "Créez et gérez vos agents RAG.",
     "new": "Nouveau projet",
     "empty": "Aucun projet pour le moment.",
+    "loadError": "Impossible de charger les projets.",
     "namePlaceholder": "Nom du projet",
     "notFound": "Projet introuvable",
     "list": {
