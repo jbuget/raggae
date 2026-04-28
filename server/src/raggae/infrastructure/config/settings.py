@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     mailgun_from_email: str = "noreply@raggae.app"
     mailgun_api_base: str = "https://api.mailgun.net/v3"
     mailgun_app_name: str = "Raggae"
+    vision_max_image_bytes: int = 4_194_304
 
     @field_validator("entra_allowed_domains", mode="before")
     @classmethod
