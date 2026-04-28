@@ -353,3 +353,63 @@ class TestUploadDocument:
                 file_content=b"content",
                 content_type="application/pdf",
             )
+
+    async def test_upload_pptx_is_accepted(
+        self,
+        use_case: UploadDocument,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name="deck.pptx",
+            file_content=b"content",
+            content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        )
+
+        # Then
+        assert result.file_name == "deck.pptx"
+        mock_file_storage_service.upload_file.assert_called_once()
+
+    async def test_upload_ppt_raises_invalid_document_type_error(
+        self,
+        use_case: UploadDocument,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
+        # When / Then
+        with pytest.raises(InvalidDocumentTypeError):
+            await use_case.execute(
+                project_id=project_id,
+                user_id=user_id,
+                file_name="legacy.ppt",
+                file_content=b"content",
+                content_type="application/vnd.ms-powerpoint",
+            )

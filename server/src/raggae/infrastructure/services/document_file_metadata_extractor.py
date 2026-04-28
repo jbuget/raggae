@@ -9,8 +9,8 @@ from raggae.application.interfaces.services.file_metadata_extractor import (
 _AUTHOR_SPLIT_RE = re.compile(r"[;,]")
 
 
-class PdfDocxFileMetadataExtractor:
-    """Extract metadata from PDF and DOCX properties."""
+class DocumentFileMetadataExtractor:
+    """Extract metadata from PDF, DOCX and PPTX document properties."""
 
     async def extract_metadata(
         self,
@@ -24,6 +24,8 @@ class PdfDocxFileMetadataExtractor:
             return self._extract_pdf(content)
         if extension == "docx":
             return self._extract_docx(content)
+        if extension == "pptx":
+            return self._extract_pptx(content)
         return FileMetadata()
 
     def _extract_pdf(self, content: bytes) -> FileMetadata:
@@ -57,6 +59,25 @@ class PdfDocxFileMetadataExtractor:
         try:
             document = DocxDocument(BytesIO(content))
             props = document.core_properties
+            author = self._clean_text(props.author)
+            created = props.created.date() if props.created is not None else None
+            return FileMetadata(
+                title=self._clean_text(props.title),
+                authors=self._parse_authors(author),
+                document_date=created,
+            )
+        except Exception:
+            return FileMetadata()
+
+    def _extract_pptx(self, content: bytes) -> FileMetadata:
+        try:
+            from pptx import Presentation
+        except ModuleNotFoundError:  # pragma: no cover - dependency management
+            return FileMetadata()
+
+        try:
+            prez = Presentation(BytesIO(content))
+            props = prez.core_properties
             author = self._clean_text(props.author)
             created = props.created.date() if props.created is not None else None
             return FileMetadata(

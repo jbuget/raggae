@@ -280,6 +280,9 @@ from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPassword
 from raggae.infrastructure.services.contextual_embedding_service import (
     ContextualEmbeddingService,
 )
+from raggae.infrastructure.services.document_file_metadata_extractor import (
+    DocumentFileMetadataExtractor,
+)
 from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
     FernetProviderApiKeyCryptoService,
@@ -343,9 +346,6 @@ from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
 )
-from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
-    PdfDocxFileMetadataExtractor,
-)
 from raggae.infrastructure.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
 )
@@ -367,6 +367,7 @@ from raggae.infrastructure.services.simple_text_chunker_service import (
 from raggae.infrastructure.services.simple_text_sanitizer_service import (
     SimpleTextSanitizerService,
 )
+from raggae.application.services.slide_chunker import SlideChunker
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
@@ -481,7 +482,7 @@ _semantic_embedding_service: EmbeddingService = _build_embedding_service()
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
-_file_metadata_extractor: FileMetadataExtractor = PdfDocxFileMetadataExtractor()
+_file_metadata_extractor: FileMetadataExtractor = DocumentFileMetadataExtractor()
 _language_detector: LanguageDetector = LangdetectLanguageDetector()
 _keyword_extractor: KeywordExtractor = KeybertKeywordExtractor()
 if settings.persistence_backend != "postgres":
@@ -516,6 +517,7 @@ elif settings.text_chunker_backend == "native":
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
 _parent_child_chunking_service = ParentChildChunkingService()
+_slide_chunker = SlideChunker()
 _document_indexing_service = DocumentIndexingService(
     document_chunk_repository=_document_chunk_repository,
     document_text_extractor=_document_text_extractor,
@@ -529,6 +531,7 @@ _document_indexing_service = DocumentIndexingService(
     chunking_strategy_selector=_chunking_strategy_selector,
     chunker_backend=settings.text_chunker_backend,
     parent_child_chunking_service=_parent_child_chunking_service,
+    slide_chunker=_slide_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
