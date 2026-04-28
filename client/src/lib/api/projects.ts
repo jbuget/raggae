@@ -1,4 +1,5 @@
 import type {
+  AccessibleProjectsResponse,
   CreateProjectRequest,
   ProjectResponse,
   ReindexProjectResponse,
@@ -8,6 +9,10 @@ import { apiFetch } from "./client";
 
 export function listProjects(token: string): Promise<ProjectResponse[]> {
   return apiFetch<ProjectResponse[]>("/projects", { token });
+}
+
+export function listAccessibleProjects(token: string): Promise<AccessibleProjectsResponse> {
+  return apiFetch<AccessibleProjectsResponse>("/projects/accessible", { token });
 }
 
 export function getProject(
