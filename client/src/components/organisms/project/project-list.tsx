@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +25,11 @@ import { useCreateProject } from "@/lib/hooks/use-projects";
 import type { ProjectResponse } from "@/lib/types/api";
 
 const VIEW_MODE_STORAGE_KEY = "projects-view-mode";
+
+function getInitialViewMode(): ViewMode {
+  if (typeof window === "undefined") return "grid";
+  return (localStorage.getItem(VIEW_MODE_STORAGE_KEY) as ViewMode) ?? "grid";
+}
 
 function ProjectSection({
   projects,
@@ -68,12 +73,7 @@ export function ProjectList() {
   const effectiveOrgId = createOrgId ?? organizationIdFromQuery;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-
-  useEffect(() => {
-    const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY) as ViewMode | null;
-    if (stored) setViewMode(stored);
-  }, []);
+  const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
 
   function handleViewChange(mode: ViewMode) {
     setViewMode(mode);
