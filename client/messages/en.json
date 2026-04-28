@@ -629,6 +629,7 @@
     "menuLabel": "Conversation options",
     "renameTitle": "Rename conversation",
     "deleteTitle": "Delete conversation",
-    "selectConversation": "Select {title}"
+    "selectConversation": "Select {title}",
+    "deleteError": "An error occurred while deleting some conversations."
   }
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -68,9 +69,17 @@ export function ConversationList({ projectId }: ConversationListProps) {
   const handleBulkDelete = () => {
     const ids = Array.from(selected);
     const currentInPath = ids.find((id) => pathname.includes(id));
+    let errorCount = 0;
+
     for (const id of ids) {
-      deleteConversation(id);
+      deleteConversation(id, {
+        onError: () => {
+          errorCount += 1;
+          if (errorCount === 1) toast.error(t("deleteError"));
+        },
+      });
     }
+
     setSelected(new Set());
     setBulkDeleteOpen(false);
     if (currentInPath) {

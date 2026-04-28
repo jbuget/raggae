@@ -629,6 +629,7 @@
     "menuLabel": "Options de la conversation",
     "renameTitle": "Renommer la conversation",
     "deleteTitle": "Supprimer la conversation",
-    "selectConversation": "Sélectionner {title}"
+    "selectConversation": "Sélectionner {title}",
+    "deleteError": "Une erreur est survenue lors de la suppression de certaines conversations."
   }
 }
