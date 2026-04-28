@@ -43,20 +43,22 @@ function FavoriteConversationItem({ conversation }: FavoriteConversationItemProp
 
 export function FavoriteConversationsSection() {
   const t = useTranslations("chat.sidebar");
-  const { data: favorites } = useFavoriteConversations();
+  const { data: favorites, isLoading } = useFavoriteConversations();
 
-  if (!favorites || favorites.length === 0) {
-    return null;
-  }
+  const isEmpty = !isLoading && (!favorites || favorites.length === 0);
 
   return (
     <div className="mt-2 border-t pt-2">
       <SidebarSectionHeader title={t("favorites")} />
-      <div className="space-y-0.5">
-        {favorites.map((conversation) => (
-          <FavoriteConversationItem key={conversation.id} conversation={conversation} />
-        ))}
-      </div>
+      {isEmpty ? (
+        <p className="px-3 py-1 text-xs text-muted-foreground">{t("noFavorites")}</p>
+      ) : (
+        <div className="space-y-0.5">
+          {favorites?.map((conversation) => (
+            <FavoriteConversationItem key={conversation.id} conversation={conversation} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

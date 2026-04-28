@@ -43,13 +43,22 @@ describe("FavoriteConversationsSection", () => {
     } as unknown as ReturnType<typeof useFavoriteConversations>);
   });
 
-  it("should render nothing when favorites list is empty", () => {
+  it("should render an empty state message when favorites list is empty", () => {
     vi.mocked(useFavoriteConversations).mockReturnValue({
       data: [],
       isLoading: false,
     } as unknown as ReturnType<typeof useFavoriteConversations>);
-    const { container } = renderWithProviders(<FavoriteConversationsSection />);
-    expect(container).toBeEmptyDOMElement();
+    renderWithProviders(<FavoriteConversationsSection />);
+    expect(screen.getByText(/no favorite conversations yet/i)).toBeInTheDocument();
+  });
+
+  it("should not render the empty state message while loading", () => {
+    vi.mocked(useFavoriteConversations).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as unknown as ReturnType<typeof useFavoriteConversations>);
+    renderWithProviders(<FavoriteConversationsSection />);
+    expect(screen.queryByText(/no favorite conversations yet/i)).not.toBeInTheDocument();
   });
 
   it("should render the conversation title", () => {
