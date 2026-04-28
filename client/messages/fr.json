@@ -493,7 +493,7 @@
       "deleteTitle": "Supprimer la conversation",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?",
       "favorites": "Mes favoris",
-      "noFavorites": "Aucune conversation favorite pour le moment",
+      "noFavorites": "Aucun favori pour le moment",
       "addToFavorites": "Ajouter aux favoris",
       "removeFromFavorites": "Retirer des favoris"
     }
