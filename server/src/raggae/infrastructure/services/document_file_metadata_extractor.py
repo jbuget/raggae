@@ -10,7 +10,7 @@ _AUTHOR_SPLIT_RE = re.compile(r"[;,]")
 
 
 class DocumentFileMetadataExtractor:
-    """Extract metadata from PDF, DOCX and PPTX document properties."""
+    """Extract metadata from PDF, DOCX, PPTX and XLSX document properties."""
 
     async def extract_metadata(
         self,
