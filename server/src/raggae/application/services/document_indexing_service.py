@@ -183,8 +183,7 @@ class DocumentIndexingService:
         document: Document,
         embedding_service: EmbeddingService,
     ) -> list[DocumentChunk]:
-        assert self._slide_chunker is not None
-        slide_chunks = self._slide_chunker.chunk(text)
+        slide_chunks = self._slide_chunker.chunk(text)  # type: ignore[union-attr]
         if not slide_chunks:
             return []
 

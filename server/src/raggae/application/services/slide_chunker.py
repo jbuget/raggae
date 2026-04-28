@@ -27,7 +27,7 @@ class SlideChunker:
         chunk_index = 0
 
         i = 1
-        while i + 1 <= len(parts) - 1:
+        while i < len(parts) - 1:
             slide_number = int(parts[i])
             body = parts[i + 1]
             title_match = _TITLE_RE.search(body)
