@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Eye, RefreshCw, Trash2 } from "lucide-react";
+import { Eye, ImageIcon, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +68,7 @@ export function DocumentRow({
         : document.status === "uploaded"
           ? "border-amber-200 bg-amber-100 text-amber-800"
           : "border-red-200 bg-red-100 text-red-800";
+  const isImageFile = document.content_type?.startsWith("image/");
   const embeddingBackendLabel = embeddingBackend ?? "default";
   const embeddingModelLabel = embeddingModel?.trim() ? embeddingModel : "default";
   const chunkingStrategyLabel = chunkingStrategy.replaceAll("_", " ");
@@ -103,6 +104,9 @@ export function DocumentRow({
     <div className="flex items-center justify-between rounded-md border p-4">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
+          {isImageFile && (
+            <ImageIcon className="h-4 w-4 text-muted-foreground shrink-0" data-testid="image-file-icon" />
+          )}
           <p className="text-sm font-medium">{document.file_name}</p>
           <Badge
             variant="outline"

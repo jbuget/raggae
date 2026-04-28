@@ -83,4 +83,15 @@ describe("DocumentRow", () => {
     renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
     expect(screen.getByText("Indexed")).toBeInTheDocument();
   });
+
+  it("should display image icon for image files", () => {
+    const imageDoc = { ...mockDoc, file_name: "photo.png", content_type: "image/png" };
+    renderWithProviders(<DocumentRow document={imageDoc} {...defaultProps} />);
+    expect(screen.getByTestId("image-file-icon")).toBeInTheDocument();
+  });
+
+  it("should not display image icon for non-image files", () => {
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
+    expect(screen.queryByTestId("image-file-icon")).not.toBeInTheDocument();
+  });
 });

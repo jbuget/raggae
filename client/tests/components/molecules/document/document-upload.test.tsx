@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
 import { DocumentUpload } from "@/components/molecules/document/document-upload";
 import { renderWithProviders } from "../../../helpers/render";
@@ -24,10 +24,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("DocumentUpload", () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
   it("should render the drop zone with supported formats hint", () => {
     renderWithProviders(<DocumentUpload onUpload={vi.fn()} isUploading={false} />);
     expect(screen.getByText(/drag and drop a file here/i)).toBeInTheDocument();
-    expect(screen.getByText(/\.pdf, \.docx, \.txt, \.md/i)).toBeInTheDocument();
+    expect(screen.getByText(/\.pdf/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /select files/i })).toBeInTheDocument();
   });
 
@@ -93,5 +95,23 @@ describe("DocumentUpload", () => {
     await user.upload(input, [fileOne, fileTwo]);
     expect(screen.getByText(/2 file\(s\) selected/i)).toBeInTheDocument();
     expect(screen.getByText(/a.pdf, b.pdf/i)).toBeInTheDocument();
+  });
+
+  it("should accept image files (png, jpg, webp)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<DocumentUpload onUpload={vi.fn()} isUploading={false} />);
+    const png = new File(["content"], "screenshot.png", { type: "image/png" });
+    const jpg = new File(["content"], "photo.jpg", { type: "image/jpeg" });
+    const webp = new File(["content"], "logo.webp", { type: "image/webp" });
+    const input = screen.getByLabelText(/select files/i);
+    await user.upload(input, [png, jpg, webp]);
+    expect(screen.getByText(/3 file\(s\) selected/i)).toBeInTheDocument();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("should include image formats in the supported formats hint", () => {
+    renderWithProviders(<DocumentUpload onUpload={vi.fn()} isUploading={false} />);
+    const hint = screen.getByText(/\.png/i);
+    expect(hint).toBeInTheDocument();
   });
 });
