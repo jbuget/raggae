@@ -32,7 +32,7 @@ from raggae.domain.exceptions.project_exceptions import (
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
-ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc"}
+ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc", "jpg", "jpeg", "png", "webp", "tiff", "gif"}
 
 
 @dataclass(frozen=True)

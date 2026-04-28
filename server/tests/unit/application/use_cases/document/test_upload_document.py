@@ -126,6 +126,71 @@ class TestUploadDocument:
                 content_type="application/octet-stream",
             )
 
+    @pytest.mark.parametrize("ext,ct", [
+        ("png", "image/png"),
+        ("jpg", "image/jpeg"),
+        ("webp", "image/webp"),
+    ])
+    async def test_upload_image_extension_accepted(
+        self,
+        use_case: UploadDocument,
+        mock_project_repository: AsyncMock,
+        ext: str,
+        ct: str,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
+        # When — no InvalidDocumentTypeError raised
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name=f"photo.{ext}",
+            file_content=b"data",
+            content_type=ct,
+        )
+
+        # Then
+        assert result.file_name == f"photo.{ext}"
+
+    async def test_upload_bmp_extension_rejected(
+        self,
+        use_case: UploadDocument,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+
+        # When / Then
+        with pytest.raises(InvalidDocumentTypeError):
+            await use_case.execute(
+                project_id=project_id,
+                user_id=user_id,
+                file_name="photo.bmp",
+                file_content=b"data",
+                content_type="image/bmp",
+            )
+
     async def test_upload_document_project_reindex_in_progress_raises_error(
         self,
         use_case: UploadDocument,
