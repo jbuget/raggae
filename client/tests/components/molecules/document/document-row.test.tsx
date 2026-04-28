@@ -34,6 +34,10 @@ const defaultProps = {
   reindexingId: null,
 };
 
+vi.mock("@/components/organisms/document/document-chunks-sheet", () => ({
+  DocumentChunksSheet: () => null,
+}));
+
 describe("DocumentRow", () => {
   it("should display file name", () => {
     renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
@@ -82,5 +86,22 @@ describe("DocumentRow", () => {
   it("should display status badge", () => {
     renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
     expect(screen.getByText("Indexed")).toBeInTheDocument();
+  });
+
+  it("should display chunks button", () => {
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
+    expect(screen.getByRole("button", { name: /view chunks/i })).toBeInTheDocument();
+  });
+
+  it("should enable chunks button when status is indexed", () => {
+    renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
+    expect(screen.getByRole("button", { name: /view chunks/i })).not.toBeDisabled();
+  });
+
+  it("should disable chunks button when status is not indexed", () => {
+    renderWithProviders(
+      <DocumentRow document={{ ...mockDoc, status: "uploaded" }} {...defaultProps} />,
+    );
+    expect(screen.getByRole("button", { name: /view chunks/i })).toBeDisabled();
   });
 });
