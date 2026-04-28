@@ -550,7 +550,8 @@
     "snapshots": "Historique",
     "githubProject": "Projet GitHub",
     "sourceCode": "Code source",
-    "stats": "Statistiques"
+    "stats": "Statistiques",
+    "conversations": "Conversations"
   },
   "layout": {
     "themeToggle": {
@@ -614,5 +615,21 @@
       "message": "Une erreur inattendue est survenue",
       "retry": "Réessayer"
     }
+  },
+  "conversations": {
+    "title": "Conversations",
+    "empty": "Aucune conversation pour le moment.",
+    "startNew": "Démarrer une conversation",
+    "new": "Nouvelle conversation",
+    "selectAll": "Tout sélectionner",
+    "selectedCount": "{count} sélectionnée(s)",
+    "deleteSelected": "Supprimer ({count})",
+    "bulkDeleteTitle": "Supprimer {count} conversation(s)",
+    "bulkDeleteConfirm": "Cette action est irréversible. Les {count} conversation(s) sélectionnée(s) seront définitivement supprimées.",
+    "menuLabel": "Options de la conversation",
+    "renameTitle": "Renommer la conversation",
+    "deleteTitle": "Supprimer la conversation",
+    "selectConversation": "Sélectionner {title}",
+    "deleteError": "Une erreur est survenue lors de la suppression de certaines conversations."
   }
 }

@@ -52,12 +52,12 @@ describe("ProjectsSection", () => {
     expect(screen.getByRole("button", { name: "Project Beta" })).toBeInTheDocument();
   });
 
-  it("should render project toggle buttons in mobile variant without dropdown", () => {
+  it("should render project toggle buttons in mobile variant with contextual menu", () => {
     renderWithProviders(
       <ProjectsSection {...baseProps} variant="mobile" projects={projects} />,
     );
     expect(screen.getByRole("button", { name: "Project Alpha" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /project menu/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /project menu/i })).toHaveLength(2);
   });
 
   it("should show the create button when canCreate is true", () => {

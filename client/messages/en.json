@@ -550,7 +550,8 @@
     "snapshots": "History",
     "githubProject": "GitHub project",
     "sourceCode": "Source code",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "conversations": "Conversations"
   },
   "layout": {
     "themeToggle": {
@@ -614,5 +615,21 @@
       "message": "An unexpected error occurred",
       "retry": "Try again"
     }
+  },
+  "conversations": {
+    "title": "Conversations",
+    "empty": "No conversations yet.",
+    "startNew": "Start a conversation",
+    "new": "New conversation",
+    "selectAll": "Select all",
+    "selectedCount": "{count} selected",
+    "deleteSelected": "Delete ({count})",
+    "bulkDeleteTitle": "Delete {count} conversation(s)",
+    "bulkDeleteConfirm": "This action is irreversible. The {count} selected conversation(s) will be permanently deleted.",
+    "menuLabel": "Conversation options",
+    "renameTitle": "Rename conversation",
+    "deleteTitle": "Delete conversation",
+    "selectConversation": "Select {title}",
+    "deleteError": "An error occurred while deleting some conversations."
   }
 }

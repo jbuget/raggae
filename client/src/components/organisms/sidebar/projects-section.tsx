@@ -53,7 +53,11 @@ export function ProjectsSection({
               canAccessSettings={canAccessSettings}
             />
           ) : (
-            <MobileProjectItem key={project.id} project={project} />
+            <MobileProjectItem
+              key={project.id}
+              project={project}
+              canAccessSettings={canAccessSettings}
+            />
           ),
         )}
     </div>
