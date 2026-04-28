@@ -1,6 +1,9 @@
+import logging
 from io import BytesIO
 
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
+
+logger = logging.getLogger(__name__)
 
 
 class MultiFormatDocumentTextExtractor:
@@ -109,7 +112,8 @@ class MultiFormatDocumentTextExtractor:
 
                 try:
                     notes_text = slide.notes_slide.notes_text_frame.text.strip()
-                except Exception:
+                except Exception as exc:
+                    logger.debug("Impossible de lire les notes de la diapositive %d : %s", index + 1, exc)
                     notes_text = ""
                 if notes_text:
                     parts.append(f"[NOTES]\n{notes_text}")
