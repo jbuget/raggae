@@ -42,7 +42,7 @@ export function ChatTemplate({ projectId, conversationId }: ChatTemplateProps) {
       <Star
         className={cn(
           "h-4 w-4",
-          conversation?.is_favorite && "fill-yellow-400 text-yellow-400",
+          conversation?.is_favorite && "fill-current",
         )}
       />
     </Button>

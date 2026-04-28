@@ -60,6 +60,8 @@ export function useRenameConversation(projectId: string) {
       renameConversation(token!, projectId, conversationId, title),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+      queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
     },
   });
 }
@@ -72,9 +74,8 @@ export function useDeleteConversation(projectId: string) {
     mutationFn: (conversationId: string) =>
       deleteConversation(token!, projectId, conversationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["conversations", projectId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
     },
   });
 }
@@ -89,6 +90,7 @@ export function useToggleFavoriteConversation(projectId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
       queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
     },
   });
 }

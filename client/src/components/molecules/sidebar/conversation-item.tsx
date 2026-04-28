@@ -61,7 +61,7 @@ export function ConversationItem({
               className="cursor-pointer gap-2"
               onSelect={() => onToggleFavorite(conversation.id)}
             >
-              <Star className={cn("h-4 w-4", conversation.is_favorite && "fill-yellow-400 text-yellow-400")} />
+              <Star className={cn("h-4 w-4", conversation.is_favorite && "fill-current")} />
               {conversation.is_favorite ? t("removeFromFavorites") : t("addToFavorites")}
             </DropdownMenuItem>
             <DropdownMenuItem

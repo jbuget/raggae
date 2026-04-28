@@ -1,10 +1,45 @@
 "use client";
 
-import Link from "next/link";
-import { Star } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SidebarSectionHeader } from "@/components/atoms/sidebar/sidebar-section-header";
-import { useFavoriteConversations } from "@/lib/hooks/use-chat";
+import { ConversationItem } from "@/components/molecules/sidebar/conversation-item";
+import {
+  useFavoriteConversations,
+  useDeleteConversation,
+  useRenameConversation,
+  useToggleFavoriteConversation,
+} from "@/lib/hooks/use-chat";
+import type { FavoriteConversationResponse } from "@/lib/types/api";
+
+interface FavoriteConversationItemProps {
+  conversation: FavoriteConversationResponse;
+}
+
+function FavoriteConversationItem({ conversation }: FavoriteConversationItemProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { mutate: deleteConversation } = useDeleteConversation(conversation.project_id);
+  const { mutate: renameConversation } = useRenameConversation(conversation.project_id);
+  const { mutate: toggleFavorite } = useToggleFavoriteConversation(conversation.project_id);
+
+  const handleDelete = (conversationId: string) => {
+    deleteConversation(conversationId);
+    if (pathname.includes(conversationId)) {
+      router.push(`/projects/${conversation.project_id}/chat`);
+    }
+  };
+
+  return (
+    <ConversationItem
+      conversation={conversation}
+      projectId={conversation.project_id}
+      onDelete={handleDelete}
+      onRename={(id, title) => renameConversation({ conversationId: id, title })}
+      onToggleFavorite={(id) => toggleFavorite(id)}
+    />
+  );
+}
 
 export function FavoriteConversationsSection() {
   const t = useTranslations("chat.sidebar");
@@ -19,17 +54,7 @@ export function FavoriteConversationsSection() {
       <SidebarSectionHeader title={t("favorites")} />
       <div className="space-y-0.5">
         {favorites.map((conversation) => (
-          <Link
-            key={conversation.id}
-            href={`/projects/${conversation.project_id}/chat/${conversation.id}`}
-            className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-muted transition-colors"
-          >
-            <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate">{conversation.title ?? t("newConversation")}</p>
-              <p className="truncate text-xs text-muted-foreground">{conversation.project_name}</p>
-            </div>
-          </Link>
+          <FavoriteConversationItem key={conversation.id} conversation={conversation} />
         ))}
       </div>
     </div>
