@@ -20,6 +20,8 @@ import {
 import { ConversationPageItem } from "@/components/molecules/project/conversation-page-item";
 import { useConversations, useDeleteConversation, useRenameConversation } from "@/lib/hooks/use-chat";
 
+const CONVERSATIONS_PAGE_LIMIT = 100;
+
 interface ConversationListProps {
   projectId: string;
 }
@@ -29,7 +31,7 @@ export function ConversationList({ projectId }: ConversationListProps) {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const pathname = usePathname();
-  const { data: conversations, isLoading } = useConversations(projectId, 100);
+  const { data: conversations, isLoading } = useConversations(projectId, CONVERSATIONS_PAGE_LIMIT);
   const { mutate: deleteConversation } = useDeleteConversation(projectId);
   const { mutate: renameConversation } = useRenameConversation(projectId);
 
