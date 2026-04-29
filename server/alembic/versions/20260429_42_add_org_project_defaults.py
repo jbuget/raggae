@@ -1,8 +1,8 @@
 """add organization project defaults
 
-Revision ID: 20260428_41
-Revises: 20260425_40
-Create Date: 2026-04-28
+Revision ID: 20260429_42
+Revises: 20260427_41
+Create Date: 2026-04-29
 """
 
 from collections.abc import Sequence
@@ -12,8 +12,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "20260428_41"
-down_revision: str | None = "20260425_40"
+revision: str = "20260429_42"
+down_revision: str | None = "20260427_41"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
