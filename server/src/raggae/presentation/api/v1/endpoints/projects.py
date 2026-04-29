@@ -101,6 +101,11 @@ def _dto_to_project_response(p: ProjectDTO) -> ProjectResponse:
         reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
         reranker_model=p.reranker_model,
         reranker_candidate_multiplier=p.reranker_candidate_multiplier,
+        overrides_models_from_org=p.overrides_models_from_org,
+        overrides_indexing_from_org=p.overrides_indexing_from_org,
+        overrides_retrieval_from_org=p.overrides_retrieval_from_org,
+        overrides_reranking_from_org=p.overrides_reranking_from_org,
+        overrides_chat_history_from_org=p.overrides_chat_history_from_org,
     )
 
 
