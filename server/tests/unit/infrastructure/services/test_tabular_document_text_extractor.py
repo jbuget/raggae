@@ -202,53 +202,60 @@ class TestTabularDocumentTextExtractorXlsx:
         assert "2024-03-15" in result
 
 
+_XL_CELL_EMPTY = 0
+_XL_CELL_TEXT = 1
+_XL_CELL_NUMBER = 2
+_XL_CELL_DATE = 3
+
+
 class TestTabularDocumentTextExtractorXls:
     @pytest.fixture
     def extractor(self) -> TabularDocumentTextExtractor:
         return TabularDocumentTextExtractor()
 
-    def _make_fake_xlrd(self) -> types.ModuleType:
-        XL_CELL_EMPTY = 0
-        XL_CELL_TEXT = 1
-        XL_CELL_NUMBER = 2
-        XL_CELL_DATE = 3
+    def _make_fake_xlrd(
+        self,
+        sheet_name: str = "Feuille1",
+        rows: list[list[tuple[int, object]]] | None = None,
+    ) -> types.ModuleType:
+        if rows is None:
+            rows = [
+                [(_XL_CELL_TEXT, "Nom"), (_XL_CELL_TEXT, "Valeur")],
+                [(_XL_CELL_TEXT, "Alpha"), (_XL_CELL_NUMBER, "42")],
+            ]
 
         class FakeCell:
             def __init__(self, ctype: int, value: object) -> None:
                 self.ctype = ctype
                 self.value = value
 
+        sheet_data = [[FakeCell(ctype, val) for ctype, val in row] for row in rows]
+
         class FakeSheet:
             def __init__(self) -> None:
-                self.name = "Feuille1"
-                self.nrows = 2
-                self.ncols = 2
-                self._data = [
-                    [FakeCell(XL_CELL_TEXT, "Nom"), FakeCell(XL_CELL_TEXT, "Valeur")],
-                    [FakeCell(XL_CELL_TEXT, "Alpha"), FakeCell(XL_CELL_NUMBER, "42")],
-                ]
+                self.nrows = len(sheet_data)
+                self.ncols = len(sheet_data[0]) if sheet_data else 0
 
             def cell(self, row: int, col: int) -> FakeCell:
-                return self._data[row][col]  # type: ignore[return-value]
+                return sheet_data[row][col]  # type: ignore[return-value]
+
+        _sheet_name = sheet_name
+        _sheet = FakeSheet()
 
         class FakeWorkbook:
             datemode = 0
 
             def sheet_names(self) -> list[str]:
-                return ["Feuille1"]
+                return [_sheet_name]
 
             def sheet_by_name(self, name: str) -> FakeSheet:
-                return FakeSheet()
+                return _sheet
 
         fake = types.ModuleType("xlrd")
-        fake.XL_CELL_EMPTY = XL_CELL_EMPTY  # type: ignore[attr-defined]
-        fake.XL_CELL_DATE = XL_CELL_DATE  # type: ignore[attr-defined]
+        fake.XL_CELL_EMPTY = _XL_CELL_EMPTY  # type: ignore[attr-defined]
+        fake.XL_CELL_DATE = _XL_CELL_DATE  # type: ignore[attr-defined]
         fake.open_workbook = lambda file_contents: FakeWorkbook()  # type: ignore[attr-defined]
-
-        def xldate_as_datetime(value: float, datemode: int) -> datetime:
-            return datetime(2024, 1, 15, 0, 0, 0)
-
-        fake.xldate_as_datetime = xldate_as_datetime  # type: ignore[attr-defined]
+        fake.xldate_as_datetime = lambda v, dm: datetime(2024, 1, 15, 0, 0, 0)  # type: ignore[attr-defined]
         return fake
 
     async def test_extract_xls_with_mocked_xlrd(
@@ -266,44 +273,18 @@ class TestTabularDocumentTextExtractorXls:
         assert "[HEADERS]:Nom|Valeur" in result
         assert "[ROW:1]:Alpha|42" in result
 
-    async def test_extract_xls_date_formatted(
+    async def test_extract_xls_date_formatted_as_yyyy_mm_dd(
         self, extractor: TabularDocumentTextExtractor, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # Given
-        XL_CELL_TEXT = 1
-        XL_CELL_DATE = 3
-
-        class FakeCell:
-            def __init__(self, ctype: int, value: object) -> None:
-                self.ctype = ctype
-                self.value = value
-
-        class FakeSheet:
-            nrows = 2
-            ncols = 2
-
-            def cell(self, row: int, col: int) -> FakeCell:
-                data = [
-                    [FakeCell(XL_CELL_TEXT, "Label"), FakeCell(XL_CELL_TEXT, "Date")],
-                    [FakeCell(XL_CELL_TEXT, "Event"), FakeCell(XL_CELL_DATE, 45306.0)],
-                ]
-                return data[row][col]  # type: ignore[return-value]
-
-        class FakeWorkbook:
-            datemode = 0
-
-            def sheet_names(self) -> list[str]:
-                return ["Data"]
-
-            def sheet_by_name(self, name: str) -> FakeSheet:
-                return FakeSheet()
-
-        fake = types.ModuleType("xlrd")
-        fake.XL_CELL_EMPTY = 0  # type: ignore[attr-defined]
-        fake.XL_CELL_DATE = XL_CELL_DATE  # type: ignore[attr-defined]
-        fake.open_workbook = lambda file_contents: FakeWorkbook()  # type: ignore[attr-defined]
-        fake.xldate_as_datetime = lambda v, dm: datetime(2024, 1, 15, 0, 0, 0)  # type: ignore[attr-defined]
-        monkeypatch.setitem(sys.modules, "xlrd", fake)
+        fake_xlrd = self._make_fake_xlrd(
+            sheet_name="Data",
+            rows=[
+                [(_XL_CELL_TEXT, "Label"), (_XL_CELL_TEXT, "Date")],
+                [(_XL_CELL_TEXT, "Event"), (_XL_CELL_DATE, 45306.0)],
+            ],
+        )
+        monkeypatch.setitem(sys.modules, "xlrd", fake_xlrd)
 
         # When
         result = await extractor.extract_text("legacy.xls", b"fake", "application/vnd.ms-excel")

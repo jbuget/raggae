@@ -130,9 +130,7 @@ class MultiFormatDocumentTextExtractor:
             raise DocumentExtractionError(f"Failed to extract PPTX text: {exc}") from exc
 
     def _table_to_markdown(self, table: object) -> list[str]:
-        # Intentionally uses Markdown format: DOCX is not auto-routed to TABULAR
-        # strategy, so tables land in paragraph/fixed-window chunkers that handle
-        # prose-mixed content — not in TabularTextChunkerService.
+        # Markdown format intentional: DOCX tables go through prose chunkers, not TabularTextChunkerService.
         from docx.table import Table as DocxTable
 
         if not isinstance(table, DocxTable):

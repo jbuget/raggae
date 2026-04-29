@@ -7,12 +7,7 @@ _ROW_PREFIX = "[ROW:"
 
 
 class TabularTextChunkerService:
-    """Chunk tabular structured text into one key-value chunk per data row.
-
-    Each chunk uses a readable "field: value" format that skips empty cells,
-    making it easy for LLMs to match questions to answers without parsing
-    wide Markdown tables with mostly-empty columns.
-    """
+    """Chunk tabular structured text into one key-value chunk per data row."""
 
     async def chunk_text(
         self,
