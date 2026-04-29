@@ -73,26 +73,173 @@ class TestMultiFormatDocumentTextExtractor:
         extractor: MultiFormatDocumentTextExtractor,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        # Given
+        # Given — fake pdfplumber with two pages, no tables
         class _FakePage:
-            def __init__(self, value: str) -> None:
-                self._value = value
+            def __init__(self, text: str) -> None:
+                self._text = text
+
+            def find_tables(self) -> list[object]:
+                return []
 
             def extract_text(self) -> str:
-                return self._value
+                return self._text
 
-        class _FakeReader:
-            def __init__(self, _buffer: BytesIO) -> None:
-                self.pages = [_FakePage("page one"), _FakePage("page two")]
+            def filter(self, fn: object) -> "_FakePage":
+                return self
 
-        fake_module = types.SimpleNamespace(PdfReader=_FakeReader)
-        monkeypatch.setitem(sys.modules, "pypdf", fake_module)
+        class _FakePdf:
+            pages = [_FakePage("page one"), _FakePage("page two")]
+
+            def __enter__(self) -> "_FakePdf":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                pass
+
+        fake_pdfplumber = types.SimpleNamespace(open=lambda buf: _FakePdf())
+        monkeypatch.setitem(sys.modules, "pdfplumber", fake_pdfplumber)
+        monkeypatch.setattr(extractor._pdf_table_extractor, "extract_tables", lambda _: [])
 
         # When
         result = extractor._extract_pdf(b"%PDF-1.7")
 
         # Then
-        assert result == "[[PAGE:1]]\npage one\n[[PAGE:2]]\npage two"
+        assert "[[PAGE:1]]" in result
+        assert "page one" in result
+        assert "[[PAGE:2]]" in result
+        assert "page two" in result
+
+    async def test_extract_pdf_table_chunk_appended_after_text(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given — PdfTableExtractor returns one table on page 1
+        from raggae.infrastructure.services.pdf_table_extractor import TableData
+
+        fake_table = TableData(
+            rows=[["Produit", "Prix"], ["Widget A", "48 €"]],
+            page_number=1,
+            table_index=1,
+            bbox=(10.0, 20.0, 200.0, 100.0),
+        )
+
+        class _FakePage:
+            def find_tables(self) -> list[object]:
+                return []
+
+            def extract_text(self) -> str:
+                return "some text"
+
+            def filter(self, fn: object) -> "_FakePage":
+                return self
+
+        class _FakePdf:
+            pages = [_FakePage()]
+
+            def __enter__(self) -> "_FakePdf":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                pass
+
+        monkeypatch.setitem(sys.modules, "pdfplumber", types.SimpleNamespace(open=lambda buf: _FakePdf()))
+        monkeypatch.setattr(extractor._pdf_table_extractor, "extract_tables", lambda _: [fake_table])
+
+        # When
+        result = extractor._extract_pdf(b"%PDF-1.7")
+
+        # Then
+        assert "[[PAGE:1]] [TABLE:1]" in result
+        assert "| Produit | Prix |" in result
+        assert "| Widget A | 48 € |" in result
+
+    async def test_extract_pdf_table_bbox_filter_applied_to_text(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given — filter() is called when table bbox is present, returning filtered text
+        from raggae.infrastructure.services.pdf_table_extractor import TableData
+
+        fake_table = TableData(
+            rows=[["H"], ["v"]],
+            page_number=1,
+            table_index=1,
+            bbox=(10.0, 20.0, 200.0, 100.0),
+        )
+
+        class _FakeFilteredPage:
+            def extract_text(self) -> str:
+                return "only prose here"
+
+        class _FakePage:
+            def find_tables(self) -> list[object]:
+                return []
+
+            def extract_text(self) -> str:
+                return "prose + TABLE CONTENT"
+
+            def filter(self, fn: object) -> _FakeFilteredPage:
+                return _FakeFilteredPage()
+
+        class _FakePdf:
+            pages = [_FakePage()]
+
+            def __enter__(self) -> "_FakePdf":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                pass
+
+        monkeypatch.setitem(sys.modules, "pdfplumber", types.SimpleNamespace(open=lambda buf: _FakePdf()))
+        monkeypatch.setattr(extractor._pdf_table_extractor, "extract_tables", lambda _: [fake_table])
+
+        # When
+        result = extractor._extract_pdf(b"%PDF-1.7")
+
+        # Then — filtered text used, raw text not present
+        assert "only prose here" in result
+        assert "TABLE CONTENT" not in result
+
+    async def test_extract_pdf_table_extraction_failure_still_returns_text(
+        self,
+        extractor: MultiFormatDocumentTextExtractor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given — PdfTableExtractor raises; text extraction must still succeed
+        class _FakePage:
+            def find_tables(self) -> list[object]:
+                return []
+
+            def extract_text(self) -> str:
+                return "fallback text"
+
+            def filter(self, fn: object) -> "_FakePage":
+                return self
+
+        class _FakePdf:
+            pages = [_FakePage()]
+
+            def __enter__(self) -> "_FakePdf":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                pass
+
+        monkeypatch.setitem(sys.modules, "pdfplumber", types.SimpleNamespace(open=lambda buf: _FakePdf()))
+        monkeypatch.setattr(
+            extractor._pdf_table_extractor,
+            "extract_tables",
+            lambda _: (_ for _ in ()).throw(RuntimeError("pdfplumber crashed")),
+        )
+
+        # When
+        result = extractor._extract_pdf(b"%PDF-1.7")
+
+        # Then — text still extracted despite table extractor failure
+        assert "[[PAGE:1]]" in result
+        assert "fallback text" in result
 
     async def test_extract_text_docx_uses_docx_extractor(
         self,

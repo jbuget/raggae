@@ -350,6 +350,7 @@ from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
 )
+from raggae.infrastructure.services.pdf_table_extractor import PdfTableExtractor
 from raggae.infrastructure.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
 )
@@ -482,7 +483,10 @@ else:
     _file_storage_service = InMemoryFileStorageService()
 _embedding_service: EmbeddingService = _build_embedding_service()
 _semantic_embedding_service: EmbeddingService = _build_embedding_service()
-_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
+_pdf_table_extractor = PdfTableExtractor()
+_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor(
+    pdf_table_extractor=_pdf_table_extractor
+)
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
 _file_metadata_extractor: FileMetadataExtractor = DocumentFileMetadataExtractor()
