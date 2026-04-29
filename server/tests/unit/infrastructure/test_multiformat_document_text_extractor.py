@@ -11,6 +11,22 @@ from raggae.infrastructure.services.multiformat_document_text_extractor import (
 )
 
 
+def _make_fake_pdfplumber(pages: list[object]) -> types.ModuleType:
+    class _FakePdf:
+        def __init__(self, _pages: list[object]) -> None:
+            self.pages = _pages
+
+        def __enter__(self) -> "_FakePdf":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            pass
+
+    fake = types.ModuleType("pdfplumber")
+    fake.open = lambda _buf: _FakePdf(pages)  # type: ignore[attr-defined]
+    return fake
+
+
 class TestMultiFormatDocumentTextExtractor:
     @pytest.fixture
     def extractor(self) -> MultiFormatDocumentTextExtractor:
@@ -73,13 +89,10 @@ class TestMultiFormatDocumentTextExtractor:
         extractor: MultiFormatDocumentTextExtractor,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        # Given — fake pdfplumber with two pages, no tables
+        # Given — two pages, no tables
         class _FakePage:
             def __init__(self, text: str) -> None:
                 self._text = text
-
-            def find_tables(self) -> list[object]:
-                return []
 
             def extract_text(self) -> str:
                 return self._text
@@ -87,17 +100,9 @@ class TestMultiFormatDocumentTextExtractor:
             def filter(self, fn: object) -> "_FakePage":
                 return self
 
-        class _FakePdf:
-            pages = [_FakePage("page one"), _FakePage("page two")]
-
-            def __enter__(self) -> "_FakePdf":
-                return self
-
-            def __exit__(self, *args: object) -> None:
-                pass
-
-        fake_pdfplumber = types.SimpleNamespace(open=lambda buf: _FakePdf())
-        monkeypatch.setitem(sys.modules, "pdfplumber", fake_pdfplumber)
+        monkeypatch.setitem(
+            sys.modules, "pdfplumber", _make_fake_pdfplumber([_FakePage("page one"), _FakePage("page two")])
+        )
         monkeypatch.setattr(extractor._pdf_table_extractor, "extract_tables", lambda _: [])
 
         # When
@@ -125,25 +130,13 @@ class TestMultiFormatDocumentTextExtractor:
         )
 
         class _FakePage:
-            def find_tables(self) -> list[object]:
-                return []
-
             def extract_text(self) -> str:
                 return "some text"
 
             def filter(self, fn: object) -> "_FakePage":
                 return self
 
-        class _FakePdf:
-            pages = [_FakePage()]
-
-            def __enter__(self) -> "_FakePdf":
-                return self
-
-            def __exit__(self, *args: object) -> None:
-                pass
-
-        monkeypatch.setitem(sys.modules, "pdfplumber", types.SimpleNamespace(open=lambda buf: _FakePdf()))
+        monkeypatch.setitem(sys.modules, "pdfplumber", _make_fake_pdfplumber([_FakePage()]))
         monkeypatch.setattr(extractor._pdf_table_extractor, "extract_tables", lambda _: [fake_table])
 
         # When
@@ -153,6 +146,7 @@ class TestMultiFormatDocumentTextExtractor:
         assert "[[PAGE:1]] [TABLE:1]" in result
         assert "| Produit | Prix |" in result
         assert "| Widget A | 48 € |" in result
+        assert result.index("[[PAGE:1]] [TABLE:1]") < result.index("[[PAGE:1]]\n")
 
     async def test_extract_pdf_table_bbox_filter_applied_to_text(
         self,
@@ -174,31 +168,19 @@ class TestMultiFormatDocumentTextExtractor:
                 return "only prose here"
 
         class _FakePage:
-            def find_tables(self) -> list[object]:
-                return []
-
             def extract_text(self) -> str:
                 return "prose + TABLE CONTENT"
 
             def filter(self, fn: object) -> _FakeFilteredPage:
                 return _FakeFilteredPage()
 
-        class _FakePdf:
-            pages = [_FakePage()]
-
-            def __enter__(self) -> "_FakePdf":
-                return self
-
-            def __exit__(self, *args: object) -> None:
-                pass
-
-        monkeypatch.setitem(sys.modules, "pdfplumber", types.SimpleNamespace(open=lambda buf: _FakePdf()))
+        monkeypatch.setitem(sys.modules, "pdfplumber", _make_fake_pdfplumber([_FakePage()]))
         monkeypatch.setattr(extractor._pdf_table_extractor, "extract_tables", lambda _: [fake_table])
 
         # When
         result = extractor._extract_pdf(b"%PDF-1.7")
 
-        # Then — filtered text used, raw text not present
+        # Then
         assert "only prose here" in result
         assert "TABLE CONTENT" not in result
 
@@ -206,28 +188,17 @@ class TestMultiFormatDocumentTextExtractor:
         self,
         extractor: MultiFormatDocumentTextExtractor,
         monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         # Given — PdfTableExtractor raises; text extraction must still succeed
         class _FakePage:
-            def find_tables(self) -> list[object]:
-                return []
-
             def extract_text(self) -> str:
                 return "fallback text"
 
             def filter(self, fn: object) -> "_FakePage":
                 return self
 
-        class _FakePdf:
-            pages = [_FakePage()]
-
-            def __enter__(self) -> "_FakePdf":
-                return self
-
-            def __exit__(self, *args: object) -> None:
-                pass
-
-        monkeypatch.setitem(sys.modules, "pdfplumber", types.SimpleNamespace(open=lambda buf: _FakePdf()))
+        monkeypatch.setitem(sys.modules, "pdfplumber", _make_fake_pdfplumber([_FakePage()]))
         monkeypatch.setattr(
             extractor._pdf_table_extractor,
             "extract_tables",
@@ -235,11 +206,13 @@ class TestMultiFormatDocumentTextExtractor:
         )
 
         # When
-        result = extractor._extract_pdf(b"%PDF-1.7")
+        with caplog.at_level("WARNING"):
+            result = extractor._extract_pdf(b"%PDF-1.7")
 
-        # Then — text still extracted despite table extractor failure
+        # Then
         assert "[[PAGE:1]]" in result
         assert "fallback text" in result
+        assert "pdf_table_extraction_failed" in caplog.text
 
     async def test_extract_text_docx_uses_docx_extractor(
         self,

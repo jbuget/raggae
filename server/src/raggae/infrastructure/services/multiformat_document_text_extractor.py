@@ -68,6 +68,10 @@ class MultiFormatDocumentTextExtractor:
             if t.bbox is not None:
                 bboxes_by_page.setdefault(t.page_number, []).append(t.bbox)
 
+        tables_by_page: dict[int, list[TableData]] = {}
+        for t in tables:
+            tables_by_page.setdefault(t.page_number, []).append(t)
+
         try:
             parts: list[str] = []
             with pdfplumber.open(BytesIO(content)) as pdf:
@@ -78,10 +82,9 @@ class MultiFormatDocumentTextExtractor:
                         text = filtered.extract_text() or ""
                     else:
                         text = page.extract_text() or ""
+                    for table in tables_by_page.get(page_num, []):
+                        parts.append(table.to_chunk())
                     parts.append(f"[[PAGE:{page_num}]]\n{text}")
-
-            for table in tables:
-                parts.append(table.to_chunk())
 
             return "\n".join(parts)
         except Exception as exc:
