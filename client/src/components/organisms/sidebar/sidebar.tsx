@@ -7,6 +7,7 @@ import { ProjectsSection } from "./projects-section";
 import { OrganizationSection } from "./organization-section";
 import { UserMenu } from "./user-menu";
 import { useSidebarData } from "./use-sidebar-data";
+import { FavoriteConversationsSection } from "./favorite-conversations-section";
 
 export function Sidebar() {
   const t = useTranslations("sidebar");
@@ -23,6 +24,7 @@ export function Sidebar() {
       <SidebarLogo />
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         <SidebarNav showIcons />
+        <FavoriteConversationsSection />
         <ProjectsSection
           variant="desktop"
           title={t("myProjects")}

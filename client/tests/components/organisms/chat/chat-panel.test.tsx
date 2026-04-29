@@ -64,6 +64,16 @@ vi.mock("@/lib/hooks/use-auth", () => ({
   useAuth: () => ({ token: "token-1" }),
 }));
 
+const mockProjectData = vi.hoisted(() => ({
+  reindex_status: "idle" as string,
+  reindex_progress: 0,
+  reindex_total: 0,
+}));
+
+vi.mock("@/lib/hooks/use-projects", () => ({
+  useProject: () => ({ data: mockProjectData }),
+}));
+
 const getDocumentFileBlobMock = vi.fn();
 vi.mock("@/lib/api/documents", () => ({
   getDocumentFileBlob: (...args: unknown[]) => getDocumentFileBlobMock(...args),
@@ -106,10 +116,12 @@ describe("ChatPanel", () => {
     mockSendMessageResult.error = null;
   });
 
-  it("should show disabled message when disabled prop is set", () => {
-    renderWithProviders(
-      <ChatPanel projectId="proj-1" conversationId="conv-1" disabled disabledMessage="Réindexation en cours" />,
-    );
-    expect(screen.getByText("Réindexation en cours")).toBeInTheDocument();
+  it("should show reindexing message when project is being reindexed", () => {
+    mockProjectData.reindex_status = "in_progress";
+    mockProjectData.reindex_progress = 3;
+    mockProjectData.reindex_total = 10;
+    renderWithProviders(<ChatPanel projectId="proj-1" conversationId="conv-1" />);
+    expect(screen.getByText("Reindexing in progress (3/10). Chat is temporarily disabled.")).toBeInTheDocument();
+    mockProjectData.reindex_status = "idle";
   });
 });

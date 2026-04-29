@@ -1,4 +1,4 @@
-import { OrganizationSettings } from "@/components/organisms/organization/organization-settings";
+import { OrganizationSettingsTemplate } from "@/components/templates/organization/organization-settings-template";
 
 type OrganizationSettingsPageProps = {
   params: Promise<{
@@ -10,5 +10,5 @@ export default async function OrganizationSettingsPage({
   params,
 }: OrganizationSettingsPageProps) {
   const { organizationId } = await params;
-  return <OrganizationSettings organizationId={organizationId} />;
+  return <OrganizationSettingsTemplate organizationId={organizationId} />;
 }

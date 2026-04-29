@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatFileSize } from "@/lib/utils/format";
 
-const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md"] as const;
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".pptx", ".txt", ".md"] as const;
 const ACCEPT = SUPPORTED_EXTENSIONS.join(",");
 
 function isSupportedFile(file: File): boolean {

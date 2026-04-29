@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMessages, useSendMessage } from "@/lib/hooks/use-chat";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useProject } from "@/lib/hooks/use-projects";
 import { getDocumentFileBlob } from "@/lib/api/documents";
 import { MessageList } from "@/components/organisms/chat/message-list";
 import { DocumentPreviewDialog } from "@/components/organisms/chat/document-preview-dialog";
@@ -21,19 +22,21 @@ interface MessageSourceDocument {
 interface ChatPanelProps {
   projectId: string;
   conversationId: string | null;
-  disabled?: boolean;
-  disabledMessage?: string;
 }
 
-export function ChatPanel({
-  projectId,
-  conversationId,
-  disabled = false,
-  disabledMessage,
-}: ChatPanelProps) {
+export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   const t = useTranslations("chat.panel");
+  const tChat = useTranslations("projects.chatPage");
   const router = useRouter();
   const { token } = useAuth();
+  const { data: project } = useProject(projectId);
+  const isReindexing = project?.reindex_status === "in_progress";
+  const disabledMessage = isReindexing
+    ? tChat("reindexingMessage", {
+        progress: project?.reindex_progress,
+        total: project?.reindex_total,
+      })
+    : undefined;
 
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId);
   const { data: existingMessages } = useMessages(projectId, currentConversationId);
@@ -79,7 +82,7 @@ export function ChatPanel({
   }, [chunks]);
 
   async function handleSend(content: string) {
-    if (disabled) return;
+    if (isReindexing) return;
     const effectiveConversationId = currentConversationId ?? conversationId;
     const userMessage: MessageResponse = {
       id: `temp-${Date.now()}`,
@@ -148,7 +151,7 @@ export function ChatPanel({
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-background">
           <div className="mx-auto w-full max-w-190 px-4">
           <SourcesBar sources={streamedSourceDocuments} onSourceClick={handleSourceClick} />
-          {disabled && (
+          {isReindexing && (
             <p className="mb-2 text-xs text-amber-700">
               {disabledMessage || t("disabledDefault")}
             </p>
@@ -156,8 +159,8 @@ export function ChatPanel({
           <MessageInput
             onSend={handleSend}
             onStop={cancel}
-            disabled={disabled || state !== "idle"}
-            isThinking={!disabled && state !== "idle"}
+            disabled={isReindexing || state !== "idle"}
+            isThinking={!isReindexing && state !== "idle"}
             hasMessages={messages.length > 0}
           />
           </div>

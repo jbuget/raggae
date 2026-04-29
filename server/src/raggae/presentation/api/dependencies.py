@@ -84,14 +84,17 @@ from raggae.application.services.document_indexing_service import DocumentIndexi
 from raggae.application.services.parent_child_chunking_service import (
     ParentChildChunkingService,
 )
+from raggae.application.services.slide_chunker import SlideChunker
 from raggae.application.use_cases.chat.delete_conversation import DeleteConversation
 from raggae.application.use_cases.chat.get_conversation import GetConversation
 from raggae.application.use_cases.chat.list_conversation_messages import (
     ListConversationMessages,
 )
 from raggae.application.use_cases.chat.list_conversations import ListConversations
+from raggae.application.use_cases.chat.list_favorite_conversations import ListFavoriteConversations
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.application.use_cases.chat.send_message import SendMessage
+from raggae.application.use_cases.chat.toggle_favorite_conversation import ToggleFavoriteConversation
 from raggae.application.use_cases.chat.update_conversation import UpdateConversation
 from raggae.application.use_cases.document.delete_document import DeleteDocument
 from raggae.application.use_cases.document.get_document_file import GetDocumentFile
@@ -162,6 +165,7 @@ from raggae.application.use_cases.organization.upsert_org_project_defaults impor
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
+from raggae.application.use_cases.project.list_accessible_projects import ListAccessibleProjects
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.publish_project import PublishProject
 from raggae.application.use_cases.project.reindex_project import ReindexProject
@@ -292,6 +296,9 @@ from raggae.infrastructure.services.bcrypt_password_hasher import BcryptPassword
 from raggae.infrastructure.services.contextual_embedding_service import (
     ContextualEmbeddingService,
 )
+from raggae.infrastructure.services.document_file_metadata_extractor import (
+    DocumentFileMetadataExtractor,
+)
 from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
 from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
     FernetProviderApiKeyCryptoService,
@@ -354,9 +361,6 @@ from raggae.infrastructure.services.openai_embedding_service import OpenAIEmbedd
 from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
-)
-from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
-    PdfDocxFileMetadataExtractor,
 )
 from raggae.infrastructure.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
@@ -497,7 +501,7 @@ _semantic_embedding_service: EmbeddingService = _build_embedding_service()
 _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
-_file_metadata_extractor: FileMetadataExtractor = PdfDocxFileMetadataExtractor()
+_file_metadata_extractor: FileMetadataExtractor = DocumentFileMetadataExtractor()
 _language_detector: LanguageDetector = LangdetectLanguageDetector()
 _keyword_extractor: KeywordExtractor = KeybertKeywordExtractor()
 if settings.persistence_backend != "postgres":
@@ -532,6 +536,7 @@ elif settings.text_chunker_backend == "native":
 else:
     raise ValueError(f"Unsupported text chunker backend: {settings.text_chunker_backend}")
 _parent_child_chunking_service = ParentChildChunkingService()
+_slide_chunker = SlideChunker()
 _document_indexing_service = DocumentIndexingService(
     document_chunk_repository=_document_chunk_repository,
     document_text_extractor=_document_text_extractor,
@@ -545,6 +550,7 @@ _document_indexing_service = DocumentIndexingService(
     chunking_strategy_selector=_chunking_strategy_selector,
     chunker_backend=settings.text_chunker_backend,
     parent_child_chunking_service=_parent_child_chunking_service,
+    slide_chunker=_slide_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)
@@ -692,6 +698,14 @@ def get_get_project_use_case() -> GetProject:
 
 def get_list_projects_use_case() -> ListProjects:
     return ListProjects(project_repository=_project_repository)
+
+
+def get_list_accessible_projects_use_case() -> ListAccessibleProjects:
+    return ListAccessibleProjects(
+        organization_member_repository=_organization_member_repository,
+        organization_repository=_organization_repository,
+        project_repository=_project_repository,
+    )
 
 
 def get_delete_project_use_case() -> DeleteProject:
@@ -895,6 +909,14 @@ def get_update_conversation_use_case() -> UpdateConversation:
         conversation_repository=_conversation_repository,
         organization_member_repository=_organization_member_repository,
     )
+
+
+def get_toggle_favorite_conversation_use_case() -> ToggleFavoriteConversation:
+    return ToggleFavoriteConversation(conversation_repository=_conversation_repository)
+
+
+def get_list_favorite_conversations_use_case() -> ListFavoriteConversations:
+    return ListFavoriteConversations(conversation_repository=_conversation_repository)
 
 
 def get_create_organization_use_case() -> CreateOrganization:

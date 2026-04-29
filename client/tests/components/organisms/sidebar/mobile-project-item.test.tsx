@@ -13,6 +13,7 @@ vi.mock("@/lib/hooks/use-chat", () => ({
   useConversations: vi.fn(() => ({ data: [], isLoading: false })),
   useDeleteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useRenameConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useToggleFavoriteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/lib/hooks/use-auth", () => ({
@@ -60,6 +61,6 @@ describe("MobileProjectItem", () => {
   it("should apply active styles when pathname is under the project", () => {
     vi.mocked(usePathname).mockReturnValue("/projects/proj-1/chat/conv-1");
     renderWithProviders(<MobileProjectItem project={project} />);
-    expect(screen.getByRole("button", { name: "My Project" })).toHaveClass("text-primary");
+    expect(screen.getByRole("button", { name: "My Project" })).toHaveClass("font-semibold");
   });
 });

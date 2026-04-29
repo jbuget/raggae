@@ -2,56 +2,25 @@
 
 import { useQueries } from "@tanstack/react-query";
 import { listConversations } from "@/lib/api/chat";
-import { listOrganizationMembers, listOrganizationProjects } from "@/lib/api/organizations";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useOrganizations } from "@/lib/hooks/use-organizations";
-import { useProjects } from "@/lib/hooks/use-projects";
+import { useAccessibleProjects } from "@/lib/hooks/use-accessible-projects";
 
 export function useSidebarData() {
-  const { token, user } = useAuth();
-  const { data: projects, isLoading: isLoadingProjects } = useProjects();
-  const { data: organizations } = useOrganizations();
+  const { token } = useAuth();
+  const {
+    personalProjects,
+    organizationSections,
+    editableOrganizationIds,
+    isLoading: isLoadingProjects,
+  } = useAccessibleProjects();
 
-  const sortedOrganizations = [...(organizations ?? [])].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
-  );
-
-  const organizationProjectsQueries = useQueries({
-    queries: sortedOrganizations.map((organization) => ({
-      queryKey: ["organization-projects", organization.id],
-      queryFn: () => listOrganizationProjects(token!, organization.id),
-      enabled: !!token,
-    })),
-  });
+  const sortedOrganizations = organizationSections.map((s) => s.organization);
 
   const organizationProjectsMap = new Map(
-    sortedOrganizations.map((organization, index) => [
-      organization.id,
-      organizationProjectsQueries[index]?.data ?? [],
-    ]),
+    organizationSections.map((s) => [s.organization.id, s.projects]),
   );
 
-  const organizationMembersQueries = useQueries({
-    queries: sortedOrganizations.map((organization) => ({
-      queryKey: ["organization-members", organization.id],
-      queryFn: () => listOrganizationMembers(token!, organization.id),
-      enabled: !!token && !!user?.id,
-    })),
-  });
-
-  const editableOrganizationIds = new Set(
-    sortedOrganizations
-      .filter((_, index) => {
-        const members = organizationMembersQueries[index]?.data ?? [];
-        const currentUserMember = members.find((member) => member.user_id === user?.id);
-        return currentUserMember?.role === "owner" || currentUserMember?.role === "maker";
-      })
-      .map((organization) => organization.id),
-  );
-
-  const personalProjects = (projects ?? []).filter((p) => !p.organization_id);
-
-  const allOrgProjects = Array.from(organizationProjectsMap.values()).flat();
+  const allOrgProjects = organizationSections.flatMap((s) => s.projects);
   const allProjects = [...personalProjects, ...allOrgProjects];
 
   useQueries({

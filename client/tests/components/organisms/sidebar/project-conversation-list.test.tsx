@@ -14,6 +14,7 @@ vi.mock("@/lib/hooks/use-chat", () => ({
   useConversations: vi.fn(),
   useDeleteConversation: vi.fn(),
   useRenameConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useToggleFavoriteConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/lib/hooks/use-auth", () => ({
@@ -29,6 +30,7 @@ const makeConversation = (id: string, title: string | null, createdAt: string): 
   user_id: "user-1",
   created_at: createdAt,
   title,
+  is_favorite: false,
 });
 
 const conversations = [

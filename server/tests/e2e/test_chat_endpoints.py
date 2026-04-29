@@ -685,3 +685,139 @@ class TestChatEndpoints:
 
         # Then
         assert response.status_code == 404
+
+    async def test_toggle_favorite_by_owner_returns_200_and_is_favorite_true(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        send_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "hello", "limit": 3},
+            headers=headers,
+        )
+        conversation_id = send_response.json()["conversation_id"]
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/favorite",
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_favorite"] is True
+
+    async def test_toggle_favorite_twice_returns_is_favorite_false(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        send_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "hello", "limit": 3},
+            headers=headers,
+        )
+        conversation_id = send_response.json()["conversation_id"]
+        await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/favorite",
+            headers=headers,
+        )
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/favorite",
+            headers=headers,
+        )
+
+        # Then
+        assert response.status_code == 200
+        assert response.json()["is_favorite"] is False
+
+    async def test_toggle_favorite_by_other_user_returns_403(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        owner_headers, project_id = await self._create_project(client)
+        send_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "hello", "limit": 3},
+            headers=owner_headers,
+        )
+        conversation_id = send_response.json()["conversation_id"]
+        other_headers = await self._auth_headers(client)
+
+        # When
+        response = await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/favorite",
+            headers=other_headers,
+        )
+
+        # Then
+        assert response.status_code == 403
+
+    async def test_list_favorite_conversations_returns_favorites_cross_projects(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        send_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "hello", "limit": 3},
+            headers=headers,
+        )
+        conversation_id = send_response.json()["conversation_id"]
+        await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{conversation_id}/favorite",
+            headers=headers,
+        )
+
+        # When
+        response = await client.get("/api/v1/users/me/conversations/favorites", headers=headers)
+
+        # Then
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["id"] == conversation_id
+        assert data[0]["is_favorite"] is True
+
+    async def test_list_favorite_conversations_sorted_by_created_at_desc(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        # Given
+        headers, project_id = await self._create_project(client)
+        first = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "first", "limit": 3, "start_new_conversation": True},
+            headers=headers,
+        )
+        second = await client.post(
+            f"/api/v1/projects/{project_id}/chat/messages",
+            json={"message": "second", "limit": 3, "start_new_conversation": True},
+            headers=headers,
+        )
+        first_id = first.json()["conversation_id"]
+        second_id = second.json()["conversation_id"]
+        await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{first_id}/favorite",
+            headers=headers,
+        )
+        await client.patch(
+            f"/api/v1/projects/{project_id}/chat/conversations/{second_id}/favorite",
+            headers=headers,
+        )
+
+        # When
+        response = await client.get("/api/v1/users/me/conversations/favorites", headers=headers)
+
+        # Then
+        assert response.status_code == 200
+        ids = [item["id"] for item in response.json()]
+        assert ids.index(second_id) < ids.index(first_id)

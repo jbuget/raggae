@@ -15,6 +15,7 @@ const conversation: ConversationResponse = {
   user_id: "user-1",
   created_at: "2024-01-15T10:00:00Z",
   title: "Test conversation",
+  is_favorite: false,
 };
 
 const defaultProps = {
@@ -22,6 +23,7 @@ const defaultProps = {
   projectId: "proj-1",
   onDelete: vi.fn(),
   onRename: vi.fn(),
+  onToggleFavorite: vi.fn(),
 };
 
 describe("ConversationItem", () => {

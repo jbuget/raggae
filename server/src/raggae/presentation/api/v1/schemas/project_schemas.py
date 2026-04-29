@@ -161,3 +161,15 @@ class ReindexProjectResponse(BaseModel):
     total_documents: int
     indexed_documents: int
     failed_documents: int
+
+
+class OrganizationSectionResponse(BaseModel):
+    organization_id: UUID
+    organization_name: str
+    projects: list[ProjectResponse]
+    can_edit: bool
+
+
+class AccessibleProjectsResponse(BaseModel):
+    personal_projects: list[ProjectResponse]
+    organization_sections: list[OrganizationSectionResponse]

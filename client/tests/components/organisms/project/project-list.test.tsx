@@ -17,31 +17,34 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: () => null }),
 }));
 
-const mockProjects = [
-  {
-    id: "proj-1",
-    user_id: "user-1",
-    name: "Alpha",
-    description: "First project",
-    system_prompt: "",
-    is_published: false,
-    created_at: "2026-01-01T00:00:00Z",
-  },
-  {
-    id: "proj-2",
-    user_id: "user-1",
-    name: "Beta",
-    description: "",
-    system_prompt: "",
-    is_published: false,
-    created_at: "2026-02-01T00:00:00Z",
-  },
-];
+const mockAccessibleProjects = {
+  personal_projects: [
+    {
+      id: "proj-1",
+      user_id: "user-1",
+      name: "Alpha",
+      description: "First project",
+      system_prompt: "",
+      is_published: false,
+      created_at: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "proj-2",
+      user_id: "user-1",
+      name: "Beta",
+      description: "",
+      system_prompt: "",
+      is_published: false,
+      created_at: "2026-02-01T00:00:00Z",
+    },
+  ],
+  organization_sections: [],
+};
 
 describe("ProjectList", () => {
-  it("should render a list of projects", async () => {
+  it("should render personal projects", async () => {
     server.use(
-      http.get("/api/v1/projects", () => HttpResponse.json(mockProjects)),
+      http.get("/api/v1/projects/accessible", () => HttpResponse.json(mockAccessibleProjects)),
     );
     renderWithProviders(<ProjectList />);
     expect(await screen.findByText("Alpha")).toBeInTheDocument();
@@ -50,22 +53,62 @@ describe("ProjectList", () => {
 
   it("should render skeleton while loading", () => {
     server.use(
-      http.get("/api/v1/projects", async () => {
+      http.get("/api/v1/projects/accessible", async () => {
         await new Promise(() => {}); // never resolves
-        return HttpResponse.json([]);
+        return HttpResponse.json({});
       }),
     );
     renderWithProviders(<ProjectList />);
-    // skeletons are rendered (no project text yet)
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
   });
 
   it("should show empty state when no projects", async () => {
     server.use(
-      http.get("/api/v1/projects", () => HttpResponse.json([])),
+      http.get("/api/v1/projects/accessible", () =>
+        HttpResponse.json({ personal_projects: [], organization_sections: [] }),
+      ),
     );
     renderWithProviders(<ProjectList />);
     expect(await screen.findByText(/no projects yet/i)).toBeInTheDocument();
+  });
+
+  it("should show error message when request fails", async () => {
+    server.use(
+      http.get("/api/v1/projects/accessible", () => HttpResponse.error()),
+    );
+    renderWithProviders(<ProjectList />);
+    expect(await screen.findByText(/unable to load projects/i)).toBeInTheDocument();
+  });
+
+  it("should render org section projects", async () => {
+    server.use(
+      http.get("/api/v1/projects/accessible", () =>
+        HttpResponse.json({
+          personal_projects: [],
+          organization_sections: [
+            {
+              organization_id: "org-1",
+              organization_name: "Acme Corp",
+              projects: [
+                {
+                  id: "org-proj-1",
+                  user_id: "user-1",
+                  name: "Org Project",
+                  description: "",
+                  system_prompt: "",
+                  is_published: true,
+                  created_at: "2026-03-01T00:00:00Z",
+                },
+              ],
+              can_edit: false,
+            },
+          ],
+        }),
+      ),
+    );
+    renderWithProviders(<ProjectList />);
+    expect(await screen.findByText("Acme Corp")).toBeInTheDocument();
+    expect(screen.getByText("Org Project")).toBeInTheDocument();
   });
 
   it("should open create dialog when ?create=1 is in the URL", async () => {
@@ -74,7 +117,7 @@ describe("ProjectList", () => {
       useSearchParams: () => ({ get: (key: string) => (key === "create" ? "1" : null) }),
     }));
     server.use(
-      http.get("/api/v1/projects", () => HttpResponse.json(mockProjects)),
+      http.get("/api/v1/projects/accessible", () => HttpResponse.json(mockAccessibleProjects)),
     );
     renderWithProviders(<ProjectList />);
     expect(await screen.findByRole("dialog")).toBeInTheDocument();

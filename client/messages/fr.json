@@ -122,13 +122,17 @@
     "description": "Créez et gérez vos agents RAG.",
     "new": "Nouveau projet",
     "empty": "Aucun projet pour le moment.",
+    "loadError": "Impossible de charger les projets.",
     "namePlaceholder": "Nom du projet",
     "notFound": "Projet introuvable",
     "list": {
       "createTitle": "Créer un projet",
       "createSuccess": "Projet créé",
       "createError": "Erreur lors de la création du projet",
-      "createFirst": "Créer votre premier projet"
+      "createFirst": "Créer votre premier projet",
+      "myProjects": "Mes projets",
+      "gridView": "Vue grille",
+      "listView": "Vue liste"
     },
     "card": {
       "created": "Créé le",
@@ -499,7 +503,11 @@
       "renameDescription": "Saisissez un nouveau nom pour cette conversation.",
       "renamePlaceholder": "Nom de la conversation",
       "deleteTitle": "Supprimer la conversation",
-      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?"
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette conversation ?",
+      "favorites": "Mes favoris",
+      "noFavorites": "Aucun favori pour le moment",
+      "addToFavorites": "Ajouter aux favoris",
+      "removeFromFavorites": "Retirer des favoris"
     }
   },
   "documents": {
@@ -541,7 +549,18 @@
       "downloadDocument": "Télécharger le document",
       "indexedAt": "Indexé le {date}",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer « {name} » ?",
-      "unableToLoadPreview": "Impossible de charger l'aperçu de ce document."
+      "unableToLoadPreview": "Impossible de charger l'aperçu de ce document.",
+      "chunksAriaLabel": "Voir les chunks",
+      "chunksTitle": "Chunks",
+      "chunksDisabledTitle": "Le document doit être indexé pour accéder aux chunks"
+    },
+    "chunks": {
+      "title": "{count} chunk(s)",
+      "loading": "Chargement des chunks...",
+      "empty": "Aucun chunk pour ce document.",
+      "error": "Impossible de charger les chunks.",
+      "chunkLabel": "Chunk #{index}",
+      "metadata": "Métadonnées"
     }
   },
   "sidebar": {
@@ -558,7 +577,8 @@
     "snapshots": "Historique",
     "githubProject": "Projet GitHub",
     "sourceCode": "Code source",
-    "stats": "Statistiques"
+    "stats": "Statistiques",
+    "conversations": "Conversations"
   },
   "layout": {
     "themeToggle": {
@@ -622,5 +642,21 @@
       "message": "Une erreur inattendue est survenue",
       "retry": "Réessayer"
     }
+  },
+  "conversations": {
+    "title": "Conversations",
+    "empty": "Aucune conversation pour le moment.",
+    "startNew": "Démarrer une conversation",
+    "new": "Nouvelle conversation",
+    "selectAll": "Tout sélectionner",
+    "selectedCount": "{count} sélectionnée(s)",
+    "deleteSelected": "Supprimer ({count})",
+    "bulkDeleteTitle": "Supprimer {count} conversation(s)",
+    "bulkDeleteConfirm": "Cette action est irréversible. Les {count} conversation(s) sélectionnée(s) seront définitivement supprimées.",
+    "menuLabel": "Options de la conversation",
+    "renameTitle": "Renommer la conversation",
+    "deleteTitle": "Supprimer la conversation",
+    "selectConversation": "Sélectionner {title}",
+    "deleteError": "Une erreur est survenue lors de la suppression de certaines conversations."
   }
 }

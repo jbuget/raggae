@@ -15,9 +15,13 @@ from raggae.application.use_cases.chat.list_conversation_messages import (
 )
 from raggae.application.use_cases.chat.list_conversations import ListConversations
 from raggae.application.use_cases.chat.send_message import SendMessage
+from raggae.application.use_cases.chat.toggle_favorite_conversation import ToggleFavoriteConversation
 from raggae.application.use_cases.chat.update_conversation import UpdateConversation
 from raggae.application.use_cases.project.get_project import GetProject
-from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
+from raggae.domain.exceptions.conversation_exceptions import (
+    ConversationAccessDeniedError,
+    ConversationNotFoundError,
+)
 from raggae.domain.exceptions.document_exceptions import LLMGenerationError
 from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
@@ -32,6 +36,7 @@ from raggae.presentation.api.dependencies import (
     get_list_conversation_messages_use_case,
     get_list_conversations_use_case,
     get_send_message_use_case,
+    get_toggle_favorite_conversation_use_case,
     get_update_conversation_use_case,
 )
 from raggae.presentation.api.v1.schemas.chat_schemas import (
@@ -324,6 +329,7 @@ async def list_conversations(
             user_id=conversation.user_id,
             created_at=conversation.created_at,
             title=conversation.title,
+            is_favorite=conversation.is_favorite,
         )
         for conversation in conversations
     ]
@@ -359,6 +365,7 @@ async def get_conversation(
         user_id=conversation.user_id,
         created_at=conversation.created_at,
         title=conversation.title,
+        is_favorite=conversation.is_favorite,
         message_count=conversation.message_count,
         last_message=(
             MessageResponse(
@@ -424,3 +431,36 @@ async def update_conversation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Conversation not found",
         ) from None
+
+
+@router.patch("/conversations/{conversation_id}/favorite")
+async def toggle_favorite_conversation(
+    project_id: UUID,
+    conversation_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[ToggleFavoriteConversation, Depends(get_toggle_favorite_conversation_use_case)],
+) -> ConversationResponse:
+    try:
+        conversation = await use_case.execute(
+            conversation_id=conversation_id,
+            user_id=user_id,
+        )
+    except ConversationNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found",
+        ) from None
+    except ConversationAccessDeniedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        ) from None
+
+    return ConversationResponse(
+        id=conversation.id,
+        project_id=conversation.project_id,
+        user_id=conversation.user_id,
+        created_at=conversation.created_at,
+        title=conversation.title,
+        is_favorite=conversation.is_favorite,
+    )

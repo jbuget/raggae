@@ -12,3 +12,4 @@ class Conversation:
     user_id: UUID
     created_at: datetime
     title: str | None = None
+    is_favorite: bool = False

@@ -102,18 +102,31 @@ class MmrDiversityRerankerService:
         query: str,
         top_k: int,
     ) -> list[RetrievedChunkDTO]:
-        """Fallback MMR using word overlap."""
+        """Fallback MMR using hybrid score (or word overlap when score=0)."""
         query_words = set(query.lower().split())
         selected: list[int] = []
         remaining = list(range(len(chunks)))
+
+        # Pre-compute relevance: prefer existing hybrid score over word overlap
+        relevance: list[float] = []
+        for chunk in chunks:
+            if chunk.score > 0:
+                relevance.append(chunk.score)
+            else:
+                chunk_words = set(chunk.content.lower().split())
+                relevance.append(len(query_words & chunk_words) / max(len(query_words), 1))
+
+        # Normalise to [0, 1] so λ weighting is consistent
+        max_rel = max(relevance) if relevance else 1.0
+        if max_rel > 0:
+            relevance = [r / max_rel for r in relevance]
 
         for _ in range(min(top_k, len(chunks))):
             best_idx = -1
             best_score = float("-inf")
 
             for idx in remaining:
-                chunk_words = set(chunks[idx].content.lower().split())
-                rel = len(query_words & chunk_words) / max(len(query_words), 1)
+                rel = relevance[idx]
 
                 if selected:
                     max_sim = max(_word_overlap(chunks[idx].content, chunks[s].content) for s in selected)

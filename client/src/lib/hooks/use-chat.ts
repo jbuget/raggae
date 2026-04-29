@@ -7,9 +7,11 @@ import {
   deleteConversation,
   getConversation,
   listConversations,
+  listFavoriteConversations,
   listMessages,
   renameConversation,
   streamMessage,
+  toggleFavoriteConversation,
 } from "@/lib/api/chat";
 import type {
   RetrievedChunkResponse,
@@ -58,6 +60,8 @@ export function useRenameConversation(projectId: string) {
       renameConversation(token!, projectId, conversationId, title),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+      queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
     },
   });
 }
@@ -70,10 +74,34 @@ export function useDeleteConversation(projectId: string) {
     mutationFn: (conversationId: string) =>
       deleteConversation(token!, projectId, conversationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["conversations", projectId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
     },
+  });
+}
+
+export function useToggleFavoriteConversation(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      toggleFavoriteConversation(token!, projectId, conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["favorite-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversation"] });
+    },
+  });
+}
+
+export function useFavoriteConversations(limit = 50) {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["favorite-conversations", limit],
+    queryFn: () => listFavoriteConversations(token!, limit),
+    enabled: !!token,
   });
 }
 
