@@ -166,9 +166,9 @@
         "history": "Versions"
       },
       "reindexingWarning": "Reindexing in progress ({progress}/{total}). Upload, chat and reindex actions are temporarily blocked.",
-      "overrideOrgDefaults": "Customize this section",
-      "globalOverrideLabel": "Use my own settings",
-      "globalOverrideDescription": "Enable to ignore organization defaults across all sections.",
+      "overrideOrgDefaults": "Override organization settings",
+      "globalOverrideLabel": "Override organization settings",
+      "globalOverrideDescription": "Enable to use your own settings instead of those defined by the organization.",
       "saveChanges": "Save changes",
       "updateSuccess": "Project updated",
       "updateError": "Failed to update project",
