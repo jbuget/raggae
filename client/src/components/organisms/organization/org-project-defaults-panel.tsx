@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizationProjectDefaults, useUpsertOrganizationProjectDefaults } from "@/lib/hooks/use-org-project-defaults";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
+import { useSystemDefaults } from "@/lib/hooks/use-system-defaults";
 import type {
   ChunkingStrategy,
   ProjectEmbeddingBackend,
@@ -31,6 +32,7 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
   const tCommon = useTranslations("common");
 
   const { data: defaults, isLoading, isError } = useOrganizationProjectDefaults(organizationId);
+  const { data: systemDefaults } = useSystemDefaults();
   const upsert = useUpsertOrganizationProjectDefaults(organizationId);
   const { data: modelCatalog } = useModelCatalog();
   const { data: orgCredentials } = useOrgModelCredentials(organizationId);
@@ -107,11 +109,31 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
   const effectiveRerankerModel = rerankerModel ?? defaults?.reranker_model ?? "";
   const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? defaults?.reranker_candidate_multiplier ?? 3;
   const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
+const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? 8;
+const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? 4000;
 
-  const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? 8;
-  const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? 4000;
+function handleReset() {
+  if (!systemDefaults) return;
+  setEmbeddingBackend(systemDefaults.embedding_backend as ProjectEmbeddingBackend);
+  setEmbeddingModel(systemDefaults.embedding_model);
+  setEmbeddingCredentialId("");
+  setLlmBackend(systemDefaults.llm_backend as ProjectLLMBackend);
+  setLlmModel(systemDefaults.llm_model);
+  setLlmCredentialId("");
+  setChunkingStrategy(systemDefaults.chunking_strategy as ChunkingStrategy);
+  setParentChildChunking(systemDefaults.parent_child_chunking);
+  setRetrievalStrategy(systemDefaults.retrieval_strategy as RetrievalStrategy);
+  setRetrievalTopK(systemDefaults.retrieval_top_k);
+  setRetrievalMinScore(systemDefaults.retrieval_min_score);
+  setRerankingEnabled(systemDefaults.reranking_enabled);
+  setRerankerBackend(systemDefaults.reranker_backend as ProjectRerankerBackend);
+  setRerankerModel(systemDefaults.reranker_model);
+  setRerankerCandidateMultiplier(systemDefaults.reranker_candidate_multiplier);
+  setChatHistoryWindowSize(systemDefaults.chat_history_window_size);
+  setChatHistoryMaxChars(systemDefaults.chat_history_max_chars);
+}
 
-  const hasChanges =
+const hasChanges =
     effectiveEmbeddingBackend !== (defaults?.embedding_backend ?? "") ||
     effectiveEmbeddingModel !== (defaults?.embedding_model ?? "") ||
     effectiveLlmBackend !== (defaults?.llm_backend ?? "") ||
@@ -429,13 +451,21 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
         </div>
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 flex gap-3">
         <Button
           className="cursor-pointer"
           disabled={!hasChanges || upsert.isPending}
           onClick={handleSave}
         >
           {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
+        </Button>
+        <Button
+          variant="outline"
+          className="cursor-pointer"
+          onClick={handleReset}
+          disabled={!systemDefaults || upsert.isPending}
+        >
+          {t("resetToSystem")}
         </Button>
       </div>
     </Card>

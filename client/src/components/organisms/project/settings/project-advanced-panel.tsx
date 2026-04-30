@@ -356,16 +356,16 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             />
           </div>
         )}
-        {!inOrg && userHasAnyDefaults && (
+        {((!inOrg) || (inOrg && globalOverride)) && (
           <div className="flex items-center justify-between gap-4 border-b py-4">
             <div className="space-y-0.5">
               <p className="text-sm font-medium">{t("overrideUserDefaults")}</p>
               <p className="text-xs text-muted-foreground">{t("globalOverrideDescription")}</p>
             </div>
             <Switch
-              checked={globalUserOverride}
+              checked={!userHasAnyDefaults || globalUserOverride}
               onCheckedChange={handleGlobalUserToggle}
-              disabled={updateProject.isPending}
+              disabled={!userHasAnyDefaults || updateProject.isPending}
             />
           </div>
         )}
@@ -388,18 +388,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedModels && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {(userHasModels && !lockedModels) && (
+                {!lockedModels && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-models-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-models-user"
-                      checked={project.overrides_models_from_user}
+                      checked={!userHasModels || project.overrides_models_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user)}
-                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
+                      disabled={!userHasModels || (!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
                 {lockedByUserModels && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                {!userHasModels && !lockedModels && (
+                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                )}
                 {(!lockedModels && !lockedByUserModels && !project.embedding_backend && !project.llm_backend && systemDefaults) && (
                   <p className="text-xs text-muted-foreground">{t("systemDefaultsApplied")}</p>
                 )}
@@ -522,18 +525,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedIndexing && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {(userHasIndexing && !lockedIndexing) && (
+                {!lockedIndexing && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-indexing-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-indexing-user"
-                      checked={project.overrides_indexing_from_user}
+                      checked={!userHasIndexing || project.overrides_indexing_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_indexing_from_user", project.overrides_indexing_from_user)}
-                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
+                      disabled={!userHasIndexing || (!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
                 {lockedByUserIndexing && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                {!userHasIndexing && !lockedIndexing && (
+                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                )}
                 {isProjectReindexing && (
                   <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
@@ -598,18 +604,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedRetrieval && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {(userHasRetrieval && !lockedRetrieval) && (
+                {!lockedRetrieval && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-retrieval-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-retrieval-user"
-                      checked={project.overrides_retrieval_from_user}
+                      checked={!userHasRetrieval || project.overrides_retrieval_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_user", project.overrides_retrieval_from_user)}
-                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
+                      disabled={!userHasRetrieval || (!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
                 {lockedByUserRetrieval && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                {!userHasRetrieval && !lockedRetrieval && (
+                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                )}
                 <fieldset disabled={lockedRetrieval || lockedByUserRetrieval} className="space-y-4 disabled:opacity-60">
                   <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
                   <div className="space-y-2">
@@ -669,18 +678,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedReranking && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {(userHasReranking && !lockedReranking) && (
+                {!lockedReranking && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-reranking-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-reranking-user"
-                      checked={project.overrides_reranking_from_user}
+                      checked={!userHasReranking || project.overrides_reranking_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_reranking_from_user", project.overrides_reranking_from_user)}
-                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
+                      disabled={!userHasReranking || (!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
                 {lockedByUserReranking && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                {!userHasReranking && !lockedReranking && (
+                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                )}
                 <fieldset disabled={lockedReranking || lockedByUserReranking} className="space-y-4 disabled:opacity-60">
                   <div className="flex items-center gap-2">
                     <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
@@ -752,18 +764,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedChatHistory && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {(userHasChatHistory && !lockedChatHistory) && (
+                {!lockedChatHistory && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-chat-history-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-chat-history-user"
-                      checked={project.overrides_chat_history_from_user}
+                      checked={!userHasChatHistory || project.overrides_chat_history_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_user", project.overrides_chat_history_from_user)}
-                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
+                      disabled={!userHasChatHistory || (!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
                 {lockedByUserChatHistory && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                {!userHasChatHistory && !lockedChatHistory && (
+                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                )}
                 <fieldset disabled={lockedChatHistory || lockedByUserChatHistory} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-2">
                     <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>

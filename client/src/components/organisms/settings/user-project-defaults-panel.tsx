@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
+import { useSystemDefaults } from "@/lib/hooks/use-system-defaults";
 import { useUpsertUserProjectDefaults, useUserProjectDefaults } from "@/lib/hooks/use-user-project-defaults";
 import type {
   ChunkingStrategy,
@@ -27,6 +28,7 @@ export function UserProjectDefaultsPanel() {
   const tCommon = useTranslations("common");
 
   const { data: defaults, isLoading, isError } = useUserProjectDefaults();
+  const { data: systemDefaults } = useSystemDefaults();
   const upsert = useUpsertUserProjectDefaults();
   const { data: modelCatalog } = useModelCatalog();
   const { data: credentials } = useModelCredentials();
@@ -105,6 +107,27 @@ export function UserProjectDefaultsPanel() {
 
   const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? 8;
   const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? 4000;
+
+  function handleReset() {
+    if (!systemDefaults) return;
+    setEmbeddingBackend(systemDefaults.embedding_backend as ProjectEmbeddingBackend);
+    setEmbeddingModel(systemDefaults.embedding_model);
+    setEmbeddingCredentialId("");
+    setLlmBackend(systemDefaults.llm_backend as ProjectLLMBackend);
+    setLlmModel(systemDefaults.llm_model);
+    setLlmCredentialId("");
+    setChunkingStrategy(systemDefaults.chunking_strategy as ChunkingStrategy);
+    setParentChildChunking(systemDefaults.parent_child_chunking);
+    setRetrievalStrategy(systemDefaults.retrieval_strategy as RetrievalStrategy);
+    setRetrievalTopK(systemDefaults.retrieval_top_k);
+    setRetrievalMinScore(systemDefaults.retrieval_min_score);
+    setRerankingEnabled(systemDefaults.reranking_enabled);
+    setRerankerBackend(systemDefaults.reranker_backend as ProjectRerankerBackend);
+    setRerankerModel(systemDefaults.reranker_model);
+    setRerankerCandidateMultiplier(systemDefaults.reranker_candidate_multiplier);
+    setChatHistoryWindowSize(systemDefaults.chat_history_window_size);
+    setChatHistoryMaxChars(systemDefaults.chat_history_max_chars);
+  }
 
   const hasChanges =
     effectiveEmbeddingBackend !== (defaults?.embedding_backend ?? "") ||
@@ -424,13 +447,21 @@ export function UserProjectDefaultsPanel() {
         </div>
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 flex gap-3">
         <Button
           className="cursor-pointer"
           disabled={!hasChanges || upsert.isPending}
           onClick={handleSave}
         >
           {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
+        </Button>
+        <Button
+          variant="outline"
+          className="cursor-pointer"
+          onClick={handleReset}
+          disabled={!systemDefaults || upsert.isPending}
+        >
+          {t("resetToSystem")}
         </Button>
       </div>
     </Card>

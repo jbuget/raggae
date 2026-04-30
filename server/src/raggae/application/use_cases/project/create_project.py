@@ -61,7 +61,6 @@ from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
 
 
-
 class CreateProject:
     """Use Case: Create a new project."""
 

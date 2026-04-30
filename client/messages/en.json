@@ -124,7 +124,8 @@
       "description": "These values are automatically suggested when you create a new project. Each project can override them individually.",
       "saveSuccess": "Default settings saved",
       "saveError": "Failed to save default settings",
-      "loadError": "Unable to load default settings"
+      "loadError": "Unable to load default settings",
+      "resetToSystem": "Reset to system defaults"
     }
   },
   "projects": {
@@ -182,6 +183,7 @@
       "globalOverrideDescription": "Enable to use your own settings instead of those defined by the organization.",
       "overrideUserDefaults": "Override your default settings",
       "userDefaultsApplied": "These settings are defined by your default settings.",
+      "noUserDefaultsDefined": "No default settings defined. Project settings are used.",
       "systemDefaultsApplied": "These settings are defined by the system defaults.",
       "saveChanges": "Save changes",
       "updateSuccess": "Project updated",
@@ -455,7 +457,8 @@
       "description": "These values are automatically applied when a new project is created in this organization. Each project can override them individually.",
       "saveSuccess": "Default settings saved",
       "saveError": "Failed to save default settings",
-      "loadError": "Unable to load default settings"
+      "loadError": "Unable to load default settings",
+      "resetToSystem": "Reset to system defaults"
     }
   },
   "invitations": {
