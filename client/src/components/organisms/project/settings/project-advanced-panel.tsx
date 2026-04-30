@@ -81,6 +81,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const [chatHistoryMaxChars, setChatHistoryMaxChars] = useState<number | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [forceGlobalEnabled, setForceGlobalEnabled] = useState(false);
 
   if (!project) return null;
 
@@ -101,26 +102,33 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const lockedChatHistory = orgHasChatHistory && !project.overrides_chat_history_from_org;
 
   const orgHasAnyDefaults = orgHasModels || orgHasIndexing || orgHasRetrieval || orgHasReranking || orgHasChatHistory;
-  const globalOverride = (
+  const anySectionOverrides =
     (orgHasModels && project.overrides_models_from_org) ||
     (orgHasIndexing && project.overrides_indexing_from_org) ||
     (orgHasRetrieval && project.overrides_retrieval_from_org) ||
     (orgHasReranking && project.overrides_reranking_from_org) ||
-    (orgHasChatHistory && project.overrides_chat_history_from_org)
-  );
+    (orgHasChatHistory && project.overrides_chat_history_from_org);
+
+  const globalOverride = forceGlobalEnabled || anySectionOverrides;
 
   function handleGlobalToggle() {
-    const newValue = !globalOverride;
-    updateProject.mutate(
-      {
-        ...(orgHasModels && { overrides_models_from_org: newValue }),
-        ...(orgHasIndexing && { overrides_indexing_from_org: newValue }),
-        ...(orgHasRetrieval && { overrides_retrieval_from_org: newValue }),
-        ...(orgHasReranking && { overrides_reranking_from_org: newValue }),
-        ...(orgHasChatHistory && { overrides_chat_history_from_org: newValue }),
-      },
-      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-    );
+    if (globalOverride) {
+      // Turn OFF: reset all sections to org defaults + lock UI
+      setForceGlobalEnabled(false);
+      updateProject.mutate(
+        {
+          ...(orgHasModels && { overrides_models_from_org: false }),
+          ...(orgHasIndexing && { overrides_indexing_from_org: false }),
+          ...(orgHasRetrieval && { overrides_retrieval_from_org: false }),
+          ...(orgHasReranking && { overrides_reranking_from_org: false }),
+          ...(orgHasChatHistory && { overrides_chat_history_from_org: false }),
+        },
+        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+      );
+    } else {
+      // Turn ON: unlock section switches without touching backend values
+      setForceGlobalEnabled(true);
+    }
   }
 
   function handleToggleOverride(flag: string, currentValue: boolean) {
