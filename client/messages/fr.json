@@ -166,7 +166,9 @@
         "history": "Versions"
       },
       "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
-      "overrideOrgDefaults": "Surcharger les valeurs par défaut de l'organisation",
+      "overrideOrgDefaults": "Personnaliser cette section",
+      "globalOverrideLabel": "Utiliser mes propres paramètres",
+      "globalOverrideDescription": "Activez pour ignorer les valeurs par défaut de l'organisation sur toutes les sections.",
       "saveChanges": "Enregistrer",
       "updateSuccess": "Projet mis à jour",
       "updateError": "Erreur lors de la mise à jour du projet",
