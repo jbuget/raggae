@@ -98,6 +98,29 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const lockedReranking = orgHasReranking && !project.overrides_reranking_from_org;
   const lockedChatHistory = orgHasChatHistory && !project.overrides_chat_history_from_org;
 
+  const orgHasAnyDefaults = orgHasModels || orgHasIndexing || orgHasRetrieval || orgHasReranking || orgHasChatHistory;
+  const globalOverride = (
+    (!orgHasModels || project.overrides_models_from_org) &&
+    (!orgHasIndexing || project.overrides_indexing_from_org) &&
+    (!orgHasRetrieval || project.overrides_retrieval_from_org) &&
+    (!orgHasReranking || project.overrides_reranking_from_org) &&
+    (!orgHasChatHistory || project.overrides_chat_history_from_org)
+  );
+
+  function handleGlobalToggle() {
+    const newValue = !globalOverride;
+    updateProject.mutate(
+      {
+        ...(orgHasModels && { overrides_models_from_org: newValue }),
+        ...(orgHasIndexing && { overrides_indexing_from_org: newValue }),
+        ...(orgHasRetrieval && { overrides_retrieval_from_org: newValue }),
+        ...(orgHasReranking && { overrides_reranking_from_org: newValue }),
+        ...(orgHasChatHistory && { overrides_chat_history_from_org: newValue }),
+      },
+      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+    );
+  }
+
   function handleToggleOverride(flag: string, currentValue: boolean) {
     updateProject.mutate(
       { [flag]: !currentValue },
@@ -232,6 +255,21 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   return (
     <div className="max-w-3xl space-y-10">
+
+      {/* Global override toggle */}
+      {orgHasAnyDefaults && (
+        <div className="flex items-center justify-between rounded-md border bg-muted/40 px-4 py-3">
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium">{t("globalOverrideLabel")}</p>
+            <p className="text-xs text-muted-foreground">{t("globalOverrideDescription")}</p>
+          </div>
+          <Switch
+            checked={globalOverride}
+            onCheckedChange={handleGlobalToggle}
+            disabled={updateProject.isPending}
+          />
+        </div>
+      )}
 
       {/* Models */}
       <div className="space-y-4">
