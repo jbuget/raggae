@@ -47,6 +47,11 @@ class ProjectDTO:
     overrides_retrieval_from_org: bool
     overrides_reranking_from_org: bool
     overrides_chat_history_from_org: bool
+    overrides_models_from_user: bool
+    overrides_indexing_from_user: bool
+    overrides_retrieval_from_user: bool
+    overrides_reranking_from_user: bool
+    overrides_chat_history_from_user: bool
 
     @classmethod
     def from_entity(cls, project: Project) -> "ProjectDTO":
@@ -92,4 +97,9 @@ class ProjectDTO:
             overrides_retrieval_from_org=project.overrides_retrieval_from_org,
             overrides_reranking_from_org=project.overrides_reranking_from_org,
             overrides_chat_history_from_org=project.overrides_chat_history_from_org,
+            overrides_models_from_user=project.overrides_models_from_user,
+            overrides_indexing_from_user=project.overrides_indexing_from_user,
+            overrides_retrieval_from_user=project.overrides_retrieval_from_user,
+            overrides_reranking_from_user=project.overrides_reranking_from_user,
+            overrides_chat_history_from_user=project.overrides_chat_history_from_user,
         )

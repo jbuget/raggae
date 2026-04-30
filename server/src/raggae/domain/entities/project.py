@@ -51,6 +51,11 @@ class Project:
     overrides_retrieval_from_org: bool = False
     overrides_reranking_from_org: bool = False
     overrides_chat_history_from_org: bool = False
+    overrides_models_from_user: bool = False
+    overrides_indexing_from_user: bool = False
+    overrides_retrieval_from_user: bool = False
+    overrides_reranking_from_user: bool = False
+    overrides_chat_history_from_user: bool = False
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""
