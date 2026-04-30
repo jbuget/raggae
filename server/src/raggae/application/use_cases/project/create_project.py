@@ -18,6 +18,10 @@ from raggae.application.constants import (
     MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
     MIN_PROJECT_RETRIEVAL_MIN_SCORE,
     MIN_PROJECT_RETRIEVAL_TOP_K,
+    SUPPORTED_EMBEDDING_BACKENDS,
+    SUPPORTED_LLM_BACKENDS,
+    SUPPORTED_RERANKER_BACKENDS,
+    SUPPORTED_RETRIEVAL_STRATEGIES,
 )
 from raggae.application.dto.project_dto import ProjectDTO
 from raggae.application.interfaces.repositories.org_project_defaults_repository import (
@@ -31,6 +35,9 @@ from raggae.application.interfaces.repositories.project_repository import (
 )
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
+)
+from raggae.application.interfaces.repositories.user_project_defaults_repository import (
+    UserProjectDefaultsRepository,
 )
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
@@ -53,10 +60,6 @@ from raggae.domain.exceptions.project_exceptions import (
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.model_provider import ModelProvider
 
-_SUPPORTED_EMBEDDING_BACKENDS = {"openai", "gemini", "ollama", "inmemory"}
-_SUPPORTED_LLM_BACKENDS = {"openai", "gemini", "anthropic", "ollama", "inmemory"}
-_SUPPORTED_RETRIEVAL_STRATEGIES = {"vector", "fulltext", "hybrid"}
-_SUPPORTED_RERANKER_BACKENDS = {"none", "cross_encoder", "inmemory", "mmr"}
 
 
 class CreateProject:
@@ -68,11 +71,13 @@ class CreateProject:
         organization_member_repository: OrganizationMemberRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
         org_project_defaults_repository: OrgProjectDefaultsRepository | None = None,
+        user_project_defaults_repository: UserProjectDefaultsRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._organization_member_repository = organization_member_repository
         self._provider_credential_repository = provider_credential_repository
         self._org_project_defaults_repository = org_project_defaults_repository
+        self._user_project_defaults_repository = user_project_defaults_repository
         self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
 
     def with_crypto_service(
@@ -113,11 +118,11 @@ class CreateProject:
             raise ProjectSystemPromptTooLongError(
                 f"System prompt exceeds {MAX_PROJECT_SYSTEM_PROMPT_LENGTH} characters"
             )
-        if embedding_backend is not None and embedding_backend not in _SUPPORTED_EMBEDDING_BACKENDS:
+        if embedding_backend is not None and embedding_backend not in SUPPORTED_EMBEDDING_BACKENDS:
             raise InvalidProjectEmbeddingBackendError(f"Unsupported embedding backend: {embedding_backend}")
-        if llm_backend is not None and llm_backend not in _SUPPORTED_LLM_BACKENDS:
+        if llm_backend is not None and llm_backend not in SUPPORTED_LLM_BACKENDS:
             raise InvalidProjectLLMBackendError(f"Unsupported llm backend: {llm_backend}")
-        if retrieval_strategy is not None and retrieval_strategy not in _SUPPORTED_RETRIEVAL_STRATEGIES:
+        if retrieval_strategy is not None and retrieval_strategy not in SUPPORTED_RETRIEVAL_STRATEGIES:
             raise InvalidProjectRetrievalStrategyError(
                 f"Unsupported retrieval strategy: {retrieval_strategy}"
             )
@@ -153,7 +158,7 @@ class CreateProject:
                 f"{MIN_PROJECT_CHAT_HISTORY_MAX_CHARS} and "
                 f"{MAX_PROJECT_CHAT_HISTORY_MAX_CHARS}"
             )
-        if reranker_backend is not None and reranker_backend not in _SUPPORTED_RERANKER_BACKENDS:
+        if reranker_backend is not None and reranker_backend not in SUPPORTED_RERANKER_BACKENDS:
             raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
         if reranker_candidate_multiplier is not None and not (
             MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
@@ -218,11 +223,20 @@ class CreateProject:
                     organization_id
                 )
 
+        user_defaults = None
+        if organization_id is None and self._user_project_defaults_repository is not None:
+            user_defaults = await self._user_project_defaults_repository.find_by_user_id(user_id)
+
         overrides_models = True
         overrides_indexing = True
         overrides_retrieval = True
         overrides_reranking = True
         overrides_chat_history = True
+        user_overrides_models = True
+        user_overrides_indexing = True
+        user_overrides_retrieval = True
+        user_overrides_reranking = True
+        user_overrides_chat_history = True
 
         effective_embedding_backend = embedding_backend
         effective_embedding_model = embedding_model
@@ -269,32 +283,70 @@ class CreateProject:
                     effective_parent_child_chunking = org_defaults.parent_child_chunking
             if org_defaults.has_retrieval_defaults():
                 overrides_retrieval = False
-                effective_retrieval_strategy = org_defaults.retrieval_strategy or effective_retrieval_strategy
-                effective_retrieval_top_k = org_defaults.retrieval_top_k or effective_retrieval_top_k
-                effective_retrieval_min_score = (
-                    org_defaults.retrieval_min_score
-                    if org_defaults.retrieval_min_score is not None
-                    else effective_retrieval_min_score
-                )
+                if org_defaults.retrieval_strategy is not None:
+                    effective_retrieval_strategy = org_defaults.retrieval_strategy
+                if org_defaults.retrieval_top_k is not None:
+                    effective_retrieval_top_k = org_defaults.retrieval_top_k
+                if org_defaults.retrieval_min_score is not None:
+                    effective_retrieval_min_score = org_defaults.retrieval_min_score
             if org_defaults.has_reranking_defaults():
                 overrides_reranking = False
-                effective_reranking_enabled = (
-                    org_defaults.reranking_enabled
-                    if org_defaults.reranking_enabled is not None
-                    else effective_reranking_enabled
-                )
+                if org_defaults.reranking_enabled is not None:
+                    effective_reranking_enabled = org_defaults.reranking_enabled
                 effective_reranker_backend = org_defaults.reranker_backend
                 effective_reranker_model = org_defaults.reranker_model
-                effective_reranker_candidate_multiplier = (
-                    org_defaults.reranker_candidate_multiplier or effective_reranker_candidate_multiplier
-                )
+                if org_defaults.reranker_candidate_multiplier is not None:
+                    effective_reranker_candidate_multiplier = org_defaults.reranker_candidate_multiplier
             if org_defaults.has_chat_history_defaults():
                 overrides_chat_history = False
+                if org_defaults.chat_history_window_size is not None:
+                    effective_chat_history_window_size = org_defaults.chat_history_window_size
+                if org_defaults.chat_history_max_chars is not None:
+                    effective_chat_history_max_chars = org_defaults.chat_history_max_chars
+
+        if user_defaults is not None:
+            if user_defaults.has_models_defaults():
+                user_overrides_models = False
+                effective_embedding_backend = user_defaults.embedding_backend
+                effective_embedding_model = user_defaults.embedding_model
+                effective_llm_backend = user_defaults.llm_backend
+                effective_llm_model = user_defaults.llm_model
+            if user_defaults.has_indexing_defaults():
+                user_overrides_indexing = False
+                if user_defaults.chunking_strategy is not None:
+                    effective_chunking_strategy = ChunkingStrategy(user_defaults.chunking_strategy)
+                if user_defaults.parent_child_chunking is not None:
+                    effective_parent_child_chunking = user_defaults.parent_child_chunking
+            if user_defaults.has_retrieval_defaults():
+                user_overrides_retrieval = False
+                effective_retrieval_strategy = (
+                    user_defaults.retrieval_strategy or effective_retrieval_strategy
+                )
+                effective_retrieval_top_k = user_defaults.retrieval_top_k or effective_retrieval_top_k
+                effective_retrieval_min_score = (
+                    user_defaults.retrieval_min_score
+                    if user_defaults.retrieval_min_score is not None
+                    else effective_retrieval_min_score
+                )
+            if user_defaults.has_reranking_defaults():
+                user_overrides_reranking = False
+                effective_reranking_enabled = (
+                    user_defaults.reranking_enabled
+                    if user_defaults.reranking_enabled is not None
+                    else effective_reranking_enabled
+                )
+                effective_reranker_backend = user_defaults.reranker_backend
+                effective_reranker_model = user_defaults.reranker_model
+                effective_reranker_candidate_multiplier = (
+                    user_defaults.reranker_candidate_multiplier or effective_reranker_candidate_multiplier
+                )
+            if user_defaults.has_chat_history_defaults():
+                user_overrides_chat_history = False
                 effective_chat_history_window_size = (
-                    org_defaults.chat_history_window_size or effective_chat_history_window_size
+                    user_defaults.chat_history_window_size or effective_chat_history_window_size
                 )
                 effective_chat_history_max_chars = (
-                    org_defaults.chat_history_max_chars or effective_chat_history_max_chars
+                    user_defaults.chat_history_max_chars or effective_chat_history_max_chars
                 )
 
         project = Project(
@@ -330,6 +382,11 @@ class CreateProject:
             overrides_retrieval_from_org=overrides_retrieval,
             overrides_reranking_from_org=overrides_reranking,
             overrides_chat_history_from_org=overrides_chat_history,
+            overrides_models_from_user=user_overrides_models,
+            overrides_indexing_from_user=user_overrides_indexing,
+            overrides_retrieval_from_user=user_overrides_retrieval,
+            overrides_reranking_from_user=user_overrides_reranking,
+            overrides_chat_history_from_user=user_overrides_chat_history,
         )
 
         await self._project_repository.save(project)
