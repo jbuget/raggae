@@ -102,11 +102,11 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   const orgHasAnyDefaults = orgHasModels || orgHasIndexing || orgHasRetrieval || orgHasReranking || orgHasChatHistory;
   const globalOverride = (
-    (!orgHasModels || project.overrides_models_from_org) &&
-    (!orgHasIndexing || project.overrides_indexing_from_org) &&
-    (!orgHasRetrieval || project.overrides_retrieval_from_org) &&
-    (!orgHasReranking || project.overrides_reranking_from_org) &&
-    (!orgHasChatHistory || project.overrides_chat_history_from_org)
+    (orgHasModels && project.overrides_models_from_org) ||
+    (orgHasIndexing && project.overrides_indexing_from_org) ||
+    (orgHasRetrieval && project.overrides_retrieval_from_org) ||
+    (orgHasReranking && project.overrides_reranking_from_org) ||
+    (orgHasChatHistory && project.overrides_chat_history_from_org)
   );
 
   function handleGlobalToggle() {
@@ -290,7 +290,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-models"
                       checked={project.overrides_models_from_org}
                       onCheckedChange={() => handleToggleOverride("overrides_models_from_org", project.overrides_models_from_org)}
-                      disabled={updateProject.isPending}
+                      disabled={!globalOverride || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -409,7 +409,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-indexing"
                       checked={project.overrides_indexing_from_org}
                       onCheckedChange={() => handleToggleOverride("overrides_indexing_from_org", project.overrides_indexing_from_org)}
-                      disabled={updateProject.isPending}
+                      disabled={!globalOverride || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -473,7 +473,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-retrieval"
                       checked={project.overrides_retrieval_from_org}
                       onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_org", project.overrides_retrieval_from_org)}
-                      disabled={updateProject.isPending}
+                      disabled={!globalOverride || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -532,7 +532,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-reranking"
                       checked={project.overrides_reranking_from_org}
                       onCheckedChange={() => handleToggleOverride("overrides_reranking_from_org", project.overrides_reranking_from_org)}
-                      disabled={updateProject.isPending}
+                      disabled={!globalOverride || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -603,7 +603,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-chat-history"
                       checked={project.overrides_chat_history_from_org}
                       onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_org", project.overrides_chat_history_from_org)}
-                      disabled={updateProject.isPending}
+                      disabled={!globalOverride || updateProject.isPending}
                     />
                   </div>
                 )}
