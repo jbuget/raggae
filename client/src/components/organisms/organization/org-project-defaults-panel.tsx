@@ -30,7 +30,7 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
   const tForm = useTranslations("projects.form");
   const tCommon = useTranslations("common");
 
-  const { data: defaults, isLoading } = useOrganizationProjectDefaults(organizationId);
+  const { data: defaults, isLoading, isError } = useOrganizationProjectDefaults(organizationId);
   const upsert = useUpsertOrganizationProjectDefaults(organizationId);
   const { data: modelCatalog } = useModelCatalog();
   const { data: orgCredentials } = useOrgModelCredentials(organizationId);
@@ -71,6 +71,10 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
     );
   }
 
+  if (isError) {
+    return <p className="text-sm text-destructive">{t("loadError")}</p>;
+  }
+
   // Effective values = local state ?? persisted defaults ?? fallback
   const effectiveEmbeddingBackend = embeddingBackend === undefined ? (defaults?.embedding_backend ?? "") : embeddingBackend;
   const effectiveLlmBackend = llmBackend === undefined ? (defaults?.llm_backend ?? "") : llmBackend;
@@ -91,15 +95,42 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
   const embeddingModelOptions = effectiveEmbeddingBackend ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
   const llmModelOptions = effectiveLlmBackend ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
-  const hasModelsChanges =
+  const effectiveChunkingStrategy = chunkingStrategy ?? (defaults?.chunking_strategy as ChunkingStrategy | undefined) ?? "auto";
+  const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? false;
+
+  const effectiveRetrievalStrategy = retrievalStrategy ?? (defaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? "hybrid";
+  const effectiveRetrievalTopK = retrievalTopK ?? defaults?.retrieval_top_k ?? 8;
+  const effectiveRetrievalMinScore = retrievalMinScore ?? defaults?.retrieval_min_score ?? 0.3;
+
+  const effectiveRerankingEnabled = rerankingEnabled ?? defaults?.reranking_enabled ?? false;
+  const effectiveRerankerBackend = rerankerBackend ?? (defaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? "none";
+  const effectiveRerankerModel = rerankerModel ?? defaults?.reranker_model ?? "";
+  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? defaults?.reranker_candidate_multiplier ?? 3;
+  const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
+
+  const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? 8;
+  const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? 4000;
+
+  const hasChanges =
     effectiveEmbeddingBackend !== (defaults?.embedding_backend ?? "") ||
     effectiveEmbeddingModel !== (defaults?.embedding_model ?? "") ||
     effectiveLlmBackend !== (defaults?.llm_backend ?? "") ||
     effectiveLlmModel !== (defaults?.llm_model ?? "") ||
     embeddingCredentialId !== undefined ||
-    llmCredentialId !== undefined;
+    llmCredentialId !== undefined ||
+    effectiveChunkingStrategy !== (defaults?.chunking_strategy ?? "auto") ||
+    effectiveParentChildChunking !== (defaults?.parent_child_chunking ?? false) ||
+    effectiveRetrievalStrategy !== (defaults?.retrieval_strategy ?? "hybrid") ||
+    effectiveRetrievalTopK !== (defaults?.retrieval_top_k ?? 8) ||
+    effectiveRetrievalMinScore !== (defaults?.retrieval_min_score ?? 0.3) ||
+    effectiveRerankingEnabled !== (defaults?.reranking_enabled ?? false) ||
+    effectiveRerankerBackend !== (defaults?.reranker_backend ?? "none") ||
+    effectiveRerankerModel !== (defaults?.reranker_model ?? "") ||
+    effectiveRerankerCandidateMultiplier !== (defaults?.reranker_candidate_multiplier ?? 3) ||
+    effectiveChatHistoryWindowSize !== (defaults?.chat_history_window_size ?? 8) ||
+    effectiveChatHistoryMaxChars !== (defaults?.chat_history_max_chars ?? 4000);
 
-  function handleSaveModels() {
+  function handleSave() {
     upsert.mutate(
       {
         embedding_backend: effectiveEmbeddingBackend || null,
@@ -108,17 +139,17 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
         llm_backend: effectiveLlmBackend || null,
         llm_model: effectiveLlmModel || null,
         llm_api_key_credential_id: effectiveLlmCredentialId || null,
-        chunking_strategy: defaults?.chunking_strategy ?? null,
-        parent_child_chunking: defaults?.parent_child_chunking ?? null,
-        retrieval_strategy: defaults?.retrieval_strategy ?? null,
-        retrieval_top_k: defaults?.retrieval_top_k ?? null,
-        retrieval_min_score: defaults?.retrieval_min_score ?? null,
-        reranking_enabled: defaults?.reranking_enabled ?? null,
-        reranker_backend: defaults?.reranker_backend ?? null,
-        reranker_model: defaults?.reranker_model ?? null,
-        reranker_candidate_multiplier: defaults?.reranker_candidate_multiplier ?? null,
-        chat_history_window_size: defaults?.chat_history_window_size ?? null,
-        chat_history_max_chars: defaults?.chat_history_max_chars ?? null,
+        chunking_strategy: effectiveChunkingStrategy,
+        parent_child_chunking: effectiveParentChildChunking,
+        retrieval_strategy: effectiveRetrievalStrategy,
+        retrieval_top_k: effectiveRetrievalTopK,
+        retrieval_min_score: effectiveRetrievalMinScore,
+        reranking_enabled: effectiveRerankingEnabled,
+        reranker_backend: effectiveRerankerBackend,
+        reranker_model: effectiveRerankerModel || null,
+        reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
+        chat_history_window_size: effectiveChatHistoryWindowSize,
+        chat_history_max_chars: effectiveChatHistoryMaxChars,
       },
       {
         onSuccess: () => {
@@ -126,153 +157,6 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
           setEmbeddingCredentialId(undefined);
           setLlmCredentialId(undefined);
         },
-        onError: () => toast.error(t("saveError")),
-      },
-    );
-  }
-
-  // Indexation effective values
-  const effectiveChunkingStrategy = chunkingStrategy ?? (defaults?.chunking_strategy as ChunkingStrategy | undefined) ?? "auto";
-  const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? false;
-  const hasIndexingChanges =
-    effectiveChunkingStrategy !== (defaults?.chunking_strategy ?? "auto") ||
-    effectiveParentChildChunking !== (defaults?.parent_child_chunking ?? false);
-
-  function handleSaveIndexing() {
-    upsert.mutate(
-      {
-        embedding_backend: defaults?.embedding_backend ?? null,
-        embedding_model: defaults?.embedding_model ?? null,
-        embedding_api_key_credential_id: defaults?.embedding_api_key_credential_id ?? null,
-        llm_backend: defaults?.llm_backend ?? null,
-        llm_model: defaults?.llm_model ?? null,
-        llm_api_key_credential_id: defaults?.llm_api_key_credential_id ?? null,
-        chunking_strategy: effectiveChunkingStrategy,
-        parent_child_chunking: effectiveParentChildChunking,
-        retrieval_strategy: defaults?.retrieval_strategy ?? null,
-        retrieval_top_k: defaults?.retrieval_top_k ?? null,
-        retrieval_min_score: defaults?.retrieval_min_score ?? null,
-        reranking_enabled: defaults?.reranking_enabled ?? null,
-        reranker_backend: defaults?.reranker_backend ?? null,
-        reranker_model: defaults?.reranker_model ?? null,
-        reranker_candidate_multiplier: defaults?.reranker_candidate_multiplier ?? null,
-        chat_history_window_size: defaults?.chat_history_window_size ?? null,
-        chat_history_max_chars: defaults?.chat_history_max_chars ?? null,
-      },
-      {
-        onSuccess: () => toast.success(t("saveSuccess")),
-        onError: () => toast.error(t("saveError")),
-      },
-    );
-  }
-
-  // Retrieval effective values
-  const effectiveRetrievalStrategy = retrievalStrategy ?? (defaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? "hybrid";
-  const effectiveRetrievalTopK = retrievalTopK ?? defaults?.retrieval_top_k ?? 8;
-  const effectiveRetrievalMinScore = retrievalMinScore ?? defaults?.retrieval_min_score ?? 0.3;
-  const hasRetrievalChanges =
-    effectiveRetrievalStrategy !== (defaults?.retrieval_strategy ?? "hybrid") ||
-    effectiveRetrievalTopK !== (defaults?.retrieval_top_k ?? 8) ||
-    effectiveRetrievalMinScore !== (defaults?.retrieval_min_score ?? 0.3);
-
-  function handleSaveRetrieval() {
-    upsert.mutate(
-      {
-        embedding_backend: defaults?.embedding_backend ?? null,
-        embedding_model: defaults?.embedding_model ?? null,
-        embedding_api_key_credential_id: defaults?.embedding_api_key_credential_id ?? null,
-        llm_backend: defaults?.llm_backend ?? null,
-        llm_model: defaults?.llm_model ?? null,
-        llm_api_key_credential_id: defaults?.llm_api_key_credential_id ?? null,
-        chunking_strategy: defaults?.chunking_strategy ?? null,
-        parent_child_chunking: defaults?.parent_child_chunking ?? null,
-        retrieval_strategy: effectiveRetrievalStrategy,
-        retrieval_top_k: effectiveRetrievalTopK,
-        retrieval_min_score: effectiveRetrievalMinScore,
-        reranking_enabled: defaults?.reranking_enabled ?? null,
-        reranker_backend: defaults?.reranker_backend ?? null,
-        reranker_model: defaults?.reranker_model ?? null,
-        reranker_candidate_multiplier: defaults?.reranker_candidate_multiplier ?? null,
-        chat_history_window_size: defaults?.chat_history_window_size ?? null,
-        chat_history_max_chars: defaults?.chat_history_max_chars ?? null,
-      },
-      {
-        onSuccess: () => toast.success(t("saveSuccess")),
-        onError: () => toast.error(t("saveError")),
-      },
-    );
-  }
-
-  // Reranking effective values
-  const effectiveRerankingEnabled = rerankingEnabled ?? defaults?.reranking_enabled ?? false;
-  const effectiveRerankerBackend = rerankerBackend ?? (defaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? "none";
-  const effectiveRerankerModel = rerankerModel ?? defaults?.reranker_model ?? "";
-  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? defaults?.reranker_candidate_multiplier ?? 3;
-  const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
-  const hasRerankingChanges =
-    effectiveRerankingEnabled !== (defaults?.reranking_enabled ?? false) ||
-    effectiveRerankerBackend !== (defaults?.reranker_backend ?? "none") ||
-    effectiveRerankerModel !== (defaults?.reranker_model ?? "") ||
-    effectiveRerankerCandidateMultiplier !== (defaults?.reranker_candidate_multiplier ?? 3);
-
-  function handleSaveReranking() {
-    upsert.mutate(
-      {
-        embedding_backend: defaults?.embedding_backend ?? null,
-        embedding_model: defaults?.embedding_model ?? null,
-        embedding_api_key_credential_id: defaults?.embedding_api_key_credential_id ?? null,
-        llm_backend: defaults?.llm_backend ?? null,
-        llm_model: defaults?.llm_model ?? null,
-        llm_api_key_credential_id: defaults?.llm_api_key_credential_id ?? null,
-        chunking_strategy: defaults?.chunking_strategy ?? null,
-        parent_child_chunking: defaults?.parent_child_chunking ?? null,
-        retrieval_strategy: defaults?.retrieval_strategy ?? null,
-        retrieval_top_k: defaults?.retrieval_top_k ?? null,
-        retrieval_min_score: defaults?.retrieval_min_score ?? null,
-        reranking_enabled: effectiveRerankingEnabled,
-        reranker_backend: effectiveRerankerBackend,
-        reranker_model: effectiveRerankerModel || null,
-        reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
-        chat_history_window_size: defaults?.chat_history_window_size ?? null,
-        chat_history_max_chars: defaults?.chat_history_max_chars ?? null,
-      },
-      {
-        onSuccess: () => toast.success(t("saveSuccess")),
-        onError: () => toast.error(t("saveError")),
-      },
-    );
-  }
-
-  // Chat history effective values
-  const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? 8;
-  const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? 4000;
-  const hasHistoryChanges =
-    effectiveChatHistoryWindowSize !== (defaults?.chat_history_window_size ?? 8) ||
-    effectiveChatHistoryMaxChars !== (defaults?.chat_history_max_chars ?? 4000);
-
-  function handleSaveHistory() {
-    upsert.mutate(
-      {
-        embedding_backend: defaults?.embedding_backend ?? null,
-        embedding_model: defaults?.embedding_model ?? null,
-        embedding_api_key_credential_id: defaults?.embedding_api_key_credential_id ?? null,
-        llm_backend: defaults?.llm_backend ?? null,
-        llm_model: defaults?.llm_model ?? null,
-        llm_api_key_credential_id: defaults?.llm_api_key_credential_id ?? null,
-        chunking_strategy: defaults?.chunking_strategy ?? null,
-        parent_child_chunking: defaults?.parent_child_chunking ?? null,
-        retrieval_strategy: defaults?.retrieval_strategy ?? null,
-        retrieval_top_k: defaults?.retrieval_top_k ?? null,
-        retrieval_min_score: defaults?.retrieval_min_score ?? null,
-        reranking_enabled: defaults?.reranking_enabled ?? null,
-        reranker_backend: defaults?.reranker_backend ?? null,
-        reranker_model: defaults?.reranker_model ?? null,
-        reranker_candidate_multiplier: defaults?.reranker_candidate_multiplier ?? null,
-        chat_history_window_size: effectiveChatHistoryWindowSize,
-        chat_history_max_chars: effectiveChatHistoryMaxChars,
-      },
-      {
-        onSuccess: () => toast.success(t("saveSuccess")),
         onError: () => toast.error(t("saveError")),
       },
     );
@@ -381,13 +265,6 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
             </div>
           </>
         ) : null}
-        <Button
-          className="cursor-pointer"
-          disabled={!hasModelsChanges || upsert.isPending}
-          onClick={handleSaveModels}
-        >
-          {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
-        </Button>
       </div>
 
       <hr className="border-border" />
@@ -418,13 +295,6 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
           />
           <Label htmlFor="org-parentChildChunking">{tSettings("knowledgeIndexing.parentChildLabel")}</Label>
         </div>
-        <Button
-          className="cursor-pointer"
-          disabled={!hasIndexingChanges || upsert.isPending}
-          onClick={handleSaveIndexing}
-        >
-          {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
-        </Button>
       </div>
 
       <hr className="border-border" />
@@ -469,13 +339,6 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
             onChange={(e) => { const v = Number.parseFloat(e.target.value); if (!Number.isNaN(v)) setRetrievalMinScore(Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
           />
         </div>
-        <Button
-          className="cursor-pointer"
-          disabled={!hasRetrievalChanges || upsert.isPending}
-          onClick={handleSaveRetrieval}
-        >
-          {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
-        </Button>
       </div>
 
       <hr className="border-border" />
@@ -533,13 +396,6 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
             </div>
           </>
         )}
-        <Button
-          className="cursor-pointer"
-          disabled={!hasRerankingChanges || upsert.isPending}
-          onClick={handleSaveReranking}
-        >
-          {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
-        </Button>
       </div>
 
       <hr className="border-border" />
@@ -571,10 +427,13 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
           />
           <p className="text-xs text-muted-foreground">{tSettings("answerGeneration.chatHistoryMaxCharsNote")}</p>
         </div>
+      </div>
+
+      <div className="pt-2">
         <Button
           className="cursor-pointer"
-          disabled={!hasHistoryChanges || upsert.isPending}
-          onClick={handleSaveHistory}
+          disabled={!hasChanges || upsert.isPending}
+          onClick={handleSave}
         >
           {upsert.isPending ? tCommon("saving") : tSettings("saveChanges")}
         </Button>
