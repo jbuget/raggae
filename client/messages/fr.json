@@ -72,6 +72,9 @@
   "settings": {
     "title": "Paramètres utilisateur",
     "description": "Gérez votre compte et vos clés API.",
+    "tabGeneral": "Général",
+    "tabApiKeys": "Clés API",
+    "tabProjects": "Projets",
     "profile": {
       "title": "Profil",
       "description": "Mettez à jour votre nom d'affichage.",
@@ -115,6 +118,13 @@
       "deleteConfirmTitle": "Supprimer la clé API",
       "deleteConfirmDescription": "Cette action est irréversible.",
       "apiKeyPlaceholder": "Collez votre clé API ici"
+    },
+    "userProjectDefaults": {
+      "title": "Paramètres de projet par défaut",
+      "description": "Ces valeurs sont automatiquement suggérées lors de la création d'un nouveau projet. Chaque projet peut les surcharger individuellement.",
+      "saveSuccess": "Paramètres par défaut enregistrés",
+      "saveError": "Impossible d'enregistrer les paramètres par défaut",
+      "loadError": "Impossible de charger les paramètres par défaut"
     }
   },
   "projects": {
@@ -170,6 +180,9 @@
       "orgDefaultsApplied": "Ces paramètres sont définis par l'organisation.",
       "globalOverrideLabel": "Surcharger les paramètres de l'organisation",
       "globalOverrideDescription": "Activez pour utiliser vos propres paramètres à la place de ceux définis par l'organisation.",
+      "overrideUserDefaults": "Surcharger vos paramètres par défaut",
+      "userDefaultsApplied": "Ces paramètres sont définis par vos paramètres par défaut.",
+      "systemDefaultsApplied": "Ces paramètres sont définis par les valeurs système.",
       "saveChanges": "Enregistrer",
       "updateSuccess": "Projet mis à jour",
       "updateError": "Erreur lors de la mise à jour du projet",
@@ -441,7 +454,8 @@
       "title": "Paramètres par défaut des projets",
       "description": "Ces valeurs sont automatiquement appliquées lors de la création d'un nouveau projet dans cette organisation. Chaque projet peut les surcharger individuellement.",
       "saveSuccess": "Paramètres par défaut enregistrés",
-      "saveError": "Erreur lors de l'enregistrement des paramètres par défaut"
+      "saveError": "Erreur lors de l'enregistrement des paramètres par défaut",
+      "loadError": "Impossible de charger les paramètres par défaut"
     }
   },
   "invitations": {

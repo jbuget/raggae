@@ -72,6 +72,9 @@
   "settings": {
     "title": "User Settings",
     "description": "Manage your account and API keys.",
+    "tabGeneral": "General",
+    "tabApiKeys": "API Keys",
+    "tabProjects": "Projects",
     "profile": {
       "title": "Profile",
       "description": "Update your account display name.",
@@ -115,6 +118,13 @@
       "deleteConfirmTitle": "Delete API key",
       "deleteConfirmDescription": "This action cannot be undone.",
       "apiKeyPlaceholder": "Paste your API key here"
+    },
+    "userProjectDefaults": {
+      "title": "Default project settings",
+      "description": "These values are automatically suggested when you create a new project. Each project can override them individually.",
+      "saveSuccess": "Default settings saved",
+      "saveError": "Failed to save default settings",
+      "loadError": "Unable to load default settings"
     }
   },
   "projects": {
@@ -170,6 +180,9 @@
       "orgDefaultsApplied": "These settings are defined by the organization.",
       "globalOverrideLabel": "Override organization settings",
       "globalOverrideDescription": "Enable to use your own settings instead of those defined by the organization.",
+      "overrideUserDefaults": "Override your default settings",
+      "userDefaultsApplied": "These settings are defined by your default settings.",
+      "systemDefaultsApplied": "These settings are defined by the system defaults.",
       "saveChanges": "Save changes",
       "updateSuccess": "Project updated",
       "updateError": "Failed to update project",
@@ -441,7 +454,8 @@
       "title": "Project default settings",
       "description": "These values are automatically applied when a new project is created in this organization. Each project can override them individually.",
       "saveSuccess": "Default settings saved",
-      "saveError": "Failed to save default settings"
+      "saveError": "Failed to save default settings",
+      "loadError": "Unable to load default settings"
     }
   },
   "invitations": {
