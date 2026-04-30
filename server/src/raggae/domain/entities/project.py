@@ -46,11 +46,11 @@ class Project:
     organization_id: UUID | None = None
     org_embedding_api_key_credential_id: UUID | None = None
     org_llm_api_key_credential_id: UUID | None = None
-    overrides_models_from_org: bool = True
-    overrides_indexing_from_org: bool = True
-    overrides_retrieval_from_org: bool = True
-    overrides_reranking_from_org: bool = True
-    overrides_chat_history_from_org: bool = True
+    overrides_models_from_org: bool = False
+    overrides_indexing_from_org: bool = False
+    overrides_retrieval_from_org: bool = False
+    overrides_reranking_from_org: bool = False
+    overrides_chat_history_from_org: bool = False
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""
