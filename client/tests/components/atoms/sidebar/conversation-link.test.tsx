@@ -10,6 +10,7 @@ const conversation: ConversationResponse = {
   user_id: "user-1",
   created_at: "2024-01-15T10:00:00Z",
   title: "My conversation",
+  is_favorite: false,
 };
 
 const conversationNoTitle: ConversationResponse = {

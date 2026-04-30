@@ -92,6 +92,12 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const orgHasReranking = inOrg && orgDefaults != null && (orgDefaults.reranking_enabled != null || orgDefaults.reranker_backend != null);
   const orgHasChatHistory = inOrg && orgDefaults != null && (orgDefaults.chat_history_window_size != null || orgDefaults.chat_history_max_chars != null);
 
+  const lockedModels = orgHasModels && !project.overrides_models_from_org;
+  const lockedIndexing = orgHasIndexing && !project.overrides_indexing_from_org;
+  const lockedRetrieval = orgHasRetrieval && !project.overrides_retrieval_from_org;
+  const lockedReranking = orgHasReranking && !project.overrides_reranking_from_org;
+  const lockedChatHistory = orgHasChatHistory && !project.overrides_chat_history_from_org;
+
   function handleToggleOverride(flag: string, currentValue: boolean) {
     updateProject.mutate(
       { [flag]: !currentValue },
@@ -100,8 +106,12 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   }
 
   // --- Indexation computed values ---
-  const effectiveChunkingStrategy = chunkingStrategy ?? project.chunking_strategy;
-  const effectiveParentChildChunking = parentChildChunking ?? project.parent_child_chunking;
+  const effectiveChunkingStrategy = lockedIndexing
+    ? (orgDefaults?.chunking_strategy as ChunkingStrategy | undefined) ?? project.chunking_strategy
+    : chunkingStrategy ?? project.chunking_strategy;
+  const effectiveParentChildChunking = lockedIndexing
+    ? (orgDefaults?.parent_child_chunking ?? project.parent_child_chunking)
+    : (parentChildChunking ?? project.parent_child_chunking);
   const hasIndexingChanges =
     effectiveChunkingStrategy !== project.chunking_strategy ||
     effectiveParentChildChunking !== project.parent_child_chunking;
@@ -125,18 +135,30 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   }
 
   // --- Models computed values ---
-  const effectiveEmbeddingBackend = embeddingBackend === undefined ? (project.embedding_backend ?? "") : embeddingBackend;
-  const effectiveLlmBackend = llmBackend === undefined ? (project.llm_backend ?? "") : llmBackend;
-  const effectiveEmbeddingModel = effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? ""));
-  const effectiveLlmModel = effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? ""));
+  const effectiveEmbeddingBackend = lockedModels
+    ? (orgDefaults?.embedding_backend ?? "")
+    : embeddingBackend === undefined ? (project.embedding_backend ?? "") : embeddingBackend;
+  const effectiveLlmBackend = lockedModels
+    ? (orgDefaults?.llm_backend ?? "")
+    : llmBackend === undefined ? (project.llm_backend ?? "") : llmBackend;
+  const effectiveEmbeddingModel = lockedModels
+    ? (orgDefaults?.embedding_model ?? "")
+    : effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? ""));
+  const effectiveLlmModel = lockedModels
+    ? (orgDefaults?.llm_model ?? "")
+    : effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? ""));
   const storedEmbeddingCredentialId = project.organization_id
     ? (project.org_embedding_api_key_credential_id ?? "")
     : (project.embedding_api_key_credential_id ?? "");
   const storedLlmCredentialId = project.organization_id
     ? (project.org_llm_api_key_credential_id ?? "")
     : (project.llm_api_key_credential_id ?? "");
-  const effectiveEmbeddingCredentialId = effectiveEmbeddingBackend === "" ? "" : (embeddingCredentialId ?? storedEmbeddingCredentialId);
-  const effectiveLlmCredentialId = effectiveLlmBackend === "" ? "" : (llmCredentialId ?? storedLlmCredentialId);
+  const effectiveEmbeddingCredentialId = lockedModels
+    ? (orgDefaults?.embedding_api_key_credential_id ?? "")
+    : effectiveEmbeddingBackend === "" ? "" : (embeddingCredentialId ?? storedEmbeddingCredentialId);
+  const effectiveLlmCredentialId = lockedModels
+    ? (orgDefaults?.llm_api_key_credential_id ?? "")
+    : effectiveLlmBackend === "" ? "" : (llmCredentialId ?? storedLlmCredentialId);
 
   const credentialsByProvider = (credentials ?? [])
     .filter((c) => c.is_active)
@@ -160,9 +182,15 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     effectiveLlmCredentialId !== "";
 
   // --- Retrieval computed values ---
-  const effectiveRetrievalStrategy = retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
-  const effectiveRetrievalTopK = retrievalTopK ?? project.retrieval_top_k ?? 8;
-  const effectiveRetrievalMinScore = retrievalMinScore ?? project.retrieval_min_score ?? 0.3;
+  const effectiveRetrievalStrategy = lockedRetrieval
+    ? (orgDefaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? (project.retrieval_strategy ?? "hybrid")
+    : retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
+  const effectiveRetrievalTopK = lockedRetrieval
+    ? (orgDefaults?.retrieval_top_k ?? project.retrieval_top_k ?? 8)
+    : (retrievalTopK ?? project.retrieval_top_k ?? 8);
+  const effectiveRetrievalMinScore = lockedRetrieval
+    ? (orgDefaults?.retrieval_min_score ?? project.retrieval_min_score ?? 0.3)
+    : (retrievalMinScore ?? project.retrieval_min_score ?? 0.3);
 
   const hasRetrievalChanges =
     effectiveRetrievalStrategy !== (project.retrieval_strategy ?? "hybrid") ||
@@ -170,10 +198,18 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     effectiveRetrievalMinScore !== (project.retrieval_min_score ?? 0.3);
 
   // --- Augmentation computed values ---
-  const effectiveRerankingEnabled = rerankingEnabled ?? project.reranking_enabled ?? false;
-  const effectiveRerankerBackend = rerankerBackend ?? project.reranker_backend ?? "none";
-  const effectiveRerankerModel = rerankerModel ?? project.reranker_model ?? "";
-  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? project.reranker_candidate_multiplier ?? 3;
+  const effectiveRerankingEnabled = lockedReranking
+    ? (orgDefaults?.reranking_enabled ?? project.reranking_enabled ?? false)
+    : (rerankingEnabled ?? project.reranking_enabled ?? false);
+  const effectiveRerankerBackend = lockedReranking
+    ? (orgDefaults?.reranker_backend ?? project.reranker_backend ?? "none")
+    : (rerankerBackend ?? project.reranker_backend ?? "none");
+  const effectiveRerankerModel = lockedReranking
+    ? (orgDefaults?.reranker_model ?? project.reranker_model ?? "")
+    : (rerankerModel ?? project.reranker_model ?? "");
+  const effectiveRerankerCandidateMultiplier = lockedReranking
+    ? (orgDefaults?.reranker_candidate_multiplier ?? project.reranker_candidate_multiplier ?? 3)
+    : (rerankerCandidateMultiplier ?? project.reranker_candidate_multiplier ?? 3);
   const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
 
   const hasAugmentationChanges =
@@ -183,8 +219,12 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     effectiveRerankerCandidateMultiplier !== (project.reranker_candidate_multiplier ?? 3);
 
   // --- History computed values ---
-  const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? project.chat_history_window_size ?? 8;
-  const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? project.chat_history_max_chars ?? 4000;
+  const effectiveChatHistoryWindowSize = lockedChatHistory
+    ? (orgDefaults?.chat_history_window_size ?? project.chat_history_window_size ?? 8)
+    : (chatHistoryWindowSize ?? project.chat_history_window_size ?? 8);
+  const effectiveChatHistoryMaxChars = lockedChatHistory
+    ? (orgDefaults?.chat_history_max_chars ?? project.chat_history_max_chars ?? 4000)
+    : (chatHistoryMaxChars ?? project.chat_history_max_chars ?? 4000);
 
   const hasHistoryChanges =
     effectiveChatHistoryWindowSize !== (project.chat_history_window_size ?? 8) ||
@@ -206,96 +246,100 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <Label htmlFor="overrides-models" className="text-sm">{t("overrideOrgDefaults")}</Label>
           </div>
         )}
-        <h2 className="text-base font-semibold tracking-tight">{t("models.embeddingTitle")}</h2>
-        <p className="text-sm text-muted-foreground">{t("models.embeddingDescription")}</p>
-        <div className="space-y-2">
-          <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}</Label>
-          <select id="embeddingBackend" value={effectiveEmbeddingBackend}
-            onChange={(e) => { setEmbeddingBackend((e.target.value || "") as ProjectEmbeddingBackend | ""); setEmbeddingModel(""); setEmbeddingCredentialId(""); }}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="">Default</option>
-            <option value="openai">OpenAI</option>
-            <option value="gemini">Gemini</option>
-            <option value="ollama">Ollama</option>
-            <option value="inmemory">InMemory</option>
-          </select>
-        </div>
-        {effectiveEmbeddingBackend ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}</Label>
-              <select id="embeddingCredentialId" value={effectiveEmbeddingCredentialId}
-                onChange={(e) => setEmbeddingCredentialId(e.target.value)}
-                disabled={!embeddingProviderForHints}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-              >
-                <option value="">{embeddingProviderForHints ? t("models.noSelection") : t("models.selectEmbeddingFirst")}</option>
-                {embeddingCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}</Label>
-              <select id="embeddingModel" value={effectiveEmbeddingModel}
-                onChange={(e) => setEmbeddingModel(e.target.value)}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="">{t("models.selectModel")}</option>
-                {embeddingModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-              </select>
-            </div>
-          </>
-        ) : null}
-        <hr className="border-border" />
-        <h2 className="text-base font-semibold tracking-tight">{t("models.llmTitle")}</h2>
-        <p className="text-sm text-muted-foreground">{t("models.llmDescription")}</p>
-        <div className="space-y-2">
-          <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}</Label>
-          <select id="llmBackend" value={effectiveLlmBackend}
-            onChange={(e) => { setLlmBackend((e.target.value || "") as ProjectLLMBackend | ""); setLlmModel(""); setLlmCredentialId(""); }}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="">Default</option>
-            <option value="openai">OpenAI</option>
-            <option value="gemini">Gemini</option>
-            <option value="anthropic">Anthropic</option>
-            <option value="ollama">Ollama</option>
-            <option value="inmemory">InMemory</option>
-          </select>
-        </div>
-        {effectiveLlmBackend ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}</Label>
-              <select id="llmCredentialId" value={effectiveLlmCredentialId}
-                onChange={(e) => setLlmCredentialId(e.target.value)}
-                disabled={!llmProviderForHints}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-              >
-                <option value="">{llmProviderForHints ? t("models.noSelection") : t("models.selectLlmFirst")}</option>
-                {llmCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="llmModel">{t("models.llmModelLabel")}</Label>
-              <select id="llmModel" value={effectiveLlmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="">{t("models.selectModel")}</option>
-                {llmModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-              </select>
-            </div>
-          </>
-        ) : null}
-        <Button className="cursor-pointer" disabled={!hasModelsChanges || updateProject.isPending}
-          onClick={() => updateProject.mutate(
-            { embedding_backend: effectiveEmbeddingBackend || null, embedding_model: effectiveEmbeddingModel || null, embedding_api_key: null, embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null, llm_backend: effectiveLlmBackend || null, llm_model: effectiveLlmModel || null, llm_api_key: null, llm_api_key_credential_id: effectiveLlmCredentialId || null },
-            { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+        <fieldset disabled={lockedModels} className="space-y-4 disabled:opacity-60">
+          <h2 className="text-base font-semibold tracking-tight">{t("models.embeddingTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("models.embeddingDescription")}</p>
+          <div className="space-y-2">
+            <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}</Label>
+            <select id="embeddingBackend" value={effectiveEmbeddingBackend}
+              onChange={(e) => { setEmbeddingBackend((e.target.value || "") as ProjectEmbeddingBackend | ""); setEmbeddingModel(""); setEmbeddingCredentialId(""); }}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Default</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+              <option value="ollama">Ollama</option>
+              <option value="inmemory">InMemory</option>
+            </select>
+          </div>
+          {effectiveEmbeddingBackend ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}</Label>
+                <select id="embeddingCredentialId" value={effectiveEmbeddingCredentialId}
+                  onChange={(e) => setEmbeddingCredentialId(e.target.value)}
+                  disabled={!embeddingProviderForHints}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{embeddingProviderForHints ? t("models.noSelection") : t("models.selectEmbeddingFirst")}</option>
+                  {embeddingCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}</Label>
+                <select id="embeddingModel" value={effectiveEmbeddingModel}
+                  onChange={(e) => setEmbeddingModel(e.target.value)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">{t("models.selectModel")}</option>
+                  {embeddingModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </select>
+              </div>
+            </>
+          ) : null}
+          <hr className="border-border" />
+          <h2 className="text-base font-semibold tracking-tight">{t("models.llmTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("models.llmDescription")}</p>
+          <div className="space-y-2">
+            <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}</Label>
+            <select id="llmBackend" value={effectiveLlmBackend}
+              onChange={(e) => { setLlmBackend((e.target.value || "") as ProjectLLMBackend | ""); setLlmModel(""); setLlmCredentialId(""); }}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Default</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="ollama">Ollama</option>
+              <option value="inmemory">InMemory</option>
+            </select>
+          </div>
+          {effectiveLlmBackend ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}</Label>
+                <select id="llmCredentialId" value={effectiveLlmCredentialId}
+                  onChange={(e) => setLlmCredentialId(e.target.value)}
+                  disabled={!llmProviderForHints}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{llmProviderForHints ? t("models.noSelection") : t("models.selectLlmFirst")}</option>
+                  {llmCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="llmModel">{t("models.llmModelLabel")}</Label>
+                <select id="llmModel" value={effectiveLlmModel}
+                  onChange={(e) => setLlmModel(e.target.value)}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="">{t("models.selectModel")}</option>
+                  {llmModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </select>
+              </div>
+            </>
+          ) : null}
+          {!lockedModels && (
+            <Button className="cursor-pointer" disabled={!hasModelsChanges || updateProject.isPending}
+              onClick={() => updateProject.mutate(
+                { embedding_backend: (effectiveEmbeddingBackend || null) as ProjectEmbeddingBackend | null, embedding_model: effectiveEmbeddingModel || null, embedding_api_key: null, embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null, llm_backend: (effectiveLlmBackend || null) as ProjectLLMBackend | null, llm_model: effectiveLlmModel || null, llm_api_key: null, llm_api_key_credential_id: effectiveLlmCredentialId || null },
+                { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+              )}
+            >
+              {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+            </Button>
           )}
-        >
-          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-        </Button>
+        </fieldset>
       </div>
 
       <hr className="border-border" />
@@ -313,36 +357,40 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <Label htmlFor="overrides-indexing" className="text-sm">{t("overrideOrgDefaults")}</Label>
           </div>
         )}
-        <h2 className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</h2>
+        <fieldset disabled={lockedIndexing} className="space-y-4 disabled:opacity-60">
+          <h2 className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.title")}</h2>
 
-        {isProjectReindexing && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
+          {isProjectReindexing && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
+            <select id="chunkingStrategy" value={effectiveChunkingStrategy}
+              onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="auto">{tForm("chunkingAuto")}</option>
+              <option value="fixed_window">{tForm("chunkingFixed")}</option>
+              <option value="paragraph">{tForm("chunkingParagraph")}</option>
+              <option value="heading_section">{tForm("chunkingHeading")}</option>
+              <option value="semantic">{tForm("chunkingSemantic")}</option>
+            </select>
           </div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
-          <select id="chunkingStrategy" value={effectiveChunkingStrategy}
-            onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="auto">{tForm("chunkingAuto")}</option>
-            <option value="fixed_window">{tForm("chunkingFixed")}</option>
-            <option value="paragraph">{tForm("chunkingParagraph")}</option>
-            <option value="heading_section">{tForm("chunkingHeading")}</option>
-            <option value="semantic">{tForm("chunkingSemantic")}</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
-          <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
-        </div>
-        <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
-        {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
-        <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProject.isPending} onClick={handleIndexingSave}>
-          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-        </Button>
+          <div className="flex items-center gap-2">
+            <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
+            <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
+          {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
+          {!lockedIndexing && (
+            <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProject.isPending} onClick={handleIndexingSave}>
+              {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+            </Button>
+          )}
+        </fieldset>
         <div className="space-y-3 rounded-md border p-4">
           <p className="text-base font-semibold tracking-tight">{t("knowledgeIndexing.reindexTitle")}</p>
           <p className="text-sm text-muted-foreground">{t("knowledgeIndexing.reindexDescription")}</p>
@@ -400,41 +448,45 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <Label htmlFor="overrides-retrieval" className="text-sm">{t("overrideOrgDefaults")}</Label>
           </div>
         )}
-        <h2 className="text-base font-semibold tracking-tight">{t("contextRetrieval.title")}</h2>
-        <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
-        <div className="space-y-2">
-          <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}</Label>
-          <select id="retrievalStrategy" value={effectiveRetrievalStrategy}
-            onChange={(e) => setRetrievalStrategy(e.target.value as RetrievalStrategy)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="hybrid">{t("contextRetrieval.hybrid")}</option>
-            <option value="vector">{t("contextRetrieval.vector")}</option>
-            <option value="fulltext">{t("contextRetrieval.fulltext")}</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}</Label>
-          <Input id="retrievalTopK" type="number" min={1} max={40} value={effectiveRetrievalTopK}
-            onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setRetrievalTopK(Math.max(1, Math.min(40, v))); }}
-          />
-          <p className="text-xs text-muted-foreground">{t("contextRetrieval.topKNote")}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="retrievalMinScore">{t("contextRetrieval.minScoreLabel")}</Label>
-          <Input id="retrievalMinScore" type="number" min={0} max={1} step={0.05} value={effectiveRetrievalMinScore}
-            onChange={(e) => { const v = Number.parseFloat(e.target.value); if (!Number.isNaN(v)) setRetrievalMinScore(Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
-          />
-          <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
-        </div>
-        <Button className="cursor-pointer" disabled={!hasRetrievalChanges || updateProject.isPending}
-          onClick={() => updateProject.mutate(
-            { retrieval_strategy: effectiveRetrievalStrategy, retrieval_top_k: effectiveRetrievalTopK, retrieval_min_score: effectiveRetrievalMinScore },
-            { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+        <fieldset disabled={lockedRetrieval} className="space-y-4 disabled:opacity-60">
+          <h2 className="text-base font-semibold tracking-tight">{t("contextRetrieval.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
+          <div className="space-y-2">
+            <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}</Label>
+            <select id="retrievalStrategy" value={effectiveRetrievalStrategy}
+              onChange={(e) => setRetrievalStrategy(e.target.value as RetrievalStrategy)}
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="hybrid">{t("contextRetrieval.hybrid")}</option>
+              <option value="vector">{t("contextRetrieval.vector")}</option>
+              <option value="fulltext">{t("contextRetrieval.fulltext")}</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}</Label>
+            <Input id="retrievalTopK" type="number" min={1} max={40} value={effectiveRetrievalTopK}
+              onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setRetrievalTopK(Math.max(1, Math.min(40, v))); }}
+            />
+            <p className="text-xs text-muted-foreground">{t("contextRetrieval.topKNote")}</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="retrievalMinScore">{t("contextRetrieval.minScoreLabel")}</Label>
+            <Input id="retrievalMinScore" type="number" min={0} max={1} step={0.05} value={effectiveRetrievalMinScore}
+              onChange={(e) => { const v = Number.parseFloat(e.target.value); if (!Number.isNaN(v)) setRetrievalMinScore(Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
+            />
+            <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
+          </div>
+          {!lockedRetrieval && (
+            <Button className="cursor-pointer" disabled={!hasRetrievalChanges || updateProject.isPending}
+              onClick={() => updateProject.mutate(
+                { retrieval_strategy: effectiveRetrievalStrategy, retrieval_top_k: effectiveRetrievalTopK, retrieval_min_score: effectiveRetrievalMinScore },
+                { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+              )}
+            >
+              {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+            </Button>
           )}
-        >
-          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-        </Button>
+        </fieldset>
       </div>
 
       <hr className="border-border" />
@@ -452,53 +504,57 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <Label htmlFor="overrides-reranking" className="text-sm">{t("overrideOrgDefaults")}</Label>
           </div>
         )}
-        <h2 className="text-base font-semibold tracking-tight">{t("contextAugmentation.title")}</h2>
-        <div className="flex items-center gap-2">
-          <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
-          <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
-        </div>
-        {effectiveRerankingEnabled && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}</Label>
-              <select id="rerankerBackend" value={effectiveRerankerBackend}
-                onChange={(e) => { setRerankerBackend(e.target.value as ProjectRerankerBackend); setRerankerModel(""); }}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-              >
-                <option value="none">{t("contextAugmentation.rerankerNone")}</option>
-                <option value="cross_encoder">{t("contextAugmentation.rerankerCrossEncoder")}</option>
-                <option value="inmemory">{t("contextAugmentation.rerankerInMemory")}</option>
-                <option value="mmr">{t("contextAugmentation.rerankerMmr")}</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}</Label>
-              <select id="rerankerModel" value={effectiveRerankerModel}
-                onChange={(e) => setRerankerModel(e.target.value)}
-                disabled={effectiveRerankerBackend === "none"}
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
-              >
-                <option value="">{effectiveRerankerBackend === "none" ? t("contextAugmentation.selectRerankerBackend") : t("contextAugmentation.selectModel")}</option>
-                {rerankerModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}</Label>
-              <Input id="rerankerCandidateMultiplier" type="number" min={1} max={10} value={effectiveRerankerCandidateMultiplier}
-                onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setRerankerCandidateMultiplier(Math.max(1, Math.min(10, v))); }}
-              />
-              <p className="text-xs text-muted-foreground">{t("contextAugmentation.candidateMultiplierNote")}</p>
-            </div>
-          </>
-        )}
-        <Button className="cursor-pointer" disabled={!hasAugmentationChanges || updateProject.isPending}
-          onClick={() => updateProject.mutate(
-            { reranking_enabled: effectiveRerankingEnabled, reranker_backend: effectiveRerankerBackend, reranker_model: effectiveRerankerModel || null, reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier },
-            { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+        <fieldset disabled={lockedReranking} className="space-y-4 disabled:opacity-60">
+          <h2 className="text-base font-semibold tracking-tight">{t("contextAugmentation.title")}</h2>
+          <div className="flex items-center gap-2">
+            <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
+            <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
+          </div>
+          {effectiveRerankingEnabled && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}</Label>
+                <select id="rerankerBackend" value={effectiveRerankerBackend}
+                  onChange={(e) => { setRerankerBackend(e.target.value as ProjectRerankerBackend); setRerankerModel(""); }}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                >
+                  <option value="none">{t("contextAugmentation.rerankerNone")}</option>
+                  <option value="cross_encoder">{t("contextAugmentation.rerankerCrossEncoder")}</option>
+                  <option value="inmemory">{t("contextAugmentation.rerankerInMemory")}</option>
+                  <option value="mmr">{t("contextAugmentation.rerankerMmr")}</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}</Label>
+                <select id="rerankerModel" value={effectiveRerankerModel}
+                  onChange={(e) => setRerankerModel(e.target.value)}
+                  disabled={effectiveRerankerBackend === "none"}
+                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{effectiveRerankerBackend === "none" ? t("contextAugmentation.selectRerankerBackend") : t("contextAugmentation.selectModel")}</option>
+                  {rerankerModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}</Label>
+                <Input id="rerankerCandidateMultiplier" type="number" min={1} max={10} value={effectiveRerankerCandidateMultiplier}
+                  onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setRerankerCandidateMultiplier(Math.max(1, Math.min(10, v))); }}
+                />
+                <p className="text-xs text-muted-foreground">{t("contextAugmentation.candidateMultiplierNote")}</p>
+              </div>
+            </>
           )}
-        >
-          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-        </Button>
+          {!lockedReranking && (
+            <Button className="cursor-pointer" disabled={!hasAugmentationChanges || updateProject.isPending}
+              onClick={() => updateProject.mutate(
+                { reranking_enabled: effectiveRerankingEnabled, reranker_backend: effectiveRerankerBackend as ProjectRerankerBackend, reranker_model: effectiveRerankerModel || null, reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier },
+                { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+              )}
+            >
+              {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+            </Button>
+          )}
+        </fieldset>
       </div>
 
       <hr className="border-border" />
@@ -516,29 +572,33 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <Label htmlFor="overrides-chat-history" className="text-sm">{t("overrideOrgDefaults")}</Label>
           </div>
         )}
-        <h2 className="text-base font-semibold tracking-tight">{t("answerGeneration.historyTitle")}</h2>
-        <div className="space-y-2">
-          <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
-          <Input id="chatHistoryWindowSize" type="number" min={1} max={40} value={effectiveChatHistoryWindowSize}
-            onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setChatHistoryWindowSize(Math.max(1, Math.min(40, v))); }}
-          />
-          <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryWindowNote")}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="chatHistoryMaxChars">{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>
-          <Input id="chatHistoryMaxChars" type="number" min={128} max={16000} value={effectiveChatHistoryMaxChars}
-            onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setChatHistoryMaxChars(Math.max(128, Math.min(16000, v))); }}
-          />
-          <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
-        </div>
-        <Button className="cursor-pointer" disabled={!hasHistoryChanges || updateProject.isPending}
-          onClick={() => updateProject.mutate(
-            { chat_history_window_size: effectiveChatHistoryWindowSize, chat_history_max_chars: effectiveChatHistoryMaxChars },
-            { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+        <fieldset disabled={lockedChatHistory} className="space-y-4 disabled:opacity-60">
+          <h2 className="text-base font-semibold tracking-tight">{t("answerGeneration.historyTitle")}</h2>
+          <div className="space-y-2">
+            <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
+            <Input id="chatHistoryWindowSize" type="number" min={1} max={40} value={effectiveChatHistoryWindowSize}
+              onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setChatHistoryWindowSize(Math.max(1, Math.min(40, v))); }}
+            />
+            <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryWindowNote")}</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="chatHistoryMaxChars">{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>
+            <Input id="chatHistoryMaxChars" type="number" min={128} max={16000} value={effectiveChatHistoryMaxChars}
+              onChange={(e) => { const v = Number.parseInt(e.target.value, 10); if (!Number.isNaN(v)) setChatHistoryMaxChars(Math.max(128, Math.min(16000, v))); }}
+            />
+            <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
+          </div>
+          {!lockedChatHistory && (
+            <Button className="cursor-pointer" disabled={!hasHistoryChanges || updateProject.isPending}
+              onClick={() => updateProject.mutate(
+                { chat_history_window_size: effectiveChatHistoryWindowSize, chat_history_max_chars: effectiveChatHistoryMaxChars },
+                { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+              )}
+            >
+              {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+            </Button>
           )}
-        >
-          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-        </Button>
+        </fieldset>
       </div>
 
       <hr className="border-border" />
