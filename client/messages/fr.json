@@ -167,6 +167,7 @@
       },
       "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
       "overrideOrgDefaults": "Surcharger les paramètres de l'organisation",
+      "orgDefaultsApplied": "Ces paramètres sont définis par l'organisation.",
       "globalOverrideLabel": "Surcharger les paramètres de l'organisation",
       "globalOverrideDescription": "Activez pour utiliser vos propres paramètres à la place de ceux définis par l'organisation.",
       "saveChanges": "Enregistrer",
