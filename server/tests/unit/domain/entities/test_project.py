@@ -203,7 +203,7 @@ class TestProject:
         assert unpublished.system_prompt == "prompt"
         assert unpublished.created_at == now
 
-    def test_override_flags_default_to_true(self) -> None:
+    def test_override_flags_default_to_false(self) -> None:
         # Given / When
         project = Project(
             id=uuid4(),
@@ -216,11 +216,11 @@ class TestProject:
         )
 
         # Then
-        assert project.overrides_models_from_org is True
-        assert project.overrides_indexing_from_org is True
-        assert project.overrides_retrieval_from_org is True
-        assert project.overrides_reranking_from_org is True
-        assert project.overrides_chat_history_from_org is True
+        assert project.overrides_models_from_org is False
+        assert project.overrides_indexing_from_org is False
+        assert project.overrides_retrieval_from_org is False
+        assert project.overrides_reranking_from_org is False
+        assert project.overrides_chat_history_from_org is False
 
     def test_override_flags_can_be_set_to_false(self) -> None:
         # Given / When

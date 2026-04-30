@@ -68,7 +68,7 @@ def upgrade() -> None:
             "overrides_models_from_org",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("true"),
+            server_default=sa.text("false"),
         ),
     )
     op.add_column(
@@ -77,7 +77,7 @@ def upgrade() -> None:
             "overrides_indexing_from_org",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("true"),
+            server_default=sa.text("false"),
         ),
     )
     op.add_column(
@@ -86,7 +86,7 @@ def upgrade() -> None:
             "overrides_retrieval_from_org",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("true"),
+            server_default=sa.text("false"),
         ),
     )
     op.add_column(
@@ -95,7 +95,7 @@ def upgrade() -> None:
             "overrides_reranking_from_org",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("true"),
+            server_default=sa.text("false"),
         ),
     )
     op.add_column(
@@ -104,7 +104,7 @@ def upgrade() -> None:
             "overrides_chat_history_from_org",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("true"),
+            server_default=sa.text("false"),
         ),
     )
 
