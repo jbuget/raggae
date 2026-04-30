@@ -167,6 +167,7 @@
       },
       "reindexingWarning": "Reindexing in progress ({progress}/{total}). Upload, chat and reindex actions are temporarily blocked.",
       "overrideOrgDefaults": "Override organization settings",
+      "orgDefaultsApplied": "These settings are defined by the organization.",
       "globalOverrideLabel": "Override organization settings",
       "globalOverrideDescription": "Enable to use your own settings instead of those defined by the organization.",
       "saveChanges": "Save changes",

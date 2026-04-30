@@ -294,6 +294,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                   </div>
                 )}
+                {lockedModels && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
                 <fieldset disabled={lockedModels} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{t("models.embeddingTitle")}</p>
@@ -417,6 +418,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
                   </div>
                 )}
+                {lockedIndexing && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
                 <fieldset disabled={lockedIndexing} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-2">
                     <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
@@ -475,6 +477,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                   </div>
                 )}
+                {lockedRetrieval && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
                 <fieldset disabled={lockedRetrieval} className="space-y-4 disabled:opacity-60">
                   <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
                   <div className="space-y-2">
@@ -533,6 +536,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                   </div>
                 )}
+                {lockedReranking && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
                 <fieldset disabled={lockedReranking} className="space-y-4 disabled:opacity-60">
                   <div className="flex items-center gap-2">
                     <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
@@ -603,6 +607,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                   </div>
                 )}
+                {lockedChatHistory && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
                 <fieldset disabled={lockedChatHistory} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-2">
                     <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
