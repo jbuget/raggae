@@ -258,6 +258,11 @@ async def list_organization_projects(
             overrides_retrieval_from_org=p.overrides_retrieval_from_org,
             overrides_reranking_from_org=p.overrides_reranking_from_org,
             overrides_chat_history_from_org=p.overrides_chat_history_from_org,
+            overrides_models_from_user=p.overrides_models_from_user,
+            overrides_indexing_from_user=p.overrides_indexing_from_user,
+            overrides_retrieval_from_user=p.overrides_retrieval_from_user,
+            overrides_reranking_from_user=p.overrides_reranking_from_user,
+            overrides_chat_history_from_user=p.overrides_chat_history_from_user,
         )
         for p in projects
     ]
@@ -508,7 +513,7 @@ async def get_organization_project_defaults(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     if result is None:
         return None
-    return OrganizationProjectDefaultsResponse(**result.__dict__)
+    return OrganizationProjectDefaultsResponse.from_dto(result)
 
 
 @router.put("/{organization_id}/project-defaults", dependencies=[Depends(get_current_user_id)])
@@ -532,7 +537,7 @@ async def upsert_organization_project_defaults(
         "organization_project_defaults_upserted",
         extra={"organization_id": str(organization_id), "user_id": str(user_id)},
     )
-    return OrganizationProjectDefaultsResponse(**result.__dict__)
+    return OrganizationProjectDefaultsResponse.from_dto(result)
 
 
 @router.post(

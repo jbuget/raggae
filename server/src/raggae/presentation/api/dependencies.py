@@ -196,12 +196,14 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
 )
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
+from raggae.application.use_cases.user.get_user_project_defaults import GetUserProjectDefaults
 from raggae.application.use_cases.user.handle_oauth_callback import HandleOAuthCallback
 from raggae.application.use_cases.user.initiate_oauth_login import InitiateOAuthLogin
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.application.use_cases.user.update_user_locale import UpdateUserLocale
+from raggae.application.use_cases.user.upsert_user_project_defaults import UpsertUserProjectDefaults
 from raggae.infrastructure.cache.oauth_code_store import InMemoryOAuthCodeStore
 from raggae.infrastructure.config.settings import settings
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
@@ -242,6 +244,9 @@ from raggae.infrastructure.database.repositories.in_memory_provider_credential_r
 )
 from raggae.infrastructure.database.repositories.in_memory_stats_repository import (
     InMemoryStatsRepository,
+)
+from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
+    InMemoryUserProjectDefaultsRepository,
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
@@ -284,6 +289,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_stats_repository import (
     SQLAlchemyStatsRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_user_project_defaults_repository import (
+    SQLAlchemyUserProjectDefaultsRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
@@ -435,6 +443,9 @@ if settings.persistence_backend == "postgres":
     _org_project_defaults_repository: (
         InMemoryOrgProjectDefaultsRepository | SQLAlchemyOrgProjectDefaultsRepository
     ) = SQLAlchemyOrgProjectDefaultsRepository(session_factory=SessionFactory)
+    _user_project_defaults_repository: (
+        InMemoryUserProjectDefaultsRepository | SQLAlchemyUserProjectDefaultsRepository
+    ) = SQLAlchemyUserProjectDefaultsRepository(session_factory=SessionFactory)
     _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
         session_factory=SessionFactory
     )
@@ -463,6 +474,7 @@ else:
     _provider_credential_repository = InMemoryProviderCredentialRepository()
     _org_credential_repository = InMemoryOrgProviderCredentialRepository()
     _org_project_defaults_repository = InMemoryOrgProjectDefaultsRepository()
+    _user_project_defaults_repository = InMemoryUserProjectDefaultsRepository()
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
     _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
@@ -686,6 +698,7 @@ def get_create_project_use_case() -> CreateProject:
         organization_member_repository=_organization_member_repository,
         provider_credential_repository=_provider_credential_repository,
         org_project_defaults_repository=_org_project_defaults_repository,
+        user_project_defaults_repository=_user_project_defaults_repository,
     ).with_crypto_service(_provider_api_key_crypto_service)
 
 
@@ -1129,6 +1142,20 @@ def get_upsert_org_project_defaults_use_case() -> UpsertOrganizationProjectDefau
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         org_project_defaults_repository=_org_project_defaults_repository,
+    )
+
+
+def get_get_user_project_defaults_use_case() -> GetUserProjectDefaults:
+    return GetUserProjectDefaults(
+        user_repository=_user_repository,
+        user_project_defaults_repository=_user_project_defaults_repository,
+    )
+
+
+def get_upsert_user_project_defaults_use_case() -> UpsertUserProjectDefaults:
+    return UpsertUserProjectDefaults(
+        user_repository=_user_repository,
+        user_project_defaults_repository=_user_project_defaults_repository,
     )
 
 
