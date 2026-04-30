@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from raggae.application.dto.org_project_defaults_dto import OrgProjectDefaultsDTO
 from raggae.domain.value_objects.organization_invitation_status import (
     OrganizationInvitationStatus,
 )
@@ -107,6 +110,10 @@ class OrganizationProjectDefaultsResponse(BaseModel):
     # Chat history
     chat_history_window_size: int | None
     chat_history_max_chars: int | None
+
+    @classmethod
+    def from_dto(cls, dto: OrgProjectDefaultsDTO) -> OrganizationProjectDefaultsResponse:
+        return cls.model_validate(dto.__dict__)
 
 
 class UpsertOrganizationProjectDefaultsRequest(BaseModel):

@@ -219,4 +219,9 @@ async def restore_project_snapshot(
         overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
         overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
         overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
+        overrides_models_from_user=project_dto.overrides_models_from_user,
+        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
+        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
+        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
+        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
     )

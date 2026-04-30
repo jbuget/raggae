@@ -114,6 +114,11 @@ class UpdateProjectRequest(BaseModel):
     overrides_retrieval_from_org: bool | None = None
     overrides_reranking_from_org: bool | None = None
     overrides_chat_history_from_org: bool | None = None
+    overrides_models_from_user: bool | None = None
+    overrides_indexing_from_user: bool | None = None
+    overrides_retrieval_from_user: bool | None = None
+    overrides_reranking_from_user: bool | None = None
+    overrides_chat_history_from_user: bool | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -154,6 +159,11 @@ class ProjectResponse(BaseModel):
     overrides_retrieval_from_org: bool
     overrides_reranking_from_org: bool
     overrides_chat_history_from_org: bool
+    overrides_models_from_user: bool
+    overrides_indexing_from_user: bool
+    overrides_retrieval_from_user: bool
+    overrides_reranking_from_user: bool
+    overrides_chat_history_from_user: bool
 
 
 class ReindexProjectResponse(BaseModel):
