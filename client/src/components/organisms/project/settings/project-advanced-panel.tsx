@@ -25,6 +25,8 @@ import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
 import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
 import { useOrganizationProjectDefaults } from "@/lib/hooks/use-org-project-defaults";
+import { useSystemDefaults } from "@/lib/hooks/use-system-defaults";
+import { useUserProjectDefaults } from "@/lib/hooks/use-user-project-defaults";
 import type {
   ChunkingStrategy,
   ModelProvider,
@@ -49,6 +51,8 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const { data: userCredentials } = useModelCredentials();
   const { data: orgCredentials } = useOrgModelCredentials(project?.organization_id);
   const { data: orgDefaults } = useOrganizationProjectDefaults(project?.organization_id);
+  const { data: userDefaults } = useUserProjectDefaults();
+  const { data: systemDefaults } = useSystemDefaults();
   const credentials = project?.organization_id ? orgCredentials : userCredentials;
 
   // Indexation state
@@ -101,6 +105,19 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const lockedReranking = orgHasReranking && !project.overrides_reranking_from_org;
   const lockedChatHistory = orgHasChatHistory && !project.overrides_chat_history_from_org;
 
+  // User defaults helpers
+  const userHasModels = userDefaults != null && (userDefaults.embedding_backend != null || userDefaults.llm_backend != null);
+  const userHasIndexing = userDefaults != null && (userDefaults.chunking_strategy != null || userDefaults.parent_child_chunking != null);
+  const userHasRetrieval = userDefaults != null && (userDefaults.retrieval_strategy != null || userDefaults.retrieval_top_k != null || userDefaults.retrieval_min_score != null);
+  const userHasReranking = userDefaults != null && (userDefaults.reranking_enabled != null || userDefaults.reranker_backend != null);
+  const userHasChatHistory = userDefaults != null && (userDefaults.chat_history_window_size != null || userDefaults.chat_history_max_chars != null);
+
+  const lockedByUserModels = userHasModels && !lockedModels && !project.overrides_models_from_user;
+  const lockedByUserIndexing = userHasIndexing && !lockedIndexing && !project.overrides_indexing_from_user;
+  const lockedByUserRetrieval = userHasRetrieval && !lockedRetrieval && !project.overrides_retrieval_from_user;
+  const lockedByUserReranking = userHasReranking && !lockedReranking && !project.overrides_reranking_from_user;
+  const lockedByUserChatHistory = userHasChatHistory && !lockedChatHistory && !project.overrides_chat_history_from_user;
+
   const orgHasAnyDefaults = orgHasModels || orgHasIndexing || orgHasRetrieval || orgHasReranking || orgHasChatHistory;
   const anySectionOverrides =
     (orgHasModels && project.overrides_models_from_org) ||
@@ -141,10 +158,14 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   // --- Indexation computed values ---
   const effectiveChunkingStrategy = lockedIndexing
     ? (orgDefaults?.chunking_strategy as ChunkingStrategy | undefined) ?? project.chunking_strategy
-    : chunkingStrategy ?? project.chunking_strategy;
+    : lockedByUserIndexing
+      ? (userDefaults?.chunking_strategy as ChunkingStrategy | undefined) ?? project.chunking_strategy
+      : chunkingStrategy ?? project.chunking_strategy;
   const effectiveParentChildChunking = lockedIndexing
     ? (orgDefaults?.parent_child_chunking ?? project.parent_child_chunking)
-    : (parentChildChunking ?? project.parent_child_chunking);
+    : lockedByUserIndexing
+      ? (userDefaults?.parent_child_chunking ?? project.parent_child_chunking)
+      : (parentChildChunking ?? project.parent_child_chunking);
   const hasIndexingChanges =
     effectiveChunkingStrategy !== project.chunking_strategy ||
     effectiveParentChildChunking !== project.parent_child_chunking;
@@ -170,16 +191,24 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   // --- Models computed values ---
   const effectiveEmbeddingBackend = lockedModels
     ? (orgDefaults?.embedding_backend ?? "")
-    : embeddingBackend === undefined ? (project.embedding_backend ?? "") : embeddingBackend;
+    : lockedByUserModels
+      ? (userDefaults?.embedding_backend ?? project.embedding_backend ?? "")
+      : embeddingBackend === undefined ? (project.embedding_backend ?? systemDefaults?.embedding_backend ?? "") : embeddingBackend;
   const effectiveLlmBackend = lockedModels
     ? (orgDefaults?.llm_backend ?? "")
-    : llmBackend === undefined ? (project.llm_backend ?? "") : llmBackend;
+    : lockedByUserModels
+      ? (userDefaults?.llm_backend ?? project.llm_backend ?? "")
+      : llmBackend === undefined ? (project.llm_backend ?? systemDefaults?.llm_backend ?? "") : llmBackend;
   const effectiveEmbeddingModel = lockedModels
     ? (orgDefaults?.embedding_model ?? "")
-    : effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? ""));
+    : lockedByUserModels
+      ? (userDefaults?.embedding_model ?? project.embedding_model ?? "")
+      : effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? systemDefaults?.embedding_model ?? ""));
   const effectiveLlmModel = lockedModels
     ? (orgDefaults?.llm_model ?? "")
-    : effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? ""));
+    : lockedByUserModels
+      ? (userDefaults?.llm_model ?? project.llm_model ?? "")
+      : effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? systemDefaults?.llm_model ?? ""));
   const storedEmbeddingCredentialId = project.organization_id
     ? (project.org_embedding_api_key_credential_id ?? "")
     : (project.embedding_api_key_credential_id ?? "");
@@ -188,10 +217,14 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     : (project.llm_api_key_credential_id ?? "");
   const effectiveEmbeddingCredentialId = lockedModels
     ? (orgDefaults?.embedding_api_key_credential_id ?? "")
-    : effectiveEmbeddingBackend === "" ? "" : (embeddingCredentialId ?? storedEmbeddingCredentialId);
+    : lockedByUserModels
+      ? (userDefaults?.embedding_api_key_credential_id ?? storedEmbeddingCredentialId)
+      : effectiveEmbeddingBackend === "" ? "" : (embeddingCredentialId ?? storedEmbeddingCredentialId);
   const effectiveLlmCredentialId = lockedModels
     ? (orgDefaults?.llm_api_key_credential_id ?? "")
-    : effectiveLlmBackend === "" ? "" : (llmCredentialId ?? storedLlmCredentialId);
+    : lockedByUserModels
+      ? (userDefaults?.llm_api_key_credential_id ?? storedLlmCredentialId)
+      : effectiveLlmBackend === "" ? "" : (llmCredentialId ?? storedLlmCredentialId);
 
   const credentialsByProvider = (credentials ?? [])
     .filter((c) => c.is_active)
@@ -207,23 +240,29 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const llmModelOptions = effectiveLlmBackend ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
   const hasModelsChanges =
-    effectiveEmbeddingBackend !== (project.embedding_backend ?? "") ||
-    effectiveEmbeddingModel !== (project.embedding_model ?? "") ||
-    effectiveLlmBackend !== (project.llm_backend ?? "") ||
-    effectiveLlmModel !== (project.llm_model ?? "") ||
-    effectiveEmbeddingCredentialId !== "" ||
-    effectiveLlmCredentialId !== "";
+    effectiveEmbeddingBackend !== (project.embedding_backend ?? systemDefaults?.embedding_backend ?? "") ||
+    effectiveEmbeddingModel !== (project.embedding_model ?? systemDefaults?.embedding_model ?? "") ||
+    effectiveLlmBackend !== (project.llm_backend ?? systemDefaults?.llm_backend ?? "") ||
+    effectiveLlmModel !== (project.llm_model ?? systemDefaults?.llm_model ?? "") ||
+    effectiveEmbeddingCredentialId !== storedEmbeddingCredentialId ||
+    effectiveLlmCredentialId !== storedLlmCredentialId;
 
   // --- Retrieval computed values ---
   const effectiveRetrievalStrategy = lockedRetrieval
     ? (orgDefaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? (project.retrieval_strategy ?? "hybrid")
-    : retrievalStrategy ?? (project.retrieval_strategy ?? "hybrid");
+    : lockedByUserRetrieval
+      ? (userDefaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? (project.retrieval_strategy ?? "hybrid")
+      : retrievalStrategy ?? (project.retrieval_strategy ?? systemDefaults?.retrieval_strategy ?? "hybrid");
   const effectiveRetrievalTopK = lockedRetrieval
     ? (orgDefaults?.retrieval_top_k ?? project.retrieval_top_k ?? 8)
-    : (retrievalTopK ?? project.retrieval_top_k ?? 8);
+    : lockedByUserRetrieval
+      ? (userDefaults?.retrieval_top_k ?? project.retrieval_top_k ?? 8)
+      : (retrievalTopK ?? project.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8);
   const effectiveRetrievalMinScore = lockedRetrieval
     ? (orgDefaults?.retrieval_min_score ?? project.retrieval_min_score ?? 0.3)
-    : (retrievalMinScore ?? project.retrieval_min_score ?? 0.3);
+    : lockedByUserRetrieval
+      ? (userDefaults?.retrieval_min_score ?? project.retrieval_min_score ?? 0.3)
+      : (retrievalMinScore ?? project.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3);
 
   const hasRetrievalChanges =
     effectiveRetrievalStrategy !== (project.retrieval_strategy ?? "hybrid") ||
@@ -233,16 +272,24 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   // --- Augmentation computed values ---
   const effectiveRerankingEnabled = lockedReranking
     ? (orgDefaults?.reranking_enabled ?? project.reranking_enabled ?? false)
-    : (rerankingEnabled ?? project.reranking_enabled ?? false);
+    : lockedByUserReranking
+      ? (userDefaults?.reranking_enabled ?? project.reranking_enabled ?? false)
+      : (rerankingEnabled ?? project.reranking_enabled ?? false);
   const effectiveRerankerBackend = lockedReranking
     ? (orgDefaults?.reranker_backend ?? project.reranker_backend ?? "none")
-    : (rerankerBackend ?? project.reranker_backend ?? "none");
+    : lockedByUserReranking
+      ? (userDefaults?.reranker_backend ?? project.reranker_backend ?? "none")
+      : (rerankerBackend ?? project.reranker_backend ?? systemDefaults?.reranker_backend ?? "none");
   const effectiveRerankerModel = lockedReranking
     ? (orgDefaults?.reranker_model ?? project.reranker_model ?? "")
-    : (rerankerModel ?? project.reranker_model ?? "");
+    : lockedByUserReranking
+      ? (userDefaults?.reranker_model ?? project.reranker_model ?? "")
+      : (rerankerModel ?? project.reranker_model ?? systemDefaults?.reranker_model ?? "");
   const effectiveRerankerCandidateMultiplier = lockedReranking
     ? (orgDefaults?.reranker_candidate_multiplier ?? project.reranker_candidate_multiplier ?? 3)
-    : (rerankerCandidateMultiplier ?? project.reranker_candidate_multiplier ?? 3);
+    : lockedByUserReranking
+      ? (userDefaults?.reranker_candidate_multiplier ?? project.reranker_candidate_multiplier ?? 3)
+      : (rerankerCandidateMultiplier ?? project.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? 3);
   const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
 
   const hasAugmentationChanges =
@@ -254,10 +301,14 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   // --- History computed values ---
   const effectiveChatHistoryWindowSize = lockedChatHistory
     ? (orgDefaults?.chat_history_window_size ?? project.chat_history_window_size ?? 8)
-    : (chatHistoryWindowSize ?? project.chat_history_window_size ?? 8);
+    : lockedByUserChatHistory
+      ? (userDefaults?.chat_history_window_size ?? project.chat_history_window_size ?? 8)
+      : (chatHistoryWindowSize ?? project.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8);
   const effectiveChatHistoryMaxChars = lockedChatHistory
     ? (orgDefaults?.chat_history_max_chars ?? project.chat_history_max_chars ?? 4000)
-    : (chatHistoryMaxChars ?? project.chat_history_max_chars ?? 4000);
+    : lockedByUserChatHistory
+      ? (userDefaults?.chat_history_max_chars ?? project.chat_history_max_chars ?? 4000)
+      : (chatHistoryMaxChars ?? project.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000);
 
   const hasHistoryChanges =
     effectiveChatHistoryWindowSize !== (project.chat_history_window_size ?? 8) ||
@@ -288,7 +339,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
           {/* Models */}
           <AccordionItem value="models">
-            <AccordionTrigger>{t("tabs.models")}</AccordionTrigger>
+            <AccordionTrigger className="text-base">{t("tabs.models")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 {orgHasModels && (
@@ -303,7 +354,22 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedModels && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                <fieldset disabled={lockedModels} className="space-y-4 disabled:opacity-60">
+                {(userHasModels && !lockedModels) && (
+                  <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
+                    <Label htmlFor="overrides-models-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
+                    <Switch
+                      id="overrides-models-user"
+                      checked={project.overrides_models_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user)}
+                      disabled={updateProject.isPending}
+                    />
+                  </div>
+                )}
+                {lockedByUserModels && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                {(!lockedModels && !lockedByUserModels && !project.embedding_backend && !project.llm_backend && systemDefaults) && (
+                  <p className="text-xs text-muted-foreground">{t("systemDefaultsApplied")}</p>
+                )}
+                <fieldset disabled={lockedModels || lockedByUserModels} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{t("models.embeddingTitle")}</p>
                     <p className="text-sm text-muted-foreground">{t("models.embeddingDescription")}</p>
@@ -390,7 +456,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       </div>
                     </>
                   ) : null}
-                  {!lockedModels && (
+                  {!lockedModels && !lockedByUserModels && (
                     <Button className="cursor-pointer" disabled={!hasModelsChanges || updateProject.isPending}
                       onClick={() => updateProject.mutate(
                         { embedding_backend: (effectiveEmbeddingBackend || null) as ProjectEmbeddingBackend | null, embedding_model: effectiveEmbeddingModel || null, embedding_api_key: null, embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null, llm_backend: (effectiveLlmBackend || null) as ProjectLLMBackend | null, llm_model: effectiveLlmModel || null, llm_api_key: null, llm_api_key_credential_id: effectiveLlmCredentialId || null },
@@ -407,7 +473,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
           {/* Indexation */}
           <AccordionItem value="indexing">
-            <AccordionTrigger>{t("tabs.knowledgeIndexing")}</AccordionTrigger>
+            <AccordionTrigger className="text-base">{t("tabs.knowledgeIndexing")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 {orgHasIndexing && (
@@ -421,13 +487,25 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                   </div>
                 )}
+                {lockedIndexing && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
+                {(userHasIndexing && !lockedIndexing) && (
+                  <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
+                    <Label htmlFor="overrides-indexing-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
+                    <Switch
+                      id="overrides-indexing-user"
+                      checked={project.overrides_indexing_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_indexing_from_user", project.overrides_indexing_from_user)}
+                      disabled={updateProject.isPending}
+                    />
+                  </div>
+                )}
+                {lockedByUserIndexing && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
                 {isProjectReindexing && (
                   <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
                   </div>
                 )}
-                {lockedIndexing && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                <fieldset disabled={lockedIndexing} className="space-y-4 disabled:opacity-60">
+                <fieldset disabled={lockedIndexing || lockedByUserIndexing} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-2">
                     <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
                     <select id="chunkingStrategy" value={effectiveChunkingStrategy}
@@ -447,7 +525,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                   <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
                   {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
-                  {!lockedIndexing && (
+                  {!lockedIndexing && !lockedByUserIndexing && (
                     <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProject.isPending} onClick={handleIndexingSave}>
                       {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
                     </Button>
@@ -471,7 +549,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
           {/* Retrieval */}
           <AccordionItem value="retrieval">
-            <AccordionTrigger>{t("tabs.contextRetrieval")}</AccordionTrigger>
+            <AccordionTrigger className="text-base">{t("tabs.contextRetrieval")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 {orgHasRetrieval && (
@@ -486,7 +564,19 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedRetrieval && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                <fieldset disabled={lockedRetrieval} className="space-y-4 disabled:opacity-60">
+                {(userHasRetrieval && !lockedRetrieval) && (
+                  <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
+                    <Label htmlFor="overrides-retrieval-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
+                    <Switch
+                      id="overrides-retrieval-user"
+                      checked={project.overrides_retrieval_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_user", project.overrides_retrieval_from_user)}
+                      disabled={updateProject.isPending}
+                    />
+                  </div>
+                )}
+                {lockedByUserRetrieval && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                <fieldset disabled={lockedRetrieval || lockedByUserRetrieval} className="space-y-4 disabled:opacity-60">
                   <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
                   <div className="space-y-2">
                     <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}</Label>
@@ -513,7 +603,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                     <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
                   </div>
-                  {!lockedRetrieval && (
+                  {!lockedRetrieval && !lockedByUserRetrieval && (
                     <Button className="cursor-pointer" disabled={!hasRetrievalChanges || updateProject.isPending}
                       onClick={() => updateProject.mutate(
                         { retrieval_strategy: effectiveRetrievalStrategy, retrieval_top_k: effectiveRetrievalTopK, retrieval_min_score: effectiveRetrievalMinScore },
@@ -530,7 +620,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
           {/* Augmentation */}
           <AccordionItem value="augmentation">
-            <AccordionTrigger>{t("tabs.contextAugmentation")}</AccordionTrigger>
+            <AccordionTrigger className="text-base">{t("tabs.contextAugmentation")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 {orgHasReranking && (
@@ -545,7 +635,19 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedReranking && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                <fieldset disabled={lockedReranking} className="space-y-4 disabled:opacity-60">
+                {(userHasReranking && !lockedReranking) && (
+                  <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
+                    <Label htmlFor="overrides-reranking-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
+                    <Switch
+                      id="overrides-reranking-user"
+                      checked={project.overrides_reranking_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_reranking_from_user", project.overrides_reranking_from_user)}
+                      disabled={updateProject.isPending}
+                    />
+                  </div>
+                )}
+                {lockedByUserReranking && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                <fieldset disabled={lockedReranking || lockedByUserReranking} className="space-y-4 disabled:opacity-60">
                   <div className="flex items-center gap-2">
                     <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
                     <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
@@ -584,7 +686,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       </div>
                     </>
                   )}
-                  {!lockedReranking && (
+                  {!lockedReranking && !lockedByUserReranking && (
                     <Button className="cursor-pointer" disabled={!hasAugmentationChanges || updateProject.isPending}
                       onClick={() => updateProject.mutate(
                         { reranking_enabled: effectiveRerankingEnabled, reranker_backend: effectiveRerankerBackend as ProjectRerankerBackend, reranker_model: effectiveRerankerModel || null, reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier },
@@ -601,7 +703,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
           {/* Chat history */}
           <AccordionItem value="history">
-            <AccordionTrigger>{t("tabs.answerGeneration")}</AccordionTrigger>
+            <AccordionTrigger className="text-base">{t("tabs.answerGeneration")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 {orgHasChatHistory && (
@@ -616,7 +718,19 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </div>
                 )}
                 {lockedChatHistory && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                <fieldset disabled={lockedChatHistory} className="space-y-4 disabled:opacity-60">
+                {(userHasChatHistory && !lockedChatHistory) && (
+                  <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
+                    <Label htmlFor="overrides-chat-history-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
+                    <Switch
+                      id="overrides-chat-history-user"
+                      checked={project.overrides_chat_history_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_user", project.overrides_chat_history_from_user)}
+                      disabled={updateProject.isPending}
+                    />
+                  </div>
+                )}
+                {lockedByUserChatHistory && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
+                <fieldset disabled={lockedChatHistory || lockedByUserChatHistory} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-2">
                     <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
                     <Input id="chatHistoryWindowSize" type="number" min={1} max={40} value={effectiveChatHistoryWindowSize}
@@ -631,7 +745,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     />
                     <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
                   </div>
-                  {!lockedChatHistory && (
+                  {!lockedChatHistory && !lockedByUserChatHistory && (
                     <Button className="cursor-pointer" disabled={!hasHistoryChanges || updateProject.isPending}
                       onClick={() => updateProject.mutate(
                         { chat_history_window_size: effectiveChatHistoryWindowSize, chat_history_max_chars: effectiveChatHistoryMaxChars },
