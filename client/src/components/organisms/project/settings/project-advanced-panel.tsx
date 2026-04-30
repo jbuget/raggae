@@ -119,18 +119,25 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const lockedByUserChatHistory = userHasChatHistory && !lockedChatHistory && !project.overrides_chat_history_from_user;
 
   const orgHasAnyDefaults = orgHasModels || orgHasIndexing || orgHasRetrieval || orgHasReranking || orgHasChatHistory;
+  const userHasAnyDefaults = userHasModels || userHasIndexing || userHasRetrieval || userHasReranking || userHasChatHistory;
   const anySectionOverrides =
     (orgHasModels && project.overrides_models_from_org) ||
     (orgHasIndexing && project.overrides_indexing_from_org) ||
     (orgHasRetrieval && project.overrides_retrieval_from_org) ||
     (orgHasReranking && project.overrides_reranking_from_org) ||
     (orgHasChatHistory && project.overrides_chat_history_from_org);
+  const anyUserSectionOverrides =
+    (userHasModels && project.overrides_models_from_user) ||
+    (userHasIndexing && project.overrides_indexing_from_user) ||
+    (userHasRetrieval && project.overrides_retrieval_from_user) ||
+    (userHasReranking && project.overrides_reranking_from_user) ||
+    (userHasChatHistory && project.overrides_chat_history_from_user);
 
   const globalOverride = forceGlobalEnabled || anySectionOverrides;
+  const globalUserOverride = forceGlobalEnabled || anyUserSectionOverrides;
 
   function handleGlobalToggle() {
     if (globalOverride) {
-      // Turn OFF: reset all sections to org defaults + lock UI
       setForceGlobalEnabled(false);
       updateProject.mutate(
         {
@@ -143,11 +150,26 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
         { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
       );
     } else {
-      // Turn ON: unlock section switches without touching backend values
       setForceGlobalEnabled(true);
     }
   }
-
+  function handleGlobalUserToggle() {
+    if (globalUserOverride) {
+      setForceGlobalEnabled(false);
+      updateProject.mutate(
+        {
+          ...(userHasModels && { overrides_models_from_user: false }),
+          ...(userHasIndexing && { overrides_indexing_from_user: false }),
+          ...(userHasRetrieval && { overrides_retrieval_from_user: false }),
+          ...(userHasReranking && { overrides_reranking_from_user: false }),
+          ...(userHasChatHistory && { overrides_chat_history_from_user: false }),
+        },
+        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
+      );
+    } else {
+      setForceGlobalEnabled(true);
+    }
+  }
   function handleToggleOverride(flag: string, currentValue: boolean) {
     updateProject.mutate(
       { [flag]: !currentValue },
@@ -321,7 +343,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
       <Card className="px-5 py-1">
 
         {/* Global override */}
-        {orgHasAnyDefaults && (
+        {inOrg && orgHasAnyDefaults && (
           <div className="flex items-center justify-between gap-4 border-b py-4">
             <div className="space-y-0.5">
               <p className="text-sm font-medium">{t("globalOverrideLabel")}</p>
@@ -334,7 +356,19 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             />
           </div>
         )}
-
+        {!inOrg && userHasAnyDefaults && (
+          <div className="flex items-center justify-between gap-4 border-b py-4">
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium">{t("overrideUserDefaults")}</p>
+              <p className="text-xs text-muted-foreground">{t("globalOverrideDescription")}</p>
+            </div>
+            <Switch
+              checked={globalUserOverride}
+              onCheckedChange={handleGlobalUserToggle}
+              disabled={updateProject.isPending}
+            />
+          </div>
+        )}
         <Accordion type="multiple" className="w-full">
 
           {/* Models */}
@@ -361,7 +395,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-models-user"
                       checked={project.overrides_models_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user)}
-                      disabled={updateProject.isPending}
+                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -495,7 +529,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-indexing-user"
                       checked={project.overrides_indexing_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_indexing_from_user", project.overrides_indexing_from_user)}
-                      disabled={updateProject.isPending}
+                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -571,7 +605,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-retrieval-user"
                       checked={project.overrides_retrieval_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_user", project.overrides_retrieval_from_user)}
-                      disabled={updateProject.isPending}
+                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -642,7 +676,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-reranking-user"
                       checked={project.overrides_reranking_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_reranking_from_user", project.overrides_reranking_from_user)}
-                      disabled={updateProject.isPending}
+                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
@@ -725,7 +759,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       id="overrides-chat-history-user"
                       checked={project.overrides_chat_history_from_user}
                       onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_user", project.overrides_chat_history_from_user)}
-                      disabled={updateProject.isPending}
+                      disabled={(!inOrg && !globalUserOverride) || updateProject.isPending}
                     />
                   </div>
                 )}
