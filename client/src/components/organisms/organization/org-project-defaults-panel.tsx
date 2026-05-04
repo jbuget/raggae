@@ -77,11 +77,11 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
     return <p className="text-sm text-destructive">{t("loadError")}</p>;
   }
 
-  // Effective values = local state ?? persisted defaults ?? fallback
-  const effectiveEmbeddingBackend = embeddingBackend === undefined ? (defaults?.embedding_backend ?? "") : embeddingBackend;
-  const effectiveLlmBackend = llmBackend === undefined ? (defaults?.llm_backend ?? "") : llmBackend;
-  const effectiveEmbeddingModel = embeddingModel ?? (defaults?.embedding_model ?? "");
-  const effectiveLlmModel = llmModel ?? (defaults?.llm_model ?? "");
+  // Effective values = local state ?? persisted defaults ?? system defaults ?? hardcoded
+  const effectiveEmbeddingBackend = embeddingBackend === undefined ? (defaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "") : embeddingBackend;
+  const effectiveLlmBackend = llmBackend === undefined ? (defaults?.llm_backend ?? systemDefaults?.llm_backend ?? "") : llmBackend;
+  const effectiveEmbeddingModel = embeddingModel ?? (defaults?.embedding_model ?? systemDefaults?.embedding_model ?? "");
+  const effectiveLlmModel = llmModel ?? (defaults?.llm_model ?? systemDefaults?.llm_model ?? "");
   const effectiveEmbeddingCredentialId = embeddingCredentialId ?? (defaults?.embedding_api_key_credential_id ?? "");
   const effectiveLlmCredentialId = llmCredentialId ?? (defaults?.llm_api_key_credential_id ?? "");
 
@@ -100,17 +100,17 @@ export function OrgProjectDefaultsPanel({ organizationId }: OrgProjectDefaultsPa
   const effectiveChunkingStrategy = chunkingStrategy ?? (defaults?.chunking_strategy as ChunkingStrategy | undefined) ?? "auto";
   const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? false;
 
-  const effectiveRetrievalStrategy = retrievalStrategy ?? (defaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? "hybrid";
-  const effectiveRetrievalTopK = retrievalTopK ?? defaults?.retrieval_top_k ?? 8;
-  const effectiveRetrievalMinScore = retrievalMinScore ?? defaults?.retrieval_min_score ?? 0.3;
+  const effectiveRetrievalStrategy = retrievalStrategy ?? (defaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? (systemDefaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? "hybrid";
+  const effectiveRetrievalTopK = retrievalTopK ?? defaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8;
+  const effectiveRetrievalMinScore = retrievalMinScore ?? defaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3;
 
   const effectiveRerankingEnabled = rerankingEnabled ?? defaults?.reranking_enabled ?? false;
-  const effectiveRerankerBackend = rerankerBackend ?? (defaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? "none";
-  const effectiveRerankerModel = rerankerModel ?? defaults?.reranker_model ?? "";
-  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? defaults?.reranker_candidate_multiplier ?? 3;
+  const effectiveRerankerBackend = rerankerBackend ?? (defaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? (systemDefaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? "none";
+  const effectiveRerankerModel = rerankerModel ?? defaults?.reranker_model ?? systemDefaults?.reranker_model ?? "";
+  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? defaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? 3;
   const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
-const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? 8;
-const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? 4000;
+  const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8;
+  const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000;
 
 function handleReset() {
   if (!systemDefaults) return;
@@ -120,12 +120,12 @@ function handleReset() {
   setLlmBackend(systemDefaults.llm_backend as ProjectLLMBackend);
   setLlmModel(systemDefaults.llm_model);
   setLlmCredentialId("");
-  setChunkingStrategy(systemDefaults.chunking_strategy as ChunkingStrategy);
-  setParentChildChunking(systemDefaults.parent_child_chunking);
+  setChunkingStrategy("auto");
+  setParentChildChunking(false);
   setRetrievalStrategy(systemDefaults.retrieval_strategy as RetrievalStrategy);
   setRetrievalTopK(systemDefaults.retrieval_top_k);
   setRetrievalMinScore(systemDefaults.retrieval_min_score);
-  setRerankingEnabled(systemDefaults.reranking_enabled);
+  setRerankingEnabled(false);
   setRerankerBackend(systemDefaults.reranker_backend as ProjectRerankerBackend);
   setRerankerModel(systemDefaults.reranker_model);
   setRerankerCandidateMultiplier(systemDefaults.reranker_candidate_multiplier);
@@ -134,31 +134,31 @@ function handleReset() {
 }
 
 const hasChanges =
-    effectiveEmbeddingBackend !== (defaults?.embedding_backend ?? "") ||
-    effectiveEmbeddingModel !== (defaults?.embedding_model ?? "") ||
-    effectiveLlmBackend !== (defaults?.llm_backend ?? "") ||
-    effectiveLlmModel !== (defaults?.llm_model ?? "") ||
+    effectiveEmbeddingBackend !== (defaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "") ||
+    effectiveEmbeddingModel !== (defaults?.embedding_model ?? systemDefaults?.embedding_model ?? "") ||
+    effectiveLlmBackend !== (defaults?.llm_backend ?? systemDefaults?.llm_backend ?? "") ||
+    effectiveLlmModel !== (defaults?.llm_model ?? systemDefaults?.llm_model ?? "") ||
     embeddingCredentialId !== undefined ||
     llmCredentialId !== undefined ||
     effectiveChunkingStrategy !== (defaults?.chunking_strategy ?? "auto") ||
     effectiveParentChildChunking !== (defaults?.parent_child_chunking ?? false) ||
-    effectiveRetrievalStrategy !== (defaults?.retrieval_strategy ?? "hybrid") ||
-    effectiveRetrievalTopK !== (defaults?.retrieval_top_k ?? 8) ||
-    effectiveRetrievalMinScore !== (defaults?.retrieval_min_score ?? 0.3) ||
+    effectiveRetrievalStrategy !== (defaults?.retrieval_strategy ?? systemDefaults?.retrieval_strategy ?? "hybrid") ||
+    effectiveRetrievalTopK !== (defaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8) ||
+    effectiveRetrievalMinScore !== (defaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3) ||
     effectiveRerankingEnabled !== (defaults?.reranking_enabled ?? false) ||
-    effectiveRerankerBackend !== (defaults?.reranker_backend ?? "none") ||
-    effectiveRerankerModel !== (defaults?.reranker_model ?? "") ||
-    effectiveRerankerCandidateMultiplier !== (defaults?.reranker_candidate_multiplier ?? 3) ||
-    effectiveChatHistoryWindowSize !== (defaults?.chat_history_window_size ?? 8) ||
-    effectiveChatHistoryMaxChars !== (defaults?.chat_history_max_chars ?? 4000);
+    effectiveRerankerBackend !== (defaults?.reranker_backend ?? systemDefaults?.reranker_backend ?? "none") ||
+    effectiveRerankerModel !== (defaults?.reranker_model ?? systemDefaults?.reranker_model ?? "") ||
+    effectiveRerankerCandidateMultiplier !== (defaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? 3) ||
+    effectiveChatHistoryWindowSize !== (defaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8) ||
+    effectiveChatHistoryMaxChars !== (defaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000);
 
   function handleSave() {
     upsert.mutate(
       {
-        embedding_backend: effectiveEmbeddingBackend || null,
+        embedding_backend: (effectiveEmbeddingBackend as ProjectEmbeddingBackend) || null,
         embedding_model: effectiveEmbeddingModel || null,
         embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
-        llm_backend: effectiveLlmBackend || null,
+        llm_backend: (effectiveLlmBackend as ProjectLLMBackend) || null,
         llm_model: effectiveLlmModel || null,
         llm_api_key_credential_id: effectiveLlmCredentialId || null,
         chunking_strategy: effectiveChunkingStrategy,
@@ -187,13 +187,13 @@ const hasChanges =
   return (
     <Card className="space-y-8 p-5">
       <div className="space-y-1">
-        <h2 className="text-lg font-medium">{t("title")}</h2>
+        <p className="text-lg font-medium">{t("title")}</p>
         <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
       {/* Models */}
       <div className="space-y-4">
-        <h3 className="text-base font-semibold tracking-tight">{tSettings("models.embeddingTitle")}</h3>
+        <p className="text-sm font-medium">{tSettings("models.embeddingTitle")}</p>
         <p className="text-sm text-muted-foreground">{tSettings("models.embeddingDescription")}</p>
         <div className="space-y-2">
           <Label htmlFor="org-embeddingBackend">{tSettings("models.embeddingBackendLabel")}</Label>
@@ -240,7 +240,7 @@ const hasChanges =
           </>
         ) : null}
         <hr className="border-border" />
-        <h3 className="text-base font-semibold tracking-tight">{tSettings("models.llmTitle")}</h3>
+        <p className="text-sm font-medium">{tSettings("models.llmTitle")}</p>
         <p className="text-sm text-muted-foreground">{tSettings("models.llmDescription")}</p>
         <div className="space-y-2">
           <Label htmlFor="org-llmBackend">{tSettings("models.llmBackendLabel")}</Label>
@@ -293,7 +293,7 @@ const hasChanges =
 
       {/* Indexation */}
       <div className="space-y-4">
-        <h3 className="text-base font-semibold tracking-tight">{tSettings("knowledgeIndexing.title")}</h3>
+        <p className="text-sm font-medium">{tSettings("knowledgeIndexing.title")}</p>
         <div className="space-y-2">
           <Label htmlFor="org-chunkingStrategy">{tSettings("knowledgeIndexing.chunkingLabel")}</Label>
           <select
@@ -323,7 +323,7 @@ const hasChanges =
 
       {/* Retrieval */}
       <div className="space-y-4">
-        <h3 className="text-base font-semibold tracking-tight">{tSettings("contextRetrieval.title")}</h3>
+        <p className="text-sm font-medium">{tSettings("contextRetrieval.title")}</p>
         <p className="text-sm text-muted-foreground">{tSettings("contextRetrieval.description")}</p>
         <div className="space-y-2">
           <Label htmlFor="org-retrievalStrategy">{tSettings("contextRetrieval.searchTypeLabel")}</Label>
@@ -367,7 +367,7 @@ const hasChanges =
 
       {/* Reranking */}
       <div className="space-y-4">
-        <h3 className="text-base font-semibold tracking-tight">{tSettings("contextAugmentation.title")}</h3>
+        <p className="text-sm font-medium">{tSettings("contextAugmentation.title")}</p>
         <div className="flex items-center gap-2">
           <Switch
             id="org-rerankingEnabled"
@@ -424,7 +424,7 @@ const hasChanges =
 
       {/* Chat history */}
       <div className="space-y-4">
-        <h3 className="text-base font-semibold tracking-tight">{tSettings("answerGeneration.historyTitle")}</h3>
+        <p className="text-sm font-medium">{tSettings("answerGeneration.historyTitle")}</p>
         <div className="space-y-2">
           <Label htmlFor="org-chatHistoryWindowSize">{tSettings("answerGeneration.chatHistoryWindowLabel")}</Label>
           <Input

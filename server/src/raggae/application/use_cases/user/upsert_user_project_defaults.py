@@ -1,12 +1,24 @@
-from dataclasses import replace
 from uuid import UUID
 
+from raggae.application.constants import (
+    SUPPORTED_CHUNKING_STRATEGIES,
+    SUPPORTED_EMBEDDING_BACKENDS,
+    SUPPORTED_LLM_BACKENDS,
+    SUPPORTED_RERANKER_BACKENDS,
+    SUPPORTED_RETRIEVAL_STRATEGIES,
+)
 from raggae.application.dto.user_project_defaults_dto import UserProjectDefaultsDTO
 from raggae.application.interfaces.repositories.user_project_defaults_repository import (
     UserProjectDefaultsRepository,
 )
 from raggae.application.interfaces.repositories.user_repository import UserRepository
 from raggae.domain.entities.user_project_defaults import UserProjectDefaults
+from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectEmbeddingBackendError,
+    InvalidProjectLLMBackendError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRetrievalStrategyError,
+)
 from raggae.domain.exceptions.user_exceptions import UserNotFoundError
 
 
@@ -46,10 +58,21 @@ class UpsertUserProjectDefaults:
         if user is None:
             raise UserNotFoundError(f"User {user_id} not found")
 
-        existing = await self._user_project_defaults_repository.find_by_user_id(user_id)
-        base = existing or UserProjectDefaults(user_id=user_id)
-        defaults = replace(
-            base,
+        if embedding_backend is not None and embedding_backend not in SUPPORTED_EMBEDDING_BACKENDS:
+            raise InvalidProjectEmbeddingBackendError(f"Unsupported embedding backend: {embedding_backend}")
+        if llm_backend is not None and llm_backend not in SUPPORTED_LLM_BACKENDS:
+            raise InvalidProjectLLMBackendError(f"Unsupported LLM backend: {llm_backend}")
+        if chunking_strategy is not None and chunking_strategy not in SUPPORTED_CHUNKING_STRATEGIES:
+            raise ValueError(f"Unsupported chunking strategy: {chunking_strategy}")
+        if retrieval_strategy is not None and retrieval_strategy not in SUPPORTED_RETRIEVAL_STRATEGIES:
+            raise InvalidProjectRetrievalStrategyError(
+                f"Unsupported retrieval strategy: {retrieval_strategy}"
+            )
+        if reranker_backend is not None and reranker_backend not in SUPPORTED_RERANKER_BACKENDS:
+            raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
+
+        defaults = UserProjectDefaults(
+            user_id=user_id,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,

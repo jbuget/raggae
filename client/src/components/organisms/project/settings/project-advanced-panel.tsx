@@ -85,7 +85,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const [chatHistoryMaxChars, setChatHistoryMaxChars] = useState<number | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [forceGlobalEnabled, setForceGlobalEnabled] = useState(false);
 
   if (!project) return null;
 
@@ -112,70 +111,34 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const userHasReranking = userDefaults != null && (userDefaults.reranking_enabled != null || userDefaults.reranker_backend != null);
   const userHasChatHistory = userDefaults != null && (userDefaults.chat_history_window_size != null || userDefaults.chat_history_max_chars != null);
 
-  const lockedByUserModels = userHasModels && !lockedModels && !project.overrides_models_from_user;
-  const lockedByUserIndexing = userHasIndexing && !lockedIndexing && !project.overrides_indexing_from_user;
-  const lockedByUserRetrieval = userHasRetrieval && !lockedRetrieval && !project.overrides_retrieval_from_user;
-  const lockedByUserReranking = userHasReranking && !lockedReranking && !project.overrides_reranking_from_user;
-  const lockedByUserChatHistory = userHasChatHistory && !lockedChatHistory && !project.overrides_chat_history_from_user;
+  const lockedByUserModels = !inOrg && userHasModels && !project.overrides_models_from_user;
+  const lockedByUserIndexing = !inOrg && userHasIndexing && !project.overrides_indexing_from_user;
+  const lockedByUserRetrieval = !inOrg && userHasRetrieval && !project.overrides_retrieval_from_user;
+  const lockedByUserReranking = !inOrg && userHasReranking && !project.overrides_reranking_from_user;
+  const lockedByUserChatHistory = !inOrg && userHasChatHistory && !project.overrides_chat_history_from_user;
 
-  const orgHasAnyDefaults = orgHasModels || orgHasIndexing || orgHasRetrieval || orgHasReranking || orgHasChatHistory;
-  const userHasAnyDefaults = userHasModels || userHasIndexing || userHasRetrieval || userHasReranking || userHasChatHistory;
-  const anySectionOverrides =
-    (orgHasModels && project.overrides_models_from_org) ||
-    (orgHasIndexing && project.overrides_indexing_from_org) ||
-    (orgHasRetrieval && project.overrides_retrieval_from_org) ||
-    (orgHasReranking && project.overrides_reranking_from_org) ||
-    (orgHasChatHistory && project.overrides_chat_history_from_org);
-  const anyUserSectionOverrides =
-    (userHasModels && project.overrides_models_from_user) ||
-    (userHasIndexing && project.overrides_indexing_from_user) ||
-    (userHasRetrieval && project.overrides_retrieval_from_user) ||
-    (userHasReranking && project.overrides_reranking_from_user) ||
-    (userHasChatHistory && project.overrides_chat_history_from_user);
-
-  const globalOverride = forceGlobalEnabled || anySectionOverrides;
-  const globalUserOverride = forceGlobalEnabled || anyUserSectionOverrides;
-
-  function handleGlobalToggle() {
-    if (globalOverride) {
-      setForceGlobalEnabled(false);
-      updateProject.mutate(
-        {
-          ...(orgHasModels && { overrides_models_from_org: false }),
-          ...(orgHasIndexing && { overrides_indexing_from_org: false }),
-          ...(orgHasRetrieval && { overrides_retrieval_from_org: false }),
-          ...(orgHasReranking && { overrides_reranking_from_org: false }),
-          ...(orgHasChatHistory && { overrides_chat_history_from_org: false }),
-        },
-        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-      );
-    } else {
-      setForceGlobalEnabled(true);
-    }
-  }
-  function handleGlobalUserToggle() {
-    if (globalUserOverride) {
-      setForceGlobalEnabled(false);
-      updateProject.mutate(
-        {
-          ...(userHasModels && { overrides_models_from_user: false }),
-          ...(userHasIndexing && { overrides_indexing_from_user: false }),
-          ...(userHasRetrieval && { overrides_retrieval_from_user: false }),
-          ...(userHasReranking && { overrides_reranking_from_user: false }),
-          ...(userHasChatHistory && { overrides_chat_history_from_user: false }),
-        },
-        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-      );
-    } else {
-      setForceGlobalEnabled(true);
-    }
-  }
-  function handleToggleOverride(flag: string, currentValue: boolean) {
+  function handleToggleOverride(flag: string, currentValue: boolean, onUnlock?: () => void, onLock?: () => void) {
+    if (!currentValue) onUnlock?.(); else onLock?.();
     updateProject.mutate(
       { [flag]: !currentValue },
       { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
     );
   }
+
+  function resetModels() { setEmbeddingBackend(undefined); setEmbeddingModel(null); setEmbeddingCredentialId(null); setLlmBackend(undefined); setLlmModel(null); setLlmCredentialId(null); }
+  function fillModelsFrom(src: typeof orgDefaults | typeof userDefaults) { setEmbeddingBackend((src?.embedding_backend ?? "") as ProjectEmbeddingBackend | ""); setEmbeddingModel(src?.embedding_model ?? null); setEmbeddingCredentialId(src?.embedding_api_key_credential_id ?? null); setLlmBackend((src?.llm_backend ?? "") as ProjectLLMBackend | ""); setLlmModel(src?.llm_model ?? null); setLlmCredentialId(src?.llm_api_key_credential_id ?? null); }
+
+  function resetIndexing() { setChunkingStrategy(null); setParentChildChunking(null); }
+  function fillIndexingFrom(src: typeof orgDefaults | typeof userDefaults) { setChunkingStrategy((src?.chunking_strategy ?? null) as ChunkingStrategy | null); setParentChildChunking(src?.parent_child_chunking ?? null); }
+
+  function resetRetrieval() { setRetrievalStrategy(null); setRetrievalTopK(null); setRetrievalMinScore(null); }
+  function fillRetrievalFrom(src: typeof orgDefaults | typeof userDefaults) { setRetrievalStrategy((src?.retrieval_strategy ?? null) as RetrievalStrategy | null); setRetrievalTopK(src?.retrieval_top_k ?? null); setRetrievalMinScore(src?.retrieval_min_score ?? null); }
+
+  function resetReranking() { setRerankingEnabled(null); setRerankerBackend(null); setRerankerModel(null); setRerankerCandidateMultiplier(null); }
+  function fillRerankingFrom(src: typeof orgDefaults | typeof userDefaults) { setRerankingEnabled(src?.reranking_enabled ?? null); setRerankerBackend((src?.reranker_backend ?? null) as ProjectRerankerBackend | null); setRerankerModel(src?.reranker_model ?? null); setRerankerCandidateMultiplier(src?.reranker_candidate_multiplier ?? null); }
+
+  function resetHistory() { setChatHistoryWindowSize(null); setChatHistoryMaxChars(null); }
+  function fillHistoryFrom(src: typeof orgDefaults | typeof userDefaults) { setChatHistoryWindowSize(src?.chat_history_window_size ?? null); setChatHistoryMaxChars(src?.chat_history_max_chars ?? null); }
 
   // --- Indexation computed values ---
   const effectiveChunkingStrategy = lockedIndexing
@@ -250,14 +213,14 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   const credentialsByProvider = (credentials ?? [])
     .filter((c) => c.is_active)
-    .reduce<Record<ModelProvider, Array<{ id: string; masked_key: string }>>>(
-      (acc, c) => { acc[c.provider].push({ id: c.id, masked_key: c.masked_key }); return acc; },
-      { openai: [], gemini: [], anthropic: [] },
+    .reduce<Record<string, Array<{ id: string; masked_key: string }>>>(
+      (acc, c) => { (acc[c.provider] ??= []).push({ id: c.id, masked_key: c.masked_key }); return acc; },
+      {},
     );
   const embeddingProviderForHints = effectiveEmbeddingBackend === "openai" || effectiveEmbeddingBackend === "gemini" ? effectiveEmbeddingBackend : null;
   const llmProviderForHints = effectiveLlmBackend === "openai" || effectiveLlmBackend === "gemini" || effectiveLlmBackend === "anthropic" ? effectiveLlmBackend : null;
-  const embeddingCredentialOptions = embeddingProviderForHints ? credentialsByProvider[embeddingProviderForHints] : [];
-  const llmCredentialOptions = llmProviderForHints ? credentialsByProvider[llmProviderForHints] : [];
+  const embeddingCredentialOptions = embeddingProviderForHints ? (credentialsByProvider[embeddingProviderForHints] ?? []) : [];
+  const llmCredentialOptions = llmProviderForHints ? (credentialsByProvider[llmProviderForHints] ?? []) : [];
   const embeddingModelOptions = effectiveEmbeddingBackend ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
   const llmModelOptions = effectiveLlmBackend ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
@@ -287,9 +250,9 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
       : (retrievalMinScore ?? project.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3);
 
   const hasRetrievalChanges =
-    effectiveRetrievalStrategy !== (project.retrieval_strategy ?? "hybrid") ||
-    effectiveRetrievalTopK !== (project.retrieval_top_k ?? 8) ||
-    effectiveRetrievalMinScore !== (project.retrieval_min_score ?? 0.3);
+    effectiveRetrievalStrategy !== (project.retrieval_strategy ?? systemDefaults?.retrieval_strategy ?? "hybrid") ||
+    effectiveRetrievalTopK !== (project.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8) ||
+    effectiveRetrievalMinScore !== (project.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3);
 
   // --- Augmentation computed values ---
   const effectiveRerankingEnabled = lockedReranking
@@ -316,9 +279,9 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   const hasAugmentationChanges =
     effectiveRerankingEnabled !== (project.reranking_enabled ?? false) ||
-    effectiveRerankerBackend !== (project.reranker_backend ?? "none") ||
-    effectiveRerankerModel !== (project.reranker_model ?? "") ||
-    effectiveRerankerCandidateMultiplier !== (project.reranker_candidate_multiplier ?? 3);
+    effectiveRerankerBackend !== (project.reranker_backend ?? systemDefaults?.reranker_backend ?? "none") ||
+    effectiveRerankerModel !== (project.reranker_model ?? systemDefaults?.reranker_model ?? "") ||
+    effectiveRerankerCandidateMultiplier !== (project.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? 3);
 
   // --- History computed values ---
   const effectiveChatHistoryWindowSize = lockedChatHistory
@@ -333,42 +296,15 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
       : (chatHistoryMaxChars ?? project.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000);
 
   const hasHistoryChanges =
-    effectiveChatHistoryWindowSize !== (project.chat_history_window_size ?? 8) ||
-    effectiveChatHistoryMaxChars !== (project.chat_history_max_chars ?? 4000);
+    effectiveChatHistoryWindowSize !== (project.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8) ||
+    effectiveChatHistoryMaxChars !== (project.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000);
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
 
       {/* Settings card */}
       <Card className="px-5 py-1">
 
-        {/* Global override */}
-        {inOrg && orgHasAnyDefaults && (
-          <div className="flex items-center justify-between gap-4 border-b py-4">
-            <div className="space-y-0.5">
-              <p className="text-sm font-medium">{t("globalOverrideLabel")}</p>
-              <p className="text-xs text-muted-foreground">{t("globalOverrideDescription")}</p>
-            </div>
-            <Switch
-              checked={globalOverride}
-              onCheckedChange={handleGlobalToggle}
-              disabled={updateProject.isPending}
-            />
-          </div>
-        )}
-        {((!inOrg) || (inOrg && globalOverride)) && (
-          <div className="flex items-center justify-between gap-4 border-b py-4">
-            <div className="space-y-0.5">
-              <p className="text-sm font-medium">{t("overrideUserDefaults")}</p>
-              <p className="text-xs text-muted-foreground">{t("globalOverrideDescription")}</p>
-            </div>
-            <Switch
-              checked={!userHasAnyDefaults || globalUserOverride}
-              onCheckedChange={handleGlobalUserToggle}
-              disabled={!userHasAnyDefaults || updateProject.isPending}
-            />
-          </div>
-        )}
         <Accordion type="multiple" className="w-full">
 
           {/* Models */}
@@ -382,29 +318,26 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-models"
                       checked={project.overrides_models_from_org}
-                      onCheckedChange={() => handleToggleOverride("overrides_models_from_org", project.overrides_models_from_org)}
-                      disabled={!globalOverride || updateProject.isPending}
+                      onCheckedChange={() => handleToggleOverride("overrides_models_from_org", project.overrides_models_from_org, () => fillModelsFrom(orgDefaults), resetModels)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedModels && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {!lockedModels && (
+                {lockedModels && <p className="text-xs text-foreground">{t("orgDefaultsApplied")}</p>}
+                {!inOrg && userHasModels && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-models-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-models-user"
-                      checked={!userHasModels || project.overrides_models_from_user}
-                      onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user)}
-                      disabled={!userHasModels || (!inOrg && !globalUserOverride) || updateProject.isPending}
+                      checked={project.overrides_models_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user, () => fillModelsFrom(userDefaults), resetModels)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedByUserModels && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
-                {!userHasModels && !lockedModels && (
-                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
-                )}
+                {lockedByUserModels && <p className="text-xs text-foreground">{t("userDefaultsApplied")}</p>}
                 {(!lockedModels && !lockedByUserModels && !project.embedding_backend && !project.llm_backend && systemDefaults) && (
-                  <p className="text-xs text-muted-foreground">{t("systemDefaultsApplied")}</p>
+                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <fieldset disabled={lockedModels || lockedByUserModels} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-1">
@@ -519,27 +452,24 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-indexing"
                       checked={project.overrides_indexing_from_org}
-                      onCheckedChange={() => handleToggleOverride("overrides_indexing_from_org", project.overrides_indexing_from_org)}
-                      disabled={!globalOverride || updateProject.isPending}
+                      onCheckedChange={() => handleToggleOverride("overrides_indexing_from_org", project.overrides_indexing_from_org, () => fillIndexingFrom(orgDefaults), resetIndexing)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedIndexing && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {!lockedIndexing && (
+                {lockedIndexing && <p className="text-xs text-foreground">{t("orgDefaultsApplied")}</p>}
+                {!inOrg && userHasIndexing && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-indexing-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-indexing-user"
-                      checked={!userHasIndexing || project.overrides_indexing_from_user}
-                      onCheckedChange={() => handleToggleOverride("overrides_indexing_from_user", project.overrides_indexing_from_user)}
-                      disabled={!userHasIndexing || (!inOrg && !globalUserOverride) || updateProject.isPending}
+                      checked={project.overrides_indexing_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_indexing_from_user", project.overrides_indexing_from_user, () => fillIndexingFrom(userDefaults), resetIndexing)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedByUserIndexing && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
-                {!userHasIndexing && !lockedIndexing && (
-                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
-                )}
+                {lockedByUserIndexing && <p className="text-xs text-foreground">{t("userDefaultsApplied")}</p>}
                 {isProjectReindexing && (
                   <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
@@ -598,26 +528,26 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-retrieval"
                       checked={project.overrides_retrieval_from_org}
-                      onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_org", project.overrides_retrieval_from_org)}
-                      disabled={!globalOverride || updateProject.isPending}
+                      onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_org", project.overrides_retrieval_from_org, () => fillRetrievalFrom(orgDefaults), resetRetrieval)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedRetrieval && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {!lockedRetrieval && (
+                {lockedRetrieval && <p className="text-xs text-foreground">{t("orgDefaultsApplied")}</p>}
+                {!inOrg && userHasRetrieval && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-retrieval-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-retrieval-user"
-                      checked={!userHasRetrieval || project.overrides_retrieval_from_user}
-                      onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_user", project.overrides_retrieval_from_user)}
-                      disabled={!userHasRetrieval || (!inOrg && !globalUserOverride) || updateProject.isPending}
+                      checked={project.overrides_retrieval_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_retrieval_from_user", project.overrides_retrieval_from_user, () => fillRetrievalFrom(userDefaults), resetRetrieval)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedByUserRetrieval && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
-                {!userHasRetrieval && !lockedRetrieval && (
-                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                {lockedByUserRetrieval && <p className="text-xs text-foreground">{t("userDefaultsApplied")}</p>}
+                {(!lockedRetrieval && !lockedByUserRetrieval && !project.retrieval_strategy && systemDefaults) && (
+                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <fieldset disabled={lockedRetrieval || lockedByUserRetrieval} className="space-y-4 disabled:opacity-60">
                   <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
@@ -672,26 +602,26 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-reranking"
                       checked={project.overrides_reranking_from_org}
-                      onCheckedChange={() => handleToggleOverride("overrides_reranking_from_org", project.overrides_reranking_from_org)}
-                      disabled={!globalOverride || updateProject.isPending}
+                      onCheckedChange={() => handleToggleOverride("overrides_reranking_from_org", project.overrides_reranking_from_org, () => fillRerankingFrom(orgDefaults), resetReranking)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedReranking && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {!lockedReranking && (
+                {lockedReranking && <p className="text-xs text-foreground">{t("orgDefaultsApplied")}</p>}
+                {!inOrg && userHasReranking && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-reranking-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-reranking-user"
-                      checked={!userHasReranking || project.overrides_reranking_from_user}
-                      onCheckedChange={() => handleToggleOverride("overrides_reranking_from_user", project.overrides_reranking_from_user)}
-                      disabled={!userHasReranking || (!inOrg && !globalUserOverride) || updateProject.isPending}
+                      checked={project.overrides_reranking_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_reranking_from_user", project.overrides_reranking_from_user, () => fillRerankingFrom(userDefaults), resetReranking)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedByUserReranking && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
-                {!userHasReranking && !lockedReranking && (
-                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                {lockedByUserReranking && <p className="text-xs text-foreground">{t("userDefaultsApplied")}</p>}
+                {(!lockedReranking && !lockedByUserReranking && !project.reranker_backend && systemDefaults) && (
+                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <fieldset disabled={lockedReranking || lockedByUserReranking} className="space-y-4 disabled:opacity-60">
                   <div className="flex items-center gap-2">
@@ -758,26 +688,26 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-chat-history"
                       checked={project.overrides_chat_history_from_org}
-                      onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_org", project.overrides_chat_history_from_org)}
-                      disabled={!globalOverride || updateProject.isPending}
+                      onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_org", project.overrides_chat_history_from_org, () => fillHistoryFrom(orgDefaults), resetHistory)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedChatHistory && <p className="text-xs text-muted-foreground">{t("orgDefaultsApplied")}</p>}
-                {!lockedChatHistory && (
+                {lockedChatHistory && <p className="text-xs text-foreground">{t("orgDefaultsApplied")}</p>}
+                {!inOrg && userHasChatHistory && (
                   <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
                     <Label htmlFor="overrides-chat-history-user" className="text-sm cursor-pointer">{t("overrideUserDefaults")}</Label>
                     <Switch
                       id="overrides-chat-history-user"
-                      checked={!userHasChatHistory || project.overrides_chat_history_from_user}
-                      onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_user", project.overrides_chat_history_from_user)}
-                      disabled={!userHasChatHistory || (!inOrg && !globalUserOverride) || updateProject.isPending}
+                      checked={project.overrides_chat_history_from_user}
+                      onCheckedChange={() => handleToggleOverride("overrides_chat_history_from_user", project.overrides_chat_history_from_user, () => fillHistoryFrom(userDefaults), resetHistory)}
+                      disabled={updateProject.isPending}
                     />
                   </div>
                 )}
-                {lockedByUserChatHistory && <p className="text-xs text-muted-foreground">{t("userDefaultsApplied")}</p>}
-                {!userHasChatHistory && !lockedChatHistory && (
-                  <p className="text-xs text-muted-foreground">{t("noUserDefaultsDefined")}</p>
+                {lockedByUserChatHistory && <p className="text-xs text-foreground">{t("userDefaultsApplied")}</p>}
+                {(!lockedChatHistory && !lockedByUserChatHistory && !project.chat_history_window_size && systemDefaults) && (
+                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <fieldset disabled={lockedChatHistory || lockedByUserChatHistory} className="space-y-4 disabled:opacity-60">
                   <div className="space-y-2">

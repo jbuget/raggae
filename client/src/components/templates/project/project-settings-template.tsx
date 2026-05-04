@@ -43,7 +43,7 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
 
   return (
     <PageTemplate title={<ProjectName projectId={projectId} />}>
-      <div className="w-full space-y-8">
+      <div className="max-w-3xl space-y-8">
         <div
           role="tablist"
           aria-label="Project settings sections"
