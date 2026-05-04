@@ -1,6 +1,9 @@
+import logging
 import httpx
 
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiEmbeddingService:
@@ -23,6 +26,12 @@ class GeminiEmbeddingService:
         return embeddings
 
     async def _embed_single(self, text: str) -> list[float]:
+        logger.debug(
+            "Gemini embedding request (model=%s, expected_dim=%s, text_len=%s)",
+            self._model,
+            self._expected_dimension,
+            len(text),
+        )
         payload: dict[str, object] = {
             "content": {
                 "parts": [{"text": text}],
@@ -46,7 +55,17 @@ class GeminiEmbeddingService:
                     f"Invalid embedding dimension: expected {self._expected_dimension}, got {len(embedding)}"
                 )
             return embedding
+        except httpx.HTTPStatusError as exc:
+            logger.error(
+                "Gemini embedding request failed (status=%s, body=%s)",
+                exc.response.status_code,
+                exc.response.text,
+            )
+            raise EmbeddingGenerationError(
+                f"Failed to generate embeddings: status={exc.response.status_code}"
+            ) from exc
         except EmbeddingGenerationError:
             raise
         except Exception as exc:  # pragma: no cover - provider dependent
+            logger.exception("Gemini embedding request failed")
             raise EmbeddingGenerationError(f"Failed to generate embeddings: {exc}") from exc
