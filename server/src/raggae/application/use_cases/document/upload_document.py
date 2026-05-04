@@ -1,16 +1,31 @@
-from dataclasses import dataclass
+import logging
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
 
 from raggae.application.dto.document_dto import DocumentDTO
 from raggae.application.interfaces.repositories.document_chunk_repository import (
     DocumentChunkRepository,
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
+from raggae.application.interfaces.repositories.org_project_defaults_repository import (
+    OrgProjectDefaultsRepository,
+)
+from raggae.application.interfaces.repositories.org_provider_credential_repository import (
+    OrgProviderCredentialRepository,
+)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.provider_credential_repository import (
+    ProviderCredentialRepository,
+)
+from raggae.application.interfaces.repositories.user_project_defaults_repository import (
+    UserProjectDefaultsRepository,
+)
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver,
@@ -80,6 +95,10 @@ class UploadDocument:
         project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         max_documents_per_project: int | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
+        org_project_defaults_repository: OrgProjectDefaultsRepository | None = None,
+        org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
+        user_project_defaults_repository: UserProjectDefaultsRepository | None = None,
+        provider_credential_repository: ProviderCredentialRepository | None = None,
     ) -> None:
         self._document_repository = document_repository
         self._project_repository = project_repository
@@ -93,6 +112,10 @@ class UploadDocument:
         self._project_embedding_service_resolver = project_embedding_service_resolver
         self._max_documents_per_project = max_documents_per_project
         self._organization_member_repository = organization_member_repository
+        self._org_project_defaults_repository = org_project_defaults_repository
+        self._org_provider_credential_repository = org_provider_credential_repository
+        self._user_project_defaults_repository = user_project_defaults_repository
+        self._provider_credential_repository = provider_credential_repository
 
     async def execute(
         self,
@@ -107,6 +130,7 @@ class UploadDocument:
         return await self._execute_single(
             project_id=project_id,
             project=project,
+            user_id=user_id,
             file_name=file_name,
             file_content=file_content,
             content_type=content_type,
@@ -154,11 +178,13 @@ class UploadDocument:
                 document_dto = await self._execute_single(
                     project_id=project_id,
                     project=project,
+                    user_id=user_id,
                     file_name=stored_filename,
                     file_content=item.file_content,
                     content_type=item.content_type,
                 )
             except InvalidDocumentTypeError as exc:
+                logger.warning("Upload rejected [%s] %s: %s", "INVALID_FILE_TYPE", item.file_name, exc)
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -167,7 +193,8 @@ class UploadDocument:
                     )
                 )
                 continue
-            except DocumentTooLargeError:
+            except DocumentTooLargeError as exc:
+                logger.warning("Upload rejected [%s] %s: %s", "FILE_TOO_LARGE", item.file_name, exc)
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -177,6 +204,7 @@ class UploadDocument:
                 )
                 continue
             except (DocumentExtractionError, EmbeddingGenerationError) as exc:
+                logger.error("Upload failed [%s] %s: %s", "PROCESSING_FAILED", item.file_name, exc, exc_info=True)
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -236,6 +264,7 @@ class UploadDocument:
         self,
         project_id: UUID,
         project: Project,
+        user_id: UUID,
         file_name: str,
         file_content: bytes,
         content_type: str,
@@ -267,8 +296,9 @@ class UploadDocument:
             if self._processing_mode == "sync" and self._document_indexing_service is not None:
                 document = document.transition_to(DocumentStatus.PROCESSING)
                 await self._document_repository.save(document)
+                effective_project = await self._resolve_effective_project_for_embedding(project, user_id)
                 embedding_service = (
-                    self._project_embedding_service_resolver.resolve(project)
+                    self._project_embedding_service_resolver.resolve(effective_project)
                     if self._project_embedding_service_resolver is not None
                     else None
                 )
@@ -287,6 +317,52 @@ class UploadDocument:
             raise
 
         return DocumentDTO.from_entity(document)
+
+    async def _resolve_effective_project_for_embedding(self, project: Project, user_id: UUID) -> Project:
+        if project.organization_id is not None and not project.overrides_models_from_org:
+            return await self._resolve_from_org_defaults(project)
+        if project.organization_id is None and not project.overrides_models_from_user:
+            return await self._resolve_from_user_defaults(project, user_id)
+        return project
+
+    async def _resolve_from_org_defaults(self, project: Project) -> Project:
+        if self._org_project_defaults_repository is None or self._org_provider_credential_repository is None:
+            return project
+        assert project.organization_id is not None
+        org_defaults = await self._org_project_defaults_repository.find_by_organization_id(project.organization_id)
+        if org_defaults is None or org_defaults.embedding_backend is None:
+            return project
+        encrypted_key: str | None = None
+        if org_defaults.embedding_api_key_credential_id is not None:
+            org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
+            org_cred = next((c for c in org_creds if c.id == org_defaults.embedding_api_key_credential_id), None)
+            if org_cred is not None:
+                encrypted_key = org_cred.encrypted_api_key
+        return replace(
+            project,
+            embedding_backend=org_defaults.embedding_backend,
+            embedding_model=org_defaults.embedding_model,
+            embedding_api_key_encrypted=encrypted_key,
+        )
+
+    async def _resolve_from_user_defaults(self, project: Project, user_id: UUID) -> Project:
+        if self._user_project_defaults_repository is None or self._provider_credential_repository is None:
+            return project
+        user_defaults = await self._user_project_defaults_repository.find_by_user_id(user_id)
+        if user_defaults is None or user_defaults.embedding_backend is None:
+            return project
+        encrypted_key: str | None = None
+        if user_defaults.embedding_api_key_credential_id is not None:
+            user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
+            user_cred = next((c for c in user_creds if c.id == user_defaults.embedding_api_key_credential_id), None)
+            if user_cred is not None:
+                encrypted_key = user_cred.encrypted_api_key
+        return replace(
+            project,
+            embedding_backend=user_defaults.embedding_backend,
+            embedding_model=user_defaults.embedding_model,
+            embedding_api_key_encrypted=encrypted_key,
+        )
 
     async def _cleanup_failed_document(self, document_id: UUID, storage_key: str) -> None:
         await self._file_storage_service.delete_file(storage_key)

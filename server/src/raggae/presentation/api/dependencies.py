@@ -771,6 +771,10 @@ def get_upload_document_use_case() -> UploadDocument:
         project_embedding_service_resolver=_project_embedding_service_resolver,
         max_documents_per_project=settings.max_documents_per_project,
         organization_member_repository=_organization_member_repository,
+        org_project_defaults_repository=_org_project_defaults_repository,
+        org_provider_credential_repository=_org_credential_repository,
+        user_project_defaults_repository=_user_project_defaults_repository,
+        provider_credential_repository=_provider_credential_repository,
     )
 
 
