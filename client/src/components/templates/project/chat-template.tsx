@@ -5,6 +5,7 @@ import { ChatPanel } from "@/components/organisms/chat/chat-panel";
 import { ConversationTitle } from "@/components/organisms/chat/conversation-title";
 import { FavoriteConversationButton } from "@/components/organisms/chat/favorite-conversation-button";
 import { ProjectName } from "@/components/organisms/project/project-name";
+import { ProjectOwnerName } from "@/components/organisms/project/project-owner-name";
 
 type ChatTemplateProps = {
   projectId: string;
@@ -13,6 +14,7 @@ type ChatTemplateProps = {
 
 export function ChatTemplate({ projectId, conversationId }: ChatTemplateProps) {
   const breadcrumb = [
+    { label: <ProjectOwnerName projectId={projectId} /> },
     { label: <ProjectName projectId={projectId} /> },
     ...(conversationId
       ? [{ label: <ConversationTitle projectId={projectId} conversationId={conversationId} /> }]

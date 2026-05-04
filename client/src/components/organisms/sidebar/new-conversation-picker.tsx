@@ -60,7 +60,7 @@ export function NewConversationPicker({ showIcon = false }: NewConversationPicke
             className="h-6 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
           />
         </div>
-        <ScrollArea className="max-h-60">
+        <ScrollArea className="max-h-60" onWheel={(e) => e.stopPropagation()}>
           {filteredProjects.length === 0 && (
             <p className="px-2 py-1.5 text-xs text-muted-foreground">{t("noProjectsFound")}</p>
           )}

@@ -69,6 +69,7 @@ export function useDeleteProject() {
     mutationFn: (projectId: string) => deleteProject(token!, projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }

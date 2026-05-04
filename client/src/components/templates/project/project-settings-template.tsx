@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { History } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { PageTemplate } from "@/components/templates/page-template";
 import { ProjectGeneralPanel } from "@/components/organisms/project/settings/project-general-panel";
 import { ProjectInstructionsPanel } from "@/components/organisms/project/settings/project-instructions-panel";
 import { ProjectKnowledgePanel } from "@/components/organisms/project/settings/project-knowledge-panel";
 import { ProjectAdvancedPanel } from "@/components/organisms/project/settings/project-advanced-panel";
 import { ProjectName } from "@/components/organisms/project/project-name";
+import { ProjectSnapshotsSheet } from "@/components/organisms/project/project-snapshots-sheet";
 
 const SETTINGS_TABS = ["General", "Instructions", "Knowledge", "Advanced"] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
@@ -26,6 +29,7 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     SETTINGS_TABS.find((tab) => tab === tabFromUrl) ?? "General",
   );
+  const [versionsOpen, setVersionsOpen] = useState(false);
 
   const tabLabels: Record<SettingsTab, string> = {
     General: t("tabs.general"),
@@ -44,11 +48,12 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
   return (
     <PageTemplate title={<ProjectName projectId={projectId} />}>
       <div className="max-w-3xl space-y-8">
-        <div
-          role="tablist"
-          aria-label="Project settings sections"
-          className="flex flex-wrap items-end gap-4 border-b"
-        >
+        <div className="flex items-end justify-between border-b">
+          <div
+            role="tablist"
+            aria-label="Project settings sections"
+            className="flex flex-wrap items-end gap-4"
+          >
           {SETTINGS_TABS.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -69,6 +74,16 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
               </button>
             );
           })}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-1 gap-1.5"
+            onClick={() => setVersionsOpen(true)}
+          >
+            <History className="size-4" />
+            {t("tabs.history")}
+          </Button>
         </div>
 
         {activeTab === "General" && <ProjectGeneralPanel projectId={projectId} />}
@@ -76,6 +91,12 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
         {activeTab === "Knowledge" && <ProjectKnowledgePanel projectId={projectId} />}
         {activeTab === "Advanced" && <ProjectAdvancedPanel projectId={projectId} />}
       </div>
+
+      <ProjectSnapshotsSheet
+        projectId={projectId}
+        open={versionsOpen}
+        onOpenChange={setVersionsOpen}
+      />
     </PageTemplate>
   );
 }

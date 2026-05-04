@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ProjectSnapshotsList } from "@/components/organisms/project/project-snapshots-list";
 import { useDeleteProject, useProject, useReindexProject, useUpdateProject } from "@/lib/hooks/use-projects";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
@@ -178,22 +177,22 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     ? (orgDefaults?.embedding_backend ?? "")
     : lockedByUserModels
       ? (userDefaults?.embedding_backend ?? project.embedding_backend ?? "")
-      : embeddingBackend === undefined ? (project.embedding_backend ?? systemDefaults?.embedding_backend ?? "") : embeddingBackend;
+      : embeddingBackend === undefined ? (project.embedding_backend ?? "") : embeddingBackend;
   const effectiveLlmBackend = lockedModels
     ? (orgDefaults?.llm_backend ?? "")
     : lockedByUserModels
       ? (userDefaults?.llm_backend ?? project.llm_backend ?? "")
-      : llmBackend === undefined ? (project.llm_backend ?? systemDefaults?.llm_backend ?? "") : llmBackend;
+      : llmBackend === undefined ? (project.llm_backend ?? "") : llmBackend;
   const effectiveEmbeddingModel = lockedModels
     ? (orgDefaults?.embedding_model ?? "")
     : lockedByUserModels
       ? (userDefaults?.embedding_model ?? project.embedding_model ?? "")
-      : effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? (project.embedding_model ?? systemDefaults?.embedding_model ?? ""));
+      : effectiveEmbeddingBackend === "" ? "" : (embeddingModel ?? project.embedding_model ?? "");
   const effectiveLlmModel = lockedModels
     ? (orgDefaults?.llm_model ?? "")
     : lockedByUserModels
       ? (userDefaults?.llm_model ?? project.llm_model ?? "")
-      : effectiveLlmBackend === "" ? "" : (llmModel ?? (project.llm_model ?? systemDefaults?.llm_model ?? ""));
+      : effectiveLlmBackend === "" ? "" : (llmModel ?? project.llm_model ?? "");
   const storedEmbeddingCredentialId = project.organization_id
     ? (project.org_embedding_api_key_credential_id ?? "")
     : (project.embedding_api_key_credential_id ?? "");
@@ -225,10 +224,10 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const llmModelOptions = effectiveLlmBackend ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
   const hasModelsChanges =
-    effectiveEmbeddingBackend !== (project.embedding_backend ?? systemDefaults?.embedding_backend ?? "") ||
-    effectiveEmbeddingModel !== (project.embedding_model ?? systemDefaults?.embedding_model ?? "") ||
-    effectiveLlmBackend !== (project.llm_backend ?? systemDefaults?.llm_backend ?? "") ||
-    effectiveLlmModel !== (project.llm_model ?? systemDefaults?.llm_model ?? "") ||
+    effectiveEmbeddingBackend !== (project.embedding_backend ?? "") ||
+    effectiveEmbeddingModel !== (project.embedding_model ?? "") ||
+    effectiveLlmBackend !== (project.llm_backend ?? "") ||
+    effectiveLlmModel !== (project.llm_model ?? "") ||
     effectiveEmbeddingCredentialId !== storedEmbeddingCredentialId ||
     effectiveLlmCredentialId !== storedLlmCredentialId;
 
@@ -318,7 +317,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-models"
                       checked={project.overrides_models_from_org}
-                      onCheckedChange={() => handleToggleOverride("overrides_models_from_org", project.overrides_models_from_org, () => fillModelsFrom(orgDefaults), resetModels)}
+                      onCheckedChange={() => handleToggleOverride("overrides_models_from_org", project.overrides_models_from_org, () => fillModelsFrom(orgDefaults), () => fillModelsFrom(orgDefaults))}
                       disabled={updateProject.isPending}
                     />
                   </div>
@@ -330,7 +329,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     <Switch
                       id="overrides-models-user"
                       checked={project.overrides_models_from_user}
-                      onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user, () => fillModelsFrom(userDefaults), resetModels)}
+                      onCheckedChange={() => handleToggleOverride("overrides_models_from_user", project.overrides_models_from_user, () => fillModelsFrom(userDefaults), () => fillModelsFrom(userDefaults))}
                       disabled={updateProject.isPending}
                     />
                   </div>
@@ -769,12 +768,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Versions */}
-      <Card className="space-y-4 p-5">
-        <h3 className="text-base font-semibold tracking-tight">{t("tabs.history")}</h3>
-        <ProjectSnapshotsList projectId={projectId} />
-      </Card>
 
       {/* Danger zone */}
       <div className="space-y-3 rounded-md border border-destructive/30 p-4">

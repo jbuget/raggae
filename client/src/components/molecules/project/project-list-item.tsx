@@ -25,7 +25,7 @@ export function ProjectListItem({ project, showSettings = true }: ProjectListIte
   const router = useRouter();
 
   return (
-    <div className="relative flex items-center gap-4 rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50">
+    <div className="relative flex items-center gap-4 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-muted/50">
       <Link
         href={`/projects/${project.id}/chat`}
         className="flex flex-1 items-center gap-4 min-w-0"
@@ -54,7 +54,7 @@ export function ProjectListItem({ project, showSettings = true }: ProjectListIte
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(`/projects/${project.id}/settings`)}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(`/projects/${project.id}/settings`)}>
               <Settings className="mr-2 size-4" />
               {t("card.settings")}
             </DropdownMenuItem>

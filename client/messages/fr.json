@@ -236,7 +236,8 @@
         "reindexSuccess": "Document réindexé",
         "reindexError": "Erreur lors de la réindexation du document",
         "deleteSuccess": "Document supprimé",
-        "deleteError": "Erreur lors de la suppression du document"
+        "deleteError": "Erreur lors de la suppression du document",
+        "noEmbeddingModel": "Aucun modèle d'embedding configuré. Les uploads échoueront tant qu'aucun modèle n'est défini dans l'onglet Avancé."
       },
       "knowledgeIndexing": {
         "title": "Indexation",

@@ -53,14 +53,14 @@ export function ProjectCard({ project, showSettings = true }: ProjectCardProps) 
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
+                className="h-7 w-7 cursor-pointer"
                 onClick={(e) => e.preventDefault()}
               >
                 <MoreVertical className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => router.push(`/projects/${project.id}/settings`)}>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(`/projects/${project.id}/settings`)}>
                 <Settings className="mr-2 size-4" />
                 {t("card.settings")}
               </DropdownMenuItem>

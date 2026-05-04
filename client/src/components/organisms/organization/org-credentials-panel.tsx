@@ -124,7 +124,7 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
             return (
               <div
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card p-3"
               >
                 <div className="flex items-center gap-2">
                   <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">

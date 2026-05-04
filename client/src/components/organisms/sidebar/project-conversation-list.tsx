@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ConversationItem } from "@/components/molecules/sidebar/conversation-item";
@@ -40,7 +41,12 @@ export function ProjectConversationList({ projectId }: ProjectConversationListPr
 
   if (recent.length === 0) {
     return (
-      <p className="px-3 py-1 text-xs text-muted-foreground">{t("noConversations")}</p>
+      <Link
+        href={`/projects/${projectId}/chat`}
+        className="block px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+      >
+        {t("noConversations")}
+      </Link>
     );
   }
 

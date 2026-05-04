@@ -21,7 +21,7 @@ export function SnapshotCard({
   const t = useTranslations("projects.snapshots");
 
   return (
-    <Card className="transition-colors hover:bg-muted/30 dark:hover:bg-muted/20">
+    <Card className="gap-2 transition-colors hover:bg-muted/30 dark:hover:bg-muted/20">
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">

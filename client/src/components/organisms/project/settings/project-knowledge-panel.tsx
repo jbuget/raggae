@@ -1,5 +1,6 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,8 +29,16 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
 
+  const hasEmbeddingModel = !!project.embedding_backend || !!project.embedding_model;
+
   return (
     <div className="max-w-4xl space-y-4">
+      {!hasEmbeddingModel && (
+        <div className="flex items-start gap-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2.5 text-sm text-yellow-700 dark:text-yellow-400">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+          <span>{t("documentIngestion.noEmbeddingModel")}</span>
+        </div>
+      )}
       <p className="text-sm text-muted-foreground">{t("documentIngestion.description")}</p>
       <p className="text-sm text-muted-foreground">
         {t("documentIngestion.indexedTotal", { indexed: indexedCount, total: totalCount })}
@@ -89,6 +98,8 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
       ) : (
         <p className="text-sm text-muted-foreground">{t("documentIngestion.empty")}</p>
       )}
+
+
     </div>
   );
 }

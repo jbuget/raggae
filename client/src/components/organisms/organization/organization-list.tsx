@@ -139,7 +139,7 @@ export function OrganizationList() {
       {sortedOrganizations.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">
           {sortedOrganizations.map((organization) => (
-            <div key={organization.id} className="rounded-md border p-4">
+            <div key={organization.id} className="rounded-md border bg-card p-4">
               <p className="text-base font-semibold">{organization.name}</p>
               <p className="text-xs text-muted-foreground">
                 {organization.slug ? `/${organization.slug}` : t("list.noSlug")}

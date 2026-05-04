@@ -236,7 +236,8 @@
         "reindexSuccess": "Document reindexed",
         "reindexError": "Failed to reindex document",
         "deleteSuccess": "Document deleted",
-        "deleteError": "Failed to delete document"
+        "deleteError": "Failed to delete document",
+        "noEmbeddingModel": "No embedding model configured. Uploads will fail until a model is set in the Advanced tab."
       },
       "knowledgeIndexing": {
         "title": "Knowledge indexing",

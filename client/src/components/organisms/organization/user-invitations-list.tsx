@@ -37,7 +37,7 @@ export function UserInvitationsList() {
       {data.map((invitation) => (
         <div
           key={invitation.id}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card p-4"
         >
           <div className="space-y-1">
             <p className="text-base font-semibold">{invitation.organization_name}</p>

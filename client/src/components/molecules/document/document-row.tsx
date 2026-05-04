@@ -22,7 +22,7 @@ import type {
   DocumentResponse,
   ProjectEmbeddingBackend,
 } from "@/lib/types/api";
-import { formatDate, formatDateTime, formatFileSize } from "@/lib/utils/format";
+import { formatDateTime, formatFileSize } from "@/lib/utils/format";
 
 interface DocumentRowProps {
   document: DocumentResponse;
@@ -112,11 +112,6 @@ export function DocumentRow({
           >
             {statusLabel}
           </Badge>
-          {document.status === "indexed" && document.last_indexed_at ? (
-            <Badge variant="outline" className="px-1.5 py-0 text-[10px] leading-4">
-              {t("indexedAt", { date: formatDateTime(document.last_indexed_at) })}
-            </Badge>
-          ) : null}
         </div>
         <div className="flex gap-3 text-xs text-muted-foreground">
           <span
@@ -127,7 +122,6 @@ export function DocumentRow({
             {document.id}
           </span>
           <span>{formatFileSize(document.file_size)}</span>
-          <span>{formatDate(document.created_at)}</span>
           {document.status === "error" && document.error_message && (
             <span className="text-destructive">{document.error_message}</span>
           )}
