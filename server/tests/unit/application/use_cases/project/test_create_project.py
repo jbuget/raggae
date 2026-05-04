@@ -453,6 +453,117 @@ class TestCreateProject:
         assert result.overrides_reranking_from_org is True
         assert result.overrides_chat_history_from_org is True
 
+    async def test_create_personal_project_with_user_defaults_applies_them_and_sets_flags_false(
+        self,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        from raggae.domain.entities.user_project_defaults import UserProjectDefaults
+        from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
+            InMemoryUserProjectDefaultsRepository,
+        )
+
+        user_id = uuid4()
+        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        await defaults_repo.save(
+            UserProjectDefaults(
+                user_id=user_id,
+                llm_backend="openai",
+                llm_model="gpt-5",
+                retrieval_top_k=15,
+                chat_history_window_size=12,
+            )
+        )
+        use_case = CreateProject(
+            project_repository=mock_project_repository,
+            user_project_defaults_repository=defaults_repo,
+        )
+
+        # When
+        result = await use_case.execute(
+            user_id=user_id,
+            name="Personal Project",
+            description="desc",
+            system_prompt="ok",
+        )
+
+        # Then — user defaults applied, relevant flags set to False
+        assert result.llm_backend == "openai"
+        assert result.llm_model == "gpt-5"
+        assert result.retrieval_top_k == 15
+        assert result.chat_history_window_size == 12
+        assert result.overrides_models_from_user is False
+        assert result.overrides_retrieval_from_user is False
+        assert result.overrides_chat_history_from_user is False
+        assert result.overrides_indexing_from_user is True  # no indexing defaults set
+        assert result.overrides_reranking_from_user is True  # no reranking defaults set
+
+    async def test_create_personal_project_without_user_defaults_keeps_flags_true(
+        self,
+        mock_project_repository: AsyncMock,
+    ) -> None:
+        # Given
+        from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
+            InMemoryUserProjectDefaultsRepository,
+        )
+
+        use_case = CreateProject(
+            project_repository=mock_project_repository,
+            user_project_defaults_repository=InMemoryUserProjectDefaultsRepository(),
+        )
+
+        # When
+        result = await use_case.execute(
+            user_id=uuid4(),
+            name="Personal Project",
+            description="desc",
+            system_prompt="ok",
+        )
+
+        # Then — all user override flags stay True since no defaults exist
+        assert result.overrides_models_from_user is True
+        assert result.overrides_indexing_from_user is True
+        assert result.overrides_retrieval_from_user is True
+        assert result.overrides_reranking_from_user is True
+        assert result.overrides_chat_history_from_user is True
+
+    async def test_create_project_in_org_ignores_user_defaults(
+        self,
+        mock_project_repository: AsyncMock,
+        mock_organization_member_repository: AsyncMock,
+    ) -> None:
+        # Given — user has defaults but project is in an org
+        from raggae.domain.entities.user_project_defaults import UserProjectDefaults
+        from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
+            InMemoryUserProjectDefaultsRepository,
+        )
+
+        user_id = uuid4()
+        org_id = uuid4()
+        user_defaults_repo = InMemoryUserProjectDefaultsRepository()
+        await user_defaults_repo.save(
+            UserProjectDefaults(user_id=user_id, llm_backend="openai", llm_model="gpt-5")
+        )
+        mock_organization_member_repository.find_by_organization_and_user.return_value = object()
+        use_case = CreateProject(
+            project_repository=mock_project_repository,
+            organization_member_repository=mock_organization_member_repository,
+            user_project_defaults_repository=user_defaults_repo,
+        )
+
+        # When
+        result = await use_case.execute(
+            user_id=user_id,
+            organization_id=org_id,
+            name="Org Project",
+            description="desc",
+            system_prompt="ok",
+        )
+
+        # Then — user defaults NOT applied for org projects
+        assert result.llm_backend is None
+        assert result.overrides_models_from_user is True
+
     async def test_create_project_with_credential_id_resolves_key_and_succeeds(
         self,
         use_case: CreateProject,

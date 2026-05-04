@@ -318,35 +318,26 @@ class CreateProject:
                     effective_parent_child_chunking = user_defaults.parent_child_chunking
             if user_defaults.has_retrieval_defaults():
                 user_overrides_retrieval = False
-                effective_retrieval_strategy = (
-                    user_defaults.retrieval_strategy or effective_retrieval_strategy
-                )
-                effective_retrieval_top_k = user_defaults.retrieval_top_k or effective_retrieval_top_k
-                effective_retrieval_min_score = (
-                    user_defaults.retrieval_min_score
-                    if user_defaults.retrieval_min_score is not None
-                    else effective_retrieval_min_score
-                )
+                if user_defaults.retrieval_strategy is not None:
+                    effective_retrieval_strategy = user_defaults.retrieval_strategy
+                if user_defaults.retrieval_top_k is not None:
+                    effective_retrieval_top_k = user_defaults.retrieval_top_k
+                if user_defaults.retrieval_min_score is not None:
+                    effective_retrieval_min_score = user_defaults.retrieval_min_score
             if user_defaults.has_reranking_defaults():
                 user_overrides_reranking = False
-                effective_reranking_enabled = (
-                    user_defaults.reranking_enabled
-                    if user_defaults.reranking_enabled is not None
-                    else effective_reranking_enabled
-                )
+                if user_defaults.reranking_enabled is not None:
+                    effective_reranking_enabled = user_defaults.reranking_enabled
                 effective_reranker_backend = user_defaults.reranker_backend
                 effective_reranker_model = user_defaults.reranker_model
-                effective_reranker_candidate_multiplier = (
-                    user_defaults.reranker_candidate_multiplier or effective_reranker_candidate_multiplier
-                )
+                if user_defaults.reranker_candidate_multiplier is not None:
+                    effective_reranker_candidate_multiplier = user_defaults.reranker_candidate_multiplier
             if user_defaults.has_chat_history_defaults():
                 user_overrides_chat_history = False
-                effective_chat_history_window_size = (
-                    user_defaults.chat_history_window_size or effective_chat_history_window_size
-                )
-                effective_chat_history_max_chars = (
-                    user_defaults.chat_history_max_chars or effective_chat_history_max_chars
-                )
+                if user_defaults.chat_history_window_size is not None:
+                    effective_chat_history_window_size = user_defaults.chat_history_window_size
+                if user_defaults.chat_history_max_chars is not None:
+                    effective_chat_history_max_chars = user_defaults.chat_history_max_chars
 
         project = Project(
             id=uuid4(),

@@ -81,8 +81,8 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex border-b">
+    <div className="max-w-3xl space-y-6">
+      <div className="flex flex-wrap items-end gap-4 border-b">
         {ORG_SETTINGS_TABS.map((tab) => {
           const isActive = activeTab === tab;
           return (
@@ -92,7 +92,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
               role="tab"
               aria-selected={isActive}
               className={[
-                "cursor-pointer border-b-2 px-1 py-3 text-sm whitespace-nowrap transition-colors mr-4",
+                "cursor-pointer border-b-2 px-1 py-3 text-sm whitespace-nowrap transition-colors",
                 isActive
                   ? "border-primary text-foreground font-medium"
                   : "border-transparent text-muted-foreground hover:text-foreground",

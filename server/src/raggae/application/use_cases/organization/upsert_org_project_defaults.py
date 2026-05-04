@@ -1,6 +1,12 @@
-from dataclasses import replace
 from uuid import UUID
 
+from raggae.application.constants import (
+    SUPPORTED_CHUNKING_STRATEGIES,
+    SUPPORTED_EMBEDDING_BACKENDS,
+    SUPPORTED_LLM_BACKENDS,
+    SUPPORTED_RERANKER_BACKENDS,
+    SUPPORTED_RETRIEVAL_STRATEGIES,
+)
 from raggae.application.dto.org_project_defaults_dto import OrgProjectDefaultsDTO
 from raggae.application.interfaces.repositories.org_project_defaults_repository import (
     OrgProjectDefaultsRepository,
@@ -15,6 +21,12 @@ from raggae.domain.entities.organization_project_defaults import OrganizationPro
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
+)
+from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectEmbeddingBackendError,
+    InvalidProjectLLMBackendError,
+    InvalidProjectRerankerBackendError,
+    InvalidProjectRetrievalStrategyError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
@@ -66,10 +78,21 @@ class UpsertOrganizationProjectDefaults:
                 f"User {user_id} must be an owner to configure project defaults"
             )
 
-        existing = await self._org_project_defaults_repository.find_by_organization_id(organization_id)
-        base = existing or OrganizationProjectDefaults(organization_id=organization_id)
-        defaults = replace(
-            base,
+        if embedding_backend is not None and embedding_backend not in SUPPORTED_EMBEDDING_BACKENDS:
+            raise InvalidProjectEmbeddingBackendError(f"Unsupported embedding backend: {embedding_backend}")
+        if llm_backend is not None and llm_backend not in SUPPORTED_LLM_BACKENDS:
+            raise InvalidProjectLLMBackendError(f"Unsupported LLM backend: {llm_backend}")
+        if chunking_strategy is not None and chunking_strategy not in SUPPORTED_CHUNKING_STRATEGIES:
+            raise ValueError(f"Unsupported chunking strategy: {chunking_strategy}")
+        if retrieval_strategy is not None and retrieval_strategy not in SUPPORTED_RETRIEVAL_STRATEGIES:
+            raise InvalidProjectRetrievalStrategyError(
+                f"Unsupported retrieval strategy: {retrieval_strategy}"
+            )
+        if reranker_backend is not None and reranker_backend not in SUPPORTED_RERANKER_BACKENDS:
+            raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
+
+        defaults = OrganizationProjectDefaults(
+            organization_id=organization_id,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,

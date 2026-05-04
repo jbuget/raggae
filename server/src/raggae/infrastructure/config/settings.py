@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     default_embedding_provider: str = Field(default="inmemory", alias="DEFAULT_EMBEDDING_PROVIDER")
     default_embedding_api_key: str = Field(default="", alias="DEFAULT_EMBEDDING_API_KEY")
     default_embedding_model: str = Field(default="", alias="DEFAULT_EMBEDDING_MODEL")
+
+    @field_validator("default_llm_provider", "default_embedding_provider", mode="before")
+    @classmethod
+    def normalize_provider_to_lowercase(cls, v: object) -> object:
+        return v.lower() if isinstance(v, str) else v
+
     credentials_encryption_key: str = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
     user_provider_keys_enabled: bool = True
     allowed_origins: str = "http://localhost:3000,http://localhost:8000"
