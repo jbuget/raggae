@@ -1,4 +1,5 @@
 import logging
+
 import httpx
 
 from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError

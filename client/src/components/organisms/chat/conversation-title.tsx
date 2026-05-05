@@ -17,11 +17,10 @@ export function ConversationTitle({ projectId, conversationId }: ConversationTit
 
   useEffect(() => {
     if (editing) {
-      setValue(conversation?.title ?? "");
       inputRef.current?.focus();
       inputRef.current?.select();
     }
-  }, [editing, conversation?.title]);
+  }, [editing]);
 
   function handleSave() {
     const trimmed = value.trim();
@@ -51,7 +50,10 @@ export function ConversationTitle({ projectId, conversationId }: ConversationTit
     <span
       className="cursor-text hover:opacity-70"
       title="Cliquer pour renommer"
-      onClick={() => setEditing(true)}
+      onClick={() => {
+        setValue(conversation?.title ?? "");
+        setEditing(true);
+      }}
     >
       {conversation?.title ?? ""}
     </span>

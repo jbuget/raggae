@@ -3,8 +3,6 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-logger = logging.getLogger(__name__)
-
 from raggae.application.dto.document_dto import DocumentDTO
 from raggae.application.interfaces.repositories.document_chunk_repository import (
     DocumentChunkRepository,
@@ -46,6 +44,8 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc", "pptx"}
 
@@ -204,7 +204,9 @@ class UploadDocument:
                 )
                 continue
             except (DocumentExtractionError, EmbeddingGenerationError) as exc:
-                logger.error("Upload failed [%s] %s: %s", "PROCESSING_FAILED", item.file_name, exc, exc_info=True)
+                logger.error(
+                    "Upload failed [%s] %s: %s", "PROCESSING_FAILED", item.file_name, exc, exc_info=True
+                )
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -329,13 +331,17 @@ class UploadDocument:
         if self._org_project_defaults_repository is None or self._org_provider_credential_repository is None:
             return project
         assert project.organization_id is not None
-        org_defaults = await self._org_project_defaults_repository.find_by_organization_id(project.organization_id)
+        org_defaults = await self._org_project_defaults_repository.find_by_organization_id(
+            project.organization_id
+        )
         if org_defaults is None or org_defaults.embedding_backend is None:
             return project
         encrypted_key: str | None = None
         if org_defaults.embedding_api_key_credential_id is not None:
             org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
-            org_cred = next((c for c in org_creds if c.id == org_defaults.embedding_api_key_credential_id), None)
+            org_cred = next(
+                (c for c in org_creds if c.id == org_defaults.embedding_api_key_credential_id), None
+            )
             if org_cred is not None:
                 encrypted_key = org_cred.encrypted_api_key
         return replace(
@@ -354,7 +360,9 @@ class UploadDocument:
         encrypted_key: str | None = None
         if user_defaults.embedding_api_key_credential_id is not None:
             user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
-            user_cred = next((c for c in user_creds if c.id == user_defaults.embedding_api_key_credential_id), None)
+            user_cred = next(
+                (c for c in user_creds if c.id == user_defaults.embedding_api_key_credential_id), None
+            )
             if user_cred is not None:
                 encrypted_key = user_cred.encrypted_api_key
         return replace(

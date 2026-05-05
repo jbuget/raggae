@@ -1,6 +1,5 @@
 import { http, HttpResponse } from "msw";
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { OrganizationList } from "@/components/organisms/organization/organization-list";
 import { renderWithProviders } from "../../../helpers/render";

@@ -231,6 +231,7 @@ export function DocumentRow({
               <iframe src={previewUrl} title={document.file_name} className="h-[84vh] w-full rounded-md border" />
             )}
             {!previewLoading && !previewError && previewUrl && previewType?.startsWith("image/") && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl} alt={document.file_name} className="mx-auto max-h-[84vh] object-contain" />
             )}
             {!previewLoading && !previewError && previewUrl && previewType?.startsWith("text/") && (

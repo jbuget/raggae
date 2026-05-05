@@ -28,7 +28,6 @@ import { useSystemDefaults } from "@/lib/hooks/use-system-defaults";
 import { useUserProjectDefaults } from "@/lib/hooks/use-user-project-defaults";
 import type {
   ChunkingStrategy,
-  ModelProvider,
   ProjectEmbeddingBackend,
   ProjectLLMBackend,
   ProjectRerankerBackend,
@@ -124,7 +123,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     );
   }
 
-  function resetModels() { setEmbeddingBackend(undefined); setEmbeddingModel(null); setEmbeddingCredentialId(null); setLlmBackend(undefined); setLlmModel(null); setLlmCredentialId(null); }
   function fillModelsFrom(src: typeof orgDefaults | typeof userDefaults) { setEmbeddingBackend((src?.embedding_backend ?? "") as ProjectEmbeddingBackend | ""); setEmbeddingModel(src?.embedding_model ?? null); setEmbeddingCredentialId(src?.embedding_api_key_credential_id ?? null); setLlmBackend((src?.llm_backend ?? "") as ProjectLLMBackend | ""); setLlmModel(src?.llm_model ?? null); setLlmCredentialId(src?.llm_api_key_credential_id ?? null); }
 
   function resetIndexing() { setChunkingStrategy(null); setParentChildChunking(null); }

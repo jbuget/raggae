@@ -160,7 +160,7 @@ describe("streamMessage", () => {
       );
 
     await expect(async () => {
-      for await (const _ of streamMessage("token", "proj-1", { message: "hi" })) {
+      for await (const _chunk of streamMessage("token", "proj-1", { message: "hi" })) {
         // should throw before yielding
       }
     }).rejects.toThrow(StreamServerError);
@@ -223,7 +223,7 @@ describe("streamMessage", () => {
       );
 
     await expect(async () => {
-      for await (const _ of streamMessage("token", "proj-1", { message: "hi" }, abortController.signal)) {
+      for await (const _chunk of streamMessage("token", "proj-1", { message: "hi" }, abortController.signal)) {
         // should throw before yielding
       }
     }).rejects.toThrow(StreamAbortedError);
