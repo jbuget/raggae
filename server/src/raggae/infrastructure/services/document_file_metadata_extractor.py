@@ -28,6 +28,9 @@ class DocumentFileMetadataExtractor:
             return self._extract_pptx(content)
         if extension == "xlsx":
             return self._extract_xlsx(content)
+        # xls uses a legacy binary format not readable by openpyxl; csv has no embedded metadata.
+        if extension in {"xls", "csv"}:
+            return FileMetadata()
         return FileMetadata()
 
     def _extract_pdf(self, content: bytes) -> FileMetadata:

@@ -126,6 +126,7 @@ class DocumentIndexingService:
 
         document_chunks: list[DocumentChunk] = []
         if chunks:
+            # Tabular documents produce one chunk per row — parent-child would break that semantics.
             use_parent_child = (
                 strategy != ChunkingStrategy.TABULAR
                 and project.parent_child_chunking
