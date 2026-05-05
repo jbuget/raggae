@@ -309,7 +309,8 @@
         "chatHistoryWindowNote": "Nombre maximum de messages récents conservés dans le contexte du prompt.",
         "chatHistoryMaxCharsLabel": "Budget caractères pour l'historique",
         "chatHistoryMaxCharsNote": "Budget en caractères pour l'historique de conversation injecté dans le prompt LLM."
-      }
+      },
+      "pageTitle": "Paramètres"
     },
     "snapshots": {
       "title": "Historique des versions",

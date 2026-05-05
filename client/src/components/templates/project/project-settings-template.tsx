@@ -46,7 +46,7 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
   }
 
   return (
-    <PageTemplate title={<ProjectName projectId={projectId} />}>
+    <PageTemplate title={<ProjectName projectId={projectId} showOrg />} description={t("pageTitle")}>
       <div className="max-w-3xl space-y-8">
         <div className="flex items-end justify-between border-b">
           <div
