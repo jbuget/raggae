@@ -1,13 +1,23 @@
 import logging
+from collections.abc import Callable
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
+
+if TYPE_CHECKING:
+    from raggae.infrastructure.services.pdf_table_extractor import PdfTableExtractor, TableData
 
 logger = logging.getLogger(__name__)
 
 
 class MultiFormatDocumentTextExtractor:
-    """Extract text from txt/md/pdf/docx files with basic normalization."""
+    """Extract text from txt/md/pdf/docx/pptx files with basic normalization."""
+
+    def __init__(self, pdf_table_extractor: "PdfTableExtractor | None" = None) -> None:
+        from raggae.infrastructure.services.pdf_table_extractor import PdfTableExtractor as _PTE
+
+        self._pdf_table_extractor = pdf_table_extractor or _PTE()
 
     async def extract_text(self, file_name: str, content: bytes, content_type: str) -> str:
         _ = content_type
@@ -43,19 +53,60 @@ class MultiFormatDocumentTextExtractor:
 
     def _extract_pdf(self, content: bytes) -> str:
         try:
-            from pypdf import PdfReader
-        except ModuleNotFoundError as exc:  # pragma: no cover - dependency management
-            raise DocumentExtractionError("pypdf is required for PDF extraction") from exc
+            import pdfplumber
+        except ModuleNotFoundError as exc:  # pragma: no cover
+            raise DocumentExtractionError("pdfplumber is required for PDF extraction") from exc
+
+        tables: list[TableData] = []
+        try:
+            tables = self._pdf_table_extractor.extract_tables(content)
+        except Exception:
+            logger.warning("pdf_table_extraction_failed", exc_info=True)
+
+        bboxes_by_page: dict[int, list[tuple[float, float, float, float]]] = {}
+        for t in tables:
+            if t.bbox is not None:
+                bboxes_by_page.setdefault(t.page_number, []).append(t.bbox)
+
+        tables_by_page: dict[int, list[TableData]] = {}
+        for t in tables:
+            tables_by_page.setdefault(t.page_number, []).append(t)
 
         try:
-            reader = PdfReader(BytesIO(content))
-            parts = [
-                f"[[PAGE:{index + 1}]]\n{page.extract_text() or ''}"
-                for index, page in enumerate(reader.pages)
-            ]
+            parts: list[str] = []
+            with pdfplumber.open(BytesIO(content)) as pdf:
+                for page_num, page in enumerate(pdf.pages, start=1):
+                    page_bboxes = bboxes_by_page.get(page_num, [])
+                    if page_bboxes:
+                        filtered = page.filter(self._make_bbox_filter(page_bboxes))
+                        text = filtered.extract_text() or ""
+                    else:
+                        text = page.extract_text() or ""
+                    for table in tables_by_page.get(page_num, []):
+                        parts.append(table.to_chunk())
+                    parts.append(f"[[PAGE:{page_num}]]\n{text}")
+
             return "\n".join(parts)
-        except Exception as exc:  # pragma: no cover - file dependent
+        except Exception as exc:
             raise DocumentExtractionError(f"Failed to extract PDF text: {exc}") from exc
+
+    @staticmethod
+    def _make_bbox_filter(
+        bboxes: list[tuple[float, float, float, float]],
+    ) -> Callable[[dict[str, object]], bool]:
+
+        def keep(obj: dict[str, object]) -> bool:
+            for b in bboxes:
+                if (
+                    float(obj.get("x0", 0) or 0) >= b[0]  # type: ignore[arg-type]
+                    and float(obj.get("x1", 0) or 0) <= b[2]  # type: ignore[arg-type]
+                    and float(obj.get("top", 0) or 0) >= b[1]  # type: ignore[arg-type]
+                    and float(obj.get("bottom", 0) or 0) <= b[3]  # type: ignore[arg-type]
+                ):
+                    return False
+            return True
+
+        return keep
 
     def _extract_docx(self, content: bytes) -> str:
         try:
