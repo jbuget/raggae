@@ -11,20 +11,21 @@ from raggae.application.use_cases.organization.upsert_org_project_defaults impor
 )
 from raggae.domain.entities.organization import Organization
 from raggae.domain.entities.organization_member import OrganizationMember
-from raggae.domain.entities.organization_project_defaults import OrganizationProjectDefaults
+from raggae.domain.entities.project_defaults import ProjectDefaults
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
-from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
-    InMemoryOrgProjectDefaultsRepository,
-)
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
 from raggae.infrastructure.database.repositories.in_memory_organization_member_repository import (
     InMemoryOrganizationMemberRepository,
 )
 from raggae.infrastructure.database.repositories.in_memory_organization_repository import (
     InMemoryOrganizationRepository,
+)
+from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+    InMemoryProjectDefaultsRepository,
 )
 
 
@@ -57,7 +58,7 @@ class TestGetOrganizationProjectDefaults:
         return (
             InMemoryOrganizationRepository(),
             InMemoryOrganizationMemberRepository(),
-            InMemoryOrgProjectDefaultsRepository(),
+            InMemoryProjectDefaultsRepository(),
         )
 
     async def test_returns_none_when_no_defaults_configured(self, repos) -> None:
@@ -82,7 +83,9 @@ class TestGetOrganizationProjectDefaults:
         user_id = uuid4()
         await org_repo.save(_make_org(org_id))
         await member_repo.save(_make_member(org_id, user_id))
-        await defaults_repo.save(OrganizationProjectDefaults(organization_id=org_id, llm_backend="openai"))
+        await defaults_repo.save(
+            ProjectDefaults(owner_id=org_id, owner_type=ProjectDefaultsOwnerType.ORGA, llm_backend="openai")
+        )
         use_case = GetOrganizationProjectDefaults(org_repo, member_repo, defaults_repo)
 
         # When
@@ -90,7 +93,8 @@ class TestGetOrganizationProjectDefaults:
 
         # Then
         assert result is not None
-        assert result.organization_id == org_id
+        assert result.owner_id == org_id
+        assert result.owner_type == ProjectDefaultsOwnerType.ORGA
         assert result.llm_backend == "openai"
 
     async def test_raises_not_found_when_org_missing(self, repos) -> None:
@@ -135,7 +139,7 @@ class TestUpsertOrganizationProjectDefaults:
         return (
             InMemoryOrganizationRepository(),
             InMemoryOrganizationMemberRepository(),
-            InMemoryOrgProjectDefaultsRepository(),
+            InMemoryProjectDefaultsRepository(),
         )
 
     async def test_owner_can_upsert_defaults(self, repos) -> None:
@@ -156,7 +160,8 @@ class TestUpsertOrganizationProjectDefaults:
         )
 
         # Then
-        assert result.organization_id == org_id
+        assert result.owner_id == org_id
+        assert result.owner_type == ProjectDefaultsOwnerType.ORGA
         assert result.llm_backend == "openai"
         assert result.llm_model == "gpt-4o"
 
@@ -167,7 +172,9 @@ class TestUpsertOrganizationProjectDefaults:
         user_id = uuid4()
         await org_repo.save(_make_org(org_id))
         await member_repo.save(_make_member(org_id, user_id))
-        await defaults_repo.save(OrganizationProjectDefaults(organization_id=org_id, llm_backend="ollama"))
+        await defaults_repo.save(
+            ProjectDefaults(owner_id=org_id, owner_type=ProjectDefaultsOwnerType.ORGA, llm_backend="ollama")
+        )
         use_case = UpsertOrganizationProjectDefaults(org_repo, member_repo, defaults_repo)
 
         # When
@@ -179,7 +186,7 @@ class TestUpsertOrganizationProjectDefaults:
 
         # Then
         assert result.llm_backend == "openai"
-        saved = await defaults_repo.find_by_organization_id(org_id)
+        saved = await defaults_repo.find_by_owner(org_id, ProjectDefaultsOwnerType.ORGA)
         assert saved is not None
         assert saved.llm_backend == "openai"
 

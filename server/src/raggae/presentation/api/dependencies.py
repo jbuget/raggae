@@ -218,9 +218,6 @@ from raggae.infrastructure.database.repositories.in_memory_document_repository i
 from raggae.infrastructure.database.repositories.in_memory_message_repository import (
     InMemoryMessageRepository,
 )
-from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
-    InMemoryOrgProjectDefaultsRepository,
-)
 from raggae.infrastructure.database.repositories.in_memory_org_provider_credential_repository import (
     InMemoryOrgProviderCredentialRepository,
 )
@@ -233,6 +230,9 @@ from raggae.infrastructure.database.repositories.in_memory_organization_member_r
 from raggae.infrastructure.database.repositories.in_memory_organization_repository import (
     InMemoryOrganizationRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+    InMemoryProjectDefaultsRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
@@ -244,9 +244,6 @@ from raggae.infrastructure.database.repositories.in_memory_provider_credential_r
 )
 from raggae.infrastructure.database.repositories.in_memory_stats_repository import (
     InMemoryStatsRepository,
-)
-from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
-    InMemoryUserProjectDefaultsRepository,
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
@@ -263,9 +260,6 @@ from raggae.infrastructure.database.repositories.sqlalchemy_document_repository 
 from raggae.infrastructure.database.repositories.sqlalchemy_message_repository import (
     SQLAlchemyMessageRepository,
 )
-from raggae.infrastructure.database.repositories.sqlalchemy_org_project_defaults_repository import (
-    SQLAlchemyOrgProjectDefaultsRepository,
-)
 from raggae.infrastructure.database.repositories.sqlalchemy_org_provider_credential_repository import (
     SQLAlchemyOrgProviderCredentialRepository,
 )
@@ -278,6 +272,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_organization_member_
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_repository import (
     SQLAlchemyOrganizationRepository,
 )
+from raggae.infrastructure.database.repositories.sqlalchemy_project_defaults_repository import (
+    SQLAlchemyProjectDefaultsRepository,
+)
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
 )
@@ -289,9 +286,6 @@ from raggae.infrastructure.database.repositories.sqlalchemy_provider_credential_
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_stats_repository import (
     SQLAlchemyStatsRepository,
-)
-from raggae.infrastructure.database.repositories.sqlalchemy_user_project_defaults_repository import (
-    SQLAlchemyUserProjectDefaultsRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_user_repository import (
     SQLAlchemyUserRepository,
@@ -440,12 +434,9 @@ if settings.persistence_backend == "postgres":
     _org_credential_repository: OrgProviderCredentialRepository = SQLAlchemyOrgProviderCredentialRepository(
         session_factory=SessionFactory
     )
-    _org_project_defaults_repository: (
-        InMemoryOrgProjectDefaultsRepository | SQLAlchemyOrgProjectDefaultsRepository
-    ) = SQLAlchemyOrgProjectDefaultsRepository(session_factory=SessionFactory)
-    _user_project_defaults_repository: (
-        InMemoryUserProjectDefaultsRepository | SQLAlchemyUserProjectDefaultsRepository
-    ) = SQLAlchemyUserProjectDefaultsRepository(session_factory=SessionFactory)
+    _project_defaults_repository: InMemoryProjectDefaultsRepository | SQLAlchemyProjectDefaultsRepository = (
+        SQLAlchemyProjectDefaultsRepository(session_factory=SessionFactory)
+    )
     _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
         session_factory=SessionFactory
     )
@@ -473,8 +464,7 @@ else:
     _message_repository = InMemoryMessageRepository()
     _provider_credential_repository = InMemoryProviderCredentialRepository()
     _org_credential_repository = InMemoryOrgProviderCredentialRepository()
-    _org_project_defaults_repository = InMemoryOrgProjectDefaultsRepository()
-    _user_project_defaults_repository = InMemoryUserProjectDefaultsRepository()
+    _project_defaults_repository = InMemoryProjectDefaultsRepository()
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
     _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
@@ -697,8 +687,7 @@ def get_create_project_use_case() -> CreateProject:
         project_repository=_project_repository,
         organization_member_repository=_organization_member_repository,
         provider_credential_repository=_provider_credential_repository,
-        org_project_defaults_repository=_org_project_defaults_repository,
-        user_project_defaults_repository=_user_project_defaults_repository,
+        project_defaults_repository=_project_defaults_repository,
     ).with_crypto_service(_provider_api_key_crypto_service)
 
 
@@ -771,9 +760,8 @@ def get_upload_document_use_case() -> UploadDocument:
         project_embedding_service_resolver=_project_embedding_service_resolver,
         max_documents_per_project=settings.max_documents_per_project,
         organization_member_repository=_organization_member_repository,
-        org_project_defaults_repository=_org_project_defaults_repository,
+        project_defaults_repository=_project_defaults_repository,
         org_provider_credential_repository=_org_credential_repository,
-        user_project_defaults_repository=_user_project_defaults_repository,
         provider_credential_repository=_provider_credential_repository,
     )
 
@@ -1137,7 +1125,7 @@ def get_get_org_project_defaults_use_case() -> GetOrganizationProjectDefaults:
     return GetOrganizationProjectDefaults(
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
-        org_project_defaults_repository=_org_project_defaults_repository,
+        project_defaults_repository=_project_defaults_repository,
     )
 
 
@@ -1145,21 +1133,21 @@ def get_upsert_org_project_defaults_use_case() -> UpsertOrganizationProjectDefau
     return UpsertOrganizationProjectDefaults(
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
-        org_project_defaults_repository=_org_project_defaults_repository,
+        project_defaults_repository=_project_defaults_repository,
     )
 
 
 def get_get_user_project_defaults_use_case() -> GetUserProjectDefaults:
     return GetUserProjectDefaults(
         user_repository=_user_repository,
-        user_project_defaults_repository=_user_project_defaults_repository,
+        project_defaults_repository=_project_defaults_repository,
     )
 
 
 def get_upsert_user_project_defaults_use_case() -> UpsertUserProjectDefaults:
     return UpsertUserProjectDefaults(
         user_repository=_user_repository,
-        user_project_defaults_repository=_user_project_defaults_repository,
+        project_defaults_repository=_project_defaults_repository,
     )
 
 

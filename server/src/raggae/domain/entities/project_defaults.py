@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+
 
 @dataclass(frozen=True)
-class UserProjectDefaults:
-    """Default advanced settings for projects created by a user (personal projects)."""
+class ProjectDefaults:
+    """Default advanced settings for projects, owned by a user or an organization."""
 
-    user_id: UUID
+    owner_id: UUID
+    owner_type: ProjectDefaultsOwnerType
     # Models
     embedding_backend: str | None = None
     embedding_model: str | None = None

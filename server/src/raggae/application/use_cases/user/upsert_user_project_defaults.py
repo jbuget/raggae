@@ -7,12 +7,12 @@ from raggae.application.constants import (
     SUPPORTED_RERANKER_BACKENDS,
     SUPPORTED_RETRIEVAL_STRATEGIES,
 )
-from raggae.application.dto.user_project_defaults_dto import UserProjectDefaultsDTO
-from raggae.application.interfaces.repositories.user_project_defaults_repository import (
-    UserProjectDefaultsRepository,
+from raggae.application.dto.project_defaults_dto import ProjectDefaultsDTO
+from raggae.application.interfaces.repositories.project_defaults_repository import (
+    ProjectDefaultsRepository,
 )
 from raggae.application.interfaces.repositories.user_repository import UserRepository
-from raggae.domain.entities.user_project_defaults import UserProjectDefaults
+from raggae.domain.entities.project_defaults import ProjectDefaults
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
@@ -20,6 +20,7 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectRetrievalStrategyError,
 )
 from raggae.domain.exceptions.user_exceptions import UserNotFoundError
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
 
 
 class UpsertUserProjectDefaults:
@@ -28,10 +29,10 @@ class UpsertUserProjectDefaults:
     def __init__(
         self,
         user_repository: UserRepository,
-        user_project_defaults_repository: UserProjectDefaultsRepository,
+        project_defaults_repository: ProjectDefaultsRepository,
     ) -> None:
         self._user_repository = user_repository
-        self._user_project_defaults_repository = user_project_defaults_repository
+        self._project_defaults_repository = project_defaults_repository
 
     async def execute(
         self,
@@ -53,7 +54,7 @@ class UpsertUserProjectDefaults:
         reranker_candidate_multiplier: int | None = None,
         chat_history_window_size: int | None = None,
         chat_history_max_chars: int | None = None,
-    ) -> UserProjectDefaultsDTO:
+    ) -> ProjectDefaultsDTO:
         user = await self._user_repository.find_by_id(user_id)
         if user is None:
             raise UserNotFoundError(f"User {user_id} not found")
@@ -71,8 +72,9 @@ class UpsertUserProjectDefaults:
         if reranker_backend is not None and reranker_backend not in SUPPORTED_RERANKER_BACKENDS:
             raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
 
-        defaults = UserProjectDefaults(
-            user_id=user_id,
+        defaults = ProjectDefaults(
+            owner_id=user_id,
+            owner_type=ProjectDefaultsOwnerType.USER,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,
@@ -91,5 +93,5 @@ class UpsertUserProjectDefaults:
             chat_history_window_size=chat_history_window_size,
             chat_history_max_chars=chat_history_max_chars,
         )
-        await self._user_project_defaults_repository.save(defaults)
-        return UserProjectDefaultsDTO.from_entity(defaults)
+        await self._project_defaults_repository.save(defaults)
+        return ProjectDefaultsDTO.from_entity(defaults)

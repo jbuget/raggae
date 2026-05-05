@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from raggae.application.dto.user_project_defaults_dto import UserProjectDefaultsDTO
+from raggae.application.dto.project_defaults_dto import ProjectDefaultsDTO
 
 
 class RegisterUserRequest(BaseModel):
@@ -79,8 +79,11 @@ class UserProjectDefaultsResponse(BaseModel):
     chat_history_max_chars: int | None
 
     @classmethod
-    def from_dto(cls, dto: UserProjectDefaultsDTO) -> UserProjectDefaultsResponse:
-        return cls.model_validate(dto.__dict__)
+    def from_dto(cls, dto: ProjectDefaultsDTO) -> UserProjectDefaultsResponse:
+        data = dto.__dict__.copy()
+        data["user_id"] = data.pop("owner_id")
+        data.pop("owner_type", None)
+        return cls.model_validate(data)
 
 
 class UpsertUserProjectDefaultsRequest(BaseModel):

@@ -5,12 +5,13 @@ import pytest
 
 from raggae.application.use_cases.user.get_user_project_defaults import GetUserProjectDefaults
 from raggae.application.use_cases.user.upsert_user_project_defaults import UpsertUserProjectDefaults
+from raggae.domain.entities.project_defaults import ProjectDefaults
 from raggae.domain.entities.user import User
-from raggae.domain.entities.user_project_defaults import UserProjectDefaults
 from raggae.domain.exceptions.user_exceptions import UserNotFoundError
 from raggae.domain.value_objects.locale import Locale
-from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
-    InMemoryUserProjectDefaultsRepository,
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+    InMemoryProjectDefaultsRepository,
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import InMemoryUserRepository
 
@@ -34,10 +35,10 @@ class TestGetUserProjectDefaults:
         user = _make_user()
         user_repo = InMemoryUserRepository()
         await user_repo.save(user)
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         use_case = GetUserProjectDefaults(
             user_repository=user_repo,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When
@@ -52,12 +53,17 @@ class TestGetUserProjectDefaults:
         user = _make_user()
         user_repo = InMemoryUserRepository()
         await user_repo.save(user)
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
-        defaults = UserProjectDefaults(user_id=user.id, embedding_backend="openai", llm_backend="anthropic")
+        defaults_repo = InMemoryProjectDefaultsRepository()
+        defaults = ProjectDefaults(
+            owner_id=user.id,
+            owner_type=ProjectDefaultsOwnerType.USER,
+            embedding_backend="openai",
+            llm_backend="anthropic",
+        )
         await defaults_repo.save(defaults)
         use_case = GetUserProjectDefaults(
             user_repository=user_repo,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When
@@ -65,7 +71,8 @@ class TestGetUserProjectDefaults:
 
         # Then
         assert result is not None
-        assert result.user_id == user.id
+        assert result.owner_id == user.id
+        assert result.owner_type == ProjectDefaultsOwnerType.USER
         assert result.embedding_backend == "openai"
         assert result.llm_backend == "anthropic"
 
@@ -73,10 +80,10 @@ class TestGetUserProjectDefaults:
     async def test_raises_when_user_not_found(self) -> None:
         # Given
         user_repo = InMemoryUserRepository()
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         use_case = GetUserProjectDefaults(
             user_repository=user_repo,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When / Then
@@ -91,10 +98,10 @@ class TestUpsertUserProjectDefaults:
         user = _make_user()
         user_repo = InMemoryUserRepository()
         await user_repo.save(user)
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         use_case = UpsertUserProjectDefaults(
             user_repository=user_repo,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When
@@ -106,7 +113,8 @@ class TestUpsertUserProjectDefaults:
         )
 
         # Then
-        assert result.user_id == user.id
+        assert result.owner_id == user.id
+        assert result.owner_type == ProjectDefaultsOwnerType.USER
         assert result.embedding_backend == "openai"
         assert result.llm_backend == "anthropic"
         assert result.retrieval_top_k == 5
@@ -117,13 +125,18 @@ class TestUpsertUserProjectDefaults:
         user = _make_user()
         user_repo = InMemoryUserRepository()
         await user_repo.save(user)
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         await defaults_repo.save(
-            UserProjectDefaults(user_id=user.id, embedding_backend="openai", llm_backend="openai")
+            ProjectDefaults(
+                owner_id=user.id,
+                owner_type=ProjectDefaultsOwnerType.USER,
+                embedding_backend="openai",
+                llm_backend="openai",
+            )
         )
         use_case = UpsertUserProjectDefaults(
             user_repository=user_repo,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When
@@ -137,10 +150,10 @@ class TestUpsertUserProjectDefaults:
     async def test_raises_when_user_not_found(self) -> None:
         # Given
         user_repo = InMemoryUserRepository()
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         use_case = UpsertUserProjectDefaults(
             user_repository=user_repo,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When / Then

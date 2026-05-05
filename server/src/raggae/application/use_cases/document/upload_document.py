@@ -8,21 +8,18 @@ from raggae.application.interfaces.repositories.document_chunk_repository import
     DocumentChunkRepository,
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
-from raggae.application.interfaces.repositories.org_project_defaults_repository import (
-    OrgProjectDefaultsRepository,
-)
 from raggae.application.interfaces.repositories.org_provider_credential_repository import (
     OrgProviderCredentialRepository,
 )
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
+from raggae.application.interfaces.repositories.project_defaults_repository import (
+    ProjectDefaultsRepository,
+)
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
-)
-from raggae.application.interfaces.repositories.user_project_defaults_repository import (
-    UserProjectDefaultsRepository,
 )
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.project_embedding_service_resolver import (
@@ -95,9 +92,8 @@ class UploadDocument:
         project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         max_documents_per_project: int | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
-        org_project_defaults_repository: OrgProjectDefaultsRepository | None = None,
+        project_defaults_repository: ProjectDefaultsRepository | None = None,
         org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
-        user_project_defaults_repository: UserProjectDefaultsRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
     ) -> None:
         self._document_repository = document_repository
@@ -112,9 +108,8 @@ class UploadDocument:
         self._project_embedding_service_resolver = project_embedding_service_resolver
         self._max_documents_per_project = max_documents_per_project
         self._organization_member_repository = organization_member_repository
-        self._org_project_defaults_repository = org_project_defaults_repository
+        self._project_defaults_repository = project_defaults_repository
         self._org_provider_credential_repository = org_provider_credential_repository
-        self._user_project_defaults_repository = user_project_defaults_repository
         self._provider_credential_repository = provider_credential_repository
 
     async def execute(
@@ -328,11 +323,13 @@ class UploadDocument:
         return project
 
     async def _resolve_from_org_defaults(self, project: Project) -> Project:
-        if self._org_project_defaults_repository is None or self._org_provider_credential_repository is None:
+        if self._project_defaults_repository is None or self._org_provider_credential_repository is None:
             return project
         assert project.organization_id is not None
-        org_defaults = await self._org_project_defaults_repository.find_by_organization_id(
-            project.organization_id
+        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+
+        org_defaults = await self._project_defaults_repository.find_by_owner(
+            project.organization_id, ProjectDefaultsOwnerType.ORGA
         )
         if org_defaults is None or org_defaults.embedding_backend is None:
             return project
@@ -352,9 +349,13 @@ class UploadDocument:
         )
 
     async def _resolve_from_user_defaults(self, project: Project, user_id: UUID) -> Project:
-        if self._user_project_defaults_repository is None or self._provider_credential_repository is None:
+        if self._project_defaults_repository is None or self._provider_credential_repository is None:
             return project
-        user_defaults = await self._user_project_defaults_repository.find_by_user_id(user_id)
+        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+
+        user_defaults = await self._project_defaults_repository.find_by_owner(
+            user_id, ProjectDefaultsOwnerType.USER
+        )
         if user_defaults is None or user_defaults.embedding_backend is None:
             return project
         encrypted_key: str | None = None

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from raggae.application.dto.org_project_defaults_dto import OrgProjectDefaultsDTO
+from raggae.application.dto.project_defaults_dto import ProjectDefaultsDTO
 from raggae.domain.value_objects.organization_invitation_status import (
     OrganizationInvitationStatus,
 )
@@ -112,8 +112,11 @@ class OrganizationProjectDefaultsResponse(BaseModel):
     chat_history_max_chars: int | None
 
     @classmethod
-    def from_dto(cls, dto: OrgProjectDefaultsDTO) -> OrganizationProjectDefaultsResponse:
-        return cls.model_validate(dto.__dict__)
+    def from_dto(cls, dto: ProjectDefaultsDTO) -> OrganizationProjectDefaultsResponse:
+        data = dto.__dict__.copy()
+        data["organization_id"] = data.pop("owner_id")
+        data.pop("owner_type", None)
+        return cls.model_validate(data)
 
 
 class UpsertOrganizationProjectDefaultsRequest(BaseModel):

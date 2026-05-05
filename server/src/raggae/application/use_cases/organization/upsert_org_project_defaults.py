@@ -7,17 +7,17 @@ from raggae.application.constants import (
     SUPPORTED_RERANKER_BACKENDS,
     SUPPORTED_RETRIEVAL_STRATEGIES,
 )
-from raggae.application.dto.org_project_defaults_dto import OrgProjectDefaultsDTO
-from raggae.application.interfaces.repositories.org_project_defaults_repository import (
-    OrgProjectDefaultsRepository,
-)
+from raggae.application.dto.project_defaults_dto import ProjectDefaultsDTO
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
 )
-from raggae.domain.entities.organization_project_defaults import OrganizationProjectDefaults
+from raggae.application.interfaces.repositories.project_defaults_repository import (
+    ProjectDefaultsRepository,
+)
+from raggae.domain.entities.project_defaults import ProjectDefaults
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationAccessDeniedError,
     OrganizationNotFoundError,
@@ -29,6 +29,7 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectRetrievalStrategyError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
 
 
 class UpsertOrganizationProjectDefaults:
@@ -38,11 +39,11 @@ class UpsertOrganizationProjectDefaults:
         self,
         organization_repository: OrganizationRepository,
         organization_member_repository: OrganizationMemberRepository,
-        org_project_defaults_repository: OrgProjectDefaultsRepository,
+        project_defaults_repository: ProjectDefaultsRepository,
     ) -> None:
         self._organization_repository = organization_repository
         self._organization_member_repository = organization_member_repository
-        self._org_project_defaults_repository = org_project_defaults_repository
+        self._project_defaults_repository = project_defaults_repository
 
     async def execute(
         self,
@@ -65,7 +66,7 @@ class UpsertOrganizationProjectDefaults:
         reranker_candidate_multiplier: int | None = None,
         chat_history_window_size: int | None = None,
         chat_history_max_chars: int | None = None,
-    ) -> OrgProjectDefaultsDTO:
+    ) -> ProjectDefaultsDTO:
         organization = await self._organization_repository.find_by_id(organization_id)
         if organization is None:
             raise OrganizationNotFoundError(f"Organization {organization_id} not found")
@@ -91,8 +92,9 @@ class UpsertOrganizationProjectDefaults:
         if reranker_backend is not None and reranker_backend not in SUPPORTED_RERANKER_BACKENDS:
             raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
 
-        defaults = OrganizationProjectDefaults(
-            organization_id=organization_id,
+        defaults = ProjectDefaults(
+            owner_id=organization_id,
+            owner_type=ProjectDefaultsOwnerType.ORGA,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,
@@ -111,5 +113,5 @@ class UpsertOrganizationProjectDefaults:
             chat_history_window_size=chat_history_window_size,
             chat_history_max_chars=chat_history_max_chars,
         )
-        await self._org_project_defaults_repository.save(defaults)
-        return OrgProjectDefaultsDTO.from_entity(defaults)
+        await self._project_defaults_repository.save(defaults)
+        return ProjectDefaultsDTO.from_entity(defaults)

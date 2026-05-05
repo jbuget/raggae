@@ -1,32 +1,44 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from raggae.domain.entities.organization_project_defaults import OrganizationProjectDefaults
-from raggae.infrastructure.database.models.organization_project_defaults_model import (
-    OrganizationProjectDefaultsModel,
-)
+from raggae.domain.entities.project_defaults import ProjectDefaults
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+from raggae.infrastructure.database.models.project_defaults_model import ProjectDefaultsModel
 
 
-class SQLAlchemyOrgProjectDefaultsRepository:
-    """PostgreSQL org project defaults repository using SQLAlchemy async sessions."""
+class SQLAlchemyProjectDefaultsRepository:
+    """PostgreSQL project defaults repository using SQLAlchemy async sessions."""
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
-    async def find_by_organization_id(self, organization_id: UUID) -> OrganizationProjectDefaults | None:
+    async def find_by_owner(
+        self, owner_id: UUID, owner_type: ProjectDefaultsOwnerType
+    ) -> ProjectDefaults | None:
         async with self._session_factory() as session:
-            model = await session.get(OrganizationProjectDefaultsModel, organization_id)
+            stmt = select(ProjectDefaultsModel).where(
+                ProjectDefaultsModel.owner_id == owner_id,
+                ProjectDefaultsModel.owner_type == owner_type.value,
+            )
+            result = await session.execute(stmt)
+            model = result.scalar_one_or_none()
             if model is None:
                 return None
             return self._to_domain(model)
 
-    async def save(self, defaults: OrganizationProjectDefaults) -> None:
+    async def save(self, defaults: ProjectDefaults) -> None:
         async with self._session_factory() as session:
-            model = await session.get(OrganizationProjectDefaultsModel, defaults.organization_id)
+            stmt = select(ProjectDefaultsModel).where(
+                ProjectDefaultsModel.owner_id == defaults.owner_id,
+                ProjectDefaultsModel.owner_type == defaults.owner_type.value,
+            )
+            result = await session.execute(stmt)
+            model = result.scalar_one_or_none()
             if model is None:
-                model = OrganizationProjectDefaultsModel(
-                    organization_id=defaults.organization_id,
+                model = ProjectDefaultsModel(
+                    id=uuid4(), owner_id=defaults.owner_id, owner_type=defaults.owner_type.value
                 )
                 session.add(model)
             model.embedding_backend = defaults.embedding_backend
@@ -49,9 +61,10 @@ class SQLAlchemyOrgProjectDefaultsRepository:
             await session.commit()
 
     @staticmethod
-    def _to_domain(model: OrganizationProjectDefaultsModel) -> OrganizationProjectDefaults:
-        return OrganizationProjectDefaults(
-            organization_id=model.organization_id,
+    def _to_domain(model: ProjectDefaultsModel) -> ProjectDefaults:
+        return ProjectDefaults(
+            owner_id=model.owner_id,
+            owner_type=ProjectDefaultsOwnerType(model.owner_type),
             embedding_backend=model.embedding_backend,
             embedding_model=model.embedding_model,
             embedding_api_key_credential_id=model.embedding_api_key_credential_id,

@@ -1,35 +1,26 @@
 from uuid import UUID
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Float, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from raggae.infrastructure.database.models.base import Base
 
 
-class OrganizationProjectDefaultsModel(Base):
-    __tablename__ = "organization_project_defaults"
+class ProjectDefaultsModel(Base):
+    __tablename__ = "project_defaults"
+    __table_args__ = (UniqueConstraint("owner_id", "owner_type", name="uq_project_defaults_owner"),)
 
-    organization_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
-        ForeignKey("organizations.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    owner_type: Mapped[str] = mapped_column(String(8), nullable=False)
     # Models
     embedding_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
     embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
-        ForeignKey("org_model_provider_credentials.id", ondelete="SET NULL"),
-        nullable=True,
-    )
+    embedding_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     llm_backend: Mapped[str | None] = mapped_column(String(32), nullable=True)
     llm_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
-        ForeignKey("org_model_provider_credentials.id", ondelete="SET NULL"),
-        nullable=True,
-    )
+    llm_api_key_credential_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     # Indexing
     chunking_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)
     parent_child_chunking: Mapped[bool | None] = mapped_column(Boolean(), nullable=True)

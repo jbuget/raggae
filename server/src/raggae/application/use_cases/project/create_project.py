@@ -24,20 +24,17 @@ from raggae.application.constants import (
     SUPPORTED_RETRIEVAL_STRATEGIES,
 )
 from raggae.application.dto.project_dto import ProjectDTO
-from raggae.application.interfaces.repositories.org_project_defaults_repository import (
-    OrgProjectDefaultsRepository,
-)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
+)
+from raggae.application.interfaces.repositories.project_defaults_repository import (
+    ProjectDefaultsRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import (
     ProjectRepository,
 )
 from raggae.application.interfaces.repositories.provider_credential_repository import (
     ProviderCredentialRepository,
-)
-from raggae.application.interfaces.repositories.user_project_defaults_repository import (
-    UserProjectDefaultsRepository,
 )
 from raggae.application.interfaces.services.provider_api_key_crypto_service import (
     ProviderApiKeyCryptoService,
@@ -69,14 +66,12 @@ class CreateProject:
         project_repository: ProjectRepository,
         organization_member_repository: OrganizationMemberRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
-        org_project_defaults_repository: OrgProjectDefaultsRepository | None = None,
-        user_project_defaults_repository: UserProjectDefaultsRepository | None = None,
+        project_defaults_repository: ProjectDefaultsRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._organization_member_repository = organization_member_repository
         self._provider_credential_repository = provider_credential_repository
-        self._org_project_defaults_repository = org_project_defaults_repository
-        self._user_project_defaults_repository = user_project_defaults_repository
+        self._project_defaults_repository = project_defaults_repository
         self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
 
     def with_crypto_service(
@@ -217,14 +212,20 @@ class CreateProject:
             )
             if member is None:
                 raise OrganizationAccessDeniedError("User is not a member of this organization")
-            if self._org_project_defaults_repository is not None:
-                org_defaults = await self._org_project_defaults_repository.find_by_organization_id(
-                    organization_id
+            if self._project_defaults_repository is not None:
+                from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+
+                org_defaults = await self._project_defaults_repository.find_by_owner(
+                    organization_id, ProjectDefaultsOwnerType.ORGA
                 )
 
         user_defaults = None
-        if organization_id is None and self._user_project_defaults_repository is not None:
-            user_defaults = await self._user_project_defaults_repository.find_by_user_id(user_id)
+        if organization_id is None and self._project_defaults_repository is not None:
+            from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+
+            user_defaults = await self._project_defaults_repository.find_by_owner(
+                user_id, ProjectDefaultsOwnerType.USER
+            )
 
         overrides_models = True
         overrides_indexing = True

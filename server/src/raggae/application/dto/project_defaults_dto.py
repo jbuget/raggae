@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from raggae.domain.entities.organization_project_defaults import OrganizationProjectDefaults
+from raggae.domain.entities.project_defaults import ProjectDefaults
+from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
 
 
 @dataclass
-class OrgProjectDefaultsDTO:
-    """Data Transfer Object for OrganizationProjectDefaults."""
+class ProjectDefaultsDTO:
+    """Data Transfer Object for ProjectDefaults."""
 
-    organization_id: UUID
+    owner_id: UUID
+    owner_type: ProjectDefaultsOwnerType
     # Models
     embedding_backend: str | None
     embedding_model: str | None
@@ -33,9 +35,10 @@ class OrgProjectDefaultsDTO:
     chat_history_max_chars: int | None
 
     @classmethod
-    def from_entity(cls, entity: OrganizationProjectDefaults) -> "OrgProjectDefaultsDTO":
+    def from_entity(cls, entity: ProjectDefaults) -> "ProjectDefaultsDTO":
         return cls(
-            organization_id=entity.organization_id,
+            owner_id=entity.owner_id,
+            owner_type=entity.owner_type,
             embedding_backend=entity.embedding_backend,
             embedding_model=entity.embedding_model,
             embedding_api_key_credential_id=entity.embedding_api_key_credential_id,

@@ -377,17 +377,19 @@ class TestCreateProject:
         mock_organization_member_repository: AsyncMock,
     ) -> None:
         # Given
-        from raggae.domain.entities.organization_project_defaults import OrganizationProjectDefaults
-        from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
-            InMemoryOrgProjectDefaultsRepository,
+        from raggae.domain.entities.project_defaults import ProjectDefaults
+        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+        from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+            InMemoryProjectDefaultsRepository,
         )
 
         org_id = uuid4()
         user_id = uuid4()
-        defaults_repo = InMemoryOrgProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         await defaults_repo.save(
-            OrganizationProjectDefaults(
-                organization_id=org_id,
+            ProjectDefaults(
+                owner_id=org_id,
+                owner_type=ProjectDefaultsOwnerType.ORGA,
                 llm_backend="openai",
                 llm_model="gpt-4o",
                 retrieval_top_k=12,
@@ -397,7 +399,7 @@ class TestCreateProject:
         use_case = CreateProject(
             project_repository=mock_project_repository,
             organization_member_repository=mock_organization_member_repository,
-            org_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When
@@ -425,8 +427,8 @@ class TestCreateProject:
         mock_organization_member_repository: AsyncMock,
     ) -> None:
         # Given
-        from raggae.infrastructure.database.repositories.in_memory_org_project_defaults_repository import (
-            InMemoryOrgProjectDefaultsRepository,
+        from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+            InMemoryProjectDefaultsRepository,
         )
 
         org_id = uuid4()
@@ -434,7 +436,7 @@ class TestCreateProject:
         use_case = CreateProject(
             project_repository=mock_project_repository,
             organization_member_repository=mock_organization_member_repository,
-            org_project_defaults_repository=InMemoryOrgProjectDefaultsRepository(),
+            project_defaults_repository=InMemoryProjectDefaultsRepository(),
         )
 
         # When
@@ -458,16 +460,18 @@ class TestCreateProject:
         mock_project_repository: AsyncMock,
     ) -> None:
         # Given
-        from raggae.domain.entities.user_project_defaults import UserProjectDefaults
-        from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
-            InMemoryUserProjectDefaultsRepository,
+        from raggae.domain.entities.project_defaults import ProjectDefaults
+        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+        from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+            InMemoryProjectDefaultsRepository,
         )
 
         user_id = uuid4()
-        defaults_repo = InMemoryUserProjectDefaultsRepository()
+        defaults_repo = InMemoryProjectDefaultsRepository()
         await defaults_repo.save(
-            UserProjectDefaults(
-                user_id=user_id,
+            ProjectDefaults(
+                owner_id=user_id,
+                owner_type=ProjectDefaultsOwnerType.USER,
                 llm_backend="openai",
                 llm_model="gpt-5",
                 retrieval_top_k=15,
@@ -476,7 +480,7 @@ class TestCreateProject:
         )
         use_case = CreateProject(
             project_repository=mock_project_repository,
-            user_project_defaults_repository=defaults_repo,
+            project_defaults_repository=defaults_repo,
         )
 
         # When
@@ -503,13 +507,13 @@ class TestCreateProject:
         mock_project_repository: AsyncMock,
     ) -> None:
         # Given
-        from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
-            InMemoryUserProjectDefaultsRepository,
+        from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+            InMemoryProjectDefaultsRepository,
         )
 
         use_case = CreateProject(
             project_repository=mock_project_repository,
-            user_project_defaults_repository=InMemoryUserProjectDefaultsRepository(),
+            project_defaults_repository=InMemoryProjectDefaultsRepository(),
         )
 
         # When
@@ -533,22 +537,28 @@ class TestCreateProject:
         mock_organization_member_repository: AsyncMock,
     ) -> None:
         # Given — user has defaults but project is in an org
-        from raggae.domain.entities.user_project_defaults import UserProjectDefaults
-        from raggae.infrastructure.database.repositories.in_memory_user_project_defaults_repository import (
-            InMemoryUserProjectDefaultsRepository,
+        from raggae.domain.entities.project_defaults import ProjectDefaults
+        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+        from raggae.infrastructure.database.repositories.in_memory_project_defaults_repository import (
+            InMemoryProjectDefaultsRepository,
         )
 
         user_id = uuid4()
         org_id = uuid4()
-        user_defaults_repo = InMemoryUserProjectDefaultsRepository()
+        user_defaults_repo = InMemoryProjectDefaultsRepository()
         await user_defaults_repo.save(
-            UserProjectDefaults(user_id=user_id, llm_backend="openai", llm_model="gpt-5")
+            ProjectDefaults(
+                owner_id=user_id,
+                owner_type=ProjectDefaultsOwnerType.USER,
+                llm_backend="openai",
+                llm_model="gpt-5",
+            )
         )
         mock_organization_member_repository.find_by_organization_and_user.return_value = object()
         use_case = CreateProject(
             project_repository=mock_project_repository,
             organization_member_repository=mock_organization_member_repository,
-            user_project_defaults_repository=user_defaults_repo,
+            project_defaults_repository=user_defaults_repo,
         )
 
         # When
