@@ -101,6 +101,16 @@ def _dto_to_project_response(p: ProjectDTO) -> ProjectResponse:
         reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
         reranker_model=p.reranker_model,
         reranker_candidate_multiplier=p.reranker_candidate_multiplier,
+        overrides_models_from_org=p.overrides_models_from_org,
+        overrides_indexing_from_org=p.overrides_indexing_from_org,
+        overrides_retrieval_from_org=p.overrides_retrieval_from_org,
+        overrides_reranking_from_org=p.overrides_reranking_from_org,
+        overrides_chat_history_from_org=p.overrides_chat_history_from_org,
+        overrides_models_from_user=p.overrides_models_from_user,
+        overrides_indexing_from_user=p.overrides_indexing_from_user,
+        overrides_retrieval_from_user=p.overrides_retrieval_from_user,
+        overrides_reranking_from_user=p.overrides_reranking_from_user,
+        overrides_chat_history_from_user=p.overrides_chat_history_from_user,
     )
 
 
@@ -218,6 +228,16 @@ async def create_project(
         reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+        overrides_models_from_org=project_dto.overrides_models_from_org,
+        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
+        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
+        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
+        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
+        overrides_models_from_user=project_dto.overrides_models_from_user,
+        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
+        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
+        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
+        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
     )
 
 
@@ -287,6 +307,16 @@ async def get_project(
         reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+        overrides_models_from_org=project_dto.overrides_models_from_org,
+        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
+        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
+        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
+        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
+        overrides_models_from_user=project_dto.overrides_models_from_user,
+        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
+        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
+        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
+        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
     )
 
 
@@ -330,6 +360,16 @@ async def list_projects(
             reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
             reranker_model=p.reranker_model,
             reranker_candidate_multiplier=p.reranker_candidate_multiplier,
+            overrides_models_from_org=p.overrides_models_from_org,
+            overrides_indexing_from_org=p.overrides_indexing_from_org,
+            overrides_retrieval_from_org=p.overrides_retrieval_from_org,
+            overrides_reranking_from_org=p.overrides_reranking_from_org,
+            overrides_chat_history_from_org=p.overrides_chat_history_from_org,
+            overrides_models_from_user=p.overrides_models_from_user,
+            overrides_indexing_from_user=p.overrides_indexing_from_user,
+            overrides_retrieval_from_user=p.overrides_retrieval_from_user,
+            overrides_reranking_from_user=p.overrides_reranking_from_user,
+            overrides_chat_history_from_user=p.overrides_chat_history_from_user,
         )
         for p in project_dtos
     ]
@@ -383,6 +423,16 @@ async def update_project(
             reranker_backend=data.reranker_backend,
             reranker_model=data.reranker_model,
             reranker_candidate_multiplier=data.reranker_candidate_multiplier,
+            overrides_models_from_org=data.overrides_models_from_org,
+            overrides_indexing_from_org=data.overrides_indexing_from_org,
+            overrides_retrieval_from_org=data.overrides_retrieval_from_org,
+            overrides_reranking_from_org=data.overrides_reranking_from_org,
+            overrides_chat_history_from_org=data.overrides_chat_history_from_org,
+            overrides_models_from_user=data.overrides_models_from_user,
+            overrides_indexing_from_user=data.overrides_indexing_from_user,
+            overrides_retrieval_from_user=data.overrides_retrieval_from_user,
+            overrides_reranking_from_user=data.overrides_reranking_from_user,
+            overrides_chat_history_from_user=data.overrides_chat_history_from_user,
         )
     except ProjectNotFoundError:
         raise HTTPException(
@@ -465,6 +515,16 @@ async def update_project(
         reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+        overrides_models_from_org=project_dto.overrides_models_from_org,
+        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
+        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
+        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
+        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
+        overrides_models_from_user=project_dto.overrides_models_from_user,
+        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
+        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
+        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
+        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
     )
 
 
@@ -584,6 +644,16 @@ async def publish_project(
         reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+        overrides_models_from_org=project_dto.overrides_models_from_org,
+        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
+        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
+        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
+        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
+        overrides_models_from_user=project_dto.overrides_models_from_user,
+        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
+        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
+        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
+        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
     )
 
 
@@ -638,4 +708,14 @@ async def unpublish_project(
         reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
         reranker_model=project_dto.reranker_model,
         reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
+        overrides_models_from_org=project_dto.overrides_models_from_org,
+        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
+        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
+        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
+        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
+        overrides_models_from_user=project_dto.overrides_models_from_user,
+        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
+        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
+        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
+        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
     )

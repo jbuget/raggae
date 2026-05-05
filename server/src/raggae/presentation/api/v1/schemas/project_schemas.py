@@ -109,6 +109,16 @@ class UpdateProjectRequest(BaseModel):
         ge=MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
         le=MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
     )
+    overrides_models_from_org: bool | None = None
+    overrides_indexing_from_org: bool | None = None
+    overrides_retrieval_from_org: bool | None = None
+    overrides_reranking_from_org: bool | None = None
+    overrides_chat_history_from_org: bool | None = None
+    overrides_models_from_user: bool | None = None
+    overrides_indexing_from_user: bool | None = None
+    overrides_retrieval_from_user: bool | None = None
+    overrides_reranking_from_user: bool | None = None
+    overrides_chat_history_from_user: bool | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -144,6 +154,16 @@ class ProjectResponse(BaseModel):
     reranker_candidate_multiplier: int
     chat_history_window_size: int
     chat_history_max_chars: int
+    overrides_models_from_org: bool
+    overrides_indexing_from_org: bool
+    overrides_retrieval_from_org: bool
+    overrides_reranking_from_org: bool
+    overrides_chat_history_from_org: bool
+    overrides_models_from_user: bool
+    overrides_indexing_from_user: bool
+    overrides_retrieval_from_user: bool
+    overrides_reranking_from_user: bool
+    overrides_chat_history_from_user: bool
 
 
 class ReindexProjectResponse(BaseModel):
