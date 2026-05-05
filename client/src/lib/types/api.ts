@@ -256,87 +256,37 @@ export interface AcceptOrganizationInvitationRequest {
   token: string;
 }
 
-export interface OrganizationProjectDefaultsResponse {
+export interface ProjectDefaultsConfig {
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: ChunkingStrategy | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+}
+
+export interface OrganizationProjectDefaultsResponse extends ProjectDefaultsConfig {
   organization_id: string;
-  embedding_backend?: ProjectEmbeddingBackend | null;
-  embedding_model?: string | null;
-  embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
-  llm_model?: string | null;
-  llm_api_key_credential_id?: string | null;
-  chunking_strategy?: ChunkingStrategy | null;
-  parent_child_chunking?: boolean | null;
-  retrieval_strategy?: RetrievalStrategy | null;
-  retrieval_top_k?: number | null;
-  retrieval_min_score?: number | null;
-  reranking_enabled?: boolean | null;
-  reranker_backend?: ProjectRerankerBackend | null;
-  reranker_model?: string | null;
-  reranker_candidate_multiplier?: number | null;
-  chat_history_window_size?: number | null;
-  chat_history_max_chars?: number | null;
 }
 
-export interface UpsertOrganizationProjectDefaultsRequest {
-  embedding_backend?: ProjectEmbeddingBackend | null;
-  embedding_model?: string | null;
-  embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
-  llm_model?: string | null;
-  llm_api_key_credential_id?: string | null;
-  chunking_strategy?: ChunkingStrategy | null;
-  parent_child_chunking?: boolean | null;
-  retrieval_strategy?: RetrievalStrategy | null;
-  retrieval_top_k?: number | null;
-  retrieval_min_score?: number | null;
-  reranking_enabled?: boolean | null;
-  reranker_backend?: ProjectRerankerBackend | null;
-  reranker_model?: string | null;
-  reranker_candidate_multiplier?: number | null;
-  chat_history_window_size?: number | null;
-  chat_history_max_chars?: number | null;
-}
+export type UpsertOrganizationProjectDefaultsRequest = ProjectDefaultsConfig;
 
-export interface UserProjectDefaultsResponse {
+export interface UserProjectDefaultsResponse extends ProjectDefaultsConfig {
   user_id: string;
-  embedding_backend?: ProjectEmbeddingBackend | null;
-  embedding_model?: string | null;
-  embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
-  llm_model?: string | null;
-  llm_api_key_credential_id?: string | null;
-  chunking_strategy?: ChunkingStrategy | null;
-  parent_child_chunking?: boolean | null;
-  retrieval_strategy?: RetrievalStrategy | null;
-  retrieval_top_k?: number | null;
-  retrieval_min_score?: number | null;
-  reranking_enabled?: boolean | null;
-  reranker_backend?: ProjectRerankerBackend | null;
-  reranker_model?: string | null;
-  reranker_candidate_multiplier?: number | null;
-  chat_history_window_size?: number | null;
-  chat_history_max_chars?: number | null;
 }
 
-export interface UpsertUserProjectDefaultsRequest {
-  embedding_backend?: ProjectEmbeddingBackend | null;
-  embedding_model?: string | null;
-  embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
-  llm_model?: string | null;
-  llm_api_key_credential_id?: string | null;
-  chunking_strategy?: ChunkingStrategy | null;
-  parent_child_chunking?: boolean | null;
-  retrieval_strategy?: RetrievalStrategy | null;
-  retrieval_top_k?: number | null;
-  retrieval_min_score?: number | null;
-  reranking_enabled?: boolean | null;
-  reranker_backend?: ProjectRerankerBackend | null;
-  reranker_model?: string | null;
-  reranker_candidate_multiplier?: number | null;
-  chat_history_window_size?: number | null;
-  chat_history_max_chars?: number | null;
-}
+export type UpsertUserProjectDefaultsRequest = ProjectDefaultsConfig;
 
 // System
 export interface SystemDefaultsResponse {
