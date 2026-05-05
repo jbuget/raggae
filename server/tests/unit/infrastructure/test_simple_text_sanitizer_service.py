@@ -25,3 +25,15 @@ class TestSimpleTextSanitizerService:
 
         # Then
         assert result == "Item 1\nItem 2"
+
+    async def test_sanitize_text_removes_c1_control_characters(self) -> None:
+        # Given — U+0092 (RIGHT SINGLE QUOTATION MARK control variant) found in some Windows Excel exports
+        service = SimpleTextSanitizerService()
+        raw_text = "Prix\x92unit\xe9"
+
+        # When
+        result = await service.sanitize_text(raw_text)
+
+        # Then
+        assert "\x92" not in result
+        assert "Prix" in result

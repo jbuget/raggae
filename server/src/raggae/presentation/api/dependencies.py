@@ -375,6 +375,7 @@ from raggae.infrastructure.services.simple_text_sanitizer_service import (
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
+from raggae.infrastructure.services.tabular_text_chunker_service import TabularTextChunkerService
 
 
 def _build_embedding_service() -> EmbeddingService:
@@ -497,6 +498,7 @@ if settings.persistence_backend != "postgres":
     _language_detector = InMemoryLanguageDetector(language="en")
     _keyword_extractor = InMemoryKeywordExtractor()
 _chunking_strategy_selector = DeterministicChunkingStrategySelector()
+_tabular_chunker: TextChunkerService = TabularTextChunkerService()
 if settings.text_chunker_backend == "llamaindex":
     _text_chunker_service: TextChunkerService = LlamaIndexTextChunkerService(
         chunk_size=settings.chunk_size,
@@ -539,6 +541,7 @@ _document_indexing_service = DocumentIndexingService(
     chunker_backend=settings.text_chunker_backend,
     parent_child_chunking_service=_parent_child_chunking_service,
     slide_chunker=_slide_chunker,
+    tabular_chunker=_tabular_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)

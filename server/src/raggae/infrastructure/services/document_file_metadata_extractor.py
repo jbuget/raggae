@@ -10,7 +10,7 @@ _AUTHOR_SPLIT_RE = re.compile(r"[;,]")
 
 
 class DocumentFileMetadataExtractor:
-    """Extract metadata from PDF, DOCX and PPTX document properties."""
+    """Extract metadata from PDF, DOCX, PPTX and XLSX document properties."""
 
     async def extract_metadata(
         self,
@@ -26,6 +26,11 @@ class DocumentFileMetadataExtractor:
             return self._extract_docx(content)
         if extension == "pptx":
             return self._extract_pptx(content)
+        if extension == "xlsx":
+            return self._extract_xlsx(content)
+        # xls uses a legacy binary format not readable by openpyxl; csv has no embedded metadata.
+        if extension in {"xls", "csv"}:
+            return FileMetadata()
         return FileMetadata()
 
     def _extract_pdf(self, content: bytes) -> FileMetadata:
@@ -83,6 +88,26 @@ class DocumentFileMetadataExtractor:
             return FileMetadata(
                 title=self._clean_text(props.title),
                 authors=self._parse_authors(author),
+                document_date=created,
+            )
+        except Exception:
+            return FileMetadata()
+
+    def _extract_xlsx(self, content: bytes) -> FileMetadata:
+        try:
+            import openpyxl
+        except ModuleNotFoundError:
+            return FileMetadata()
+
+        try:
+            wb = openpyxl.load_workbook(BytesIO(content), data_only=True)
+            props = wb.properties
+            title = self._clean_text(props.title)
+            creator = self._clean_text(props.creator)
+            created = props.created.date() if props.created is not None else None
+            return FileMetadata(
+                title=title,
+                authors=self._parse_authors(creator),
                 document_date=created,
             )
         except Exception:
