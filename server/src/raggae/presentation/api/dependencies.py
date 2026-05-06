@@ -1167,6 +1167,10 @@ def get_update_project_configuration_use_case() -> UpdateProjectConfiguration:
     )
 
 
+def get_agent_configuration_repository() -> AgentConfigurationRepository:
+    return _agent_configuration_repository
+
+
 def get_get_public_stats_use_case() -> GetPublicStats:
     return GetPublicStats(stats_repository=_stats_repository)
 

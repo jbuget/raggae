@@ -5,7 +5,6 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from raggae.domain.entities.project import Project
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.database.models import Base
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
@@ -34,7 +33,7 @@ class TestSQLAlchemyProjectRepository:
         await engine.dispose()
 
     @pytest.mark.integration
-    async def test_integration_persists_project_ingestion_settings(
+    async def test_integration_save_and_find_by_id(
         self, session_factory: async_sessionmaker[AsyncSession]
     ) -> None:
         # Given
@@ -42,31 +41,14 @@ class TestSQLAlchemyProjectRepository:
         project = Project(
             id=uuid4(),
             user_id=uuid4(),
-            name="Project",
+            name="Test Project",
             description="desc",
             system_prompt="prompt",
-            is_published=False,
+            is_published=True,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.SEMANTIC,
-            parent_child_chunking=True,
             reindex_status="in_progress",
             reindex_progress=3,
             reindex_total=10,
-            embedding_backend="openai",
-            embedding_model="text-embedding-3-small",
-            embedding_api_key_encrypted="enc-embedding",
-            llm_backend="gemini",
-            llm_model="gemini-2.0-flash",
-            llm_api_key_encrypted="enc-llm",
-            retrieval_strategy="fulltext",
-            retrieval_top_k=11,
-            retrieval_min_score=0.37,
-            chat_history_window_size=10,
-            chat_history_max_chars=5000,
-            reranking_enabled=True,
-            reranker_backend="cross_encoder",
-            reranker_model="cross-encoder/ms-marco-MiniLM-L-6-v2",
-            reranker_candidate_multiplier=4,
         )
 
         # When
@@ -75,23 +57,69 @@ class TestSQLAlchemyProjectRepository:
 
         # Then
         assert found is not None
-        assert found.chunking_strategy == ChunkingStrategy.SEMANTIC
-        assert found.parent_child_chunking is True
+        assert found.id == project.id
+        assert found.name == "Test Project"
+        assert found.description == "desc"
+        assert found.system_prompt == "prompt"
+        assert found.is_published is True
         assert found.reindex_status == "in_progress"
         assert found.reindex_progress == 3
         assert found.reindex_total == 10
-        assert found.embedding_backend == "openai"
-        assert found.embedding_model == "text-embedding-3-small"
-        assert found.embedding_api_key_encrypted == "enc-embedding"
-        assert found.llm_backend == "gemini"
-        assert found.llm_model == "gemini-2.0-flash"
-        assert found.llm_api_key_encrypted == "enc-llm"
-        assert found.retrieval_strategy == "fulltext"
-        assert found.retrieval_top_k == 11
-        assert found.retrieval_min_score == 0.37
-        assert found.chat_history_window_size == 10
-        assert found.chat_history_max_chars == 5000
-        assert found.reranking_enabled is True
-        assert found.reranker_backend == "cross_encoder"
-        assert found.reranker_model == "cross-encoder/ms-marco-MiniLM-L-6-v2"
-        assert found.reranker_candidate_multiplier == 4
+
+    @pytest.mark.integration
+    async def test_integration_update_project(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        # Given
+        repository = SQLAlchemyProjectRepository(session_factory=session_factory)
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="Original",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        await repository.save(project)
+
+        # When
+        from dataclasses import replace
+        updated = replace(project, name="Updated", is_published=True)
+        await repository.save(updated)
+        found = await repository.find_by_id(project.id)
+
+        # Then
+        assert found is not None
+        assert found.name == "Updated"
+        assert found.is_published is True
+
+    @pytest.mark.integration
+    async def test_integration_find_by_id_returns_none_when_missing(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        repository = SQLAlchemyProjectRepository(session_factory=session_factory)
+        assert await repository.find_by_id(uuid4()) is None
+
+    @pytest.mark.integration
+    async def test_integration_delete_removes_project(
+        self, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        # Given
+        repository = SQLAlchemyProjectRepository(session_factory=session_factory)
+        project = Project(
+            id=uuid4(),
+            user_id=uuid4(),
+            name="To Delete",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        await repository.save(project)
+
+        # When
+        await repository.delete(project.id)
+
+        # Then
+        assert await repository.find_by_id(project.id) is None
