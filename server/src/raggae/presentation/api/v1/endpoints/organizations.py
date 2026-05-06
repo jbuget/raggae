@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Literal, cast
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -94,9 +94,6 @@ from raggae.presentation.api.v1.schemas.project_schemas import ProjectResponse
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 logger = logging.getLogger(__name__)
-
-ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
-ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory", "mmr"]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_user_id)])
@@ -219,53 +216,7 @@ async def list_organization_projects(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
-    return [
-        ProjectResponse(
-            id=p.id,
-            user_id=p.user_id,
-            organization_id=p.organization_id,
-            name=p.name,
-            description=p.description,
-            system_prompt=p.system_prompt,
-            is_published=p.is_published,
-            created_at=p.created_at,
-            chunking_strategy=p.chunking_strategy,
-            parent_child_chunking=p.parent_child_chunking,
-            reindex_status=p.reindex_status,
-            reindex_progress=p.reindex_progress,
-            reindex_total=p.reindex_total,
-            embedding_backend=p.embedding_backend,
-            embedding_model=p.embedding_model,
-            embedding_api_key_masked=p.embedding_api_key_masked,
-            embedding_api_key_credential_id=p.embedding_api_key_credential_id,
-            org_embedding_api_key_credential_id=p.org_embedding_api_key_credential_id,
-            llm_backend=p.llm_backend,
-            llm_model=p.llm_model,
-            llm_api_key_masked=p.llm_api_key_masked,
-            llm_api_key_credential_id=p.llm_api_key_credential_id,
-            org_llm_api_key_credential_id=p.org_llm_api_key_credential_id,
-            retrieval_strategy=cast(ProjectRetrievalStrategy, p.retrieval_strategy),
-            retrieval_top_k=p.retrieval_top_k,
-            retrieval_min_score=p.retrieval_min_score,
-            chat_history_window_size=p.chat_history_window_size,
-            chat_history_max_chars=p.chat_history_max_chars,
-            reranking_enabled=p.reranking_enabled,
-            reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
-            reranker_model=p.reranker_model,
-            reranker_candidate_multiplier=p.reranker_candidate_multiplier,
-            overrides_models_from_org=p.overrides_models_from_org,
-            overrides_indexing_from_org=p.overrides_indexing_from_org,
-            overrides_retrieval_from_org=p.overrides_retrieval_from_org,
-            overrides_reranking_from_org=p.overrides_reranking_from_org,
-            overrides_chat_history_from_org=p.overrides_chat_history_from_org,
-            overrides_models_from_user=p.overrides_models_from_user,
-            overrides_indexing_from_user=p.overrides_indexing_from_user,
-            overrides_retrieval_from_user=p.overrides_retrieval_from_user,
-            overrides_reranking_from_user=p.overrides_reranking_from_user,
-            overrides_chat_history_from_user=p.overrides_chat_history_from_user,
-        )
-        for p in projects
-    ]
+    return [ProjectResponse.from_dto(p) for p in projects]
 
 
 @router.patch("/{organization_id}/members/{member_id}", dependencies=[Depends(get_current_user_id)])

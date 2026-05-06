@@ -4,7 +4,6 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.project import Project
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.database.models.project_model import ProjectModel
 
 
@@ -26,40 +25,9 @@ class SQLAlchemyProjectRepository:
                     description=project.description,
                     system_prompt=project.system_prompt,
                     is_published=project.is_published,
-                    chunking_strategy=project.chunking_strategy.value,
-                    parent_child_chunking=project.parent_child_chunking,
                     reindex_status=project.reindex_status,
                     reindex_progress=project.reindex_progress,
                     reindex_total=project.reindex_total,
-                    embedding_backend=project.embedding_backend,
-                    embedding_model=project.embedding_model,
-                    embedding_api_key_encrypted=project.embedding_api_key_encrypted,
-                    embedding_api_key_credential_id=project.embedding_api_key_credential_id,
-                    llm_backend=project.llm_backend,
-                    llm_model=project.llm_model,
-                    llm_api_key_encrypted=project.llm_api_key_encrypted,
-                    llm_api_key_credential_id=project.llm_api_key_credential_id,
-                    retrieval_strategy=project.retrieval_strategy,
-                    retrieval_top_k=project.retrieval_top_k,
-                    retrieval_min_score=project.retrieval_min_score,
-                    chat_history_window_size=project.chat_history_window_size,
-                    chat_history_max_chars=project.chat_history_max_chars,
-                    reranking_enabled=project.reranking_enabled,
-                    reranker_backend=project.reranker_backend,
-                    reranker_model=project.reranker_model,
-                    reranker_candidate_multiplier=project.reranker_candidate_multiplier,
-                    org_embedding_api_key_credential_id=project.org_embedding_api_key_credential_id,
-                    org_llm_api_key_credential_id=project.org_llm_api_key_credential_id,
-                    overrides_models_from_org=project.overrides_models_from_org,
-                    overrides_indexing_from_org=project.overrides_indexing_from_org,
-                    overrides_retrieval_from_org=project.overrides_retrieval_from_org,
-                    overrides_reranking_from_org=project.overrides_reranking_from_org,
-                    overrides_chat_history_from_org=project.overrides_chat_history_from_org,
-                    overrides_models_from_user=project.overrides_models_from_user,
-                    overrides_indexing_from_user=project.overrides_indexing_from_user,
-                    overrides_retrieval_from_user=project.overrides_retrieval_from_user,
-                    overrides_reranking_from_user=project.overrides_reranking_from_user,
-                    overrides_chat_history_from_user=project.overrides_chat_history_from_user,
                     created_at=project.created_at,
                 )
                 session.add(model)
@@ -70,197 +38,44 @@ class SQLAlchemyProjectRepository:
                 model.description = project.description
                 model.system_prompt = project.system_prompt
                 model.is_published = project.is_published
-                model.chunking_strategy = project.chunking_strategy.value
-                model.parent_child_chunking = project.parent_child_chunking
                 model.reindex_status = project.reindex_status
                 model.reindex_progress = project.reindex_progress
                 model.reindex_total = project.reindex_total
-                model.embedding_backend = project.embedding_backend
-                model.embedding_model = project.embedding_model
-                model.embedding_api_key_encrypted = project.embedding_api_key_encrypted
-                model.embedding_api_key_credential_id = project.embedding_api_key_credential_id
-                model.llm_backend = project.llm_backend
-                model.llm_model = project.llm_model
-                model.llm_api_key_encrypted = project.llm_api_key_encrypted
-                model.llm_api_key_credential_id = project.llm_api_key_credential_id
-                model.org_embedding_api_key_credential_id = project.org_embedding_api_key_credential_id
-                model.org_llm_api_key_credential_id = project.org_llm_api_key_credential_id
-                model.overrides_models_from_org = project.overrides_models_from_org
-                model.overrides_indexing_from_org = project.overrides_indexing_from_org
-                model.overrides_retrieval_from_org = project.overrides_retrieval_from_org
-                model.overrides_reranking_from_org = project.overrides_reranking_from_org
-                model.overrides_chat_history_from_org = project.overrides_chat_history_from_org
-                model.overrides_models_from_user = project.overrides_models_from_user
-                model.overrides_indexing_from_user = project.overrides_indexing_from_user
-                model.overrides_retrieval_from_user = project.overrides_retrieval_from_user
-                model.overrides_reranking_from_user = project.overrides_reranking_from_user
-                model.overrides_chat_history_from_user = project.overrides_chat_history_from_user
-                model.retrieval_strategy = project.retrieval_strategy
-                model.retrieval_top_k = project.retrieval_top_k
-                model.retrieval_min_score = project.retrieval_min_score
-                model.chat_history_window_size = project.chat_history_window_size
-                model.chat_history_max_chars = project.chat_history_max_chars
-                model.reranking_enabled = project.reranking_enabled
-                model.reranker_backend = project.reranker_backend
-                model.reranker_model = project.reranker_model
-                model.reranker_candidate_multiplier = project.reranker_candidate_multiplier
             await session.commit()
+
+    def _to_entity(self, model: ProjectModel) -> Project:
+        return Project(
+            id=model.id,
+            user_id=model.user_id,
+            organization_id=model.organization_id,
+            name=model.name,
+            description=model.description,
+            system_prompt=model.system_prompt,
+            is_published=model.is_published,
+            reindex_status=model.reindex_status,
+            reindex_progress=model.reindex_progress,
+            reindex_total=model.reindex_total,
+            created_at=model.created_at,
+        )
 
     async def find_by_id(self, project_id: UUID) -> Project | None:
         async with self._session_factory() as session:
             model = await session.get(ProjectModel, project_id)
             if model is None:
                 return None
-            return Project(
-                id=model.id,
-                user_id=model.user_id,
-                organization_id=model.organization_id,
-                name=model.name,
-                description=model.description,
-                system_prompt=model.system_prompt,
-                is_published=model.is_published,
-                chunking_strategy=ChunkingStrategy(model.chunking_strategy),
-                parent_child_chunking=model.parent_child_chunking,
-                reindex_status=model.reindex_status,
-                reindex_progress=model.reindex_progress,
-                reindex_total=model.reindex_total,
-                embedding_backend=model.embedding_backend,
-                embedding_model=model.embedding_model,
-                embedding_api_key_encrypted=model.embedding_api_key_encrypted,
-                embedding_api_key_credential_id=model.embedding_api_key_credential_id,
-                llm_backend=model.llm_backend,
-                llm_model=model.llm_model,
-                llm_api_key_encrypted=model.llm_api_key_encrypted,
-                llm_api_key_credential_id=model.llm_api_key_credential_id,
-                retrieval_strategy=model.retrieval_strategy,
-                retrieval_top_k=model.retrieval_top_k,
-                retrieval_min_score=model.retrieval_min_score,
-                chat_history_window_size=model.chat_history_window_size,
-                chat_history_max_chars=model.chat_history_max_chars,
-                reranking_enabled=model.reranking_enabled,
-                reranker_backend=model.reranker_backend,
-                reranker_model=model.reranker_model,
-                reranker_candidate_multiplier=model.reranker_candidate_multiplier,
-                org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
-                org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
-                overrides_models_from_org=model.overrides_models_from_org,
-                overrides_indexing_from_org=model.overrides_indexing_from_org,
-                overrides_retrieval_from_org=model.overrides_retrieval_from_org,
-                overrides_reranking_from_org=model.overrides_reranking_from_org,
-                overrides_chat_history_from_org=model.overrides_chat_history_from_org,
-                overrides_models_from_user=model.overrides_models_from_user,
-                overrides_indexing_from_user=model.overrides_indexing_from_user,
-                overrides_retrieval_from_user=model.overrides_retrieval_from_user,
-                overrides_reranking_from_user=model.overrides_reranking_from_user,
-                overrides_chat_history_from_user=model.overrides_chat_history_from_user,
-                created_at=model.created_at,
-            )
+            return self._to_entity(model)
 
     async def find_by_user_id(self, user_id: UUID) -> list[Project]:
         async with self._session_factory() as session:
             result = await session.execute(select(ProjectModel).where(ProjectModel.user_id == user_id))
-            models = result.scalars().all()
-            return [
-                Project(
-                    id=model.id,
-                    user_id=model.user_id,
-                    organization_id=model.organization_id,
-                    name=model.name,
-                    description=model.description,
-                    system_prompt=model.system_prompt,
-                    is_published=model.is_published,
-                    chunking_strategy=ChunkingStrategy(model.chunking_strategy),
-                    parent_child_chunking=model.parent_child_chunking,
-                    reindex_status=model.reindex_status,
-                    reindex_progress=model.reindex_progress,
-                    reindex_total=model.reindex_total,
-                    embedding_backend=model.embedding_backend,
-                    embedding_model=model.embedding_model,
-                    embedding_api_key_encrypted=model.embedding_api_key_encrypted,
-                    embedding_api_key_credential_id=model.embedding_api_key_credential_id,
-                    llm_backend=model.llm_backend,
-                    llm_model=model.llm_model,
-                    llm_api_key_encrypted=model.llm_api_key_encrypted,
-                    llm_api_key_credential_id=model.llm_api_key_credential_id,
-                    retrieval_strategy=model.retrieval_strategy,
-                    retrieval_top_k=model.retrieval_top_k,
-                    retrieval_min_score=model.retrieval_min_score,
-                    chat_history_window_size=model.chat_history_window_size,
-                    chat_history_max_chars=model.chat_history_max_chars,
-                    reranking_enabled=model.reranking_enabled,
-                    reranker_backend=model.reranker_backend,
-                    reranker_model=model.reranker_model,
-                    reranker_candidate_multiplier=model.reranker_candidate_multiplier,
-                    org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
-                    org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
-                    overrides_models_from_org=model.overrides_models_from_org,
-                    overrides_indexing_from_org=model.overrides_indexing_from_org,
-                    overrides_retrieval_from_org=model.overrides_retrieval_from_org,
-                    overrides_reranking_from_org=model.overrides_reranking_from_org,
-                    overrides_chat_history_from_org=model.overrides_chat_history_from_org,
-                    overrides_models_from_user=model.overrides_models_from_user,
-                    overrides_indexing_from_user=model.overrides_indexing_from_user,
-                    overrides_retrieval_from_user=model.overrides_retrieval_from_user,
-                    overrides_reranking_from_user=model.overrides_reranking_from_user,
-                    overrides_chat_history_from_user=model.overrides_chat_history_from_user,
-                    created_at=model.created_at,
-                )
-                for model in models
-            ]
+            return [self._to_entity(m) for m in result.scalars().all()]
 
     async def find_by_organization_id(self, organization_id: UUID) -> list[Project]:
         async with self._session_factory() as session:
             result = await session.execute(
                 select(ProjectModel).where(ProjectModel.organization_id == organization_id)
             )
-            models = result.scalars().all()
-            return [
-                Project(
-                    id=model.id,
-                    user_id=model.user_id,
-                    organization_id=model.organization_id,
-                    name=model.name,
-                    description=model.description,
-                    system_prompt=model.system_prompt,
-                    is_published=model.is_published,
-                    chunking_strategy=ChunkingStrategy(model.chunking_strategy),
-                    parent_child_chunking=model.parent_child_chunking,
-                    reindex_status=model.reindex_status,
-                    reindex_progress=model.reindex_progress,
-                    reindex_total=model.reindex_total,
-                    embedding_backend=model.embedding_backend,
-                    embedding_model=model.embedding_model,
-                    embedding_api_key_encrypted=model.embedding_api_key_encrypted,
-                    embedding_api_key_credential_id=model.embedding_api_key_credential_id,
-                    llm_backend=model.llm_backend,
-                    llm_model=model.llm_model,
-                    llm_api_key_encrypted=model.llm_api_key_encrypted,
-                    llm_api_key_credential_id=model.llm_api_key_credential_id,
-                    retrieval_strategy=model.retrieval_strategy,
-                    retrieval_top_k=model.retrieval_top_k,
-                    retrieval_min_score=model.retrieval_min_score,
-                    chat_history_window_size=model.chat_history_window_size,
-                    chat_history_max_chars=model.chat_history_max_chars,
-                    reranking_enabled=model.reranking_enabled,
-                    reranker_backend=model.reranker_backend,
-                    reranker_model=model.reranker_model,
-                    reranker_candidate_multiplier=model.reranker_candidate_multiplier,
-                    org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
-                    org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
-                    overrides_models_from_org=model.overrides_models_from_org,
-                    overrides_indexing_from_org=model.overrides_indexing_from_org,
-                    overrides_retrieval_from_org=model.overrides_retrieval_from_org,
-                    overrides_reranking_from_org=model.overrides_reranking_from_org,
-                    overrides_chat_history_from_org=model.overrides_chat_history_from_org,
-                    overrides_models_from_user=model.overrides_models_from_user,
-                    overrides_indexing_from_user=model.overrides_indexing_from_user,
-                    overrides_retrieval_from_user=model.overrides_retrieval_from_user,
-                    overrides_reranking_from_user=model.overrides_reranking_from_user,
-                    overrides_chat_history_from_user=model.overrides_chat_history_from_user,
-                    created_at=model.created_at,
-                )
-                for model in models
-            ]
+            return [self._to_entity(m) for m in result.scalars().all()]
 
     async def find_by_organization_ids(self, organization_ids: list[UUID]) -> list[Project]:
         if not organization_ids:
@@ -269,54 +84,7 @@ class SQLAlchemyProjectRepository:
             result = await session.execute(
                 select(ProjectModel).where(ProjectModel.organization_id.in_(organization_ids))
             )
-            models = result.scalars().all()
-            return [
-                Project(
-                    id=model.id,
-                    user_id=model.user_id,
-                    organization_id=model.organization_id,
-                    name=model.name,
-                    description=model.description,
-                    system_prompt=model.system_prompt,
-                    is_published=model.is_published,
-                    chunking_strategy=ChunkingStrategy(model.chunking_strategy),
-                    parent_child_chunking=model.parent_child_chunking,
-                    reindex_status=model.reindex_status,
-                    reindex_progress=model.reindex_progress,
-                    reindex_total=model.reindex_total,
-                    embedding_backend=model.embedding_backend,
-                    embedding_model=model.embedding_model,
-                    embedding_api_key_encrypted=model.embedding_api_key_encrypted,
-                    embedding_api_key_credential_id=model.embedding_api_key_credential_id,
-                    llm_backend=model.llm_backend,
-                    llm_model=model.llm_model,
-                    llm_api_key_encrypted=model.llm_api_key_encrypted,
-                    llm_api_key_credential_id=model.llm_api_key_credential_id,
-                    retrieval_strategy=model.retrieval_strategy,
-                    retrieval_top_k=model.retrieval_top_k,
-                    retrieval_min_score=model.retrieval_min_score,
-                    chat_history_window_size=model.chat_history_window_size,
-                    chat_history_max_chars=model.chat_history_max_chars,
-                    reranking_enabled=model.reranking_enabled,
-                    reranker_backend=model.reranker_backend,
-                    reranker_model=model.reranker_model,
-                    reranker_candidate_multiplier=model.reranker_candidate_multiplier,
-                    org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
-                    org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
-                    overrides_models_from_org=model.overrides_models_from_org,
-                    overrides_indexing_from_org=model.overrides_indexing_from_org,
-                    overrides_retrieval_from_org=model.overrides_retrieval_from_org,
-                    overrides_reranking_from_org=model.overrides_reranking_from_org,
-                    overrides_chat_history_from_org=model.overrides_chat_history_from_org,
-                    overrides_models_from_user=model.overrides_models_from_user,
-                    overrides_indexing_from_user=model.overrides_indexing_from_user,
-                    overrides_retrieval_from_user=model.overrides_retrieval_from_user,
-                    overrides_reranking_from_user=model.overrides_reranking_from_user,
-                    overrides_chat_history_from_user=model.overrides_chat_history_from_user,
-                    created_at=model.created_at,
-                )
-                for model in models
-            ]
+            return [self._to_entity(m) for m in result.scalars().all()]
 
     async def delete(self, project_id: UUID) -> None:
         async with self._session_factory() as session:

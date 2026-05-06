@@ -206,7 +206,7 @@ async def update_project_configuration(
         InvalidProjectRerankerBackendError,
     ) as exc:
         _config_error_handler(exc)
-    return AgentConfigurationResponse.from_dto(result)  # type: ignore[arg-type]
+    return AgentConfigurationResponse.from_dto(result)
 
 
 @router.post("/{project_id}/query")

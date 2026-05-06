@@ -41,6 +41,7 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
@@ -339,7 +340,7 @@ class UploadDocument:
             user_id=user_id,
         )
 
-    async def _resolve_config(self, project: Project, user_id: UUID):  # type: ignore[return]
+    async def _resolve_config(self, project: Project, user_id: UUID) -> ResolvedAgentConfiguration | None:
         if self._agent_configuration_repository is None:
             return None
         project_config = await self._agent_configuration_repository.find_by_owner(
@@ -360,19 +361,19 @@ class UploadDocument:
         app_config = await self._agent_configuration_repository.find_app_defaults()
         return ConfigExtractor.resolve(project_config, parent_config, app_config)
 
-    async def _fetch_encrypted_key(self, credential_id, project: Project, user_id: UUID) -> str | None:
+    async def _fetch_encrypted_key(self, credential_id: UUID, project: Project, user_id: UUID) -> str | None:
         if project.organization_id is not None and self._org_provider_credential_repository is not None:
             org_creds = await self._org_provider_credential_repository.list_by_org_id(
                 project.organization_id
             )
-            cred = next((c for c in org_creds if c.id == credential_id), None)
-            if cred is not None:
-                return cred.encrypted_api_key
+            org_cred = next((c for c in org_creds if c.id == credential_id), None)
+            if org_cred is not None:
+                return org_cred.encrypted_api_key
         if self._provider_credential_repository is not None:
             user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
-            cred = next((c for c in user_creds if c.id == credential_id), None)
-            if cred is not None:
-                return cred.encrypted_api_key
+            user_cred = next((c for c in user_creds if c.id == credential_id), None)
+            if user_cred is not None:
+                return user_cred.encrypted_api_key
         return None
 
     async def _cleanup_failed_document(self, document_id: UUID, storage_key: str) -> None:
