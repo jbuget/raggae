@@ -158,9 +158,7 @@ class TestUpdateProjectConfiguration:
 
         # When / Then
         with pytest.raises(InvalidProjectLLMBackendError):
-            await use_case.execute(
-                project_id=project.id, user_id=user_id, llm_backend="unsupported_llm"
-            )
+            await use_case.execute(project_id=project.id, user_id=user_id, llm_backend="unsupported_llm")
 
     async def test_raises_invalid_retrieval_strategy_error(self) -> None:
         # Given

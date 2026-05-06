@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from raggae.domain.entities.agent_configuration import AgentConfiguration, SYSTEM_OWNER_ID
+from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentConfiguration
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 
 

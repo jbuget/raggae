@@ -279,7 +279,9 @@ async def publish_project(
     except ProjectNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found") from None
     except ProjectAlreadyPublishedError:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Project is already published") from None
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Project is already published"
+        ) from None
     return ProjectResponse.from_dto(project_dto)
 
 

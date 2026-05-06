@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from raggae.domain.entities.agent_configuration import AgentConfiguration, SYSTEM_OWNER_ID
+from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentConfiguration
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 
 
@@ -43,9 +43,7 @@ class TestAgentConfiguration:
         assert _make(AgentConfigurationType.PROJECT).type == AgentConfigurationType.PROJECT
 
     def test_type_app(self) -> None:
-        cfg = AgentConfiguration(
-            id=uuid4(), owner_id=SYSTEM_OWNER_ID, type=AgentConfigurationType.APP
-        )
+        cfg = AgentConfiguration(id=uuid4(), owner_id=SYSTEM_OWNER_ID, type=AgentConfigurationType.APP)
         assert cfg.type == AgentConfigurationType.APP
 
     def test_system_owner_id_is_sentinel(self) -> None:

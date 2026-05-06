@@ -9,9 +9,7 @@ from raggae.infrastructure.database.models.base import Base
 
 class AgentConfigurationModel(Base):
     __tablename__ = "agent_configurations"
-    __table_args__ = (
-        UniqueConstraint("owner_id", "owner_type", name="uq_agent_configurations_owner"),
-    )
+    __table_args__ = (UniqueConstraint("owner_id", "owner_type", name="uq_agent_configurations_owner"),)
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     owner_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)

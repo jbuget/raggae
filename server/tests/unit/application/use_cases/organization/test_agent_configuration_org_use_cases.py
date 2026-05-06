@@ -118,9 +118,7 @@ class TestGetOrgAgentConfiguration:
         user_id = uuid4()
         await org_repo.save(_make_org(org_id))
         await member_repo.save(_make_member(org_id, user_id))
-        await config_repo.save(
-            _make_agent_config(org_id, llm_backend="openai", llm_model="gpt-4.1")
-        )
+        await config_repo.save(_make_agent_config(org_id, llm_backend="openai", llm_model="gpt-4.1"))
         use_case = GetOrgAgentConfiguration(org_repo, member_repo, config_repo)
 
         # When
@@ -221,9 +219,7 @@ class TestUpsertOrgAgentConfiguration:
 
         # When / Then
         with pytest.raises(InvalidProjectLLMBackendError):
-            await use_case.execute(
-                organization_id=org_id, user_id=user_id, llm_backend="unsupported_llm"
-            )
+            await use_case.execute(organization_id=org_id, user_id=user_id, llm_backend="unsupported_llm")
 
     async def test_raises_invalid_retrieval_strategy_error(self) -> None:
         # Given

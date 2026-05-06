@@ -110,9 +110,7 @@ class SendMessage:
         effective_retrieval_strategy = "hybrid"
         effective_retrieval_min_score = None
         effective_reranker_service = (
-            self._project_reranker_service_resolver.resolve(
-                reranking_enabled=None, backend=None, model=None
-            )
+            self._project_reranker_service_resolver.resolve(reranking_enabled=None, backend=None, model=None)
             if self._project_reranker_service_resolver is not None
             else None
         )
@@ -263,9 +261,7 @@ class SendMessage:
                 provider=effective_llm_provider,
             )
         llm_service = (
-            self._project_llm_service_resolver.resolve(
-                backend=None, model=None, encrypted_api_key=None
-            )
+            self._project_llm_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
             if self._project_llm_service_resolver is not None
             else self._llm_service
         )
@@ -329,9 +325,7 @@ class SendMessage:
         effective_retrieval_strategy = "hybrid"
         effective_retrieval_min_score = None
         effective_reranker_service = (
-            self._project_reranker_service_resolver.resolve(
-                reranking_enabled=None, backend=None, model=None
-            )
+            self._project_reranker_service_resolver.resolve(reranking_enabled=None, backend=None, model=None)
             if self._project_reranker_service_resolver is not None
             else None
         )
@@ -482,9 +476,7 @@ class SendMessage:
                 provider=effective_llm_provider,
             )
         llm_service = (
-            self._project_llm_service_resolver.resolve(
-                backend=None, model=None, encrypted_api_key=None
-            )
+            self._project_llm_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
             if self._project_llm_service_resolver is not None
             else self._llm_service
         )

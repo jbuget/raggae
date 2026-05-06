@@ -41,9 +41,9 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
-from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -363,9 +363,7 @@ class UploadDocument:
 
     async def _fetch_encrypted_key(self, credential_id: UUID, project: Project, user_id: UUID) -> str | None:
         if project.organization_id is not None and self._org_provider_credential_repository is not None:
-            org_creds = await self._org_provider_credential_repository.list_by_org_id(
-                project.organization_id
-            )
+            org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
             org_cred = next((c for c in org_creds if c.id == credential_id), None)
             if org_cred is not None:
                 return org_cred.encrypted_api_key

@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from raggae.domain.entities.agent_configuration import AgentConfiguration, SYSTEM_OWNER_ID
+from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentConfiguration
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.infrastructure.database.models.agent_configuration_model import AgentConfigurationModel
 

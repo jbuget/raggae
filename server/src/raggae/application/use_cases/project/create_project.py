@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 from raggae.application.dto.project_dto import ProjectDTO
 from raggae.application.interfaces.repositories.agent_configuration_repository import (
     AgentConfigurationRepository,
@@ -14,8 +15,6 @@ from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.exceptions.project_exceptions import ProjectSystemPromptTooLongError
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
-
-from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 
 
 class CreateProject:

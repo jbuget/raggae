@@ -34,7 +34,9 @@ class ProjectEmbeddingServiceResolver:
         effective_backend = backend or self._settings.default_embedding_provider
 
         if effective_backend == "openai":
-            api_key = self._resolve_api_key(encrypted_api_key, self._resolve_default_api_key(effective_backend))
+            api_key = self._resolve_api_key(
+                encrypted_api_key, self._resolve_default_api_key(effective_backend)
+            )
             effective_model = model or self._resolve_default_model(effective_backend)
             return OpenAIEmbeddingService(
                 api_key=api_key,
@@ -43,7 +45,9 @@ class ProjectEmbeddingServiceResolver:
             )
 
         if effective_backend == "gemini":
-            api_key = self._resolve_api_key(encrypted_api_key, self._resolve_default_api_key(effective_backend))
+            api_key = self._resolve_api_key(
+                encrypted_api_key, self._resolve_default_api_key(effective_backend)
+            )
             effective_model = model or self._resolve_default_model(effective_backend)
             return GeminiEmbeddingService(
                 api_key=api_key,

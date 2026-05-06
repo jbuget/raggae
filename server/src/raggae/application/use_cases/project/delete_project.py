@@ -25,7 +25,5 @@ class DeleteProject:
             raise ProjectNotFoundError(f"Project {project_id} not found")
 
         # Delete config row first (no FK cascade because owner_id is polymorphic)
-        await self._agent_configuration_repository.delete_by_owner(
-            project_id, AgentConfigurationType.PROJECT
-        )
+        await self._agent_configuration_repository.delete_by_owner(project_id, AgentConfigurationType.PROJECT)
         await self._project_repository.delete(project_id)

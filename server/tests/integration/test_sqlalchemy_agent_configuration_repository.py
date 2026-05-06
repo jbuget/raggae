@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from raggae.domain.entities.agent_configuration import AgentConfiguration, SYSTEM_OWNER_ID
+from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentConfiguration
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.infrastructure.database.models import Base
 from raggae.infrastructure.database.repositories.sqlalchemy_agent_configuration_repository import (

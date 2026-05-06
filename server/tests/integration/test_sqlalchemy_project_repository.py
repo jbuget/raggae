@@ -85,6 +85,7 @@ class TestSQLAlchemyProjectRepository:
 
         # When
         from dataclasses import replace
+
         updated = replace(project, name="Updated", is_published=True)
         await repository.save(updated)
         found = await repository.find_by_id(project.id)

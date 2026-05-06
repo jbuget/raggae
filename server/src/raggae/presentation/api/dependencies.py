@@ -5,6 +5,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from raggae.application.config.entra_config import EntraConfig
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
@@ -26,9 +29,6 @@ from raggae.application.interfaces.repositories.organization_member_repository i
 )
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
-)
-from raggae.application.interfaces.repositories.agent_configuration_repository import (
-    AgentConfigurationRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.project_snapshot_repository import (
@@ -211,6 +211,9 @@ from raggae.application.use_cases.user.update_user_locale import UpdateUserLocal
 from raggae.application.use_cases.user.upsert_user_agent_configuration import UpsertUserAgentConfiguration
 from raggae.infrastructure.cache.oauth_code_store import InMemoryOAuthCodeStore
 from raggae.infrastructure.config.settings import settings
+from raggae.infrastructure.database.repositories.in_memory_agent_configuration_repository import (
+    InMemoryAgentConfigurationRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
     InMemoryConversationRepository,
 )
@@ -235,9 +238,6 @@ from raggae.infrastructure.database.repositories.in_memory_organization_member_r
 from raggae.infrastructure.database.repositories.in_memory_organization_repository import (
     InMemoryOrganizationRepository,
 )
-from raggae.infrastructure.database.repositories.in_memory_agent_configuration_repository import (
-    InMemoryAgentConfigurationRepository,
-)
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
@@ -252,6 +252,9 @@ from raggae.infrastructure.database.repositories.in_memory_stats_repository impo
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_agent_configuration_repository import (
+    SQLAlchemyAgentConfigurationRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_conversation_repository import (
     SQLAlchemyConversationRepository,
@@ -276,9 +279,6 @@ from raggae.infrastructure.database.repositories.sqlalchemy_organization_member_
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_repository import (
     SQLAlchemyOrganizationRepository,
-)
-from raggae.infrastructure.database.repositories.sqlalchemy_agent_configuration_repository import (
-    SQLAlchemyAgentConfigurationRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,

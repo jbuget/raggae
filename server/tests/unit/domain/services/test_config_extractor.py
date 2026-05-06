@@ -1,27 +1,21 @@
 from uuid import uuid4
 
-from raggae.domain.entities.agent_configuration import AgentConfiguration, SYSTEM_OWNER_ID
+from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentConfiguration
 from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 
 
 def _project(**kwargs) -> AgentConfiguration:
-    return AgentConfiguration(
-        id=uuid4(), owner_id=uuid4(), type=AgentConfigurationType.PROJECT, **kwargs
-    )
+    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), type=AgentConfigurationType.PROJECT, **kwargs)
 
 
 def _parent(**kwargs) -> AgentConfiguration:
-    return AgentConfiguration(
-        id=uuid4(), owner_id=uuid4(), type=AgentConfigurationType.ORGA, **kwargs
-    )
+    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), type=AgentConfigurationType.ORGA, **kwargs)
 
 
 def _app(**kwargs) -> AgentConfiguration:
-    return AgentConfiguration(
-        id=uuid4(), owner_id=SYSTEM_OWNER_ID, type=AgentConfigurationType.APP, **kwargs
-    )
+    return AgentConfiguration(id=uuid4(), owner_id=SYSTEM_OWNER_ID, type=AgentConfigurationType.APP, **kwargs)
 
 
 class TestConfigExtractor:
