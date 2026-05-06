@@ -25,44 +25,41 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
   const isActive = pathname.startsWith(`/projects/${project.id}`);
 
   return (
-    <div
-      className="group flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors hover:bg-muted"
-    >
-      <Link
-        href={`/projects/${project.id}/chat`}
-        className={cn(
-          "min-w-0 flex-1 truncate rounded-md px-2",
-          isActive ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground",
-        )}
-        title={project.name}
-      >
-        {project.name}
-      </Link>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "h-5 w-5 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100",
-              !isActive && "hover:bg-primary/10",
-            )}
-            aria-label={t("projectMenu", { projectName: project.name })}
-          >
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href={`/projects/${project.id}/chat`}>{t("chat")}</Link>
-          </DropdownMenuItem>
-          {canAccessSettings && (
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/projects/${project.id}/settings`}>{t("settings")}</Link>
-            </DropdownMenuItem>
+    <div className="group">
+      <div className="flex items-center gap-1 rounded-md px-1 py-1 text-sm transition-colors group-hover:bg-muted">
+        <Link
+          href={`/projects/${project.id}/chat`}
+          className={cn(
+            "min-w-0 flex-1 truncate rounded-md px-2",
+            isActive ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          title={project.name}
+        >
+          {project.name}
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+              aria-label={t("projectMenu", { projectName: project.name })}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/projects/${project.id}/chat`}>{t("chat")}</Link>
+            </DropdownMenuItem>
+            {canAccessSettings && (
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href={`/projects/${project.id}/settings`}>{t("settings")}</Link>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

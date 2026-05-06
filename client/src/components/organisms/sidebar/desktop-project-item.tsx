@@ -59,10 +59,7 @@ export function DesktopProjectItem({ project, canAccessSettings = true }: Deskto
             <Button
               variant="ghost"
               size="icon"
-              className={cn(
-                "h-5 w-5 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100",
-                !isActive && "hover:bg-primary/10",
-              )}
+              className="h-5 w-5 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
               aria-label={t("projectMenu", { projectName: project.name })}
             >
               <MoreVertical className="h-4 w-4" />
