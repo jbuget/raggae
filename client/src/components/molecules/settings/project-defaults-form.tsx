@@ -27,6 +27,7 @@ type SaveCallbacks = { onSuccess?: () => void; onError?: () => void };
 type ProjectDefaultsFormProps = {
   defaults: ProjectDefaultsConfig | null | undefined;
   systemDefaults: SystemDefaultsResponse | undefined;
+  inheritedDefaults?: ProjectDefaultsConfig | null | undefined;
   credentials: Credential[];
   modelCatalog: ModelCatalogResponse | undefined;
   onSave: (payload: ProjectDefaultsConfig, callbacks?: SaveCallbacks) => void;
@@ -39,6 +40,7 @@ type ProjectDefaultsFormProps = {
 export function ProjectDefaultsForm({
   defaults,
   systemDefaults,
+  inheritedDefaults,
   credentials,
   modelCatalog,
   onSave,
@@ -141,6 +143,22 @@ export function ProjectDefaultsForm({
   const hasHistoryChanges =
     effectiveChatHistoryWindowSize !== (defaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8) ||
     effectiveChatHistoryMaxChars !== (defaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000);
+
+  const hasModelsConfigured = inheritedDefaults !== undefined && (
+    defaults?.embedding_backend != null || defaults?.llm_backend != null
+  );
+  const hasIndexingConfigured = inheritedDefaults !== undefined && (
+    defaults?.chunking_strategy != null || defaults?.parent_child_chunking != null
+  );
+  const hasRetrievalConfigured = inheritedDefaults !== undefined && (
+    defaults?.retrieval_strategy != null || defaults?.retrieval_top_k != null || defaults?.retrieval_min_score != null
+  );
+  const hasRerankingConfigured = inheritedDefaults !== undefined && (
+    defaults?.reranking_enabled != null || defaults?.reranker_backend != null
+  );
+  const hasHistoryConfigured = inheritedDefaults !== undefined && (
+    defaults?.chat_history_window_size != null || defaults?.chat_history_max_chars != null
+  );
 
   // Base payload from persisted defaults — prevents a section save from overwriting other sections
   function buildBasePayload(): ProjectDefaultsConfig {
@@ -279,26 +297,38 @@ export function ProjectDefaultsForm({
                     </div>
                   </>
                 ) : null}
-                <Button
-                  className="cursor-pointer"
-                  disabled={!hasModelsChanges || isPending}
-                  onClick={() => onSave(
-                    {
-                      ...buildBasePayload(),
-                      embedding_backend: (effectiveEmbeddingBackend as ProjectEmbeddingBackend) || null,
-                      embedding_model: effectiveEmbeddingModel || null,
-                      embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
-                      llm_backend: (effectiveLlmBackend as ProjectLLMBackend) || null,
-                      llm_model: effectiveLlmModel || null,
-                      llm_api_key_credential_id: effectiveLlmCredentialId || null,
-                    },
-                    {
-                      onSuccess: () => { setEmbeddingCredentialId(undefined); setLlmCredentialId(undefined); },
-                    },
+                <div className="flex gap-2">
+                  <Button
+                    className="cursor-pointer"
+                    disabled={!hasModelsChanges || isPending}
+                    onClick={() => onSave(
+                      {
+                        ...buildBasePayload(),
+                        embedding_backend: (effectiveEmbeddingBackend as ProjectEmbeddingBackend) || null,
+                        embedding_model: effectiveEmbeddingModel || null,
+                        embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
+                        llm_backend: (effectiveLlmBackend as ProjectLLMBackend) || null,
+                        llm_model: effectiveLlmModel || null,
+                        llm_api_key_credential_id: effectiveLlmCredentialId || null,
+                      },
+                      {
+                        onSuccess: () => { setEmbeddingCredentialId(undefined); setLlmCredentialId(undefined); },
+                      },
+                    )}
+                  >
+                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
+                  </Button>
+                  {hasModelsConfigured && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      disabled={isPending}
+                      onClick={() => onSave({ ...buildBasePayload(), embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null, llm_backend: null, llm_model: null, llm_api_key_credential_id: null })}
+                    >
+                      {tSettings("resetToInherited")}
+                    </Button>
                   )}
-                >
-                  {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                </Button>
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -331,17 +361,29 @@ export function ProjectDefaultsForm({
                   />
                   <Label htmlFor={id("parentChildChunking")}>{tSettings("knowledgeIndexing.parentChildLabel")}</Label>
                 </div>
-                <Button
-                  className="cursor-pointer"
-                  disabled={!hasIndexingChanges || isPending}
-                  onClick={() => onSave({
-                    ...buildBasePayload(),
-                    chunking_strategy: effectiveChunkingStrategy,
-                    parent_child_chunking: effectiveParentChildChunking,
-                  })}
-                >
-                  {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    className="cursor-pointer"
+                    disabled={!hasIndexingChanges || isPending}
+                    onClick={() => onSave({
+                      ...buildBasePayload(),
+                      chunking_strategy: effectiveChunkingStrategy,
+                      parent_child_chunking: effectiveParentChildChunking,
+                    })}
+                  >
+                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
+                  </Button>
+                  {hasIndexingConfigured && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      disabled={isPending}
+                      onClick={() => onSave({ ...buildBasePayload(), chunking_strategy: null, parent_child_chunking: null })}
+                    >
+                      {tSettings("resetToInherited")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -388,18 +430,30 @@ export function ProjectDefaultsForm({
                     onChange={(e) => { const v = Number.parseFloat(e.target.value); if (!Number.isNaN(v)) setRetrievalMinScore(Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
                   />
                 </div>
-                <Button
-                  className="cursor-pointer"
-                  disabled={!hasRetrievalChanges || isPending}
-                  onClick={() => onSave({
-                    ...buildBasePayload(),
-                    retrieval_strategy: effectiveRetrievalStrategy,
-                    retrieval_top_k: effectiveRetrievalTopK,
-                    retrieval_min_score: effectiveRetrievalMinScore,
-                  })}
-                >
-                  {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    className="cursor-pointer"
+                    disabled={!hasRetrievalChanges || isPending}
+                    onClick={() => onSave({
+                      ...buildBasePayload(),
+                      retrieval_strategy: effectiveRetrievalStrategy,
+                      retrieval_top_k: effectiveRetrievalTopK,
+                      retrieval_min_score: effectiveRetrievalMinScore,
+                    })}
+                  >
+                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
+                  </Button>
+                  {hasRetrievalConfigured && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      disabled={isPending}
+                      onClick={() => onSave({ ...buildBasePayload(), retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null })}
+                    >
+                      {tSettings("resetToInherited")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -459,19 +513,31 @@ export function ProjectDefaultsForm({
                     </div>
                   </>
                 )}
-                <Button
-                  className="cursor-pointer"
-                  disabled={!hasRerankingChanges || isPending}
-                  onClick={() => onSave({
-                    ...buildBasePayload(),
-                    reranking_enabled: effectiveRerankingEnabled,
-                    reranker_backend: effectiveRerankerBackend,
-                    reranker_model: effectiveRerankerModel || null,
-                    reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
-                  })}
-                >
-                  {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    className="cursor-pointer"
+                    disabled={!hasRerankingChanges || isPending}
+                    onClick={() => onSave({
+                      ...buildBasePayload(),
+                      reranking_enabled: effectiveRerankingEnabled,
+                      reranker_backend: effectiveRerankerBackend,
+                      reranker_model: effectiveRerankerModel || null,
+                      reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
+                    })}
+                  >
+                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
+                  </Button>
+                  {hasRerankingConfigured && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      disabled={isPending}
+                      onClick={() => onSave({ ...buildBasePayload(), reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null })}
+                    >
+                      {tSettings("resetToInherited")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -505,17 +571,29 @@ export function ProjectDefaultsForm({
                   />
                   <p className="text-xs text-muted-foreground">{tSettings("answerGeneration.chatHistoryMaxCharsNote")}</p>
                 </div>
-                <Button
-                  className="cursor-pointer"
-                  disabled={!hasHistoryChanges || isPending}
-                  onClick={() => onSave({
-                    ...buildBasePayload(),
-                    chat_history_window_size: effectiveChatHistoryWindowSize,
-                    chat_history_max_chars: effectiveChatHistoryMaxChars,
-                  })}
-                >
-                  {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    className="cursor-pointer"
+                    disabled={!hasHistoryChanges || isPending}
+                    onClick={() => onSave({
+                      ...buildBasePayload(),
+                      chat_history_window_size: effectiveChatHistoryWindowSize,
+                      chat_history_max_chars: effectiveChatHistoryMaxChars,
+                    })}
+                  >
+                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
+                  </Button>
+                  {hasHistoryConfigured && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      disabled={isPending}
+                      onClick={() => onSave({ ...buildBasePayload(), chat_history_window_size: null, chat_history_max_chars: null })}
+                    >
+                      {tSettings("resetToInherited")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>

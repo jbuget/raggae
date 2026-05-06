@@ -1,11 +1,13 @@
 import type {
   AccessibleProjectsResponse,
+  AgentConfigurationResponse,
   CreateProjectRequest,
   ProjectResponse,
   ReindexProjectResponse,
+  UpdateAgentConfigurationRequest,
   UpdateProjectRequest,
 } from "@/lib/types/api";
-import { apiFetch } from "./client";
+import { ApiError, apiFetch } from "./client";
 
 export function listProjects(token: string): Promise<ProjectResponse[]> {
   return apiFetch<ProjectResponse[]>("/projects", { token });
@@ -81,6 +83,32 @@ export function unpublishProject(
 ): Promise<ProjectResponse> {
   return apiFetch<ProjectResponse>(`/projects/${projectId}/unpublish`, {
     method: "POST",
+    token,
+  });
+}
+
+export async function getProjectConfiguration(
+  token: string,
+  projectId: string,
+): Promise<AgentConfigurationResponse | null> {
+  try {
+    return await apiFetch<AgentConfigurationResponse>(`/projects/${projectId}/configuration`, { token });
+  } catch (err: unknown) {
+    if (err instanceof ApiError && err.status === 404) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+export function updateProjectConfiguration(
+  token: string,
+  projectId: string,
+  data: UpdateAgentConfigurationRequest,
+): Promise<AgentConfigurationResponse> {
+  return apiFetch<AgentConfigurationResponse>(`/projects/${projectId}/configuration`, {
+    method: "PUT",
+    body: JSON.stringify(data),
     token,
   });
 }

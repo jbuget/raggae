@@ -185,6 +185,7 @@
       "userDefaultsApplied": "Your user settings apply to this section. Enable the override to customize them.",
       "systemDefaultsApplied": "No settings configured — system defaults are used.",
       "saveChanges": "Save changes",
+      "resetToInherited": "Reset to inherited",
       "updateSuccess": "Project updated",
       "updateError": "Failed to update project",
       "general": {

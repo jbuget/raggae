@@ -5,13 +5,15 @@ import {
   createProject,
   deleteProject,
   getProject,
+  getProjectConfiguration,
   listProjects,
   publishProject,
   reindexProject,
   unpublishProject,
   updateProject,
+  updateProjectConfiguration,
 } from "@/lib/api/projects";
-import type { CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/api";
+import type { CreateProjectRequest, UpdateAgentConfigurationRequest, UpdateProjectRequest } from "@/lib/types/api";
 import { useAuth } from "./use-auth";
 
 export function useProjects() {
@@ -110,6 +112,29 @@ export function useUnpublishProject(projectId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+    },
+  });
+}
+
+export function useProjectConfiguration(projectId: string) {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["project-configuration", projectId],
+    queryFn: () => getProjectConfiguration(token!, projectId),
+    enabled: !!token && !!projectId,
+  });
+}
+
+export function useUpdateProjectConfiguration(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateAgentConfigurationRequest) =>
+      updateProjectConfiguration(token!, projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-configuration", projectId] });
     },
   });
 }

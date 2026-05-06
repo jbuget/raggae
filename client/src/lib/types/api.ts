@@ -61,60 +61,12 @@ export interface CreateProjectRequest {
   organization_id?: string | null;
   description?: string;
   system_prompt?: string;
-  chunking_strategy?: ChunkingStrategy;
-  parent_child_chunking?: boolean;
-  embedding_backend?: ProjectEmbeddingBackend | null;
-  embedding_model?: string | null;
-  embedding_api_key?: string | null;
-  embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
-  llm_model?: string | null;
-  llm_api_key?: string | null;
-  llm_api_key_credential_id?: string | null;
-  retrieval_strategy?: RetrievalStrategy | null;
-  retrieval_top_k?: number | null;
-  retrieval_min_score?: number | null;
-  chat_history_window_size?: number | null;
-  chat_history_max_chars?: number | null;
-  reranking_enabled?: boolean | null;
-  reranker_backend?: ProjectRerankerBackend | null;
-  reranker_model?: string | null;
-  reranker_candidate_multiplier?: number | null;
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   system_prompt?: string;
-  chunking_strategy?: ChunkingStrategy;
-  parent_child_chunking?: boolean;
-  embedding_backend?: ProjectEmbeddingBackend | null;
-  embedding_model?: string | null;
-  embedding_api_key?: string | null;
-  embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
-  llm_model?: string | null;
-  llm_api_key?: string | null;
-  llm_api_key_credential_id?: string | null;
-  retrieval_strategy?: RetrievalStrategy | null;
-  retrieval_top_k?: number | null;
-  retrieval_min_score?: number | null;
-  chat_history_window_size?: number | null;
-  chat_history_max_chars?: number | null;
-  reranking_enabled?: boolean | null;
-  reranker_backend?: ProjectRerankerBackend | null;
-  reranker_model?: string | null;
-  reranker_candidate_multiplier?: number | null;
-  overrides_models_from_org?: boolean;
-  overrides_indexing_from_org?: boolean;
-  overrides_retrieval_from_org?: boolean;
-  overrides_reranking_from_org?: boolean;
-  overrides_chat_history_from_org?: boolean;
-  overrides_models_from_user?: boolean;
-  overrides_indexing_from_user?: boolean;
-  overrides_retrieval_from_user?: boolean;
-  overrides_reranking_from_user?: boolean;
-  overrides_chat_history_from_user?: boolean;
 }
 
 export interface ProjectResponse {
@@ -126,40 +78,50 @@ export interface ProjectResponse {
   system_prompt: string;
   is_published: boolean;
   created_at: string;
-  chunking_strategy: ChunkingStrategy;
-  parent_child_chunking: boolean;
   reindex_status: string;
   reindex_progress: number;
   reindex_total: number;
-  embedding_backend?: ProjectEmbeddingBackend | null;
+}
+
+export interface AgentConfigurationResponse {
+  owner_id: string;
+  embedding_backend: string | null;
+  embedding_model: string | null;
+  embedding_api_key_credential_id: string | null;
+  llm_backend: string | null;
+  llm_model: string | null;
+  llm_api_key_credential_id: string | null;
+  chunking_strategy: string | null;
+  parent_child_chunking: boolean | null;
+  retrieval_strategy: string | null;
+  retrieval_top_k: number | null;
+  retrieval_min_score: number | null;
+  reranking_enabled: boolean | null;
+  reranker_backend: string | null;
+  reranker_model: string | null;
+  reranker_candidate_multiplier: number | null;
+  chat_history_window_size: number | null;
+  chat_history_max_chars: number | null;
+}
+
+export interface UpdateAgentConfigurationRequest {
+  embedding_backend?: string | null;
   embedding_model?: string | null;
-  embedding_api_key_masked?: string | null;
   embedding_api_key_credential_id?: string | null;
-  org_embedding_api_key_credential_id?: string | null;
-  llm_backend?: ProjectLLMBackend | null;
+  llm_backend?: string | null;
   llm_model?: string | null;
-  llm_api_key_masked?: string | null;
   llm_api_key_credential_id?: string | null;
-  org_llm_api_key_credential_id?: string | null;
-  retrieval_strategy: RetrievalStrategy;
-  retrieval_top_k: number;
-  retrieval_min_score: number;
-  chat_history_window_size: number;
-  chat_history_max_chars: number;
-  reranking_enabled: boolean;
-  reranker_backend?: ProjectRerankerBackend | null;
+  chunking_strategy?: string | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: string | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: string | null;
   reranker_model?: string | null;
-  reranker_candidate_multiplier: number;
-  overrides_models_from_org: boolean;
-  overrides_indexing_from_org: boolean;
-  overrides_retrieval_from_org: boolean;
-  overrides_reranking_from_org: boolean;
-  overrides_chat_history_from_org: boolean;
-  overrides_models_from_user: boolean;
-  overrides_indexing_from_user: boolean;
-  overrides_retrieval_from_user: boolean;
-  overrides_reranking_from_user: boolean;
-  overrides_chat_history_from_user: boolean;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
 }
 
 export interface ReindexProjectResponse {
