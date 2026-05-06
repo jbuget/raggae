@@ -310,7 +310,11 @@
         "chatHistoryMaxCharsLabel": "Budget caractères pour l'historique",
         "chatHistoryMaxCharsNote": "Budget en caractères pour l'historique de conversation injecté dans le prompt LLM."
       },
-      "pageTitle": "Paramètres"
+      "pageTitle": "Paramètres",
+      "advanced": {
+        "title": "Paramètres avancés",
+        "description": "Configurez l'indexation documentaire, les stratégies de récupération de contexte et les modèles utilisés."
+      }
     },
     "snapshots": {
       "title": "Historique des versions",

@@ -301,6 +301,10 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
       {/* Settings card */}
       <Card className="px-5 py-1">
+        <div className="space-y-1 pt-4 pb-2">
+          <h2 className="text-lg font-medium">{t("advanced.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("advanced.description")}</p>
+        </div>
 
         <Accordion type="multiple" className="w-full">
 

@@ -310,7 +310,11 @@
         "chatHistoryMaxCharsLabel": "Chat history max chars",
         "chatHistoryMaxCharsNote": "Character budget for injected conversation history in the LLM prompt."
       },
-      "pageTitle": "Settings"
+      "pageTitle": "Settings",
+      "advanced": {
+        "title": "Advanced Settings",
+        "description": "Configure document indexing, context retrieval strategies, and the models used."
+      }
     },
     "snapshots": {
       "title": "Version history",
