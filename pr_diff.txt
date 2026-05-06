@@ -1,0 +1,1309 @@
+diff --git a/client/src/components/molecules/document/document-upload.tsx b/client/src/components/molecules/document/document-upload.tsx
+index 002ae510..b67bfcba 100644
+--- a/client/src/components/molecules/document/document-upload.tsx
++++ b/client/src/components/molecules/document/document-upload.tsx
+@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
+ import { Card, CardContent } from "@/components/ui/card";
+ import { formatFileSize } from "@/lib/utils/format";
+ 
+-const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md"] as const;
++const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".csv", ".xlsx", ".xls"] as const;
+ const ACCEPT = SUPPORTED_EXTENSIONS.join(",");
+ 
+ function isSupportedFile(file: File): boolean {
+diff --git a/client/tests/components/molecules/document/document-upload.test.tsx b/client/tests/components/molecules/document/document-upload.test.tsx
+index d759fe50..6c0dcd32 100644
+--- a/client/tests/components/molecules/document/document-upload.test.tsx
++++ b/client/tests/components/molecules/document/document-upload.test.tsx
+@@ -27,7 +27,7 @@ describe("DocumentUpload", () => {
+   it("should render the drop zone with supported formats hint", () => {
+     renderWithProviders(<DocumentUpload onUpload={vi.fn()} isUploading={false} />);
+     expect(screen.getByText(/drag and drop a file here/i)).toBeInTheDocument();
+-    expect(screen.getByText(/\.pdf, \.docx, \.txt, \.md/i)).toBeInTheDocument();
++    expect(screen.getByText(/\.pdf, \.docx, \.txt, \.md, \.csv, \.xlsx, \.xls/i)).toBeInTheDocument();
+     expect(screen.getByRole("button", { name: /select files/i })).toBeInTheDocument();
+   });
+ 
+diff --git a/server/pyproject.toml b/server/pyproject.toml
+index af2f59ab..e6c9c80c 100644
+--- a/server/pyproject.toml
++++ b/server/pyproject.toml
+@@ -31,6 +31,8 @@ dependencies = [
+     "scikit-learn>=1.5.0",
+     "msal>=1.30.0",
+     "itsdangerous>=2.1.0",
++    "openpyxl>=3.1",
++    "xlrd>=2.0",
+ ]
+ 
+ [project.optional-dependencies]
+@@ -89,6 +91,10 @@ module = [
+     "pgvector.*",
+     "jose",
+     "jose.*",
++    "openpyxl",
++    "openpyxl.*",
++    "xlrd",
++    "xlrd.*",
+ ]
+ ignore_missing_imports = true
+ 
+diff --git a/server/src/raggae/application/services/document_indexing_service.py b/server/src/raggae/application/services/document_indexing_service.py
+index 702a732b..e7887ca9 100644
+--- a/server/src/raggae/application/services/document_indexing_service.py
++++ b/server/src/raggae/application/services/document_indexing_service.py
+@@ -39,6 +39,7 @@
+ from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+ 
+ _PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
++TABULAR_EXTENSIONS = frozenset({"csv", "xlsx", "xls"})
+ logger = logging.getLogger(__name__)
+ 
+ 
+@@ -59,6 +60,7 @@ def __init__(
+         chunking_strategy_selector: ChunkingStrategySelector | None = None,
+         chunker_backend: str = "native",
+         parent_child_chunking_service: ParentChildChunkingService | None = None,
++        tabular_chunker: TextChunkerService | None = None,
+     ) -> None:
+         self._document_chunk_repository = document_chunk_repository
+         self._document_text_extractor = document_text_extractor
+@@ -76,6 +78,7 @@ def __init__(
+             self._chunking_strategy_selector = chunking_strategy_selector
+         self._chunker_backend = chunker_backend
+         self._parent_child_chunking_service = parent_child_chunking_service
++        self._tabular_chunker = tabular_chunker
+ 
+     async def run_pipeline(
+         self,
+@@ -90,11 +93,14 @@ async def run_pipeline(
+             project=project,
+             file_content=file_content,
+         )
+-        chunks = await self._text_chunker_service.chunk_text(
+-            sanitized_text,
+-            strategy=strategy,
+-            embedding_service=effective_embedding_service,
+-        )
++        if strategy == ChunkingStrategy.TABULAR and self._tabular_chunker is not None:
++            chunks = await self._tabular_chunker.chunk_text(sanitized_text, strategy=strategy)
++        else:
++            chunks = await self._text_chunker_service.chunk_text(
++                sanitized_text,
++                strategy=strategy,
++                embedding_service=effective_embedding_service,
++            )
+ 
+         llamaindex_splitter = None
+         if self._chunker_backend == "llamaindex":
+@@ -105,7 +111,9 @@ async def run_pipeline(
+         document_chunks: list[DocumentChunk] = []
+         if chunks:
+             use_parent_child = (
+-                project.parent_child_chunking and self._parent_child_chunking_service is not None
++                strategy != ChunkingStrategy.TABULAR
++                and project.parent_child_chunking
++                and self._parent_child_chunking_service is not None
+             )
+ 
+             if use_parent_child:
+@@ -150,6 +158,13 @@ async def _prepare_document_for_chunking(
+             sanitized_text=sanitized_text,
+         )
+ 
++        extension = (
++            document.file_name.rsplit(".", maxsplit=1)[-1].lower() if "." in document.file_name else ""
++        )
++        if extension in TABULAR_EXTENSIONS:
++            strategy = ChunkingStrategy.TABULAR
++            return replace(document, processing_strategy=strategy), sanitized_text, strategy
++
+         strategy = project.chunking_strategy
+         if strategy == ChunkingStrategy.AUTO:
+             analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
+diff --git a/server/src/raggae/application/use_cases/document/upload_document.py b/server/src/raggae/application/use_cases/document/upload_document.py
+index d3f2c546..35984715 100644
+--- a/server/src/raggae/application/use_cases/document/upload_document.py
++++ b/server/src/raggae/application/use_cases/document/upload_document.py
+@@ -32,7 +32,7 @@
+ from raggae.domain.value_objects.document_status import DocumentStatus
+ from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+ 
+-ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc"}
++ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc", "csv", "xlsx", "xls"}
+ 
+ 
+ @dataclass(frozen=True)
+diff --git a/server/src/raggae/domain/value_objects/chunking_strategy.py b/server/src/raggae/domain/value_objects/chunking_strategy.py
+index 63c5653b..715316db 100644
+--- a/server/src/raggae/domain/value_objects/chunking_strategy.py
++++ b/server/src/raggae/domain/value_objects/chunking_strategy.py
+@@ -9,3 +9,4 @@ class ChunkingStrategy(StrEnum):
+     PARAGRAPH = "paragraph"
+     HEADING_SECTION = "heading_section"
+     SEMANTIC = "semantic"
++    TABULAR = "tabular"
+diff --git a/server/src/raggae/infrastructure/services/pdf_docx_file_metadata_extractor.py b/server/src/raggae/infrastructure/services/document_file_metadata_extractor.py
+similarity index 77%
+rename from server/src/raggae/infrastructure/services/pdf_docx_file_metadata_extractor.py
+rename to server/src/raggae/infrastructure/services/document_file_metadata_extractor.py
+index f63f5872..452d1f78 100644
+--- a/server/src/raggae/infrastructure/services/pdf_docx_file_metadata_extractor.py
++++ b/server/src/raggae/infrastructure/services/document_file_metadata_extractor.py
+@@ -9,8 +9,8 @@
+ _AUTHOR_SPLIT_RE = re.compile(r"[;,]")
+ 
+ 
+-class PdfDocxFileMetadataExtractor:
+-    """Extract metadata from PDF and DOCX properties."""
++class DocumentFileMetadataExtractor:
++    """Extract metadata from PDF, DOCX and XLSX document properties."""
+ 
+     async def extract_metadata(
+         self,
+@@ -24,6 +24,8 @@ async def extract_metadata(
+             return self._extract_pdf(content)
+         if extension == "docx":
+             return self._extract_docx(content)
++        if extension == "xlsx":
++            return self._extract_xlsx(content)
+         return FileMetadata()
+ 
+     def _extract_pdf(self, content: bytes) -> FileMetadata:
+@@ -67,6 +69,26 @@ def _extract_docx(self, content: bytes) -> FileMetadata:
+         except Exception:
+             return FileMetadata()
+ 
++    def _extract_xlsx(self, content: bytes) -> FileMetadata:
++        try:
++            import openpyxl
++        except ModuleNotFoundError:
++            return FileMetadata()
++
++        try:
++            wb = openpyxl.load_workbook(BytesIO(content), data_only=True)
++            props = wb.properties
++            title = self._clean_text(props.title)
++            creator = self._clean_text(props.creator)
++            created = props.created.date() if props.created is not None else None
++            return FileMetadata(
++                title=title,
++                authors=self._parse_authors(creator),
++                document_date=created,
++            )
++        except Exception:
++            return FileMetadata()
++
+     def _clean_text(self, value: object) -> str | None:
+         if not isinstance(value, str):
+             return None
+diff --git a/server/src/raggae/infrastructure/services/multiformat_document_text_extractor.py b/server/src/raggae/infrastructure/services/multiformat_document_text_extractor.py
+index 640ff098..6806a082 100644
+--- a/server/src/raggae/infrastructure/services/multiformat_document_text_extractor.py
++++ b/server/src/raggae/infrastructure/services/multiformat_document_text_extractor.py
+@@ -1,10 +1,17 @@
+ from io import BytesIO
+ 
++from raggae.application.services.document_indexing_service import TABULAR_EXTENSIONS
+ from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
++from raggae.infrastructure.services.tabular_document_text_extractor import (
++    TabularDocumentTextExtractor,
++)
+ 
+ 
+ class MultiFormatDocumentTextExtractor:
+-    """Extract text from txt/md/pdf/docx files with basic normalization."""
++    """Extract text from txt/md/pdf/docx/csv/xlsx/xls files with basic normalization."""
++
++    def __init__(self) -> None:
++        self._tabular_extractor = TabularDocumentTextExtractor()
+ 
+     async def extract_text(self, file_name: str, content: bytes, content_type: str) -> str:
+         _ = content_type
+@@ -18,6 +25,8 @@ async def extract_text(self, file_name: str, content: bytes, content_type: str)
+             text = self._extract_docx(content)
+         elif extension == "doc":
+             raise DocumentExtractionError("DOC extraction is not supported in sync mode yet. Use DOCX.")
++        elif extension in TABULAR_EXTENSIONS:
++            return await self._tabular_extractor.extract_text(file_name, content, content_type)
+         else:
+             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
+ 
+@@ -58,13 +67,34 @@ def _extract_docx(self, content: bytes) -> str:
+             document = DocxDocument(BytesIO(content))
+             parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
+             for table in document.tables:
+-                for row in table.rows:
+-                    row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+-                    if row_cells:
+-                        parts.append(" | ".join(row_cells))
++                parts.extend(self._table_to_markdown(table))
+             return "\n".join(parts)
+         except Exception as exc:  # pragma: no cover - file dependent
+             raise DocumentExtractionError(f"Failed to extract DOCX text: {exc}") from exc
+ 
++    def _table_to_markdown(self, table: object) -> list[str]:
++        # Intentionally uses Markdown format: DOCX is not auto-routed to TABULAR
++        # strategy, so tables land in paragraph/fixed-window chunkers that handle
++        # prose-mixed content — not in TabularTextChunkerService.
++        from docx.table import Table as DocxTable
++
++        if not isinstance(table, DocxTable):
++            return []
++        markdown_rows = []
++        for row in table.rows:
++            cells = [cell.text.strip() for cell in row.cells]
++            if any(cells):
++                markdown_rows.append(cells)
++        if not markdown_rows:
++            return []
++        lines: list[str] = []
++        header = markdown_rows[0]
++        lines.append("| " + " | ".join(header) + " |")
++        lines.append("| " + " | ".join("---" for _ in header) + " |")
++        for row in markdown_rows[1:]:
++            padded = (list(row) + [""] * len(header))[: len(header)]
++            lines.append("| " + " | ".join(padded) + " |")
++        return lines
++
+     def _normalize_text(self, text: str) -> str:
+         return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").split("\n")).strip()
+diff --git a/server/src/raggae/infrastructure/services/simple_text_sanitizer_service.py b/server/src/raggae/infrastructure/services/simple_text_sanitizer_service.py
+index 97994dcb..a0ba9b69 100644
+--- a/server/src/raggae/infrastructure/services/simple_text_sanitizer_service.py
++++ b/server/src/raggae/infrastructure/services/simple_text_sanitizer_service.py
+@@ -7,7 +7,9 @@ class SimpleTextSanitizerService:
+     async def sanitize_text(self, text: str) -> str:
+         normalized = text.replace("\r\n", "\n").replace("\r", "\n").replace("\xa0", " ")
+         without_controls = "".join(
+-            char for char in normalized if char == "\n" or char == "\t" or ord(char) >= 32
++            char
++            for char in normalized
++            if char == "\n" or char == "\t" or (ord(char) >= 32 and not (0x80 <= ord(char) <= 0x9F))
+         )
+         stripped_lines = "\n".join(line.rstrip() for line in without_controls.split("\n"))
+         collapsed_newlines = re.sub(r"\n{3,}", "\n\n", stripped_lines)
+diff --git a/server/src/raggae/infrastructure/services/tabular_document_text_extractor.py b/server/src/raggae/infrastructure/services/tabular_document_text_extractor.py
+new file mode 100644
+index 00000000..bcccc5e6
+--- /dev/null
++++ b/server/src/raggae/infrastructure/services/tabular_document_text_extractor.py
+@@ -0,0 +1,140 @@
++import csv
++import io
++from datetime import date, datetime
++from typing import Any
++
++from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
++
++
++class TabularDocumentTextExtractor:
++    """Extract text from CSV, XLSX, and XLS files into structured tabular format."""
++
++    async def extract_text(self, file_name: str, content: bytes, content_type: str) -> str:
++        _ = content_type
++        extension = file_name.rsplit(".", maxsplit=1)[-1].lower() if "." in file_name else ""
++
++        if extension == "csv":
++            return self._extract_csv(content)
++        if extension == "xlsx":
++            return self._extract_xlsx(content)
++        if extension == "xls":
++            return self._extract_xls(content)
++        raise DocumentExtractionError(f"Unsupported tabular extension: {extension}")
++
++    def _extract_csv(self, content: bytes) -> str:
++        try:
++            text = content.decode("utf-8-sig")
++        except UnicodeDecodeError:
++            text = content.decode("latin-1")
++
++        sample = text[:4096]
++        try:
++            dialect: Any = csv.Sniffer().sniff(sample, delimiters=",;\t")
++        except csv.Error:
++            dialect = csv.excel
++
++        rows: list[list[str]] = []
++        for row in csv.reader(io.StringIO(text), dialect):
++            rows.append([cell.strip() for cell in row])
++        return self._rows_to_structured_text(rows, sheet_name=None)
++
++    def _extract_xlsx(self, content: bytes) -> str:
++        try:
++            import openpyxl
++        except ModuleNotFoundError as exc:
++            raise DocumentExtractionError("openpyxl is required for XLSX extraction") from exc
++
++        try:
++            wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
++            parts: list[str] = []
++            for sheet_name in wb.sheetnames:
++                ws = wb[sheet_name]
++                rows = [[self._format_cell_value(cell.value) for cell in row] for row in ws.iter_rows()]
++                sheet_text = self._rows_to_structured_text(rows, sheet_name=sheet_name)
++                if sheet_text:
++                    parts.append(sheet_text)
++            return "\n".join(parts)
++        except DocumentExtractionError:
++            raise
++        except Exception as exc:
++            raise DocumentExtractionError(f"Failed to extract XLSX: {exc}") from exc
++
++    def _extract_xls(self, content: bytes) -> str:
++        try:
++            import xlrd
++        except ModuleNotFoundError as exc:
++            raise DocumentExtractionError("xlrd is required for XLS extraction") from exc
++
++        try:
++            wb = xlrd.open_workbook(file_contents=content)
++            parts: list[str] = []
++            for sheet_name in wb.sheet_names():
++                ws = wb.sheet_by_name(sheet_name)
++                rows = [
++                    [
++                        self._format_xlrd_cell(ws.cell(row_idx, col_idx), wb.datemode)
++                        for col_idx in range(ws.ncols)
++                    ]
++                    for row_idx in range(ws.nrows)
++                ]
++                sheet_text = self._rows_to_structured_text(rows, sheet_name=sheet_name)
++                if sheet_text:
++                    parts.append(sheet_text)
++            return "\n".join(parts)
++        except DocumentExtractionError:
++            raise
++        except Exception as exc:
++            raise DocumentExtractionError(f"Failed to extract XLS: {exc}") from exc
++
++    def _format_cell_value(self, value: object) -> str:
++        if value is None:
++            return ""
++        if isinstance(value, datetime):
++            if value.hour == 0 and value.minute == 0 and value.second == 0:
++                return value.strftime("%Y-%m-%d")
++            return value.strftime("%Y-%m-%d %H:%M:%S")
++        if isinstance(value, date):
++            return value.strftime("%Y-%m-%d")
++        return str(value).strip()
++
++    def _format_xlrd_cell(self, cell: Any, datemode: int) -> str:
++        import xlrd
++
++        if cell.ctype == xlrd.XL_CELL_EMPTY:
++            return ""
++        if cell.ctype == xlrd.XL_CELL_DATE:
++            try:
++                dt = xlrd.xldate_as_datetime(cell.value, datemode)
++                if dt.hour == 0 and dt.minute == 0 and dt.second == 0:
++                    return str(dt.strftime("%Y-%m-%d"))
++                return str(dt.strftime("%Y-%m-%d %H:%M:%S"))
++            except Exception:
++                return str(cell.value)
++        return str(cell.value).strip()
++
++    def _rows_to_structured_text(self, rows: list[list[str]], sheet_name: str | None) -> str:
++        non_empty = [row for row in rows if any(v.strip() for v in row if v is not None)]
++        if len(non_empty) < 2:
++            return ""
++
++        headers = non_empty[0]
++        data_rows = non_empty[1:]
++
++        lines: list[str] = []
++        if sheet_name is not None:
++            lines.append(f"[SHEET:{sheet_name}]")
++
++        escaped_headers = [self._escape(h) for h in headers]
++        lines.append(f"[HEADERS]:{self._join(escaped_headers)}")
++
++        for idx, row in enumerate(data_rows, start=1):
++            padded = (list(row) + [""] * len(headers))[: len(headers)]
++            lines.append(f"[ROW:{idx}]:{self._join([self._escape(v) for v in padded])}")
++
++        return "\n".join(lines)
++
++    def _escape(self, value: str) -> str:
++        return value.replace("|", "&#124;")
++
++    def _join(self, values: list[str]) -> str:
++        return "|".join(values)
+diff --git a/server/src/raggae/infrastructure/services/tabular_text_chunker_service.py b/server/src/raggae/infrastructure/services/tabular_text_chunker_service.py
+new file mode 100644
+index 00000000..be6ad32c
+--- /dev/null
++++ b/server/src/raggae/infrastructure/services/tabular_text_chunker_service.py
+@@ -0,0 +1,64 @@
++from raggae.application.interfaces.services.embedding_service import EmbeddingService
++from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
++
++_SHEET_PREFIX = "[SHEET:"
++_HEADERS_PREFIX = "[HEADERS]:"
++_ROW_PREFIX = "[ROW:"
++
++
++class TabularTextChunkerService:
++    """Chunk tabular structured text into one key-value chunk per data row.
++
++    Each chunk uses a readable "field: value" format that skips empty cells,
++    making it easy for LLMs to match questions to answers without parsing
++    wide Markdown tables with mostly-empty columns.
++    """
++
++    async def chunk_text(
++        self,
++        text: str,
++        strategy: ChunkingStrategy = ChunkingStrategy.TABULAR,
++        embedding_service: EmbeddingService | None = None,
++    ) -> list[str]:
++        _ = (strategy, embedding_service)
++        return self._parse_chunks(text)
++
++    def _parse_chunks(self, text: str) -> list[str]:
++        lines = [line.strip() for line in text.split("\n") if line.strip()]
++        chunks: list[str] = []
++        current_sheet: str | None = None
++        current_headers: list[str] | None = None
++
++        for line in lines:
++            if line.startswith(_SHEET_PREFIX) and line.endswith("]"):
++                current_sheet = line[len(_SHEET_PREFIX) : -1]
++            elif line.startswith(_HEADERS_PREFIX):
++                current_headers = line[len(_HEADERS_PREFIX) :].split("|")
++            elif line.startswith(_ROW_PREFIX):
++                if current_headers is None:
++                    continue
++                colon_idx = line.index("]:")
++                row_num = line[len(_ROW_PREFIX) : colon_idx]
++                row_values = line[colon_idx + 2 :].split("|")
++                chunk = self._build_chunk(current_sheet, row_num, current_headers, row_values)
++                if chunk:
++                    chunks.append(chunk)
++
++        return chunks
++
++    def _build_chunk(
++        self,
++        sheet: str | None,
++        row_num: str,
++        headers: list[str],
++        values: list[str],
++    ) -> str:
++        marker = f"[SHEET:{sheet}] [ROW:{row_num}]" if sheet is not None else f"[ROW:{row_num}]"
++        padded = (list(values) + [""] * len(headers))[: len(headers)]
++        lines = [marker]
++        for header, value in zip(headers, padded, strict=False):
++            v = value.replace("&#124;", "|").strip()
++            if v:
++                h = header.replace("&#124;", "|").strip()
++                lines.append(f"{h}: {v}")
++        return "\n".join(lines) if len(lines) > 1 else ""
+diff --git a/server/src/raggae/presentation/api/dependencies.py b/server/src/raggae/presentation/api/dependencies.py
+index 79102a42..51019c71 100644
+--- a/server/src/raggae/presentation/api/dependencies.py
++++ b/server/src/raggae/presentation/api/dependencies.py
+@@ -280,6 +280,9 @@
+ from raggae.infrastructure.services.contextual_embedding_service import (
+     ContextualEmbeddingService,
+ )
++from raggae.infrastructure.services.document_file_metadata_extractor import (
++    DocumentFileMetadataExtractor,
++)
+ from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
+ from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
+     FernetProviderApiKeyCryptoService,
+@@ -343,9 +346,6 @@
+ from raggae.infrastructure.services.paragraph_text_chunker_service import (
+     ParagraphTextChunkerService,
+ )
+-from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
+-    PdfDocxFileMetadataExtractor,
+-)
+ from raggae.infrastructure.services.project_embedding_service_resolver import (
+     ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
+ )
+@@ -370,6 +370,7 @@
+ from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
+     SQLAlchemyChunkRetrievalService,
+ )
++from raggae.infrastructure.services.tabular_text_chunker_service import TabularTextChunkerService
+ 
+ 
+ def _build_embedding_service() -> EmbeddingService:
+@@ -481,7 +482,7 @@ def _build_embedding_service() -> EmbeddingService:
+ _document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
+ _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
+ _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
+-_file_metadata_extractor: FileMetadataExtractor = PdfDocxFileMetadataExtractor()
++_file_metadata_extractor: FileMetadataExtractor = DocumentFileMetadataExtractor()
+ _language_detector: LanguageDetector = LangdetectLanguageDetector()
+ _keyword_extractor: KeywordExtractor = KeybertKeywordExtractor()
+ if settings.persistence_backend != "postgres":
+@@ -489,6 +490,7 @@ def _build_embedding_service() -> EmbeddingService:
+     _language_detector = InMemoryLanguageDetector(language="en")
+     _keyword_extractor = InMemoryKeywordExtractor()
+ _chunking_strategy_selector = DeterministicChunkingStrategySelector()
++_tabular_chunker: TextChunkerService = TabularTextChunkerService()
+ if settings.text_chunker_backend == "llamaindex":
+     _text_chunker_service: TextChunkerService = LlamaIndexTextChunkerService(
+         chunk_size=settings.chunk_size,
+@@ -529,6 +531,7 @@ def _build_embedding_service() -> EmbeddingService:
+     chunking_strategy_selector=_chunking_strategy_selector,
+     chunker_backend=settings.text_chunker_backend,
+     parent_child_chunking_service=_parent_child_chunking_service,
++    tabular_chunker=_tabular_chunker,
+ )
+ _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
+ _bearer = HTTPBearer(auto_error=False)
+diff --git a/server/src/raggae/presentation/api/v1/endpoints/chat.py b/server/src/raggae/presentation/api/v1/endpoints/chat.py
+index ea7c4675..ea55487e 100644
+--- a/server/src/raggae/presentation/api/v1/endpoints/chat.py
++++ b/server/src/raggae/presentation/api/v1/endpoints/chat.py
+@@ -18,7 +18,7 @@
+ from raggae.application.use_cases.chat.update_conversation import UpdateConversation
+ from raggae.application.use_cases.project.get_project import GetProject
+ from raggae.domain.exceptions.conversation_exceptions import ConversationNotFoundError
+-from raggae.domain.exceptions.document_exceptions import LLMGenerationError
++from raggae.domain.exceptions.document_exceptions import EmbeddingGenerationError, LLMGenerationError
+ from raggae.domain.exceptions.project_exceptions import (
+     ProjectNotFoundError,
+     ProjectReindexInProgressError,
+@@ -246,8 +246,15 @@ async def _stream_to_queue(
+             yield f"data: {json.dumps({'error': 'Project reindex already in progress', 'done': True})}\n\n"
+         except ConversationNotFoundError:
+             yield f"data: {json.dumps({'error': 'Conversation not found', 'done': True})}\n\n"
++        except EmbeddingGenerationError as exc:
++            logger.exception("embedding_error_in_stream", extra={"project_id": str(project_id)})
++            yield f"data: {json.dumps({'error': f'Embedding error: {exc}', 'done': True})}\n\n"
+         except LLMGenerationError as exc:
+             yield f"data: {json.dumps({'error': str(exc), 'done': True})}\n\n"
++        except Exception as exc:
++            logger.exception("unexpected_error_in_stream", extra={"project_id": str(project_id)})
++            err_name = type(exc).__name__
++            yield f"data: {json.dumps({'error': f'Unexpected error: {err_name}', 'done': True})}\n\n"
+         finally:
+             producer.cancel()
+ 
+diff --git a/server/tests/unit/application/use_cases/document/test_upload_document.py b/server/tests/unit/application/use_cases/document/test_upload_document.py
+index 895611ce..691ae793 100644
+--- a/server/tests/unit/application/use_cases/document/test_upload_document.py
++++ b/server/tests/unit/application/use_cases/document/test_upload_document.py
+@@ -353,3 +353,85 @@ async def test_upload_document_org_user_cannot_upload(
+                 file_content=b"content",
+                 content_type="application/pdf",
+             )
++
++    @pytest.mark.parametrize(
++        "file_name,content_type",
++        [
++            ("data.csv", "text/csv"),
++            ("report.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
++            ("legacy.xls", "application/vnd.ms-excel"),
++        ],
++    )
++    async def test_upload_tabular_formats_accepted(
++        self,
++        mock_document_repository: AsyncMock,
++        mock_project_repository: AsyncMock,
++        mock_file_storage_service: AsyncMock,
++        file_name: str,
++        content_type: str,
++    ) -> None:
++        # Given
++        user_id = uuid4()
++        project_id = uuid4()
++        mock_project_repository.find_by_id.return_value = Project(
++            id=project_id,
++            user_id=user_id,
++            name="Test",
++            description="",
++            system_prompt="",
++            is_published=False,
++            created_at=datetime.now(UTC),
++        )
++        use_case = UploadDocument(
++            document_repository=mock_document_repository,
++            project_repository=mock_project_repository,
++            file_storage_service=mock_file_storage_service,
++            max_file_size=104857600,
++        )
++
++        # When
++        result = await use_case.execute(
++            project_id=project_id,
++            user_id=user_id,
++            file_name=file_name,
++            file_content=b"content",
++            content_type=content_type,
++        )
++
++        # Then — no InvalidDocumentTypeError raised
++        assert result.file_name == file_name
++
++    async def test_upload_ods_raises_invalid_type_error(
++        self,
++        mock_document_repository: AsyncMock,
++        mock_project_repository: AsyncMock,
++        mock_file_storage_service: AsyncMock,
++    ) -> None:
++        # Given
++        user_id = uuid4()
++        project_id = uuid4()
++        mock_project_repository.find_by_id.return_value = Project(
++            id=project_id,
++            user_id=user_id,
++            name="Test",
++            description="",
++            system_prompt="",
++            is_published=False,
++            created_at=datetime.now(UTC),
++        )
++        use_case = UploadDocument(
++            document_repository=mock_document_repository,
++            project_repository=mock_project_repository,
++            file_storage_service=mock_file_storage_service,
++            max_file_size=104857600,
++        )
++
++        # When / Then
++        with pytest.raises(InvalidDocumentTypeError):
++            await use_case.execute(
++                project_id=project_id,
++                user_id=user_id,
++                file_name="spreadsheet.ods",
++                file_content=b"content",
++                content_type="application/vnd.oasis.opendocument.spreadsheet",
++            )
+diff --git a/server/tests/unit/infrastructure/services/test_tabular_document_text_extractor.py b/server/tests/unit/infrastructure/services/test_tabular_document_text_extractor.py
+new file mode 100644
+index 00000000..fdab9c13
+--- /dev/null
++++ b/server/tests/unit/infrastructure/services/test_tabular_document_text_extractor.py
+@@ -0,0 +1,321 @@
++import io
++import sys
++import types
++from datetime import date, datetime
++
++import pytest
++
++from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
++from raggae.infrastructure.services.tabular_document_text_extractor import (
++    TabularDocumentTextExtractor,
++)
++
++
++class TestTabularDocumentTextExtractorCsv:
++    @pytest.fixture
++    def extractor(self) -> TabularDocumentTextExtractor:
++        return TabularDocumentTextExtractor()
++
++    async def test_extract_csv_utf8_comma_delimiter(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = "Produit,Région,Quantité\nWidget A,Nord,1200\nGadget B,Sud,500\n".encode()
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "[HEADERS]:Produit|Région|Quantité" in result
++        assert "[ROW:1]:Widget A|Nord|1200" in result
++        assert "[ROW:2]:Gadget B|Sud|500" in result
++
++    async def test_extract_csv_latin1_fallback(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = "Produit,Prix\nCafé,2.50\n".encode("latin-1")
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "[HEADERS]:Produit|Prix" in result
++        assert "Café" in result
++
++    async def test_extract_csv_semicolon_delimiter(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = b"Col1;Col2;Col3\nA;B;C\nD;E;F\n"
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "[HEADERS]:Col1|Col2|Col3" in result
++        assert "[ROW:1]:A|B|C" in result
++
++    async def test_extract_csv_tab_delimiter(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = b"Name\tAge\tCity\nAlice\t30\tParis\n"
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "[HEADERS]:Name|Age|City" in result
++        assert "[ROW:1]:Alice|30|Paris" in result
++
++    async def test_extract_csv_ignores_empty_rows(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = b"A,B\nval1,val2\n\n\nval3,val4\n"
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "[ROW:1]:val1|val2" in result
++        assert "[ROW:2]:val3|val4" in result
++        assert result.count("[ROW:") == 2
++
++    async def test_extract_csv_no_sheet_marker(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = b"H1,H2\nv1,v2\n"
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "[SHEET:" not in result
++
++    async def test_extract_csv_escapes_pipe_in_cells(self, extractor: TabularDocumentTextExtractor) -> None:
++        # Given
++        content = b"Col\nA|B\n"
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then
++        assert "&#124;" in result
++
++    async def test_extract_csv_only_headers_returns_empty(
++        self, extractor: TabularDocumentTextExtractor
++    ) -> None:
++        # Given — only one row (headers), no data
++        content = b"H1,H2,H3\n"
++
++        # When
++        result = await extractor.extract_text("data.csv", content, "text/csv")
++
++        # Then — no structured output (no data rows)
++        assert result == ""
++
++
++class TestTabularDocumentTextExtractorXlsx:
++    @pytest.fixture
++    def extractor(self) -> TabularDocumentTextExtractor:
++        return TabularDocumentTextExtractor()
++
++    @pytest.fixture
++    def single_sheet_xlsx(self) -> bytes:
++        import openpyxl
++
++        wb = openpyxl.Workbook()
++        ws = wb.active
++        ws.title = "Ventes"  # type: ignore[union-attr]
++        ws.append(["Produit", "Prix"])  # type: ignore[union-attr]
++        ws.append(["Widget A", 48.0])  # type: ignore[union-attr]
++        ws.append(["Gadget B", 12.5])  # type: ignore[union-attr]
++        buf = io.BytesIO()
++        wb.save(buf)
++        return buf.getvalue()
++
++    @pytest.fixture
++    def multi_sheet_xlsx(self) -> bytes:
++        import openpyxl
++
++        wb = openpyxl.Workbook()
++        ws1 = wb.active
++        ws1.title = "Sheet1"  # type: ignore[union-attr]
++        ws1.append(["Name", "Value"])  # type: ignore[union-attr]
++        ws1.append(["Alpha", 1])  # type: ignore[union-attr]
++        ws2 = wb.create_sheet("Sheet2")
++        ws2.append(["Key", "Data"])
++        ws2.append(["X", "Y"])
++        buf = io.BytesIO()
++        wb.save(buf)
++        return buf.getvalue()
++
++    @pytest.fixture
++    def date_xlsx(self) -> bytes:
++        import openpyxl
++
++        wb = openpyxl.Workbook()
++        ws = wb.active
++        ws.append(["Label", "Date"])  # type: ignore[union-attr]
++        ws.append(["Event", date(2024, 3, 15)])  # type: ignore[union-attr]
++        buf = io.BytesIO()
++        wb.save(buf)
++        return buf.getvalue()
++
++    async def test_extract_xlsx_single_sheet(
++        self,
++        extractor: TabularDocumentTextExtractor,
++        single_sheet_xlsx: bytes,
++    ) -> None:
++        # When
++        result = await extractor.extract_text(
++            "report.xlsx",
++            single_sheet_xlsx,
++            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
++        )
++
++        # Then
++        assert "[SHEET:Ventes]" in result
++        assert "[HEADERS]:Produit|Prix" in result
++        assert "[ROW:1]:Widget A|" in result
++
++    async def test_extract_xlsx_multi_sheets_both_present(
++        self,
++        extractor: TabularDocumentTextExtractor,
++        multi_sheet_xlsx: bytes,
++    ) -> None:
++        # When
++        result = await extractor.extract_text(
++            "workbook.xlsx",
++            multi_sheet_xlsx,
++            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
++        )
++
++        # Then
++        assert "[SHEET:Sheet1]" in result
++        assert "[SHEET:Sheet2]" in result
++        assert "[ROW:1]:Alpha|1" in result
++        assert "[ROW:1]:X|Y" in result
++
++    async def test_extract_xlsx_date_formatted_as_yyyy_mm_dd(
++        self,
++        extractor: TabularDocumentTextExtractor,
++        date_xlsx: bytes,
++    ) -> None:
++        # When
++        result = await extractor.extract_text(
++            "dates.xlsx", date_xlsx, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
++        )
++
++        # Then
++        assert "2024-03-15" in result
++
++
++class TestTabularDocumentTextExtractorXls:
++    @pytest.fixture
++    def extractor(self) -> TabularDocumentTextExtractor:
++        return TabularDocumentTextExtractor()
++
++    def _make_fake_xlrd(self) -> types.ModuleType:
++        XL_CELL_EMPTY = 0
++        XL_CELL_TEXT = 1
++        XL_CELL_NUMBER = 2
++        XL_CELL_DATE = 3
++
++        class FakeCell:
++            def __init__(self, ctype: int, value: object) -> None:
++                self.ctype = ctype
++                self.value = value
++
++        class FakeSheet:
++            def __init__(self) -> None:
++                self.name = "Feuille1"
++                self.nrows = 2
++                self.ncols = 2
++                self._data = [
++                    [FakeCell(XL_CELL_TEXT, "Nom"), FakeCell(XL_CELL_TEXT, "Valeur")],
++                    [FakeCell(XL_CELL_TEXT, "Alpha"), FakeCell(XL_CELL_NUMBER, "42")],
++                ]
++
++            def cell(self, row: int, col: int) -> FakeCell:
++                return self._data[row][col]  # type: ignore[return-value]
++
++        class FakeWorkbook:
++            datemode = 0
++
++            def sheet_names(self) -> list[str]:
++                return ["Feuille1"]
++
++            def sheet_by_name(self, name: str) -> FakeSheet:
++                return FakeSheet()
++
++        fake = types.ModuleType("xlrd")
++        fake.XL_CELL_EMPTY = XL_CELL_EMPTY  # type: ignore[attr-defined]
++        fake.XL_CELL_DATE = XL_CELL_DATE  # type: ignore[attr-defined]
++        fake.open_workbook = lambda file_contents: FakeWorkbook()  # type: ignore[attr-defined]
++
++        def xldate_as_datetime(value: float, datemode: int) -> datetime:
++            return datetime(2024, 1, 15, 0, 0, 0)
++
++        fake.xldate_as_datetime = xldate_as_datetime  # type: ignore[attr-defined]
++        return fake
++
++    async def test_extract_xls_with_mocked_xlrd(
++        self, extractor: TabularDocumentTextExtractor, monkeypatch: pytest.MonkeyPatch
++    ) -> None:
++        # Given
++        fake_xlrd = self._make_fake_xlrd()
++        monkeypatch.setitem(sys.modules, "xlrd", fake_xlrd)
++
++        # When
++        result = await extractor.extract_text("legacy.xls", b"fake", "application/vnd.ms-excel")
++
++        # Then
++        assert "[SHEET:Feuille1]" in result
++        assert "[HEADERS]:Nom|Valeur" in result
++        assert "[ROW:1]:Alpha|42" in result
++
++    async def test_extract_xls_date_formatted(
++        self, extractor: TabularDocumentTextExtractor, monkeypatch: pytest.MonkeyPatch
++    ) -> None:
++        # Given
++        XL_CELL_TEXT = 1
++        XL_CELL_DATE = 3
++
++        class FakeCell:
++            def __init__(self, ctype: int, value: object) -> None:
++                self.ctype = ctype
++                self.value = value
++
++        class FakeSheet:
++            nrows = 2
++            ncols = 2
++
++            def cell(self, row: int, col: int) -> FakeCell:
++                data = [
++                    [FakeCell(XL_CELL_TEXT, "Label"), FakeCell(XL_CELL_TEXT, "Date")],
++                    [FakeCell(XL_CELL_TEXT, "Event"), FakeCell(XL_CELL_DATE, 45306.0)],
++                ]
++                return data[row][col]  # type: ignore[return-value]
++
++        class FakeWorkbook:
++            datemode = 0
++
++            def sheet_names(self) -> list[str]:
++                return ["Data"]
++
++            def sheet_by_name(self, name: str) -> FakeSheet:
++                return FakeSheet()
++
++        fake = types.ModuleType("xlrd")
++        fake.XL_CELL_EMPTY = 0  # type: ignore[attr-defined]
++        fake.XL_CELL_DATE = XL_CELL_DATE  # type: ignore[attr-defined]
++        fake.open_workbook = lambda file_contents: FakeWorkbook()  # type: ignore[attr-defined]
++        fake.xldate_as_datetime = lambda v, dm: datetime(2024, 1, 15, 0, 0, 0)  # type: ignore[attr-defined]
++        monkeypatch.setitem(sys.modules, "xlrd", fake)
++
++        # When
++        result = await extractor.extract_text("legacy.xls", b"fake", "application/vnd.ms-excel")
++
++        # Then
++        assert "2024-01-15" in result
++
++    async def test_extract_unsupported_extension_raises(
++        self, extractor: TabularDocumentTextExtractor
++    ) -> None:
++        # When / Then
++        with pytest.raises(DocumentExtractionError):
++            await extractor.extract_text(
++                "file.ods", b"data", "application/vnd.oasis.opendocument.spreadsheet"
++            )
+diff --git a/server/tests/unit/infrastructure/services/test_tabular_text_chunker_service.py b/server/tests/unit/infrastructure/services/test_tabular_text_chunker_service.py
+new file mode 100644
+index 00000000..84360b3f
+--- /dev/null
++++ b/server/tests/unit/infrastructure/services/test_tabular_text_chunker_service.py
+@@ -0,0 +1,157 @@
++import pytest
++
++from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
++from raggae.infrastructure.services.tabular_text_chunker_service import TabularTextChunkerService
++
++
++class TestTabularTextChunkerService:
++    @pytest.fixture
++    def chunker(self) -> TabularTextChunkerService:
++        return TabularTextChunkerService()
++
++    # ------- helpers -------
++
++    def _csv_text(self) -> str:
++        return "[HEADERS]:Produit|Région|Quantité\n[ROW:1]:Widget A|Nord|1200\n[ROW:2]:Gadget B|Sud|500"
++
++    def _xlsx_text(self) -> str:
++        return "[SHEET:Ventes 2024]\n[HEADERS]:Produit|Prix\n[ROW:1]:Widget A|48\n[ROW:2]:Gadget B|12"
++
++    # ------- tests -------
++
++    async def test_chunk_text_one_chunk_per_row(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
++
++        # Then
++        assert len(chunks) == 2
++
++    async def test_chunk_text_row_marker_present(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
++
++        # Then
++        assert "[ROW:1]" in chunks[0]
++        assert "[ROW:2]" in chunks[1]
++
++    async def test_chunk_text_no_sheet_marker_for_csv(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
++
++        # Then
++        for chunk in chunks:
++            assert "[SHEET:" not in chunk
++
++    async def test_chunk_text_sheet_marker_for_xlsx(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text(self._xlsx_text(), ChunkingStrategy.TABULAR)
++
++        # Then
++        for chunk in chunks:
++            assert "[SHEET:Ventes 2024]" in chunk
++
++    async def test_chunk_text_data_values_in_chunk(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
++
++        # Then
++        assert "Widget A" in chunks[0]
++        assert "1200" in chunks[0]
++        assert "Gadget B" in chunks[1]
++        assert "500" in chunks[1]
++
++    async def test_chunk_text_headers_as_field_names(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text(self._csv_text(), ChunkingStrategy.TABULAR)
++
++        # Then — headers appear as "Header: value" lines
++        assert "Produit: Widget A" in chunks[0]
++        assert "Région: Nord" in chunks[0]
++        assert "Quantité: 1200" in chunks[0]
++
++    async def test_chunk_text_empty_cells_skipped(self, chunker: TabularTextChunkerService) -> None:
++        # Given — row with some empty cells
++        text = "[HEADERS]:A|B|C\n[ROW:1]:hello||world"
++
++        # When
++        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
++
++        # Then — only non-empty fields appear
++        assert "A: hello" in chunks[0]
++        assert "C: world" in chunks[0]
++        assert "B:" not in chunks[0]
++
++    async def test_chunk_text_empty_text_returns_no_chunks(self, chunker: TabularTextChunkerService) -> None:
++        # When
++        chunks = await chunker.chunk_text("", ChunkingStrategy.TABULAR)
++
++        # Then
++        assert chunks == []
++
++    async def test_chunk_text_headers_only_returns_no_chunks(
++        self, chunker: TabularTextChunkerService
++    ) -> None:
++        # Given — structured text with headers but no data rows
++        text = "[HEADERS]:A|B|C"
++
++        # When
++        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
++
++        # Then
++        assert chunks == []
++
++    async def test_chunk_text_row_all_empty_values_returns_no_chunk(
++        self, chunker: TabularTextChunkerService
++    ) -> None:
++        # Given — row where all cells are empty
++        text = "[HEADERS]:A|B\n[ROW:1]:|"
++
++        # When
++        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
++
++        # Then — no content to index
++        assert chunks == []
++
++    async def test_chunk_text_pipe_in_cell_unescaped_in_output(
++        self, chunker: TabularTextChunkerService
++    ) -> None:
++        # Given — pipe escaped in extractor output
++        text = "[HEADERS]:Col\n[ROW:1]:A&#124;B"
++
++        # When
++        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
++
++        # Then
++        assert "&#124;" not in chunks[0]
++        assert "A|B" in chunks[0]
++
++    async def test_chunk_text_multi_sheet_resets_headers_per_sheet(
++        self, chunker: TabularTextChunkerService
++    ) -> None:
++        # Given — two sheets with different headers
++        text = (
++            "[SHEET:Sheet1]\n[HEADERS]:Name|Value\n[ROW:1]:Alpha|1\n"
++            "[SHEET:Sheet2]\n[HEADERS]:Key|Data\n[ROW:1]:X|Y"
++        )
++
++        # When
++        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
++
++        # Then
++        assert len(chunks) == 2
++        assert "Name: Alpha" in chunks[0] and "Value: 1" in chunks[0]
++        assert "Key: X" in chunks[1] and "Data: Y" in chunks[1]
++
++    async def test_chunk_text_key_value_format(self, chunker: TabularTextChunkerService) -> None:
++        # Given
++        text = "[HEADERS]:H1|H2\n[ROW:1]:V1|V2"
++
++        # When
++        chunks = await chunker.chunk_text(text, ChunkingStrategy.TABULAR)
++
++        # Then — each chunk is marker + "key: value" lines
++        chunk = chunks[0]
++        lines = chunk.split("\n")
++        assert lines[0] == "[ROW:1]"
++        assert lines[1] == "H1: V1"
++        assert lines[2] == "H2: V2"
+diff --git a/server/tests/unit/infrastructure/test_pdf_docx_file_metadata_extractor.py b/server/tests/unit/infrastructure/test_document_file_metadata_extractor.py
+similarity index 88%
+rename from server/tests/unit/infrastructure/test_pdf_docx_file_metadata_extractor.py
+rename to server/tests/unit/infrastructure/test_document_file_metadata_extractor.py
+index f423e072..544a0513 100644
+--- a/server/tests/unit/infrastructure/test_pdf_docx_file_metadata_extractor.py
++++ b/server/tests/unit/infrastructure/test_document_file_metadata_extractor.py
+@@ -7,15 +7,15 @@
+ from docx import Document as DocxDocument
+ 
+ from raggae.application.interfaces.services.file_metadata_extractor import FileMetadata
+-from raggae.infrastructure.services.pdf_docx_file_metadata_extractor import (
+-    PdfDocxFileMetadataExtractor,
++from raggae.infrastructure.services.document_file_metadata_extractor import (
++    DocumentFileMetadataExtractor,
+ )
+ 
+ 
+-class TestPdfDocxFileMetadataExtractor:
++class TestDocumentFileMetadataExtractor:
+     async def test_extract_metadata_pdf_with_metadata(self, monkeypatch: pytest.MonkeyPatch) -> None:
+         # Given
+-        extractor = PdfDocxFileMetadataExtractor()
++        extractor = DocumentFileMetadataExtractor()
+ 
+         class _FakeMetadata:
+             title = "Workflow Review"
+@@ -39,7 +39,7 @@ def __init__(self, _buffer: BytesIO) -> None:
+ 
+     async def test_extract_metadata_pdf_without_metadata(self, monkeypatch: pytest.MonkeyPatch) -> None:
+         # Given
+-        extractor = PdfDocxFileMetadataExtractor()
++        extractor = DocumentFileMetadataExtractor()
+ 
+         class _FakeReader:
+             def __init__(self, _buffer: BytesIO) -> None:
+@@ -55,7 +55,7 @@ def __init__(self, _buffer: BytesIO) -> None:
+ 
+     async def test_extract_metadata_docx_with_core_properties(self) -> None:
+         # Given
+-        extractor = PdfDocxFileMetadataExtractor()
++        extractor = DocumentFileMetadataExtractor()
+         document = DocxDocument()
+         document.core_properties.title = "Meeting Notes"
+         document.core_properties.author = "Carol; Dan"
+@@ -78,7 +78,7 @@ async def test_extract_metadata_docx_with_core_properties(self) -> None:
+ 
+     async def test_extract_metadata_txt_returns_empty(self) -> None:
+         # Given
+-        extractor = PdfDocxFileMetadataExtractor()
++        extractor = DocumentFileMetadataExtractor()
+ 
+         # When
+         result = await extractor.extract_metadata("notes.txt", b"hello", "text/plain")
+diff --git a/server/tests/unit/infrastructure/test_multiformat_document_text_extractor.py b/server/tests/unit/infrastructure/test_multiformat_document_text_extractor.py
+index 75715ed8..251518b5 100644
+--- a/server/tests/unit/infrastructure/test_multiformat_document_text_extractor.py
++++ b/server/tests/unit/infrastructure/test_multiformat_document_text_extractor.py
+@@ -161,3 +161,83 @@ async def test_extract_text_unknown_extension_raises_error(
+                 content=b"binary",
+                 content_type="application/octet-stream",
+             )
++
++    async def test_extract_text_csv_delegates_to_tabular_extractor(
++        self,
++        extractor: MultiFormatDocumentTextExtractor,
++        monkeypatch: pytest.MonkeyPatch,
++    ) -> None:
++        # Given
++        async def fake_tabular_extract(file_name: str, content: bytes, content_type: str) -> str:
++            return "[HEADERS]:A|B\n[ROW:1]:x|y"
++
++        monkeypatch.setattr(extractor._tabular_extractor, "extract_text", fake_tabular_extract)
++
++        # When
++        result = await extractor.extract_text("data.csv", b"A,B\nx,y\n", "text/csv")
++
++        # Then
++        assert "[HEADERS]:A|B" in result
++
++    async def test_extract_text_xlsx_delegates_to_tabular_extractor(
++        self,
++        extractor: MultiFormatDocumentTextExtractor,
++        monkeypatch: pytest.MonkeyPatch,
++    ) -> None:
++        # Given
++        async def fake_tabular_extract(file_name: str, content: bytes, content_type: str) -> str:
++            return "[SHEET:S1]\n[HEADERS]:Col\n[ROW:1]:Val"
++
++        monkeypatch.setattr(extractor._tabular_extractor, "extract_text", fake_tabular_extract)
++
++        # When
++        result = await extractor.extract_text(
++            "file.xlsx", b"PK...", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
++        )
++
++        # Then
++        assert "[SHEET:S1]" in result
++
++    async def test_extract_text_xls_delegates_to_tabular_extractor(
++        self,
++        extractor: MultiFormatDocumentTextExtractor,
++        monkeypatch: pytest.MonkeyPatch,
++    ) -> None:
++        # Given
++        async def fake_tabular_extract(file_name: str, content: bytes, content_type: str) -> str:
++            return "[HEADERS]:X|Y\n[ROW:1]:1|2"
++
++        monkeypatch.setattr(extractor._tabular_extractor, "extract_text", fake_tabular_extract)
++
++        # When
++        result = await extractor.extract_text("legacy.xls", b"XLS", "application/vnd.ms-excel")
++
++        # Then
++        assert "[HEADERS]:X|Y" in result
++
++    async def test_extract_text_docx_tables_use_markdown_format(
++        self,
++        extractor: MultiFormatDocumentTextExtractor,
++    ) -> None:
++        # Given
++        document = DocxDocument()
++        table = document.add_table(rows=2, cols=2)
++        table.cell(0, 0).text = "Header A"
++        table.cell(0, 1).text = "Header B"
++        table.cell(1, 0).text = "Value 1"
++        table.cell(1, 1).text = "Value 2"
++        buffer = BytesIO()
++        document.save(buffer)
++        content = buffer.getvalue()
++
++        # When
++        result = await extractor.extract_text(
++            file_name="report.docx",
++            content=content,
++            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
++        )
++
++        # Then — Markdown separator present
++        assert "---" in result
++        assert "| Header A |" in result
++        assert "| Value 1 |" in result

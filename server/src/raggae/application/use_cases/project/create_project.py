@@ -1,85 +1,35 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from raggae.application.constants import (
-    DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS,
-    DEFAULT_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
-    DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
-    DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE,
-    DEFAULT_PROJECT_RETRIEVAL_TOP_K,
-    MAX_PROJECT_CHAT_HISTORY_MAX_CHARS,
-    MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
-    MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
-    MAX_PROJECT_RETRIEVAL_MIN_SCORE,
-    MAX_PROJECT_RETRIEVAL_TOP_K,
-    MAX_PROJECT_SYSTEM_PROMPT_LENGTH,
-    MIN_PROJECT_CHAT_HISTORY_MAX_CHARS,
-    MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE,
-    MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER,
-    MIN_PROJECT_RETRIEVAL_MIN_SCORE,
-    MIN_PROJECT_RETRIEVAL_TOP_K,
-    SUPPORTED_EMBEDDING_BACKENDS,
-    SUPPORTED_LLM_BACKENDS,
-    SUPPORTED_RERANKER_BACKENDS,
-    SUPPORTED_RETRIEVAL_STRATEGIES,
-)
 from raggae.application.dto.project_dto import ProjectDTO
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
-from raggae.application.interfaces.repositories.project_defaults_repository import (
-    ProjectDefaultsRepository,
-)
-from raggae.application.interfaces.repositories.project_repository import (
-    ProjectRepository,
-)
-from raggae.application.interfaces.repositories.provider_credential_repository import (
-    ProviderCredentialRepository,
-)
-from raggae.application.interfaces.services.provider_api_key_crypto_service import (
-    ProviderApiKeyCryptoService,
-)
+from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
-from raggae.domain.exceptions.project_exceptions import (
-    InvalidProjectChatHistoryMaxCharsError,
-    InvalidProjectChatHistoryWindowSizeError,
-    InvalidProjectEmbeddingBackendError,
-    InvalidProjectLLMBackendError,
-    InvalidProjectRerankerBackendError,
-    InvalidProjectRerankerCandidateMultiplierError,
-    InvalidProjectRetrievalMinScoreError,
-    InvalidProjectRetrievalStrategyError,
-    InvalidProjectRetrievalTopKError,
-    ProjectAPIKeyNotOwnedError,
-    ProjectSystemPromptTooLongError,
-)
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
-from raggae.domain.value_objects.model_provider import ModelProvider
+from raggae.domain.exceptions.project_exceptions import ProjectSystemPromptTooLongError
+from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+
+from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 
 
 class CreateProject:
-    """Use Case: Create a new project."""
+    """Use Case: Create a new project with a blank configuration (inherits from parent)."""
 
     def __init__(
         self,
         project_repository: ProjectRepository,
+        agent_configuration_repository: AgentConfigurationRepository,
         organization_member_repository: OrganizationMemberRepository | None = None,
-        provider_credential_repository: ProviderCredentialRepository | None = None,
-        project_defaults_repository: ProjectDefaultsRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
+        self._agent_configuration_repository = agent_configuration_repository
         self._organization_member_repository = organization_member_repository
-        self._provider_credential_repository = provider_credential_repository
-        self._project_defaults_repository = project_defaults_repository
-        self._provider_api_key_crypto_service: ProviderApiKeyCryptoService | None = None
-
-    def with_crypto_service(
-        self,
-        provider_api_key_crypto_service: ProviderApiKeyCryptoService,
-    ) -> "CreateProject":
-        self._provider_api_key_crypto_service = provider_api_key_crypto_service
-        return self
 
     async def execute(
         self,
@@ -87,122 +37,13 @@ class CreateProject:
         name: str,
         description: str,
         system_prompt: str,
-        chunking_strategy: ChunkingStrategy | None = None,
-        parent_child_chunking: bool | None = None,
-        embedding_backend: str | None = None,
-        embedding_model: str | None = None,
-        embedding_api_key: str | None = None,
-        embedding_api_key_credential_id: UUID | None = None,
-        llm_backend: str | None = None,
-        llm_model: str | None = None,
-        llm_api_key: str | None = None,
-        llm_api_key_credential_id: UUID | None = None,
-        retrieval_strategy: str | None = None,
-        retrieval_top_k: int | None = None,
-        retrieval_min_score: float | None = None,
-        chat_history_window_size: int | None = None,
-        chat_history_max_chars: int | None = None,
-        reranking_enabled: bool | None = None,
-        reranker_backend: str | None = None,
-        reranker_model: str | None = None,
-        reranker_candidate_multiplier: int | None = None,
         organization_id: UUID | None = None,
     ) -> ProjectDTO:
         if len(system_prompt) > MAX_PROJECT_SYSTEM_PROMPT_LENGTH:
             raise ProjectSystemPromptTooLongError(
                 f"System prompt exceeds {MAX_PROJECT_SYSTEM_PROMPT_LENGTH} characters"
             )
-        if embedding_backend is not None and embedding_backend not in SUPPORTED_EMBEDDING_BACKENDS:
-            raise InvalidProjectEmbeddingBackendError(f"Unsupported embedding backend: {embedding_backend}")
-        if llm_backend is not None and llm_backend not in SUPPORTED_LLM_BACKENDS:
-            raise InvalidProjectLLMBackendError(f"Unsupported llm backend: {llm_backend}")
-        if retrieval_strategy is not None and retrieval_strategy not in SUPPORTED_RETRIEVAL_STRATEGIES:
-            raise InvalidProjectRetrievalStrategyError(
-                f"Unsupported retrieval strategy: {retrieval_strategy}"
-            )
-        if retrieval_top_k is not None and not (
-            MIN_PROJECT_RETRIEVAL_TOP_K <= retrieval_top_k <= MAX_PROJECT_RETRIEVAL_TOP_K
-        ):
-            raise InvalidProjectRetrievalTopKError(
-                f"retrieval_top_k must be between {MIN_PROJECT_RETRIEVAL_TOP_K} "
-                f"and {MAX_PROJECT_RETRIEVAL_TOP_K}"
-            )
-        if retrieval_min_score is not None and not (
-            MIN_PROJECT_RETRIEVAL_MIN_SCORE <= retrieval_min_score <= MAX_PROJECT_RETRIEVAL_MIN_SCORE
-        ):
-            raise InvalidProjectRetrievalMinScoreError(
-                f"retrieval_min_score must be between {MIN_PROJECT_RETRIEVAL_MIN_SCORE} "
-                f"and {MAX_PROJECT_RETRIEVAL_MIN_SCORE}"
-            )
-        if chat_history_window_size is not None and not (
-            MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE
-            <= chat_history_window_size
-            <= MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE
-        ):
-            raise InvalidProjectChatHistoryWindowSizeError(
-                f"chat_history_window_size must be between "
-                f"{MIN_PROJECT_CHAT_HISTORY_WINDOW_SIZE} and "
-                f"{MAX_PROJECT_CHAT_HISTORY_WINDOW_SIZE}"
-            )
-        if chat_history_max_chars is not None and not (
-            MIN_PROJECT_CHAT_HISTORY_MAX_CHARS <= chat_history_max_chars <= MAX_PROJECT_CHAT_HISTORY_MAX_CHARS
-        ):
-            raise InvalidProjectChatHistoryMaxCharsError(
-                f"chat_history_max_chars must be between "
-                f"{MIN_PROJECT_CHAT_HISTORY_MAX_CHARS} and "
-                f"{MAX_PROJECT_CHAT_HISTORY_MAX_CHARS}"
-            )
-        if reranker_backend is not None and reranker_backend not in SUPPORTED_RERANKER_BACKENDS:
-            raise InvalidProjectRerankerBackendError(f"Unsupported reranker backend: {reranker_backend}")
-        if reranker_candidate_multiplier is not None and not (
-            MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
-            <= reranker_candidate_multiplier
-            <= MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
-        ):
-            raise InvalidProjectRerankerCandidateMultiplierError(
-                f"reranker_candidate_multiplier must be between "
-                f"{MIN_PROJECT_RERANKER_CANDIDATE_MULTIPLIER} and "
-                f"{MAX_PROJECT_RERANKER_CANDIDATE_MULTIPLIER}"
-            )
-        resolved_embedding_api_key = await self._resolve_api_key_from_credential_id(
-            user_id=user_id,
-            backend=embedding_backend,
-            api_key=embedding_api_key,
-            api_key_credential_id=embedding_api_key_credential_id,
-            config_type="embedding",
-        )
-        resolved_llm_api_key = await self._resolve_api_key_from_credential_id(
-            user_id=user_id,
-            backend=llm_backend,
-            api_key=llm_api_key,
-            api_key_credential_id=llm_api_key_credential_id,
-            config_type="llm",
-        )
-        await self._validate_api_key_belongs_to_user(
-            user_id=user_id,
-            backend=embedding_backend,
-            api_key=resolved_embedding_api_key,
-            config_type="embedding",
-        )
-        await self._validate_api_key_belongs_to_user(
-            user_id=user_id,
-            backend=llm_backend,
-            api_key=resolved_llm_api_key,
-            config_type="llm",
-        )
-        encrypted_embedding_api_key = self._encrypt_api_key_if_provided(resolved_embedding_api_key)
-        encrypted_llm_api_key = self._encrypt_api_key_if_provided(resolved_llm_api_key)
-        effective_embedding_api_key_credential_id = (
-            embedding_api_key_credential_id
-            if embedding_api_key_credential_id is not None and resolved_embedding_api_key is not None
-            else None
-        )
-        effective_llm_api_key_credential_id = (
-            llm_api_key_credential_id
-            if llm_api_key_credential_id is not None and resolved_llm_api_key is not None
-            else None
-        )
-        org_defaults = None
+
         if organization_id is not None:
             if self._organization_member_repository is None:
                 raise OrganizationAccessDeniedError("Organization repository is not configured")
@@ -212,136 +53,10 @@ class CreateProject:
             )
             if member is None:
                 raise OrganizationAccessDeniedError("User is not a member of this organization")
-            if self._project_defaults_repository is not None:
-                from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
 
-                org_defaults = await self._project_defaults_repository.find_by_owner(
-                    organization_id, ProjectDefaultsOwnerType.ORGA
-                )
-
-        user_defaults = None
-        if organization_id is None and self._project_defaults_repository is not None:
-            from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
-
-            user_defaults = await self._project_defaults_repository.find_by_owner(
-                user_id, ProjectDefaultsOwnerType.USER
-            )
-
-        overrides_models = True
-        overrides_indexing = True
-        overrides_retrieval = True
-        overrides_reranking = True
-        overrides_chat_history = True
-        user_overrides_models = True
-        user_overrides_indexing = True
-        user_overrides_retrieval = True
-        user_overrides_reranking = True
-        user_overrides_chat_history = True
-
-        effective_embedding_backend = embedding_backend
-        effective_embedding_model = embedding_model
-        effective_llm_backend = llm_backend
-        effective_llm_model = llm_model
-        effective_chunking_strategy = chunking_strategy or ChunkingStrategy.AUTO
-        effective_parent_child_chunking = parent_child_chunking if parent_child_chunking is not None else True
-        effective_retrieval_strategy = retrieval_strategy or "hybrid"
-        effective_retrieval_top_k = retrieval_top_k or DEFAULT_PROJECT_RETRIEVAL_TOP_K
-        effective_retrieval_min_score = (
-            retrieval_min_score if retrieval_min_score is not None else DEFAULT_PROJECT_RETRIEVAL_MIN_SCORE
-        )
-        effective_reranking_enabled = reranking_enabled if reranking_enabled is not None else False
-        effective_reranker_backend = reranker_backend
-        effective_reranker_model = reranker_model
-        effective_reranker_candidate_multiplier = (
-            reranker_candidate_multiplier
-            if reranker_candidate_multiplier is not None
-            else DEFAULT_PROJECT_RERANKER_CANDIDATE_MULTIPLIER
-        )
-        effective_chat_history_window_size = (
-            chat_history_window_size
-            if chat_history_window_size is not None
-            else DEFAULT_PROJECT_CHAT_HISTORY_WINDOW_SIZE
-        )
-        effective_chat_history_max_chars = (
-            chat_history_max_chars
-            if chat_history_max_chars is not None
-            else DEFAULT_PROJECT_CHAT_HISTORY_MAX_CHARS
-        )
-
-        if org_defaults is not None:
-            if org_defaults.has_models_defaults():
-                overrides_models = False
-                effective_embedding_backend = org_defaults.embedding_backend
-                effective_embedding_model = org_defaults.embedding_model
-                effective_llm_backend = org_defaults.llm_backend
-                effective_llm_model = org_defaults.llm_model
-            if org_defaults.has_indexing_defaults():
-                overrides_indexing = False
-                if org_defaults.chunking_strategy is not None:
-                    effective_chunking_strategy = ChunkingStrategy(org_defaults.chunking_strategy)
-                if org_defaults.parent_child_chunking is not None:
-                    effective_parent_child_chunking = org_defaults.parent_child_chunking
-            if org_defaults.has_retrieval_defaults():
-                overrides_retrieval = False
-                if org_defaults.retrieval_strategy is not None:
-                    effective_retrieval_strategy = org_defaults.retrieval_strategy
-                if org_defaults.retrieval_top_k is not None:
-                    effective_retrieval_top_k = org_defaults.retrieval_top_k
-                if org_defaults.retrieval_min_score is not None:
-                    effective_retrieval_min_score = org_defaults.retrieval_min_score
-            if org_defaults.has_reranking_defaults():
-                overrides_reranking = False
-                if org_defaults.reranking_enabled is not None:
-                    effective_reranking_enabled = org_defaults.reranking_enabled
-                effective_reranker_backend = org_defaults.reranker_backend
-                effective_reranker_model = org_defaults.reranker_model
-                if org_defaults.reranker_candidate_multiplier is not None:
-                    effective_reranker_candidate_multiplier = org_defaults.reranker_candidate_multiplier
-            if org_defaults.has_chat_history_defaults():
-                overrides_chat_history = False
-                if org_defaults.chat_history_window_size is not None:
-                    effective_chat_history_window_size = org_defaults.chat_history_window_size
-                if org_defaults.chat_history_max_chars is not None:
-                    effective_chat_history_max_chars = org_defaults.chat_history_max_chars
-
-        if user_defaults is not None:
-            if user_defaults.has_models_defaults():
-                user_overrides_models = False
-                effective_embedding_backend = user_defaults.embedding_backend
-                effective_embedding_model = user_defaults.embedding_model
-                effective_llm_backend = user_defaults.llm_backend
-                effective_llm_model = user_defaults.llm_model
-            if user_defaults.has_indexing_defaults():
-                user_overrides_indexing = False
-                if user_defaults.chunking_strategy is not None:
-                    effective_chunking_strategy = ChunkingStrategy(user_defaults.chunking_strategy)
-                if user_defaults.parent_child_chunking is not None:
-                    effective_parent_child_chunking = user_defaults.parent_child_chunking
-            if user_defaults.has_retrieval_defaults():
-                user_overrides_retrieval = False
-                if user_defaults.retrieval_strategy is not None:
-                    effective_retrieval_strategy = user_defaults.retrieval_strategy
-                if user_defaults.retrieval_top_k is not None:
-                    effective_retrieval_top_k = user_defaults.retrieval_top_k
-                if user_defaults.retrieval_min_score is not None:
-                    effective_retrieval_min_score = user_defaults.retrieval_min_score
-            if user_defaults.has_reranking_defaults():
-                user_overrides_reranking = False
-                if user_defaults.reranking_enabled is not None:
-                    effective_reranking_enabled = user_defaults.reranking_enabled
-                effective_reranker_backend = user_defaults.reranker_backend
-                effective_reranker_model = user_defaults.reranker_model
-                if user_defaults.reranker_candidate_multiplier is not None:
-                    effective_reranker_candidate_multiplier = user_defaults.reranker_candidate_multiplier
-            if user_defaults.has_chat_history_defaults():
-                user_overrides_chat_history = False
-                if user_defaults.chat_history_window_size is not None:
-                    effective_chat_history_window_size = user_defaults.chat_history_window_size
-                if user_defaults.chat_history_max_chars is not None:
-                    effective_chat_history_max_chars = user_defaults.chat_history_max_chars
-
+        project_id = uuid4()
         project = Project(
-            id=uuid4(),
+            id=project_id,
             user_id=user_id,
             organization_id=organization_id,
             name=name,
@@ -349,111 +64,15 @@ class CreateProject:
             system_prompt=system_prompt,
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=effective_chunking_strategy,
-            parent_child_chunking=effective_parent_child_chunking,
-            embedding_backend=effective_embedding_backend,
-            embedding_model=effective_embedding_model,
-            embedding_api_key_encrypted=encrypted_embedding_api_key,
-            embedding_api_key_credential_id=effective_embedding_api_key_credential_id,
-            llm_backend=effective_llm_backend,
-            llm_model=effective_llm_model,
-            llm_api_key_encrypted=encrypted_llm_api_key,
-            llm_api_key_credential_id=effective_llm_api_key_credential_id,
-            retrieval_strategy=effective_retrieval_strategy,
-            retrieval_top_k=effective_retrieval_top_k,
-            retrieval_min_score=effective_retrieval_min_score,
-            chat_history_window_size=effective_chat_history_window_size,
-            chat_history_max_chars=effective_chat_history_max_chars,
-            reranking_enabled=effective_reranking_enabled,
-            reranker_backend=effective_reranker_backend,
-            reranker_model=effective_reranker_model,
-            reranker_candidate_multiplier=effective_reranker_candidate_multiplier,
-            overrides_models_from_org=overrides_models,
-            overrides_indexing_from_org=overrides_indexing,
-            overrides_retrieval_from_org=overrides_retrieval,
-            overrides_reranking_from_org=overrides_reranking,
-            overrides_chat_history_from_org=overrides_chat_history,
-            overrides_models_from_user=user_overrides_models,
-            overrides_indexing_from_user=user_overrides_indexing,
-            overrides_retrieval_from_user=user_overrides_retrieval,
-            overrides_reranking_from_user=user_overrides_reranking,
-            overrides_chat_history_from_user=user_overrides_chat_history,
         )
-
         await self._project_repository.save(project)
 
+        # Create a blank PROJECT config row — all fields null = inherit from parent hierarchy
+        project_config = AgentConfiguration(
+            id=uuid4(),
+            owner_id=project_id,
+            type=AgentConfigurationType.PROJECT,
+        )
+        await self._agent_configuration_repository.save(project_config)
+
         return ProjectDTO.from_entity(project)
-
-    def _encrypt_api_key_if_provided(self, api_key: str | None) -> str | None:
-        if api_key is None or api_key.strip() == "":
-            return None
-        if self._provider_api_key_crypto_service is None:
-            return api_key
-        return self._provider_api_key_crypto_service.encrypt(api_key.strip())
-
-    async def _validate_api_key_belongs_to_user(
-        self,
-        user_id: UUID,
-        backend: str | None,
-        api_key: str | None,
-        config_type: str,
-    ) -> None:
-        if api_key is None or api_key.strip() == "":
-            return
-        if backend is None:
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_backend is required when {config_type}_api_key is provided"
-            )
-        if backend not in {"openai", "gemini", "anthropic"}:
-            raise ProjectAPIKeyNotOwnedError(f"{config_type}_api_key cannot be used with backend '{backend}'")
-        if self._provider_credential_repository is None:
-            raise ProjectAPIKeyNotOwnedError("Provider credential repository is not configured")
-        if self._provider_api_key_crypto_service is None:
-            raise ProjectAPIKeyNotOwnedError("Provider crypto service is not configured")
-
-        fingerprint = self._provider_api_key_crypto_service.fingerprint(api_key.strip())
-        credentials = await self._provider_credential_repository.list_by_user_id_and_provider(
-            user_id=user_id,
-            provider=ModelProvider(backend),
-        )
-        if not any(credential.key_fingerprint == fingerprint for credential in credentials):
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key is not registered for this user and backend"
-            )
-
-    async def _resolve_api_key_from_credential_id(
-        self,
-        user_id: UUID,
-        backend: str | None,
-        api_key: str | None,
-        api_key_credential_id: UUID | None,
-        config_type: str,
-    ) -> str | None:
-        if api_key_credential_id is None:
-            return api_key
-        if api_key is not None and api_key.strip() != "":
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key and {config_type}_api_key_credential_id cannot both be set"
-            )
-        if backend is None:
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_backend is required when {config_type}_api_key_credential_id is provided"
-            )
-        if backend not in {"openai", "gemini", "anthropic"}:
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key_credential_id cannot be used with backend '{backend}'"
-            )
-        if self._provider_credential_repository is None:
-            raise ProjectAPIKeyNotOwnedError("Provider credential repository is not configured")
-        if self._provider_api_key_crypto_service is None:
-            raise ProjectAPIKeyNotOwnedError("Provider crypto service is not configured")
-        credentials = await self._provider_credential_repository.list_by_user_id_and_provider(
-            user_id=user_id,
-            provider=ModelProvider(backend),
-        )
-        matching = next((cred for cred in credentials if cred.id == api_key_credential_id), None)
-        if matching is None:
-            raise ProjectAPIKeyNotOwnedError(
-                f"{config_type}_api_key_credential_id is not registered for this user and backend"
-            )
-        return self._provider_api_key_crypto_service.decrypt(matching.encrypted_api_key)

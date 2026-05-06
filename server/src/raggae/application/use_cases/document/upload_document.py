@@ -1,9 +1,12 @@
 import logging
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.application.dto.document_dto import DocumentDTO
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.document_chunk_repository import (
     DocumentChunkRepository,
 )
@@ -13,9 +16,6 @@ from raggae.application.interfaces.repositories.org_provider_credential_reposito
 )
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
-)
-from raggae.application.interfaces.repositories.project_defaults_repository import (
-    ProjectDefaultsRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.provider_credential_repository import (
@@ -39,6 +39,8 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
+from raggae.domain.services.config_extractor import ConfigExtractor
+from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
@@ -92,7 +94,7 @@ class UploadDocument:
         project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         max_documents_per_project: int | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
-        project_defaults_repository: ProjectDefaultsRepository | None = None,
+        agent_configuration_repository: AgentConfigurationRepository | None = None,
         org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
         provider_credential_repository: ProviderCredentialRepository | None = None,
     ) -> None:
@@ -108,7 +110,7 @@ class UploadDocument:
         self._project_embedding_service_resolver = project_embedding_service_resolver
         self._max_documents_per_project = max_documents_per_project
         self._organization_member_repository = organization_member_repository
-        self._project_defaults_repository = project_defaults_repository
+        self._agent_configuration_repository = agent_configuration_repository
         self._org_provider_credential_repository = org_provider_credential_repository
         self._provider_credential_repository = provider_credential_repository
 
@@ -293,9 +295,13 @@ class UploadDocument:
             if self._processing_mode == "sync" and self._document_indexing_service is not None:
                 document = document.transition_to(DocumentStatus.PROCESSING)
                 await self._document_repository.save(document)
-                effective_project = await self._resolve_effective_project_for_embedding(project, user_id)
+                encrypted_api_key = await self._resolve_embedding_api_key(project, user_id)
                 embedding_service = (
-                    self._project_embedding_service_resolver.resolve(effective_project)
+                    self._project_embedding_service_resolver.resolve(
+                        backend=await self._resolve_embedding_backend(project, user_id),
+                        model=await self._resolve_embedding_model(project, user_id),
+                        encrypted_api_key=encrypted_api_key,
+                    )
                     if self._project_embedding_service_resolver is not None
                     else None
                 )
@@ -315,63 +321,59 @@ class UploadDocument:
 
         return DocumentDTO.from_entity(document)
 
-    async def _resolve_effective_project_for_embedding(self, project: Project, user_id: UUID) -> Project:
-        if project.organization_id is not None and not project.overrides_models_from_org:
-            return await self._resolve_from_org_defaults(project)
-        if project.organization_id is None and not project.overrides_models_from_user:
-            return await self._resolve_from_user_defaults(project, user_id)
-        return project
+    async def _resolve_embedding_backend(self, project: Project, user_id: UUID) -> str | None:
+        resolved = await self._resolve_config(project, user_id)
+        return resolved.embedding_backend if resolved else None
 
-    async def _resolve_from_org_defaults(self, project: Project) -> Project:
-        if self._project_defaults_repository is None or self._org_provider_credential_repository is None:
-            return project
-        assert project.organization_id is not None
-        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+    async def _resolve_embedding_model(self, project: Project, user_id: UUID) -> str | None:
+        resolved = await self._resolve_config(project, user_id)
+        return resolved.embedding_model if resolved else None
 
-        org_defaults = await self._project_defaults_repository.find_by_owner(
-            project.organization_id, ProjectDefaultsOwnerType.ORGA
+    async def _resolve_embedding_api_key(self, project: Project, user_id: UUID) -> str | None:
+        resolved = await self._resolve_config(project, user_id)
+        if resolved is None or resolved.embedding_api_key_credential_id is None:
+            return None
+        return await self._fetch_encrypted_key(
+            credential_id=resolved.embedding_api_key_credential_id,
+            project=project,
+            user_id=user_id,
         )
-        if org_defaults is None or org_defaults.embedding_backend is None:
-            return project
-        encrypted_key: str | None = None
-        if org_defaults.embedding_api_key_credential_id is not None:
-            org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
-            org_cred = next(
-                (c for c in org_creds if c.id == org_defaults.embedding_api_key_credential_id), None
+
+    async def _resolve_config(self, project: Project, user_id: UUID):  # type: ignore[return]
+        if self._agent_configuration_repository is None:
+            return None
+        project_config = await self._agent_configuration_repository.find_by_owner(
+            project.id, AgentConfigurationType.PROJECT
+        )
+        if project_config is None:
+            return None
+
+        if project.organization_id is not None:
+            parent_config = await self._agent_configuration_repository.find_by_owner(
+                project.organization_id, AgentConfigurationType.ORGA
             )
-            if org_cred is not None:
-                encrypted_key = org_cred.encrypted_api_key
-        return replace(
-            project,
-            embedding_backend=org_defaults.embedding_backend,
-            embedding_model=org_defaults.embedding_model,
-            embedding_api_key_encrypted=encrypted_key,
-        )
+        else:
+            parent_config = await self._agent_configuration_repository.find_by_owner(
+                user_id, AgentConfigurationType.USER
+            )
 
-    async def _resolve_from_user_defaults(self, project: Project, user_id: UUID) -> Project:
-        if self._project_defaults_repository is None or self._provider_credential_repository is None:
-            return project
-        from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
+        app_config = await self._agent_configuration_repository.find_app_defaults()
+        return ConfigExtractor.resolve(project_config, parent_config, app_config)
 
-        user_defaults = await self._project_defaults_repository.find_by_owner(
-            user_id, ProjectDefaultsOwnerType.USER
-        )
-        if user_defaults is None or user_defaults.embedding_backend is None:
-            return project
-        encrypted_key: str | None = None
-        if user_defaults.embedding_api_key_credential_id is not None:
+    async def _fetch_encrypted_key(self, credential_id, project: Project, user_id: UUID) -> str | None:
+        if project.organization_id is not None and self._org_provider_credential_repository is not None:
+            org_creds = await self._org_provider_credential_repository.list_by_org_id(
+                project.organization_id
+            )
+            cred = next((c for c in org_creds if c.id == credential_id), None)
+            if cred is not None:
+                return cred.encrypted_api_key
+        if self._provider_credential_repository is not None:
             user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
-            user_cred = next(
-                (c for c in user_creds if c.id == user_defaults.embedding_api_key_credential_id), None
-            )
-            if user_cred is not None:
-                encrypted_key = user_cred.encrypted_api_key
-        return replace(
-            project,
-            embedding_backend=user_defaults.embedding_backend,
-            embedding_model=user_defaults.embedding_model,
-            embedding_api_key_encrypted=encrypted_key,
-        )
+            cred = next((c for c in user_creds if c.id == credential_id), None)
+            if cred is not None:
+                return cred.encrypted_api_key
+        return None
 
     async def _cleanup_failed_document(self, document_id: UUID, storage_key: str) -> None:
         await self._file_storage_service.delete_file(storage_key)

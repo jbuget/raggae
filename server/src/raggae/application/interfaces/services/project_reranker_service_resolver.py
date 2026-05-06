@@ -1,10 +1,14 @@
 from typing import Protocol
 
 from raggae.application.interfaces.services.reranker_service import RerankerService
-from raggae.domain.entities.project import Project
 
 
 class ProjectRerankerServiceResolver(Protocol):
-    """Resolve the effective reranker service for a project."""
+    """Resolve the effective reranker service from resolved config."""
 
-    def resolve(self, project: Project) -> RerankerService | None: ...
+    def resolve(
+        self,
+        reranking_enabled: bool | None,
+        backend: str | None,
+        model: str | None,
+    ) -> RerankerService | None: ...

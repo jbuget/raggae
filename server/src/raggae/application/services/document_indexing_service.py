@@ -120,9 +120,7 @@ class DocumentIndexingService:
 
         document_chunks: list[DocumentChunk] = []
         if chunks:
-            use_parent_child = (
-                project.parent_child_chunking and self._parent_child_chunking_service is not None
-            )
+            use_parent_child = False
 
             if use_parent_child:
                 document_chunks = await self._build_parent_child_chunks(
@@ -166,7 +164,7 @@ class DocumentIndexingService:
             sanitized_text=sanitized_text,
         )
 
-        strategy = project.chunking_strategy
+        strategy = ChunkingStrategy.AUTO
         if strategy == ChunkingStrategy.AUTO:
             analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
             strategy = self._chunking_strategy_selector.select(

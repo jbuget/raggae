@@ -12,8 +12,8 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 )
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
-from raggae.application.use_cases.organization.get_org_project_defaults import (
-    GetOrganizationProjectDefaults,
+from raggae.application.use_cases.organization.get_org_agent_configuration import (
+    GetOrgAgentConfiguration,
 )
 from raggae.application.use_cases.organization.get_organization import GetOrganization
 from raggae.application.use_cases.organization.invite_organization_member import (
@@ -46,8 +46,8 @@ from raggae.application.use_cases.organization.update_organization import Update
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
 )
-from raggae.application.use_cases.organization.upsert_org_project_defaults import (
-    UpsertOrganizationProjectDefaults,
+from raggae.application.use_cases.organization.upsert_org_agent_configuration import (
+    UpsertOrgAgentConfiguration,
 )
 from raggae.domain.exceptions.organization_exceptions import (
     LastOrganizationOwnerError,
@@ -61,7 +61,7 @@ from raggae.presentation.api.dependencies import (
     get_create_organization_use_case,
     get_current_user_id,
     get_delete_organization_use_case,
-    get_get_org_project_defaults_use_case,
+    get_get_org_agent_configuration_use_case,
     get_get_organization_use_case,
     get_invite_organization_member_use_case,
     get_leave_organization_use_case,
@@ -75,7 +75,7 @@ from raggae.presentation.api.dependencies import (
     get_revoke_organization_invitation_use_case,
     get_update_organization_member_role_use_case,
     get_update_organization_use_case,
-    get_upsert_org_project_defaults_use_case,
+    get_upsert_org_agent_configuration_use_case,
 )
 from raggae.presentation.api.v1.schemas.organization_schemas import (
     AcceptOrganizationInvitationRequest,
@@ -83,11 +83,11 @@ from raggae.presentation.api.v1.schemas.organization_schemas import (
     InviteOrganizationMemberRequest,
     OrganizationInvitationResponse,
     OrganizationMemberResponse,
-    OrganizationProjectDefaultsResponse,
+    OrgAgentConfigurationResponse,
     OrganizationResponse,
     UpdateOrganizationMemberRoleRequest,
     UpdateOrganizationRequest,
-    UpsertOrganizationProjectDefaultsRequest,
+    UpsertOrgAgentConfigurationRequest,
     UserPendingOrganizationInvitationResponse,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import ProjectResponse
@@ -503,8 +503,8 @@ async def list_user_pending_organization_invitations(
 async def get_organization_project_defaults(
     organization_id: UUID,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[GetOrganizationProjectDefaults, Depends(get_get_org_project_defaults_use_case)],
-) -> OrganizationProjectDefaultsResponse | None:
+    use_case: Annotated[GetOrgAgentConfiguration, Depends(get_get_org_agent_configuration_use_case)],
+) -> OrgAgentConfigurationResponse | None:
     try:
         result = await use_case.execute(organization_id=organization_id, user_id=user_id)
     except OrganizationNotFoundError:
@@ -513,16 +513,16 @@ async def get_organization_project_defaults(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
     if result is None:
         return None
-    return OrganizationProjectDefaultsResponse.from_dto(result)
+    return OrgAgentConfigurationResponse.from_dto(result)
 
 
 @router.put("/{organization_id}/project-defaults", dependencies=[Depends(get_current_user_id)])
 async def upsert_organization_project_defaults(
     organization_id: UUID,
-    data: UpsertOrganizationProjectDefaultsRequest,
+    data: UpsertOrgAgentConfigurationRequest,
     user_id: Annotated[UUID, Depends(get_current_user_id)],
-    use_case: Annotated[UpsertOrganizationProjectDefaults, Depends(get_upsert_org_project_defaults_use_case)],
-) -> OrganizationProjectDefaultsResponse:
+    use_case: Annotated[UpsertOrgAgentConfiguration, Depends(get_upsert_org_agent_configuration_use_case)],
+) -> OrgAgentConfigurationResponse:
     try:
         result = await use_case.execute(
             organization_id=organization_id,
@@ -537,7 +537,7 @@ async def upsert_organization_project_defaults(
         "organization_project_defaults_upserted",
         extra={"organization_id": str(organization_id), "user_id": str(user_id)},
     )
-    return OrganizationProjectDefaultsResponse.from_dto(result)
+    return OrgAgentConfigurationResponse.from_dto(result)
 
 
 @router.post(

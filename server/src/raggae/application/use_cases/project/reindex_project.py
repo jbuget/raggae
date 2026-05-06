@@ -57,7 +57,9 @@ class ReindexProject:
 
                 file_content, _ = await self._file_storage_service.download_file(document.storage_key)
                 embedding_service = (
-                    self._project_embedding_service_resolver.resolve(project)
+                    self._project_embedding_service_resolver.resolve(
+                        backend=None, model=None, encrypted_api_key=None
+                    )
                     if self._project_embedding_service_resolver is not None
                     else None
                 )

@@ -7,7 +7,6 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotPublishedError,
     ProjectReindexInProgressError,
 )
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 @dataclass(frozen=True)
@@ -21,41 +20,10 @@ class Project:
     system_prompt: str
     is_published: bool
     created_at: datetime
-    chunking_strategy: ChunkingStrategy = ChunkingStrategy.AUTO
-    parent_child_chunking: bool = True
     reindex_status: str = "idle"
     reindex_progress: int = 0
     reindex_total: int = 0
-    embedding_backend: str | None = None
-    embedding_model: str | None = None
-    embedding_api_key_encrypted: str | None = None
-    embedding_api_key_credential_id: UUID | None = None
-    llm_backend: str | None = None
-    llm_model: str | None = None
-    llm_api_key_encrypted: str | None = None
-    llm_api_key_credential_id: UUID | None = None
-    retrieval_strategy: str = "hybrid"
-    retrieval_top_k: int = 8
-    retrieval_min_score: float = 0.3
-    chat_history_window_size: int = 8
-    chat_history_max_chars: int = 4000
-    reranking_enabled: bool = False
-    reranker_backend: str | None = None
-    reranker_model: str | None = None
-    reranker_candidate_multiplier: int = 3
     organization_id: UUID | None = None
-    org_embedding_api_key_credential_id: UUID | None = None
-    org_llm_api_key_credential_id: UUID | None = None
-    overrides_models_from_org: bool = False
-    overrides_indexing_from_org: bool = False
-    overrides_retrieval_from_org: bool = False
-    overrides_reranking_from_org: bool = False
-    overrides_chat_history_from_org: bool = False
-    overrides_models_from_user: bool = False
-    overrides_indexing_from_user: bool = False
-    overrides_retrieval_from_user: bool = False
-    overrides_reranking_from_user: bool = False
-    overrides_chat_history_from_user: bool = False
 
     def publish(self) -> "Project":
         """Publish the project. Raises if already published."""

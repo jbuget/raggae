@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, cast
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -27,9 +27,6 @@ router = APIRouter(
     tags=["project-snapshots"],
     dependencies=[Depends(get_current_user_id)],
 )
-
-ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
-ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory", "mmr"]
 
 
 @router.get("", response_model=ProjectSnapshotListResponse)
@@ -65,26 +62,7 @@ async def list_project_snapshots(
             description=s.description,
             system_prompt=s.system_prompt,
             is_published=s.is_published,
-            chunking_strategy=s.chunking_strategy,
-            parent_child_chunking=s.parent_child_chunking,
             organization_id=s.organization_id,
-            embedding_backend=s.embedding_backend,
-            embedding_model=s.embedding_model,
-            embedding_api_key_credential_id=s.embedding_api_key_credential_id,
-            org_embedding_api_key_credential_id=s.org_embedding_api_key_credential_id,
-            llm_backend=s.llm_backend,
-            llm_model=s.llm_model,
-            llm_api_key_credential_id=s.llm_api_key_credential_id,
-            org_llm_api_key_credential_id=s.org_llm_api_key_credential_id,
-            retrieval_strategy=cast(ProjectRetrievalStrategy, s.retrieval_strategy),
-            retrieval_top_k=s.retrieval_top_k,
-            retrieval_min_score=s.retrieval_min_score,
-            chat_history_window_size=s.chat_history_window_size,
-            chat_history_max_chars=s.chat_history_max_chars,
-            reranking_enabled=s.reranking_enabled,
-            reranker_backend=cast(ProjectRerankerBackend | None, s.reranker_backend),
-            reranker_model=s.reranker_model,
-            reranker_candidate_multiplier=s.reranker_candidate_multiplier,
             restored_from_version=s.restored_from_version,
         )
         for s in snapshot_dtos
@@ -133,26 +111,7 @@ async def get_project_snapshot(
         description=snapshot_dto.description,
         system_prompt=snapshot_dto.system_prompt,
         is_published=snapshot_dto.is_published,
-        chunking_strategy=snapshot_dto.chunking_strategy,
-        parent_child_chunking=snapshot_dto.parent_child_chunking,
         organization_id=snapshot_dto.organization_id,
-        embedding_backend=snapshot_dto.embedding_backend,
-        embedding_model=snapshot_dto.embedding_model,
-        embedding_api_key_credential_id=snapshot_dto.embedding_api_key_credential_id,
-        org_embedding_api_key_credential_id=snapshot_dto.org_embedding_api_key_credential_id,
-        llm_backend=snapshot_dto.llm_backend,
-        llm_model=snapshot_dto.llm_model,
-        llm_api_key_credential_id=snapshot_dto.llm_api_key_credential_id,
-        org_llm_api_key_credential_id=snapshot_dto.org_llm_api_key_credential_id,
-        retrieval_strategy=cast(ProjectRetrievalStrategy, snapshot_dto.retrieval_strategy),
-        retrieval_top_k=snapshot_dto.retrieval_top_k,
-        retrieval_min_score=snapshot_dto.retrieval_min_score,
-        chat_history_window_size=snapshot_dto.chat_history_window_size,
-        chat_history_max_chars=snapshot_dto.chat_history_max_chars,
-        reranking_enabled=snapshot_dto.reranking_enabled,
-        reranker_backend=cast(ProjectRerankerBackend | None, snapshot_dto.reranker_backend),
-        reranker_model=snapshot_dto.reranker_model,
-        reranker_candidate_multiplier=snapshot_dto.reranker_candidate_multiplier,
         restored_from_version=snapshot_dto.restored_from_version,
     )
 
@@ -181,47 +140,4 @@ async def restore_project_snapshot(
             detail="Snapshot not found",
         ) from None
 
-    return ProjectResponse(
-        id=project_dto.id,
-        user_id=project_dto.user_id,
-        organization_id=project_dto.organization_id,
-        name=project_dto.name,
-        description=project_dto.description,
-        system_prompt=project_dto.system_prompt,
-        is_published=project_dto.is_published,
-        created_at=project_dto.created_at,
-        chunking_strategy=project_dto.chunking_strategy,
-        parent_child_chunking=project_dto.parent_child_chunking,
-        reindex_status=project_dto.reindex_status,
-        reindex_progress=project_dto.reindex_progress,
-        reindex_total=project_dto.reindex_total,
-        embedding_backend=project_dto.embedding_backend,
-        embedding_model=project_dto.embedding_model,
-        embedding_api_key_masked=project_dto.embedding_api_key_masked,
-        embedding_api_key_credential_id=project_dto.embedding_api_key_credential_id,
-        org_embedding_api_key_credential_id=project_dto.org_embedding_api_key_credential_id,
-        llm_backend=project_dto.llm_backend,
-        llm_model=project_dto.llm_model,
-        llm_api_key_masked=project_dto.llm_api_key_masked,
-        llm_api_key_credential_id=project_dto.llm_api_key_credential_id,
-        org_llm_api_key_credential_id=project_dto.org_llm_api_key_credential_id,
-        retrieval_strategy=cast(ProjectRetrievalStrategy, project_dto.retrieval_strategy),
-        retrieval_top_k=project_dto.retrieval_top_k,
-        retrieval_min_score=project_dto.retrieval_min_score,
-        chat_history_window_size=project_dto.chat_history_window_size,
-        chat_history_max_chars=project_dto.chat_history_max_chars,
-        reranking_enabled=project_dto.reranking_enabled,
-        reranker_backend=cast(ProjectRerankerBackend | None, project_dto.reranker_backend),
-        reranker_model=project_dto.reranker_model,
-        reranker_candidate_multiplier=project_dto.reranker_candidate_multiplier,
-        overrides_models_from_org=project_dto.overrides_models_from_org,
-        overrides_indexing_from_org=project_dto.overrides_indexing_from_org,
-        overrides_retrieval_from_org=project_dto.overrides_retrieval_from_org,
-        overrides_reranking_from_org=project_dto.overrides_reranking_from_org,
-        overrides_chat_history_from_org=project_dto.overrides_chat_history_from_org,
-        overrides_models_from_user=project_dto.overrides_models_from_user,
-        overrides_indexing_from_user=project_dto.overrides_indexing_from_user,
-        overrides_retrieval_from_user=project_dto.overrides_retrieval_from_user,
-        overrides_reranking_from_user=project_dto.overrides_reranking_from_user,
-        overrides_chat_history_from_user=project_dto.overrides_chat_history_from_user,
-    )
+    return ProjectResponse.from_dto(project_dto)
