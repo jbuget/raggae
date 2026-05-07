@@ -5,7 +5,6 @@ import pytest
 
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class TestProjectSnapshot:
@@ -19,30 +18,6 @@ class TestProjectSnapshot:
             system_prompt="You are a helpful assistant.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
-            parent_child_chunking=False,
-            reindex_status="idle",
-            reindex_progress=0,
-            reindex_total=0,
-            embedding_backend="openai",
-            embedding_model="text-embedding-3-small",
-            embedding_api_key_encrypted="enc:super-secret",
-            embedding_api_key_credential_id=uuid4(),
-            org_embedding_api_key_credential_id=None,
-            llm_backend="openai",
-            llm_model="gpt-4.1",
-            llm_api_key_encrypted="enc:other-secret",
-            llm_api_key_credential_id=uuid4(),
-            org_llm_api_key_credential_id=None,
-            retrieval_strategy="hybrid",
-            retrieval_top_k=8,
-            retrieval_min_score=0.3,
-            chat_history_window_size=8,
-            chat_history_max_chars=4000,
-            reranking_enabled=False,
-            reranker_backend=None,
-            reranker_model=None,
-            reranker_candidate_multiplier=3,
             organization_id=None,
         )
 
@@ -84,27 +59,6 @@ class TestProjectSnapshot:
         assert snapshot.description == sample_project.description
         assert snapshot.system_prompt == sample_project.system_prompt
         assert snapshot.is_published == sample_project.is_published
-        assert snapshot.chunking_strategy == sample_project.chunking_strategy
-        assert snapshot.parent_child_chunking == sample_project.parent_child_chunking
-        assert snapshot.embedding_backend == sample_project.embedding_backend
-        assert snapshot.embedding_model == sample_project.embedding_model
-        assert snapshot.embedding_api_key_credential_id == sample_project.embedding_api_key_credential_id
-        assert (
-            snapshot.org_embedding_api_key_credential_id == sample_project.org_embedding_api_key_credential_id
-        )
-        assert snapshot.llm_backend == sample_project.llm_backend
-        assert snapshot.llm_model == sample_project.llm_model
-        assert snapshot.llm_api_key_credential_id == sample_project.llm_api_key_credential_id
-        assert snapshot.org_llm_api_key_credential_id == sample_project.org_llm_api_key_credential_id
-        assert snapshot.retrieval_strategy == sample_project.retrieval_strategy
-        assert snapshot.retrieval_top_k == sample_project.retrieval_top_k
-        assert snapshot.retrieval_min_score == sample_project.retrieval_min_score
-        assert snapshot.chat_history_window_size == sample_project.chat_history_window_size
-        assert snapshot.chat_history_max_chars == sample_project.chat_history_max_chars
-        assert snapshot.reranking_enabled == sample_project.reranking_enabled
-        assert snapshot.reranker_backend == sample_project.reranker_backend
-        assert snapshot.reranker_model == sample_project.reranker_model
-        assert snapshot.reranker_candidate_multiplier == sample_project.reranker_candidate_multiplier
 
     def test_from_project_does_not_include_encrypted_api_keys(
         self,

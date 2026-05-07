@@ -15,8 +15,17 @@ class TestDeleteProject:
         return AsyncMock()
 
     @pytest.fixture
-    def use_case(self, mock_project_repository: AsyncMock) -> DeleteProject:
-        return DeleteProject(project_repository=mock_project_repository)
+    def mock_agent_configuration_repository(self) -> AsyncMock:
+        return AsyncMock()
+
+    @pytest.fixture
+    def use_case(
+        self, mock_project_repository: AsyncMock, mock_agent_configuration_repository: AsyncMock
+    ) -> DeleteProject:
+        return DeleteProject(
+            project_repository=mock_project_repository,
+            agent_configuration_repository=mock_agent_configuration_repository,
+        )
 
     async def test_delete_project_success(
         self,

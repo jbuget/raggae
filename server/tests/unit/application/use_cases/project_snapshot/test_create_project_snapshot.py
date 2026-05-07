@@ -8,7 +8,6 @@ from raggae.application.use_cases.project_snapshot.create_project_snapshot impor
 )
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
 )
@@ -47,7 +46,6 @@ class TestCreateProjectSnapshot:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
         )
 
     async def test_create_project_snapshot_success(
