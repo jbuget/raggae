@@ -24,7 +24,7 @@ export function ProjectSnapshotsSheet({ projectId, open, onOpenChange }: Project
         <SheetHeader className="border-b pb-4">
           <SheetTitle>{t("tabs.history")}</SheetTitle>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto px-1 py-4">
+        <div className="flex-1 overflow-y-auto py-2">
           <ProjectSnapshotsList projectId={projectId} />
         </div>
       </SheetContent>

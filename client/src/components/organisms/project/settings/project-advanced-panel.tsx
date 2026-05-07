@@ -66,10 +66,16 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const currentOwnerType = project?.organization_id ? "ORGANIZATION" : "USER";
 
   const renderInheritedValue = (val: string | number | undefined | null, defaultValue?: string | number) => {
-    const finalVal = val ?? defaultValue;
-    if (finalVal === undefined || finalVal === null) return "";
+    const normalizedVal = val === "" ? undefined : val;
+    const finalVal = normalizedVal ?? defaultValue;
+    const inheritsFromApp = (normalizedVal === undefined || normalizedVal === null) && defaultValue !== undefined && defaultValue !== null;
+    const label = inheritsFromApp
+      ? t("inherited.default")
+      : (currentOwnerType === "USER" ? t("inherited.user") : t("inherited.organization"));
+    if (finalVal === undefined || finalVal === null || finalVal === "") {
+      return <span>{label} ({t("inherited.emptyValue")})</span>;
+    }
     const displayVal = typeof finalVal === "string" ? (BACKEND_LABELS[finalVal] ?? finalVal) : finalVal;
-    const label = currentOwnerType === "USER" ? "Défini par l'utilisateur" : "Défini par l'organisation";
     return <span>{label} ({displayVal})</span>;
   };
 
@@ -130,22 +136,22 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   // --- Models computed values ---
   const effectiveEmbeddingBackend = (embeddingBackend === undefined
-    ? (projectConfig?.embedding_backend ?? "")
+    ? (projectConfig?.embedding_backend ?? inheritedDefaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "")
     : embeddingBackend) || "none";
   const effectiveLlmBackend = (llmBackend === undefined
-    ? (projectConfig?.llm_backend ?? "")
+    ? (projectConfig?.llm_backend ?? inheritedDefaults?.llm_backend ?? systemDefaults?.llm_backend ?? "")
     : llmBackend) || "none";
   const effectiveEmbeddingModel = (embeddingModel === undefined
-    ? (projectConfig?.embedding_model ?? "")
+    ? (projectConfig?.embedding_model ?? inheritedDefaults?.embedding_model ?? systemDefaults?.embedding_model ?? "")
     : (embeddingModel ?? "")) || "none";
   const effectiveLlmModel = (llmModel === undefined
-    ? (projectConfig?.llm_model ?? "")
+    ? (projectConfig?.llm_model ?? inheritedDefaults?.llm_model ?? systemDefaults?.llm_model ?? "")
     : (llmModel ?? "")) || "none";
   const effectiveEmbeddingCredentialId = (embeddingCredentialId === undefined
-    ? (projectConfig?.embedding_api_key_credential_id ?? "")
+    ? (projectConfig?.embedding_api_key_credential_id ?? inheritedDefaults?.embedding_api_key_credential_id ?? "")
     : (embeddingCredentialId ?? "")) || "none";
   const effectiveLlmCredentialId = (llmCredentialId === undefined
-    ? (projectConfig?.llm_api_key_credential_id ?? "")
+    ? (projectConfig?.llm_api_key_credential_id ?? inheritedDefaults?.llm_api_key_credential_id ?? "")
     : (llmCredentialId ?? "")) || "none";
 
   const credentialsByProvider = (credentials ?? [])
@@ -161,12 +167,12 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const embeddingModelOptions = (effectiveEmbeddingBackend && effectiveEmbeddingBackend !== "none") ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
   const llmModelOptions = (effectiveLlmBackend && effectiveLlmBackend !== "none") ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
-  const storedEmbeddingBackend = projectConfig?.embedding_backend ?? "";
-  const storedLlmBackend = projectConfig?.llm_backend ?? "";
-  const storedEmbeddingModel = projectConfig?.embedding_model ?? "";
-  const storedLlmModel = projectConfig?.llm_model ?? "";
-  const storedEmbeddingCredentialId = projectConfig?.embedding_api_key_credential_id ?? "";
-  const storedLlmCredentialId = projectConfig?.llm_api_key_credential_id ?? "";
+  const storedEmbeddingBackend = projectConfig?.embedding_backend ?? inheritedDefaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "";
+  const storedLlmBackend = projectConfig?.llm_backend ?? inheritedDefaults?.llm_backend ?? systemDefaults?.llm_backend ?? "";
+  const storedEmbeddingModel = projectConfig?.embedding_model ?? inheritedDefaults?.embedding_model ?? systemDefaults?.embedding_model ?? "";
+  const storedLlmModel = projectConfig?.llm_model ?? inheritedDefaults?.llm_model ?? systemDefaults?.llm_model ?? "";
+  const storedEmbeddingCredentialId = projectConfig?.embedding_api_key_credential_id ?? inheritedDefaults?.embedding_api_key_credential_id ?? "";
+  const storedLlmCredentialId = projectConfig?.llm_api_key_credential_id ?? inheritedDefaults?.llm_api_key_credential_id ?? "";
 
   const hasModelsChanges =
     (effectiveEmbeddingBackend === "none" ? "" : effectiveEmbeddingBackend) !== storedEmbeddingBackend ||
@@ -354,7 +360,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.embedding_backend)}
+                        {renderInheritedValue(inheritedDefaults?.embedding_backend, systemDefaults?.embedding_backend)}
                       </SelectItem>
                       <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
                       <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
@@ -428,7 +434,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.llm_backend)}
+                        {renderInheritedValue(inheritedDefaults?.llm_backend, systemDefaults?.llm_backend)}
                       </SelectItem>
                       <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
                       <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>

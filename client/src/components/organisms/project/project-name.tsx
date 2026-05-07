@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useOrganization } from "@/lib/hooks/use-organization";
+import Link from "next/link";
 
 interface ProjectNameProps {
   projectId: string;
@@ -20,7 +21,12 @@ export function ProjectName({ projectId, showOrg }: ProjectNameProps) {
   if (showOrg && org) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="text-muted-foreground">{org.name}</span>
+        <Link
+          href={`/organizations/${org.id}`}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          {org.name}
+        </Link>
         <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
         {name}
       </span>

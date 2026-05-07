@@ -29,6 +29,10 @@ router = APIRouter(
 )
 
 
+def _dto_to_response(s: object) -> ProjectSnapshotResponse:
+    return ProjectSnapshotResponse.model_validate(s, from_attributes=True)
+
+
 @router.get("", response_model=ProjectSnapshotListResponse)
 async def list_project_snapshots(
     project_id: UUID,
@@ -50,26 +54,8 @@ async def list_project_snapshots(
             detail="Project not found",
         ) from None
 
-    snapshots = [
-        ProjectSnapshotResponse(
-            id=s.id,
-            project_id=s.project_id,
-            version_number=s.version_number,
-            label=s.label,
-            created_at=s.created_at,
-            created_by_user_id=s.created_by_user_id,
-            name=s.name,
-            description=s.description,
-            system_prompt=s.system_prompt,
-            is_published=s.is_published,
-            organization_id=s.organization_id,
-            restored_from_version=s.restored_from_version,
-        )
-        for s in snapshot_dtos
-    ]
-
     return ProjectSnapshotListResponse(
-        snapshots=snapshots,
+        snapshots=[_dto_to_response(s) for s in snapshot_dtos],
         total=total,
         limit=limit,
         offset=offset,
@@ -100,20 +86,7 @@ async def get_project_snapshot(
             detail="Snapshot not found",
         ) from None
 
-    return ProjectSnapshotResponse(
-        id=snapshot_dto.id,
-        project_id=snapshot_dto.project_id,
-        version_number=snapshot_dto.version_number,
-        label=snapshot_dto.label,
-        created_at=snapshot_dto.created_at,
-        created_by_user_id=snapshot_dto.created_by_user_id,
-        name=snapshot_dto.name,
-        description=snapshot_dto.description,
-        system_prompt=snapshot_dto.system_prompt,
-        is_published=snapshot_dto.is_published,
-        organization_id=snapshot_dto.organization_id,
-        restored_from_version=snapshot_dto.restored_from_version,
-    )
+    return _dto_to_response(snapshot_dto)
 
 
 @router.post("/{version_number}/restore", status_code=status.HTTP_200_OK)

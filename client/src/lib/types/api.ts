@@ -256,6 +256,7 @@ export interface SystemDefaultsResponse {
   llm_model: string;
   embedding_backend: string;
   embedding_model: string;
+  parent_child_chunking: boolean;
   retrieval_strategy: string;
   retrieval_top_k: number;
   retrieval_min_score: number;

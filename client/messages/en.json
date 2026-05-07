@@ -184,6 +184,12 @@
       "overrideUserDefaults": "Override your user settings",
       "userDefaultsApplied": "Your user settings apply to this section. Enable the override to customize them.",
       "systemDefaultsApplied": "No settings configured — system defaults are used.",
+      "inherited": {
+        "default": "Default",
+        "user": "Set by user",
+        "organization": "Set by organization",
+        "emptyValue": "—"
+      },
       "saveChanges": "Save changes",
       "resetToInherited": "Reset to inherited",
       "updateSuccess": "Project updated",

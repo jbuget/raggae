@@ -1171,6 +1171,7 @@ def get_update_project_configuration_use_case() -> UpdateProjectConfiguration:
     return UpdateProjectConfiguration(
         project_repository=_project_repository,
         agent_configuration_repository=_agent_configuration_repository,
+        snapshot_repository=_project_snapshot_repository,
     )
 
 

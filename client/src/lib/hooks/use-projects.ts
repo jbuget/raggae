@@ -47,6 +47,7 @@ export function useCreateProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["organization-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }

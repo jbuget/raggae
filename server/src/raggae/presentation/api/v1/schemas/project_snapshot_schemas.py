@@ -17,6 +17,21 @@ class ProjectSnapshotResponse(BaseModel):
     is_published: bool
     organization_id: UUID | None
     restored_from_version: int | None
+    embedding_backend: str | None = None
+    embedding_model: str | None = None
+    llm_backend: str | None = None
+    llm_model: str | None = None
+    chunking_strategy: str | None = None
+    parent_child_chunking: bool | None = None
+    retrieval_strategy: str | None = None
+    retrieval_top_k: int | None = None
+    retrieval_min_score: float | None = None
+    reranking_enabled: bool | None = None
+    reranker_backend: str | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int | None = None
+    chat_history_window_size: int | None = None
+    chat_history_max_chars: int | None = None
 
 
 class ProjectSnapshotListResponse(BaseModel):

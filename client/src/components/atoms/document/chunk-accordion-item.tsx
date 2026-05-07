@@ -47,7 +47,7 @@ export function ChunkAccordionItem({
           {showLevel && (
             <Badge 
               variant="outline" 
-              className={`px-1 py-0 text-[9px] uppercase leading-3 bg-transparent ${
+              className={`px-1 py-0 text-xs uppercase leading-3 bg-transparent ${
                 chunk.chunk_level === "parent" 
                   ? "border-foreground/30 text-foreground font-bold" 
                   : "border-transparent text-muted-foreground"

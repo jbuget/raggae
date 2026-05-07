@@ -184,6 +184,12 @@
       "overrideUserDefaults": "Surcharger vos paramètres utilisateur",
       "userDefaultsApplied": "Vos paramètres utilisateur s'appliquent à cette section. Activez la surcharge pour les personnaliser.",
       "systemDefaultsApplied": "Aucun paramètre configuré — les valeurs système sont utilisées.",
+      "inherited": {
+        "default": "Par défaut",
+        "user": "Défini par l'utilisateur",
+        "organization": "Défini par l'organisation",
+        "emptyValue": "—"
+      },
       "saveChanges": "Enregistrer",
       "resetToInherited": "Réinitialiser",
       "updateSuccess": "Projet mis à jour",

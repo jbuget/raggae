@@ -1,5 +1,5 @@
 from dataclasses import replace
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 from raggae.application.dto.project_dto import ProjectDTO
@@ -7,10 +7,16 @@ from raggae.application.interfaces.repositories.organization_member_repository i
     OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.project_snapshot_repository import (
     ProjectSnapshotRepository,
 )
+from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
+from raggae.domain.services.config_extractor import ConfigExtractor
+from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectSystemPromptTooLongError,
@@ -26,10 +32,12 @@ class UpdateProject:
         project_repository: ProjectRepository,
         organization_member_repository: OrganizationMemberRepository | None = None,
         snapshot_repository: ProjectSnapshotRepository | None = None,
+        agent_configuration_repository: AgentConfigurationRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._organization_member_repository = organization_member_repository
         self._snapshot_repository = snapshot_repository
+        self._agent_configuration_repository = agent_configuration_repository
 
     async def execute(
         self,
@@ -68,11 +76,38 @@ class UpdateProject:
         await self._project_repository.save(updated_project)
 
         if self._snapshot_repository is not None:
+            # Capture the RESOLVED config for the history, so we know what was actually used
+            resolved_config = None
+            if self._agent_configuration_repository:
+                agent_config = await self._agent_configuration_repository.find_by_owner(
+                    owner_id=updated_project.id,
+                    owner_type=AgentConfigurationType.PROJECT,
+                )
+                
+                parent_config = None
+                if updated_project.organization_id is not None:
+                    parent_config = await self._agent_configuration_repository.find_by_owner(
+                        updated_project.organization_id, AgentConfigurationType.ORGA
+                    )
+                else:
+                    parent_config = await self._agent_configuration_repository.find_by_owner(
+                        user_id, AgentConfigurationType.USER
+                    )
+                app_config = await self._agent_configuration_repository.find_app_defaults()
+                
+                # If agent_config is None, we pass an empty one to ConfigExtractor
+                # so it can still resolve from parent/app
+                base_config = agent_config or AgentConfiguration(
+                    id=uuid4(), owner_id=updated_project.id, type=AgentConfigurationType.PROJECT
+                )
+                resolved_config = ConfigExtractor.resolve(base_config, parent_config, app_config)
+
             version_number = await self._snapshot_repository.get_next_version_number(updated_project.id)
             snapshot = ProjectSnapshot.from_project(
                 project=updated_project,
                 version_number=version_number,
                 created_by_user_id=user_id,
+                agent_config=resolved_config,
             )
             await self._snapshot_repository.save(snapshot)
 

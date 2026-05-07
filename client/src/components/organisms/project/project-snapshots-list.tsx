@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SnapshotCard } from "@/components/molecules/project/snapshot-card";
+import { SnapshotAccordionItem } from "@/components/atoms/project/snapshot-accordion-item";
 import {
   useProjectSnapshots,
   useRestoreProjectSnapshot,
@@ -29,23 +28,18 @@ interface ProjectSnapshotsListProps {
 
 function SnapshotsSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="divide-y">
       {[1, 2, 3].map((i) => (
-        <Card key={i}>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <Skeleton className="h-5 w-10" />
-                <Skeleton className="h-5 w-24" />
-              </div>
-              <Skeleton className="h-8 w-20" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-64" />
-          </CardContent>
-        </Card>
+        <div key={i} className="flex items-center gap-3 px-4 py-3">
+          <div className="flex flex-col items-center gap-1 shrink-0 w-10">
+            <Skeleton className="h-4 w-8" />
+          </div>
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-36" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-8 w-20 shrink-0" />
+        </div>
       ))}
     </div>
   );
@@ -118,9 +112,9 @@ export function ProjectSnapshotsList({ projectId }: ProjectSnapshotsListProps) {
 
   return (
     <>
-      <div className="space-y-4">
+    <div>
         {snapshots.map((snapshot) => (
-          <SnapshotCard
+          <SnapshotAccordionItem
             key={snapshot.id}
             snapshot={snapshot}
             isCurrentVersion={snapshot.version_number === maxVersion}

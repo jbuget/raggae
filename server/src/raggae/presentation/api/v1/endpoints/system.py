@@ -30,6 +30,9 @@ async def get_system_defaults(
         embedding_model=app_config.embedding_model or settings.default_embedding_model
         if app_config
         else settings.default_embedding_model,
+        parent_child_chunking=app_config.parent_child_chunking
+        if app_config and app_config.parent_child_chunking is not None
+        else settings.default_parent_child_chunking,
         retrieval_strategy=app_config.retrieval_strategy or settings.retrieval_default_strategy
         if app_config
         else settings.retrieval_default_strategy,

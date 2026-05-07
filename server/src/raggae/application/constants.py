@@ -23,7 +23,7 @@ ALLOWED_LLM_MODELS: dict[str, frozenset[str]] = {
     "gemini": frozenset(
         {
             "gemini-3.1-pro-preview",
-            "gemini-3-flash-preview",
+            "gemini-3-flash",
             "gemini-3-deep-think-preview",
         }
     ),

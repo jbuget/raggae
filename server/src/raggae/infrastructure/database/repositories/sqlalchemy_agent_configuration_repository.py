@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentConfiguration
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+from raggae.infrastructure.config.settings import settings
 from raggae.infrastructure.database.models.agent_configuration_model import AgentConfigurationModel
 
 
@@ -108,36 +109,20 @@ class SQLAlchemyAgentConfigurationRepository:
 
     @staticmethod
     def _fallback_from_env() -> AgentConfiguration | None:
-        def env(key: str) -> str | None:
-            v = os.environ.get(key)
-            return v if v else None
-
-        def env_int(key: str, default: int) -> int:
-            try:
-                return int(os.environ.get(key, default))
-            except (ValueError, TypeError):
-                return default
-
-        def env_float(key: str, default: float) -> float:
-            try:
-                return float(os.environ.get(key, default))
-            except (ValueError, TypeError):
-                return default
-
         return AgentConfiguration(
             id=uuid4(),
             owner_id=SYSTEM_OWNER_ID,
             type=AgentConfigurationType.APP,
-            embedding_backend=env("DEFAULT_EMBEDDING_PROVIDER"),
-            embedding_model=env("DEFAULT_EMBEDDING_MODEL"),
-            llm_backend=env("DEFAULT_LLM_PROVIDER"),
-            llm_model=env("DEFAULT_LLM_MODEL"),
-            retrieval_strategy=env("RETRIEVAL_DEFAULT_STRATEGY") or "hybrid",
-            retrieval_top_k=env_int("RETRIEVAL_DEFAULT_CHUNK_LIMIT", 8),
-            retrieval_min_score=env_float("RETRIEVAL_MIN_SCORE", 0.3),
-            reranker_backend=env("RERANKER_BACKEND"),
-            reranker_model=env("RERANKER_MODEL"),
-            reranker_candidate_multiplier=env_int("RERANKER_CANDIDATE_MULTIPLIER", 3),
-            chat_history_window_size=env_int("CHAT_HISTORY_WINDOW_SIZE", 8),
-            chat_history_max_chars=env_int("CHAT_HISTORY_MAX_CHARS", 4000),
+            embedding_backend=settings.default_embedding_provider,
+            embedding_model=settings.default_embedding_model,
+            llm_backend=settings.default_llm_provider,
+            llm_model=settings.default_llm_model,
+            retrieval_strategy=settings.retrieval_default_strategy,
+            retrieval_top_k=settings.retrieval_default_chunk_limit,
+            retrieval_min_score=settings.retrieval_min_score,
+            reranker_backend=settings.reranker_backend,
+            reranker_model=settings.reranker_model,
+            reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
+            chat_history_window_size=settings.chat_history_window_size,
+            chat_history_max_chars=settings.chat_history_max_chars,
         )

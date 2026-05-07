@@ -60,7 +60,7 @@ async def get_model_catalog(
             ],
             "gemini": [
                 ModelEntry(id="gemini-3.1-pro-preview", label="Gemini 3.1 Pro"),
-                ModelEntry(id="gemini-3-flash-preview", label="Gemini 3 Flash"),
+                ModelEntry(id="gemini-3-flash", label="Gemini 3 Flash"),
                 ModelEntry(id="gemini-3-deep-think-preview", label="Deep Think"),
             ],
             "anthropic": [

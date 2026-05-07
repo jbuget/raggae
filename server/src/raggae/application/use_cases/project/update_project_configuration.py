@@ -12,7 +12,12 @@ from raggae.application.interfaces.repositories.agent_configuration_repository i
     AgentConfigurationRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.project_snapshot_repository import (
+    ProjectSnapshotRepository,
+)
 from raggae.domain.entities.agent_configuration import AgentConfiguration
+from raggae.domain.entities.project_snapshot import ProjectSnapshot
+from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
@@ -30,9 +35,11 @@ class UpdateProjectConfiguration:
         self,
         project_repository: ProjectRepository,
         agent_configuration_repository: AgentConfigurationRepository,
+        snapshot_repository: ProjectSnapshotRepository | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._agent_configuration_repository = agent_configuration_repository
+        self._snapshot_repository = snapshot_repository
 
     async def execute(
         self,
@@ -99,4 +106,28 @@ class UpdateProjectConfiguration:
             chat_history_max_chars=chat_history_max_chars,
         )
         await self._agent_configuration_repository.save(config)
+
+        if self._snapshot_repository is not None:
+            # Capture the RESOLVED config for the history, so we know what was actually used
+            parent_config = None
+            if project.organization_id is not None:
+                parent_config = await self._agent_configuration_repository.find_by_owner(
+                    project.organization_id, AgentConfigurationType.ORGA
+                )
+            else:
+                parent_config = await self._agent_configuration_repository.find_by_owner(
+                    user_id, AgentConfigurationType.USER
+                )
+            app_config = await self._agent_configuration_repository.find_app_defaults()
+            resolved = ConfigExtractor.resolve(config, parent_config, app_config)
+
+            version_number = await self._snapshot_repository.get_next_version_number(project.id)
+            snapshot = ProjectSnapshot.from_project(
+                project=project,
+                version_number=version_number,
+                created_by_user_id=user_id,
+                agent_config=resolved, # Pass resolved instead of overrides
+            )
+            await self._snapshot_repository.save(snapshot)
+
         return AgentConfigurationDTO.from_entity(config)
