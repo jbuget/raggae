@@ -25,6 +25,7 @@ export function useUploadDocument(projectId: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const processingProgressRef = useRef(0);
@@ -51,6 +52,7 @@ export function useUploadDocument(projectId: string) {
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       stopAnimation();
       setProgress(0);
+      setIsFinishing(false);
     },
     mutationFn: (files: File[]) =>
       uploadDocuments(token!, projectId, files, (xhrProgress) => {
@@ -63,12 +65,18 @@ export function useUploadDocument(projectId: string) {
     onSuccess: () => {
       stopAnimation();
       setProgress(100);
+      setIsFinishing(true);
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
-      resetTimerRef.current = setTimeout(() => setProgress(0), 600);
+      
+      resetTimerRef.current = setTimeout(() => {
+        setProgress(0);
+        setIsFinishing(false);
+      }, 500);
     },
     onError: () => {
       stopAnimation();
       setProgress(0);
+      setIsFinishing(false);
     },
   });
 
@@ -79,7 +87,11 @@ export function useUploadDocument(projectId: string) {
     };
   }, []);
 
-  return { ...mutation, progress };
+  return { 
+    ...mutation, 
+    progress, 
+    isPending: mutation.isPending || isFinishing 
+  };
 }
 
 export function useReindexDocument(projectId: string) {

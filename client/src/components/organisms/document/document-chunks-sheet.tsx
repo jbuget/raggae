@@ -68,6 +68,8 @@ export function DocumentChunksSheet({
                   chunk={chunk}
                   ariaLabel={t("chunkLabel", { index: chunk.chunk_index })}
                   metadataLabel={t("metadata")}
+                  parentLabel={t("parent")}
+                  childLabel={t("child")}
                 />
               ))}
             </div>
