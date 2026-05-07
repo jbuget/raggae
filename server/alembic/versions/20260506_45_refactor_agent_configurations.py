@@ -95,8 +95,8 @@ def upgrade() -> None:
     op.drop_column("projects", "llm_api_key_encrypted")
 
     # Remove FK constraints before dropping org credential columns
-    op.drop_constraint("projects_org_embedding_api_key_credential_id_fkey", "projects", type_="foreignkey")
-    op.drop_constraint("projects_org_llm_api_key_credential_id_fkey", "projects", type_="foreignkey")
+    op.drop_constraint("fk_projects_org_embedding_credential", "projects", type_="foreignkey")
+    op.drop_constraint("fk_projects_org_llm_credential", "projects", type_="foreignkey")
     op.drop_column("projects", "org_embedding_api_key_credential_id")
     op.drop_column("projects", "org_llm_api_key_credential_id")
 
@@ -122,7 +122,7 @@ def downgrade() -> None:
         sa.Column("org_embedding_api_key_credential_id", postgresql.UUID(as_uuid=True), nullable=True),
     )
     op.create_foreign_key(
-        "projects_org_embedding_api_key_credential_id_fkey",
+        "fk_projects_org_embedding_credential",
         "projects",
         "org_model_provider_credentials",
         ["org_embedding_api_key_credential_id"],
@@ -130,7 +130,7 @@ def downgrade() -> None:
         ondelete="SET NULL",
     )
     op.create_foreign_key(
-        "projects_org_llm_api_key_credential_id_fkey",
+        "fk_projects_org_llm_credential",
         "projects",
         "org_model_provider_credentials",
         ["org_llm_api_key_credential_id"],
@@ -201,9 +201,9 @@ def _insert_app_row() -> None:
         return v if v else None
 
     row_id = str(uuid.uuid4())
-    llm_backend = env("DEFAULT_LLM_PROVIDER")
+    llm_backend = env("DEFAULT_LLM_PROVIDER").lower() if env("DEFAULT_LLM_PROVIDER") else None
     llm_model = env("DEFAULT_LLM_MODEL")
-    embedding_backend = env("DEFAULT_EMBEDDING_PROVIDER")
+    embedding_backend = env("DEFAULT_EMBEDDING_PROVIDER").lower() if env("DEFAULT_EMBEDDING_PROVIDER") else None
     embedding_model = env("DEFAULT_EMBEDDING_MODEL")
     retrieval_strategy = env("RETRIEVAL_DEFAULT_STRATEGY", "hybrid")
     retrieval_top_k_raw = env("RETRIEVAL_DEFAULT_CHUNK_LIMIT", "8")
