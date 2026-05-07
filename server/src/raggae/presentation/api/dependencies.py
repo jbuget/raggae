@@ -726,6 +726,7 @@ def get_update_project_use_case() -> UpdateProject:
         project_repository=_project_repository,
         organization_member_repository=_organization_member_repository,
         snapshot_repository=_project_snapshot_repository,
+        agent_configuration_repository=_agent_configuration_repository,
     )
 
 
@@ -750,6 +751,9 @@ def get_reindex_project_use_case() -> ReindexProject:
         file_storage_service=_file_storage_service,
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
+        agent_configuration_repository=_agent_configuration_repository,
+        org_provider_credential_repository=_org_credential_repository,
+        provider_credential_repository=_provider_credential_repository,
     )
 
 
@@ -779,6 +783,9 @@ def get_reindex_document_use_case() -> ReindexDocument:
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
         organization_member_repository=_organization_member_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+        org_provider_credential_repository=_org_credential_repository,
+        provider_credential_repository=_provider_credential_repository,
     )
 
 

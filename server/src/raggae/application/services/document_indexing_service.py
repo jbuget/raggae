@@ -86,6 +86,7 @@ class DocumentIndexingService:
         project: Project,
         file_content: bytes,
         embedding_service: EmbeddingService | None = None,
+        parent_child_chunking: bool = False,
     ) -> Document:
         effective_embedding_service = embedding_service or self._embedding_service
         document, sanitized_text, strategy = await self._prepare_document_for_chunking(
@@ -120,7 +121,7 @@ class DocumentIndexingService:
 
         document_chunks: list[DocumentChunk] = []
         if chunks:
-            use_parent_child = False
+            use_parent_child = parent_child_chunking
 
             if use_parent_child:
                 document_chunks = await self._build_parent_child_chunks(
@@ -141,7 +142,6 @@ class DocumentIndexingService:
         await self._document_chunk_repository.replace_document_chunks(document.id, document_chunks)
 
         return document
-
     async def _prepare_document_for_chunking(
         self,
         document: Document,

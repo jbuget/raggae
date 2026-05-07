@@ -311,6 +311,7 @@ class UploadDocument:
                     project=project,
                     file_content=file_content,
                     embedding_service=embedding_service,
+                    parent_child_chunking=resolved.parent_child_chunking if resolved else False,
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 await self._document_repository.save(document)
