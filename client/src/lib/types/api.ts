@@ -439,27 +439,23 @@ export interface ProjectSnapshotResponse {
   description: string;
   system_prompt: string;
   is_published: boolean;
-  chunking_strategy: string;
-  parent_child_chunking: boolean;
+  organization_id: string | null;
+  restored_from_version: number | null;
   embedding_backend: string | null;
   embedding_model: string | null;
-  embedding_api_key_credential_id: string | null;
-  org_embedding_api_key_credential_id: string | null;
   llm_backend: string | null;
   llm_model: string | null;
-  llm_api_key_credential_id: string | null;
-  org_llm_api_key_credential_id: string | null;
-  retrieval_strategy: string;
-  retrieval_top_k: number;
-  retrieval_min_score: number;
-  chat_history_window_size: number;
-  chat_history_max_chars: number;
-  reranking_enabled: boolean;
+  chunking_strategy: string | null;
+  parent_child_chunking: boolean | null;
+  retrieval_strategy: string | null;
+  retrieval_top_k: number | null;
+  retrieval_min_score: number | null;
+  reranking_enabled: boolean | null;
   reranker_backend: string | null;
   reranker_model: string | null;
-  reranker_candidate_multiplier: number;
-  restored_from_version: number | null;
-  organization_id: string | null;
+  reranker_candidate_multiplier: number | null;
+  chat_history_window_size: number | null;
+  chat_history_max_chars: number | null;
 }
 
 export interface ProjectSnapshotListResponse {
