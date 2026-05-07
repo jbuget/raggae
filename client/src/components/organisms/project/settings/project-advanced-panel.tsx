@@ -7,18 +7,21 @@ import { useTranslations } from "next-intl";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
+import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
+import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
+import { useOrganizationProjectDefaults } from "@/lib/hooks/use-org-project-defaults";
 import {
   useDeleteProject,
   useProject,
@@ -26,10 +29,6 @@ import {
   useReindexProject,
   useUpdateProjectConfiguration,
 } from "@/lib/hooks/use-projects";
-import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
-import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
-import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
-import { useOrganizationProjectDefaults } from "@/lib/hooks/use-org-project-defaults";
 import { useSystemDefaults } from "@/lib/hooks/use-system-defaults";
 import { useUserProjectDefaults } from "@/lib/hooks/use-user-project-defaults";
 import type {
@@ -40,6 +39,8 @@ import type {
   RetrievalStrategy,
   UpdateAgentConfigurationRequest,
 } from "@/lib/types/api";
+import { BACKEND_LABELS } from "@/lib/constants/backends";
+import { InlineAlert } from "@/components/atoms/feedback/inline-alert";
 
 export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const t = useTranslations("projects.settings");
@@ -61,6 +62,16 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const credentials = project?.organization_id ? orgCredentials : userCredentials;
 
   const inheritedDefaults = project?.organization_id ? orgDefaults : userDefaults;
+
+  const currentOwnerType = project?.organization_id ? "ORGANIZATION" : "USER";
+
+  const renderInheritedValue = (val: string | number | undefined | null, defaultValue?: string | number) => {
+    const finalVal = val ?? defaultValue;
+    if (finalVal === undefined || finalVal === null) return "";
+    const displayVal = typeof finalVal === "string" ? (BACKEND_LABELS[finalVal] ?? finalVal) : finalVal;
+    const label = currentOwnerType === "USER" ? "Défini par l'utilisateur" : "Défini par l'organisation";
+    return <span>{label} ({displayVal})</span>;
+  };
 
   // Indexation state
   const [chunkingStrategy, setChunkingStrategy] = useState<ChunkingStrategy | null | undefined>(undefined);
@@ -93,29 +104,49 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  function resetLocalState() {
+    setChunkingStrategy(undefined);
+    setParentChildChunking(undefined);
+    setEmbeddingBackend(undefined);
+    setEmbeddingModel(undefined);
+    setEmbeddingCredentialId(undefined);
+    setLlmBackend(undefined);
+    setLlmModel(undefined);
+    setLlmCredentialId(undefined);
+    setRetrievalStrategy(undefined);
+    setRetrievalTopK(undefined);
+    setRetrievalMinScore(undefined);
+    setRerankingEnabled(undefined);
+    setRerankerBackend(undefined);
+    setRerankerModel(undefined);
+    setRerankerCandidateMultiplier(undefined);
+    setChatHistoryWindowSize(undefined);
+    setChatHistoryMaxChars(undefined);
+  }
+
   if (!project) return null;
 
   const isProjectReindexing = project.reindex_status === "in_progress";
 
   // --- Models computed values ---
-  const effectiveEmbeddingBackend = embeddingBackend === undefined
+  const effectiveEmbeddingBackend = (embeddingBackend === undefined
     ? (projectConfig?.embedding_backend ?? "")
-    : embeddingBackend;
-  const effectiveLlmBackend = llmBackend === undefined
+    : embeddingBackend) || "none";
+  const effectiveLlmBackend = (llmBackend === undefined
     ? (projectConfig?.llm_backend ?? "")
-    : llmBackend;
-  const effectiveEmbeddingModel = embeddingModel === undefined
+    : llmBackend) || "none";
+  const effectiveEmbeddingModel = (embeddingModel === undefined
     ? (projectConfig?.embedding_model ?? "")
-    : (embeddingModel ?? "");
-  const effectiveLlmModel = llmModel === undefined
+    : (embeddingModel ?? "")) || "none";
+  const effectiveLlmModel = (llmModel === undefined
     ? (projectConfig?.llm_model ?? "")
-    : (llmModel ?? "");
-  const effectiveEmbeddingCredentialId = embeddingCredentialId === undefined
+    : (llmModel ?? "")) || "none";
+  const effectiveEmbeddingCredentialId = (embeddingCredentialId === undefined
     ? (projectConfig?.embedding_api_key_credential_id ?? "")
-    : (embeddingCredentialId ?? "");
-  const effectiveLlmCredentialId = llmCredentialId === undefined
+    : (embeddingCredentialId ?? "")) || "none";
+  const effectiveLlmCredentialId = (llmCredentialId === undefined
     ? (projectConfig?.llm_api_key_credential_id ?? "")
-    : (llmCredentialId ?? "");
+    : (llmCredentialId ?? "")) || "none";
 
   const credentialsByProvider = (credentials ?? [])
     .filter((c) => c.is_active)
@@ -127,8 +158,8 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const llmProviderForHints = effectiveLlmBackend === "openai" || effectiveLlmBackend === "gemini" || effectiveLlmBackend === "anthropic" ? effectiveLlmBackend : null;
   const embeddingCredentialOptions = embeddingProviderForHints ? (credentialsByProvider[embeddingProviderForHints] ?? []) : [];
   const llmCredentialOptions = llmProviderForHints ? (credentialsByProvider[llmProviderForHints] ?? []) : [];
-  const embeddingModelOptions = effectiveEmbeddingBackend ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
-  const llmModelOptions = effectiveLlmBackend ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
+  const embeddingModelOptions = (effectiveEmbeddingBackend && effectiveEmbeddingBackend !== "none") ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
+  const llmModelOptions = (effectiveLlmBackend && effectiveLlmBackend !== "none") ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
   const storedEmbeddingBackend = projectConfig?.embedding_backend ?? "";
   const storedLlmBackend = projectConfig?.llm_backend ?? "";
@@ -138,30 +169,30 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const storedLlmCredentialId = projectConfig?.llm_api_key_credential_id ?? "";
 
   const hasModelsChanges =
-    effectiveEmbeddingBackend !== storedEmbeddingBackend ||
-    effectiveEmbeddingModel !== storedEmbeddingModel ||
-    effectiveLlmBackend !== storedLlmBackend ||
-    effectiveLlmModel !== storedLlmModel ||
-    effectiveEmbeddingCredentialId !== storedEmbeddingCredentialId ||
-    effectiveLlmCredentialId !== storedLlmCredentialId;
+    (effectiveEmbeddingBackend === "none" ? "" : effectiveEmbeddingBackend) !== storedEmbeddingBackend ||
+    (effectiveEmbeddingModel === "none" ? "" : effectiveEmbeddingModel) !== storedEmbeddingModel ||
+    (effectiveLlmBackend === "none" ? "" : effectiveLlmBackend) !== storedLlmBackend ||
+    (effectiveLlmModel === "none" ? "" : effectiveLlmModel) !== storedLlmModel ||
+    (effectiveEmbeddingCredentialId === "none" ? "" : effectiveEmbeddingCredentialId) !== storedEmbeddingCredentialId ||
+    (effectiveLlmCredentialId === "none" ? "" : effectiveLlmCredentialId) !== storedLlmCredentialId;
 
   const hasModelsConfigured =
     projectConfig?.embedding_backend != null ||
     projectConfig?.llm_backend != null;
 
   // --- Indexation computed values ---
-  const effectiveChunkingStrategy = chunkingStrategy === undefined
+  const effectiveChunkingStrategy = (chunkingStrategy === undefined
     ? (projectConfig?.chunking_strategy as ChunkingStrategy | null ?? null)
-    : chunkingStrategy;
+    : chunkingStrategy) ?? "none";
   const effectiveParentChildChunking = parentChildChunking === undefined
-    ? (projectConfig?.parent_child_chunking ?? false)
+    ? (projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? false)
     : (parentChildChunking ?? false);
 
   const storedChunkingStrategy = projectConfig?.chunking_strategy as ChunkingStrategy | null ?? null;
-  const storedParentChildChunking = projectConfig?.parent_child_chunking ?? false;
+  const storedParentChildChunking = projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? false;
 
   const hasIndexingChanges =
-    effectiveChunkingStrategy !== storedChunkingStrategy ||
+    (effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy) !== storedChunkingStrategy ||
     effectiveParentChildChunking !== storedParentChildChunking;
   const isSemanticRecommended = effectiveParentChildChunking && effectiveChunkingStrategy !== "semantic";
 
@@ -170,27 +201,14 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     projectConfig?.parent_child_chunking != null;
 
   const indexingPayload: UpdateAgentConfigurationRequest = {
-    chunking_strategy: effectiveChunkingStrategy,
+    chunking_strategy: effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy as ChunkingStrategy,
     parent_child_chunking: effectiveParentChildChunking,
   };
 
-  function handleIndexingSave() {
-    const parentChildChanged = effectiveParentChildChunking !== storedParentChildChunking;
-    if (parentChildChanged) {
-      setPendingIndexingData(indexingPayload);
-      setReindexWarningOpen(true);
-      return;
-    }
-    updateProjectConfig.mutate(indexingPayload, {
-      onSuccess: () => toast.success(t("updateSuccess")),
-      onError: () => toast.error(t("updateError")),
-    });
-  }
-
   // --- Retrieval computed values ---
-  const effectiveRetrievalStrategy = retrievalStrategy === undefined
+  const effectiveRetrievalStrategy = (retrievalStrategy === undefined
     ? (projectConfig?.retrieval_strategy as RetrievalStrategy | null ?? null)
-    : retrievalStrategy;
+    : retrievalStrategy) ?? "none";
   const effectiveRetrievalTopK = retrievalTopK === undefined
     ? projectConfig?.retrieval_top_k ?? null
     : retrievalTopK;
@@ -203,7 +221,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const storedRetrievalMinScore = projectConfig?.retrieval_min_score ?? null;
 
   const hasRetrievalChanges =
-    effectiveRetrievalStrategy !== storedRetrievalStrategy ||
+    (effectiveRetrievalStrategy === "none" ? null : effectiveRetrievalStrategy) !== storedRetrievalStrategy ||
     effectiveRetrievalTopK !== storedRetrievalTopK ||
     effectiveRetrievalMinScore !== storedRetrievalMinScore;
 
@@ -214,29 +232,29 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   // --- Augmentation computed values ---
   const effectiveRerankingEnabled = rerankingEnabled === undefined
-    ? (projectConfig?.reranking_enabled ?? false)
+    ? (projectConfig?.reranking_enabled ?? inheritedDefaults?.reranking_enabled ?? false)
     : (rerankingEnabled ?? false);
-  const effectiveRerankerBackend = rerankerBackend === undefined
+  const effectiveRerankerBackend = (rerankerBackend === undefined
     ? (projectConfig?.reranker_backend as ProjectRerankerBackend | null ?? null)
-    : rerankerBackend;
-  const effectiveRerankerModel = rerankerModel === undefined
+    : rerankerBackend) ?? "none";
+  const effectiveRerankerModel = (rerankerModel === undefined
     ? (projectConfig?.reranker_model ?? "")
-    : (rerankerModel ?? "");
+    : (rerankerModel ?? "")) || "none";
   const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier === undefined
     ? projectConfig?.reranker_candidate_multiplier ?? null
     : rerankerCandidateMultiplier;
 
-  const storedRerankingEnabled = projectConfig?.reranking_enabled ?? false;
+  const storedRerankingEnabled = projectConfig?.reranking_enabled ?? inheritedDefaults?.reranking_enabled ?? false;
   const storedRerankerBackend = projectConfig?.reranker_backend as ProjectRerankerBackend | null ?? null;
   const storedRerankerModel = projectConfig?.reranker_model ?? "";
   const storedRerankerCandidateMultiplier = projectConfig?.reranker_candidate_multiplier ?? null;
 
-  const rerankerModelOptions = modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? [];
+  const rerankerModelOptions = (effectiveRerankerBackend && effectiveRerankerBackend !== "none") ? (modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? []) : [];
 
   const hasAugmentationChanges =
     effectiveRerankingEnabled !== storedRerankingEnabled ||
-    effectiveRerankerBackend !== storedRerankerBackend ||
-    effectiveRerankerModel !== storedRerankerModel ||
+    (effectiveRerankerBackend === "none" ? null : effectiveRerankerBackend) !== storedRerankerBackend ||
+    (effectiveRerankerModel === "none" ? "" : effectiveRerankerModel) !== storedRerankerModel ||
     effectiveRerankerCandidateMultiplier !== storedRerankerCandidateMultiplier;
 
   const hasRerankingConfigured =
@@ -261,6 +279,41 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const hasHistoryConfigured =
     projectConfig?.chat_history_window_size != null ||
     projectConfig?.chat_history_max_chars != null;
+
+  const hasAnyChanges = hasModelsChanges || hasIndexingChanges || hasRetrievalChanges || hasAugmentationChanges || hasHistoryChanges;
+  const hasAnyConfigured = hasModelsConfigured || hasIndexingConfigured || hasRetrievalConfigured || hasRerankingConfigured || hasHistoryConfigured;
+
+  function handleSaveAll() {
+    const payload: UpdateAgentConfigurationRequest = {
+      embedding_backend: (effectiveEmbeddingBackend === "none" ? null : effectiveEmbeddingBackend as ProjectEmbeddingBackend),
+      embedding_model: effectiveEmbeddingModel === "none" ? null : effectiveEmbeddingModel,
+      embedding_api_key_credential_id: effectiveEmbeddingCredentialId === "none" ? null : effectiveEmbeddingCredentialId,
+      llm_backend: (effectiveLlmBackend === "none" ? null : effectiveLlmBackend as ProjectLLMBackend),
+      llm_model: effectiveLlmModel === "none" ? null : effectiveLlmModel,
+      llm_api_key_credential_id: effectiveLlmCredentialId === "none" ? null : effectiveLlmCredentialId,
+      chunking_strategy: effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy as ChunkingStrategy,
+      parent_child_chunking: effectiveParentChildChunking,
+      retrieval_strategy: effectiveRetrievalStrategy === "none" ? null : effectiveRetrievalStrategy as RetrievalStrategy,
+      retrieval_top_k: effectiveRetrievalTopK,
+      retrieval_min_score: effectiveRetrievalMinScore,
+      reranking_enabled: effectiveRerankingEnabled,
+      reranker_backend: effectiveRerankerBackend === "none" ? null : effectiveRerankerBackend as ProjectRerankerBackend,
+      reranker_model: effectiveRerankerModel === "none" ? null : effectiveRerankerModel,
+      reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
+      chat_history_window_size: effectiveChatHistoryWindowSize,
+      chat_history_max_chars: effectiveChatHistoryMaxChars,
+    };
+    const parentChildChanged = effectiveParentChildChunking !== storedParentChildChunking;
+    if (parentChildChanged) {
+      setPendingIndexingData(payload);
+      setReindexWarningOpen(true);
+      return;
+    }
+    updateProjectConfig.mutate(payload, {
+      onSuccess: () => { resetLocalState(); toast.success(t("updateSuccess")); },
+      onError: () => toast.error(t("updateError")),
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -288,39 +341,70 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}</Label>
-                  <select id="embeddingBackend" value={effectiveEmbeddingBackend}
-                    onChange={(e) => { setEmbeddingBackend((e.target.value || "") as ProjectEmbeddingBackend | ""); setEmbeddingModel(""); setEmbeddingCredentialId(""); }}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  <Select
+                    value={effectiveEmbeddingBackend}
+                    onValueChange={(val) => {
+                      setEmbeddingBackend((val === "none" ? "" : val) as ProjectEmbeddingBackend | "");
+                      setEmbeddingModel("");
+                      setEmbeddingCredentialId("");
+                    }}
                   >
-                    <option value="">{inheritedDefaults?.embedding_backend ? `— (${inheritedDefaults.embedding_backend})` : "—"}</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="gemini">Gemini</option>
-                    <option value="ollama">Ollama</option>
-                    <option value="inmemory">InMemory</option>
-                  </select>
+                    <SelectTrigger id="embeddingBackend">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        {renderInheritedValue(inheritedDefaults?.embedding_backend)}
+                      </SelectItem>
+                      <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
+                      <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
+                      <SelectItem value="ollama">{BACKEND_LABELS.ollama}</SelectItem>
+                      <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {effectiveEmbeddingBackend ? (
+                {effectiveEmbeddingBackend !== "none" ? (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}</Label>
-                      <select id="embeddingCredentialId" value={effectiveEmbeddingCredentialId}
-                        onChange={(e) => setEmbeddingCredentialId(e.target.value)}
+                      <Select
+                        value={effectiveEmbeddingCredentialId}
+                        onValueChange={setEmbeddingCredentialId}
                         disabled={!embeddingProviderForHints}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                       >
-                        <option value="">{embeddingProviderForHints ? t("models.noSelection") : t("models.selectEmbeddingFirst")}</option>
-                        {embeddingCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
-                      </select>
+                        <SelectTrigger id="embeddingCredentialId">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {embeddingProviderForHints ? t("models.noSelection") : t("models.selectEmbeddingFirst")}
+                          </SelectItem>
+                          {embeddingCredentialOptions.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.masked_key}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}</Label>
-                      <select id="embeddingModel" value={effectiveEmbeddingModel}
-                        onChange={(e) => setEmbeddingModel(e.target.value)}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      <Select
+                        value={embeddingModelOptions.some(m => m.id === effectiveEmbeddingModel) ? effectiveEmbeddingModel : "none"}
+                        onValueChange={setEmbeddingModel}
                       >
-                        <option value="">{t("models.selectModel")}</option>
-                        {embeddingModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
+                        <SelectTrigger id="embeddingModel">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("models.selectModel")}</SelectItem>
+                          {embeddingModelOptions.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </>
                 ) : null}
@@ -331,70 +415,74 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}</Label>
-                  <select id="llmBackend" value={effectiveLlmBackend}
-                    onChange={(e) => { setLlmBackend((e.target.value || "") as ProjectLLMBackend | ""); setLlmModel(""); setLlmCredentialId(""); }}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  <Select
+                    value={effectiveLlmBackend}
+                    onValueChange={(val) => {
+                      setLlmBackend((val === "none" ? "" : val) as ProjectLLMBackend | "");
+                      setLlmModel("");
+                      setLlmCredentialId("");
+                    }}
                   >
-                    <option value="">{inheritedDefaults?.llm_backend ? `— (${inheritedDefaults.llm_backend})` : "—"}</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="gemini">Gemini</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="ollama">Ollama</option>
-                    <option value="inmemory">InMemory</option>
-                  </select>
+                    <SelectTrigger id="llmBackend">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        {renderInheritedValue(inheritedDefaults?.llm_backend)}
+                      </SelectItem>
+                      <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
+                      <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
+                      <SelectItem value="anthropic">{BACKEND_LABELS.anthropic}</SelectItem>
+                      <SelectItem value="ollama">{BACKEND_LABELS.ollama}</SelectItem>
+                      <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {effectiveLlmBackend ? (
+                {effectiveLlmBackend !== "none" ? (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}</Label>
-                      <select id="llmCredentialId" value={effectiveLlmCredentialId}
-                        onChange={(e) => setLlmCredentialId(e.target.value)}
+                      <Select
+                        value={effectiveLlmCredentialId}
+                        onValueChange={setLlmCredentialId}
                         disabled={!llmProviderForHints}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                       >
-                        <option value="">{llmProviderForHints ? t("models.noSelection") : t("models.selectLlmFirst")}</option>
-                        {llmCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
-                      </select>
+                        <SelectTrigger id="llmCredentialId">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {llmProviderForHints ? t("models.noSelection") : t("models.selectLlmFirst")}
+                          </SelectItem>
+                          {llmCredentialOptions.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.masked_key}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="llmModel">{t("models.llmModelLabel")}</Label>
-                      <select id="llmModel" value={effectiveLlmModel}
-                        onChange={(e) => setLlmModel(e.target.value)}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      <Select
+                        value={llmModelOptions.some(m => m.id === effectiveLlmModel) ? effectiveLlmModel : "none"}
+                        onValueChange={setLlmModel}
                       >
-                        <option value="">{t("models.selectModel")}</option>
-                        {llmModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
+                        <SelectTrigger id="llmModel">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("models.selectModel")}</SelectItem>
+                          {llmModelOptions.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </>
                 ) : null}
-                <div className="flex gap-2">
-                  <Button className="cursor-pointer" disabled={!hasModelsChanges || updateProjectConfig.isPending}
-                    onClick={() => updateProjectConfig.mutate(
-                      {
-                        embedding_backend: (effectiveEmbeddingBackend || null),
-                        embedding_model: effectiveEmbeddingModel || null,
-                        embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
-                        llm_backend: (effectiveLlmBackend || null),
-                        llm_model: effectiveLlmModel || null,
-                        llm_api_key_credential_id: effectiveLlmCredentialId || null,
-                      },
-                      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                    )}
-                  >
-                    {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
-                  </Button>
-                  {hasModelsConfigured && (
-                    <Button variant="outline" className="cursor-pointer" disabled={updateProjectConfig.isPending}
-                      onClick={() => updateProjectConfig.mutate(
-                        { embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null, llm_backend: null, llm_model: null, llm_api_key_credential_id: null },
-                        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                      )}
-                    >
-                      {t("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -405,45 +493,37 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionContent>
               <div className="space-y-4">
                 {isProjectReindexing && (
-                  <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <InlineAlert variant="loading">
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
-                  </div>
+                  </InlineAlert>
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
-                  <select id="chunkingStrategy" value={effectiveChunkingStrategy ?? ""}
-                    onChange={(e) => setChunkingStrategy((e.target.value as ChunkingStrategy) || null)}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  <Select
+                    value={effectiveChunkingStrategy}
+                    onValueChange={(val) => setChunkingStrategy(val === "none" ? null : val as ChunkingStrategy)}
                   >
-                    <option value="">{inheritedDefaults?.chunking_strategy ? `— (${inheritedDefaults.chunking_strategy})` : "—"}</option>
-                    <option value="auto">{tForm("chunkingAuto")}</option>
-                    <option value="fixed_window">{tForm("chunkingFixed")}</option>
-                    <option value="paragraph">{tForm("chunkingParagraph")}</option>
-                    <option value="heading_section">{tForm("chunkingHeading")}</option>
-                    <option value="semantic">{tForm("chunkingSemantic")}</option>
-                  </select>
+                    <SelectTrigger id="chunkingStrategy">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        {renderInheritedValue(inheritedDefaults?.chunking_strategy)}
+                      </SelectItem>
+                      <SelectItem value="auto">{tForm("chunkingAuto")}</SelectItem>
+                      <SelectItem value="fixed_window">{tForm("chunkingFixed")}</SelectItem>
+                      <SelectItem value="paragraph">{tForm("chunkingParagraph")}</SelectItem>
+                      <SelectItem value="heading_section">{tForm("chunkingHeading")}</SelectItem>
+                      <SelectItem value="semantic">{tForm("chunkingSemantic")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
                   <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
                 </div>
                 <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
-                {isSemanticRecommended && <p className="text-xs text-amber-700">{t("knowledgeIndexing.parentChildWarning")}</p>}
-                <div className="flex gap-2">
-                  <Button className="cursor-pointer" disabled={!hasIndexingChanges || updateProjectConfig.isPending} onClick={handleIndexingSave}>
-                    {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
-                  </Button>
-                  {hasIndexingConfigured && (
-                    <Button variant="outline" className="cursor-pointer" disabled={updateProjectConfig.isPending}
-                      onClick={() => updateProjectConfig.mutate(
-                        { chunking_strategy: null, parent_child_chunking: null },
-                        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                      )}
-                    >
-                      {t("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
+                {isSemanticRecommended && <InlineAlert>{t("knowledgeIndexing.parentChildWarning")}</InlineAlert>}
                 <div className="space-y-3 rounded-md border p-4">
                   <p className="text-sm font-medium">{t("knowledgeIndexing.reindexTitle")}</p>
                   <p className="text-sm text-muted-foreground">{t("knowledgeIndexing.reindexDescription")}</p>
@@ -471,15 +551,22 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
                 <div className="space-y-2">
                   <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}</Label>
-                  <select id="retrievalStrategy" value={effectiveRetrievalStrategy ?? ""}
-                    onChange={(e) => setRetrievalStrategy((e.target.value as RetrievalStrategy) || null)}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  <Select
+                    value={effectiveRetrievalStrategy}
+                    onValueChange={(val) => setRetrievalStrategy(val === "none" ? null : val as RetrievalStrategy)}
                   >
-                    <option value="">{inheritedDefaults?.retrieval_strategy ? `— (${inheritedDefaults.retrieval_strategy})` : `— (${systemDefaults?.retrieval_strategy ?? "hybrid"})`}</option>
-                    <option value="hybrid">{t("contextRetrieval.hybrid")}</option>
-                    <option value="vector">{t("contextRetrieval.vector")}</option>
-                    <option value="fulltext">{t("contextRetrieval.fulltext")}</option>
-                  </select>
+                    <SelectTrigger id="retrievalStrategy">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        {renderInheritedValue(inheritedDefaults?.retrieval_strategy, systemDefaults?.retrieval_strategy ?? "hybrid")}
+                      </SelectItem>
+                      <SelectItem value="hybrid">{t("contextRetrieval.hybrid")}</SelectItem>
+                      <SelectItem value="vector">{t("contextRetrieval.vector")}</SelectItem>
+                      <SelectItem value="fulltext">{t("contextRetrieval.fulltext")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}</Label>
@@ -498,26 +585,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     onChange={(e) => { const v = Number.parseFloat(e.target.value); setRetrievalMinScore(Number.isNaN(v) ? null : Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
                   />
                   <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button className="cursor-pointer" disabled={!hasRetrievalChanges || updateProjectConfig.isPending}
-                    onClick={() => updateProjectConfig.mutate(
-                      { retrieval_strategy: effectiveRetrievalStrategy, retrieval_top_k: effectiveRetrievalTopK, retrieval_min_score: effectiveRetrievalMinScore },
-                      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                    )}
-                  >
-                    {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
-                  </Button>
-                  {hasRetrievalConfigured && (
-                    <Button variant="outline" className="cursor-pointer" disabled={updateProjectConfig.isPending}
-                      onClick={() => updateProjectConfig.mutate(
-                        { retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null },
-                        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                      )}
-                    >
-                      {t("resetToInherited")}
-                    </Button>
-                  )}
                 </div>
               </div>
             </AccordionContent>
@@ -539,26 +606,45 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}</Label>
-                      <select id="rerankerBackend" value={effectiveRerankerBackend ?? ""}
-                        onChange={(e) => { setRerankerBackend((e.target.value as ProjectRerankerBackend) || null); setRerankerModel(""); }}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      <Select
+                        value={effectiveRerankerBackend}
+                        onValueChange={(val) => {
+                          setRerankerBackend(val === "none" ? null : val as ProjectRerankerBackend);
+                          setRerankerModel("");
+                        }}
                       >
-                        <option value="none">{t("contextAugmentation.rerankerNone")}</option>
-                        <option value="cross_encoder">{t("contextAugmentation.rerankerCrossEncoder")}</option>
-                        <option value="inmemory">{t("contextAugmentation.rerankerInMemory")}</option>
-                        <option value="mmr">{t("contextAugmentation.rerankerMmr")}</option>
-                      </select>
+                        <SelectTrigger id="rerankerBackend">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("contextAugmentation.rerankerNone")}</SelectItem>
+                          <SelectItem value="cross_encoder">{t("contextAugmentation.rerankerCrossEncoder")}</SelectItem>
+                          <SelectItem value="inmemory">{t("contextAugmentation.rerankerInMemory")}</SelectItem>
+                          <SelectItem value="mmr">{t("contextAugmentation.rerankerMmr")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}</Label>
-                      <select id="rerankerModel" value={effectiveRerankerModel}
-                        onChange={(e) => setRerankerModel(e.target.value)}
+                      <Select
+                        value={rerankerModelOptions.some(m => m.id === effectiveRerankerModel) ? effectiveRerankerModel : "none"}
+                        onValueChange={setRerankerModel}
                         disabled={effectiveRerankerBackend === "none" || effectiveRerankerBackend === null}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                       >
-                        <option value="">{effectiveRerankerBackend === "none" || effectiveRerankerBackend === null ? t("contextAugmentation.selectRerankerBackend") : t("contextAugmentation.selectModel")}</option>
-                        {rerankerModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
+                        <SelectTrigger id="rerankerModel">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {effectiveRerankerBackend === "none" || effectiveRerankerBackend === null ? t("contextAugmentation.selectRerankerBackend") : t("contextAugmentation.selectModel")}
+                          </SelectItem>
+                          {rerankerModelOptions.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}</Label>
@@ -571,26 +657,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     </div>
                   </>
                 )}
-                <div className="flex gap-2">
-                  <Button className="cursor-pointer" disabled={!hasAugmentationChanges || updateProjectConfig.isPending}
-                    onClick={() => updateProjectConfig.mutate(
-                      { reranking_enabled: effectiveRerankingEnabled, reranker_backend: effectiveRerankerBackend, reranker_model: effectiveRerankerModel || null, reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier },
-                      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                    )}
-                  >
-                    {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
-                  </Button>
-                  {hasRerankingConfigured && (
-                    <Button variant="outline" className="cursor-pointer" disabled={updateProjectConfig.isPending}
-                      onClick={() => updateProjectConfig.mutate(
-                        { reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null },
-                        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                      )}
-                    >
-                      {t("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -621,31 +687,40 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   />
                   <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
                 </div>
-                <div className="flex gap-2">
-                  <Button className="cursor-pointer" disabled={!hasHistoryChanges || updateProjectConfig.isPending}
-                    onClick={() => updateProjectConfig.mutate(
-                      { chat_history_window_size: effectiveChatHistoryWindowSize, chat_history_max_chars: effectiveChatHistoryMaxChars },
-                      { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                    )}
-                  >
-                    {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
-                  </Button>
-                  {hasHistoryConfigured && (
-                    <Button variant="outline" className="cursor-pointer" disabled={updateProjectConfig.isPending}
-                      onClick={() => updateProjectConfig.mutate(
-                        { chat_history_window_size: null, chat_history_max_chars: null },
-                        { onSuccess: () => toast.success(t("updateSuccess")), onError: () => toast.error(t("updateError")) },
-                      )}
-                    >
-                      {t("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
 
         </Accordion>
+        <div className="flex gap-2 px-1 pb-4 pt-2">
+          <Button
+            className="cursor-pointer"
+            disabled={!hasAnyChanges || updateProjectConfig.isPending}
+            onClick={handleSaveAll}
+          >
+            {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
+          </Button>
+          {hasAnyConfigured && (
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              disabled={updateProjectConfig.isPending}
+              onClick={() => updateProjectConfig.mutate(
+                {
+                  embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null,
+                  llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
+                  chunking_strategy: null, parent_child_chunking: null,
+                  retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null,
+                  reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null,
+                  chat_history_window_size: null, chat_history_max_chars: null,
+                },
+                { onSuccess: () => { resetLocalState(); toast.success(t("updateSuccess")); }, onError: () => toast.error(t("updateError")) },
+              )}
+            >
+              {t("resetToInherited")}
+            </Button>
+          )}
+        </div>
       </Card>
 
       <Dialog open={reindexWarningOpen} onOpenChange={setReindexWarningOpen}>
@@ -664,7 +739,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <Button className="cursor-pointer" onClick={() => {
               if (!pendingIndexingData) return;
               updateProjectConfig.mutate(pendingIndexingData, {
-                onSuccess: () => toast.success(t("updateSuccess")),
+                onSuccess: () => { resetLocalState(); toast.success(t("updateSuccess")); },
                 onError: () => toast.error(t("updateError")),
               });
               setReindexWarningOpen(false);

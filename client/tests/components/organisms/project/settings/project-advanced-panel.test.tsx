@@ -16,58 +16,49 @@ vi.mock("next/navigation", () => ({
 const mockProject = {
   id: "proj-1",
   user_id: "user-1",
+  organization_id: null,
   name: "Test Project",
   description: "",
   system_prompt: "",
   is_published: false,
-  chunking_strategy: "auto",
-  parent_child_chunking: false,
-  reindex_status: null,
-  retrieval_strategy: "hybrid",
-  retrieval_top_k: 8,
-  retrieval_min_score: 0.3,
-  reranking_enabled: false,
-  chat_history_window_size: 8,
-  chat_history_max_chars: 4000,
+  reindex_status: "idle",
+  reindex_progress: 0,
+  reindex_total: 0,
   created_at: "2026-01-01T00:00:00Z",
 };
 
+const commonHandlers = [
+  http.get("/api/v1/projects/proj-1", () => HttpResponse.json(mockProject)),
+  http.get("/api/v1/projects/proj-1/configuration", () => HttpResponse.json({
+    owner_id: "proj-1",
+    embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null,
+    llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
+    chunking_strategy: null, parent_child_chunking: null,
+    retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null,
+    reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null,
+    chat_history_window_size: null, chat_history_max_chars: null,
+  })),
+  http.get("/api/v1/model-catalog", () => HttpResponse.json({ embedding: {}, llm: {}, reranker: {} })),
+  http.get("/api/v1/credentials", () => HttpResponse.json([])),
+  http.get("/api/v1/auth/me/project-defaults", () => HttpResponse.json(null)),
+  http.get("/api/v1/system/defaults", () => HttpResponse.json(null)),
+];
+
 describe("ProjectAdvancedPanel", () => {
   it("should render the embedding models section", async () => {
-    server.use(
-      http.get("/api/v1/projects/proj-1", () => HttpResponse.json(mockProject)),
-      http.get("/api/v1/projects/proj-1/snapshots", () =>
-        HttpResponse.json({ snapshots: [], total: 0 }),
-      ),
-      http.get("/api/v1/model-catalog", () => HttpResponse.json({ embedding: {}, llm: {}, reranker: {} })),
-      http.get("/api/v1/credentials", () => HttpResponse.json([])),
-    );
+    server.use(...commonHandlers);
     renderWithProviders(<ProjectAdvancedPanel projectId="proj-1" />);
     expect(await screen.findByRole("button", { name: /Models/i })).toBeInTheDocument();
   });
 
-  it("should render the retrieval section heading", async () => {
-    server.use(
-      http.get("/api/v1/projects/proj-1", () => HttpResponse.json(mockProject)),
-      http.get("/api/v1/projects/proj-1/snapshots", () =>
-        HttpResponse.json({ snapshots: [], total: 0 }),
-      ),
-      http.get("/api/v1/model-catalog", () => HttpResponse.json({ embedding: {}, llm: {}, reranker: {} })),
-      http.get("/api/v1/credentials", () => HttpResponse.json([])),
-    );
+  it("should render the retrieval section trigger", async () => {
+    server.use(...commonHandlers);
     renderWithProviders(<ProjectAdvancedPanel projectId="proj-1" />);
-    expect(await screen.findByRole("heading", { name: /context retrieval/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /context retrieval/i })).toBeInTheDocument();
   });
 
   it("should render the danger zone with delete button", async () => {
-    server.use(
-      http.get("/api/v1/projects/proj-1", () => HttpResponse.json(mockProject)),
-      http.get("/api/v1/projects/proj-1/snapshots", () =>
-        HttpResponse.json({ snapshots: [], total: 0 }),
-      ),
-      http.get("/api/v1/model-catalog", () => HttpResponse.json({ embedding: {}, llm: {}, reranker: {} })),
-      http.get("/api/v1/credentials", () => HttpResponse.json([])),
-    );
+    server.use(...commonHandlers);
     renderWithProviders(<ProjectAdvancedPanel projectId="proj-1" />);
     expect(await screen.findByRole("button", { name: /delete/i })).toBeInTheDocument();
   });
