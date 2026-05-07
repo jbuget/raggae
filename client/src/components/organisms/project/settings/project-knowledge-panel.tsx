@@ -1,12 +1,16 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { InlineAlert } from "@/components/atoms/feedback/inline-alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentRow } from "@/components/molecules/document/document-row";
 import { DocumentUpload } from "@/components/molecules/document/document-upload";
-import { useProject } from "@/lib/hooks/use-projects";
+import { useProject, useProjectConfiguration } from "@/lib/hooks/use-projects";
+import { useUserProjectDefaults } from "@/lib/hooks/use-user-project-defaults";
+import { useOrganizationProjectDefaults } from "@/lib/hooks/use-org-project-defaults";
+import { useSystemDefaults } from "@/lib/hooks/use-system-defaults";
+import type { ChunkingStrategy, ProjectEmbeddingBackend } from "@/lib/types/api";
 import {
   useDeleteDocument,
   useDocuments,
@@ -18,6 +22,10 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
   const t = useTranslations("projects.settings");
 
   const { data: project } = useProject(projectId);
+  const { data: projectConfig } = useProjectConfiguration(projectId);
+  const { data: userDefaults } = useUserProjectDefaults();
+  const { data: orgDefaults } = useOrganizationProjectDefaults(project?.organization_id);
+  const { data: systemDefaults } = useSystemDefaults();
   const { data: documents, isLoading: isDocumentsLoading } = useDocuments(projectId);
   const uploadDocument = useUploadDocument(projectId);
   const reindexDocument = useReindexDocument(projectId);
@@ -29,15 +37,17 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
   const indexedCount = documents?.filter((doc) => doc.status === "indexed").length ?? 0;
   const totalCount = documents?.length ?? 0;
 
-  const hasEmbeddingModel = !!project.embedding_backend || !!project.embedding_model;
+  const inheritedDefaults = project.organization_id ? orgDefaults : userDefaults;
+  const effectiveEmbeddingBackend =
+    projectConfig?.embedding_backend ??
+    inheritedDefaults?.embedding_backend ??
+    systemDefaults?.embedding_backend;
+  const hasEmbeddingModel = !!effectiveEmbeddingBackend;
 
   return (
     <div className="max-w-4xl space-y-4">
       {!hasEmbeddingModel && (
-        <div className="flex items-start gap-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2.5 text-sm text-yellow-700 dark:text-yellow-400">
-          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-          <span>{t("documentIngestion.noEmbeddingModel")}</span>
-        </div>
+        <InlineAlert>{t("documentIngestion.noEmbeddingModel")}</InlineAlert>
       )}
       <p className="text-sm text-muted-foreground">{t("documentIngestion.description")}</p>
       <p className="text-sm text-muted-foreground">
@@ -72,10 +82,10 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
             <DocumentRow
               key={doc.id}
               document={doc}
-              embeddingBackend={project.embedding_backend}
-              embeddingModel={project.embedding_model}
-              chunkingStrategy={project.chunking_strategy}
-              parentChildChunking={project.parent_child_chunking}
+              embeddingBackend={(projectConfig?.embedding_backend ?? null) as ProjectEmbeddingBackend | null}
+              embeddingModel={projectConfig?.embedding_model ?? null}
+              chunkingStrategy={(projectConfig?.chunking_strategy ?? "auto") as ChunkingStrategy}
+              parentChildChunking={projectConfig?.parent_child_chunking ?? false}
               onReindex={(id) => {
                 if (isProjectReindexing) return;
                 reindexDocument.mutate(id, {
