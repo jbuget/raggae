@@ -125,4 +125,5 @@ class SQLAlchemyAgentConfigurationRepository:
             reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
             chat_history_window_size=settings.chat_history_window_size,
             chat_history_max_chars=settings.chat_history_max_chars,
+            parent_child_chunking=settings.default_parent_child_chunking,
         )

@@ -41,9 +41,11 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
+from raggae.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -306,12 +308,26 @@ class UploadDocument:
                     if self._project_embedding_service_resolver is not None
                     else None
                 )
+                resolved = await self._resolve_config(project, user_id)
+                parent_child_chunking = (
+                    resolved.parent_child_chunking 
+                    if resolved and resolved.parent_child_chunking is not None 
+                    else settings.default_parent_child_chunking
+                )
+                chunking_strategy = None
+                if resolved and resolved.chunking_strategy:
+                    try:
+                        chunking_strategy = ChunkingStrategy(resolved.chunking_strategy)
+                    except ValueError:
+                        logger.warning(f"Invalid chunking strategy in config: {resolved.chunking_strategy}")
+
                 document = await self._document_indexing_service.run_pipeline(
                     document=document,
                     project=project,
                     file_content=file_content,
                     embedding_service=embedding_service,
-                    parent_child_chunking=resolved.parent_child_chunking if resolved else False,
+                    parent_child_chunking=parent_child_chunking,
+                    chunking_strategy=chunking_strategy,
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 await self._document_repository.save(document)
@@ -347,8 +363,12 @@ class UploadDocument:
         project_config = await self._agent_configuration_repository.find_by_owner(
             project.id, AgentConfigurationType.PROJECT
         )
-        if project_config is None:
-            return None
+        
+        # If project_config is None, we still want to resolve from parent/app
+        from uuid import uuid4
+        base_config = project_config or AgentConfiguration(
+            id=uuid4(), owner_id=project.id, type=AgentConfigurationType.PROJECT
+        )
 
         if project.organization_id is not None:
             parent_config = await self._agent_configuration_repository.find_by_owner(
@@ -360,7 +380,7 @@ class UploadDocument:
             )
 
         app_config = await self._agent_configuration_repository.find_app_defaults()
-        return ConfigExtractor.resolve(project_config, parent_config, app_config)
+        return ConfigExtractor.resolve(base_config, parent_config, app_config)
 
     async def _fetch_encrypted_key(self, credential_id: UUID, project: Project, user_id: UUID) -> str | None:
         if project.organization_id is not None and self._org_provider_credential_repository is not None:

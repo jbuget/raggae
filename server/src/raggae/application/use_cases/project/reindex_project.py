@@ -28,8 +28,10 @@ from raggae.domain.exceptions.project_exceptions import (
 )
 from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
+from raggae.infrastructure.config.settings import settings
 
 
 class ReindexProject:
@@ -63,7 +65,17 @@ class ReindexProject:
             raise ProjectReindexInProgressError(f"Project {project_id} is already reindexing")
 
         resolved = await self._resolve_config(project, user_id)
-        parent_child_chunking = resolved.parent_child_chunking if resolved else False
+        parent_child_chunking = (
+            resolved.parent_child_chunking 
+            if resolved and resolved.parent_child_chunking is not None 
+            else settings.default_parent_child_chunking
+        )
+        chunking_strategy = None
+        if resolved and resolved.chunking_strategy:
+            try:
+                chunking_strategy = ChunkingStrategy(resolved.chunking_strategy)
+            except ValueError:
+                pass
 
         documents = await self._document_repository.find_by_project_id(project_id)
         project = project.start_reindex(total_documents=len(documents))
@@ -94,6 +106,7 @@ class ReindexProject:
                     file_content=file_content,
                     embedding_service=embedding_service,
                     parent_child_chunking=parent_child_chunking,
+                    chunking_strategy=chunking_strategy,
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 indexed_documents += 1
@@ -121,8 +134,12 @@ class ReindexProject:
         project_config = await self._agent_configuration_repository.find_by_owner(
             project.id, AgentConfigurationType.PROJECT
         )
-        if project_config is None:
-            return None
+        
+        # If project_config is None, we still want to resolve from parent/app
+        from uuid import uuid4
+        base_config = project_config or AgentConfiguration(
+            id=uuid4(), owner_id=project.id, type=AgentConfigurationType.PROJECT
+        )
 
         if project.organization_id is not None:
             parent_config = await self._agent_configuration_repository.find_by_owner(
@@ -134,7 +151,7 @@ class ReindexProject:
             )
 
         app_config = await self._agent_configuration_repository.find_app_defaults()
-        return ConfigExtractor.resolve(project_config, parent_config, app_config)
+        return ConfigExtractor.resolve(base_config, parent_config, app_config)
 
     async def _resolve_embedding_api_key(
         self, resolved: ResolvedAgentConfiguration, project: Project, user_id: UUID

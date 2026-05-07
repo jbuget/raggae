@@ -87,12 +87,14 @@ class DocumentIndexingService:
         file_content: bytes,
         embedding_service: EmbeddingService | None = None,
         parent_child_chunking: bool = False,
+        chunking_strategy: ChunkingStrategy | None = None,
     ) -> Document:
         effective_embedding_service = embedding_service or self._embedding_service
         document, sanitized_text, strategy = await self._prepare_document_for_chunking(
             document=document,
             project=project,
             file_content=file_content,
+            chunking_strategy=chunking_strategy,
         )
 
         extension = (
@@ -147,6 +149,7 @@ class DocumentIndexingService:
         document: Document,
         project: Project,
         file_content: bytes,
+        chunking_strategy: ChunkingStrategy | None = None,
     ) -> tuple[Document, str, ChunkingStrategy]:
         extracted_text = await self._document_text_extractor.extract_text(
             file_name=document.file_name,
@@ -164,7 +167,7 @@ class DocumentIndexingService:
             sanitized_text=sanitized_text,
         )
 
-        strategy = ChunkingStrategy.AUTO
+        strategy = chunking_strategy or ChunkingStrategy.AUTO
         if strategy == ChunkingStrategy.AUTO:
             analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
             strategy = self._chunking_strategy_selector.select(
