@@ -586,7 +586,9 @@
       "empty": "No chunks found for this document.",
       "error": "Unable to load chunks.",
       "chunkLabel": "Chunk #{index}",
-      "metadata": "Metadata"
+      "metadata": "Metadata",
+      "parent": "Parent",
+      "child": "Child"
     }
   },
   "sidebar": {

@@ -13,7 +13,7 @@ import {
   updateProject,
   updateProjectConfiguration,
 } from "@/lib/api/projects";
-import type { CreateProjectRequest, UpdateAgentConfigurationRequest, UpdateProjectRequest } from "@/lib/types/api";
+import type { CreateProjectRequest, Project, UpdateAgentConfigurationRequest, UpdateProjectRequest } from "@/lib/types/api";
 import { useAuth } from "./use-auth";
 
 export function useProjects() {
@@ -33,6 +33,8 @@ export function useProject(projectId: string) {
     queryKey: ["projects", projectId],
     queryFn: () => getProject(token!, projectId),
     enabled: !!token && !!projectId,
+    refetchInterval: (query) =>
+      query.state.data?.reindex_status === "in_progress" ? 2000 : false,
   });
 }
 
@@ -82,10 +84,19 @@ export function useReindexProject(projectId: string) {
 
   return useMutation({
     mutationFn: () => reindexProject(token!, projectId),
+    onMutate: () => {
+      // Optimistically set status to in_progress so refetchInterval starts polling immediately
+      queryClient.setQueryData<Project>(["projects", projectId], (old) =>
+        old ? { ...old, reindex_status: "in_progress", reindex_progress: 0 } : old,
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
     },
   });
 }

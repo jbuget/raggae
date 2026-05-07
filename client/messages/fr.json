@@ -185,6 +185,7 @@
       "userDefaultsApplied": "Vos paramètres utilisateur s'appliquent à cette section. Activez la surcharge pour les personnaliser.",
       "systemDefaultsApplied": "Aucun paramètre configuré — les valeurs système sont utilisées.",
       "saveChanges": "Enregistrer",
+      "resetToInherited": "Réinitialiser",
       "updateSuccess": "Projet mis à jour",
       "updateError": "Erreur lors de la mise à jour du projet",
       "general": {
@@ -585,7 +586,9 @@
       "empty": "Aucun chunk pour ce document.",
       "error": "Impossible de charger les chunks.",
       "chunkLabel": "Chunk #{index}",
-      "metadata": "Métadonnées"
+      "metadata": "Métadonnées",
+      "parent": "Parent",
+      "child": "Enfant"
     }
   },
   "sidebar": {
