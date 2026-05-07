@@ -287,6 +287,8 @@ export interface DocumentChunkResponse {
   content: string;
   created_at: string;
   metadata_json?: Record<string, unknown> | null;
+  chunk_level: "standard" | "parent" | "child";
+  parent_chunk_id?: string | null;
 }
 
 export interface DocumentChunksResponse {

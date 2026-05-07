@@ -8,6 +8,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   ChunkingStrategy,
   ModelCatalogResponse,
@@ -19,6 +26,7 @@ import type {
   RetrievalStrategy,
   SystemDefaultsResponse,
 } from "@/lib/types/api";
+import { BACKEND_LABELS } from "@/lib/constants/backends";
 
 type Credential = { id: string; provider: ModelProvider; masked_key: string; is_active: boolean };
 
@@ -27,7 +35,7 @@ type SaveCallbacks = { onSuccess?: () => void; onError?: () => void };
 type ProjectDefaultsFormProps = {
   defaults: ProjectDefaultsConfig | null | undefined;
   systemDefaults: SystemDefaultsResponse | undefined;
-  inheritedDefaults?: ProjectDefaultsConfig | null | undefined;
+  showReset?: boolean;
   credentials: Credential[];
   modelCatalog: ModelCatalogResponse | undefined;
   onSave: (payload: ProjectDefaultsConfig, callbacks?: SaveCallbacks) => void;
@@ -40,7 +48,7 @@ type ProjectDefaultsFormProps = {
 export function ProjectDefaultsForm({
   defaults,
   systemDefaults,
-  inheritedDefaults,
+  showReset,
   credentials,
   modelCatalog,
   onSave,
@@ -80,13 +88,18 @@ export function ProjectDefaultsForm({
   const [chatHistoryWindowSize, setChatHistoryWindowSize] = useState<number | undefined>(undefined);
   const [chatHistoryMaxChars, setChatHistoryMaxChars] = useState<number | undefined>(undefined);
 
-  // Effective values = local state ?? persisted defaults ?? system defaults ?? hardcoded
-  const effectiveEmbeddingBackend = embeddingBackend === undefined ? (defaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "") : embeddingBackend;
-  const effectiveLlmBackend = llmBackend === undefined ? (defaults?.llm_backend ?? systemDefaults?.llm_backend ?? "") : llmBackend;
-  const effectiveEmbeddingModel = embeddingModel ?? (defaults?.embedding_model ?? systemDefaults?.embedding_model ?? "");
-  const effectiveLlmModel = llmModel ?? (defaults?.llm_model ?? systemDefaults?.llm_model ?? "");
+  // Effective values = local state ?? persisted defaults (no system fallback for backends/models — use placeholder instead)
+  const effectiveEmbeddingBackend = (embeddingBackend === undefined ? (defaults?.embedding_backend ?? "") : embeddingBackend) || "none";
+  const effectiveLlmBackend = (llmBackend === undefined ? (defaults?.llm_backend ?? "") : llmBackend) || "none";
+  const effectiveEmbeddingModel = (embeddingModel === undefined ? (defaults?.embedding_model ?? "") : (embeddingModel ?? "")) || "none";
+  const effectiveLlmModel = (llmModel === undefined ? (defaults?.llm_model ?? "") : (llmModel ?? "")) || "none";
   const effectiveEmbeddingCredentialId = embeddingCredentialId ?? (defaults?.embedding_api_key_credential_id ?? "");
   const effectiveLlmCredentialId = llmCredentialId ?? (defaults?.llm_api_key_credential_id ?? "");
+
+  function renderDefaultPlaceholder(val: string | null | undefined): string | undefined {
+    if (!val) return undefined;
+    return `Par défaut (${BACKEND_LABELS[val] ?? val})`;
+  }
 
   const activeCredentials = credentials.filter((c) => c.is_active);
   const credentialsByProvider = activeCredentials.reduce<Record<string, Array<{ id: string; masked_key: string }>>>(
@@ -97,8 +110,8 @@ export function ProjectDefaultsForm({
   const llmProviderForHints = effectiveLlmBackend === "openai" || effectiveLlmBackend === "gemini" || effectiveLlmBackend === "anthropic" ? effectiveLlmBackend : null;
   const embeddingCredentialOptions = embeddingProviderForHints ? (credentialsByProvider[embeddingProviderForHints] ?? []) : [];
   const llmCredentialOptions = llmProviderForHints ? (credentialsByProvider[llmProviderForHints] ?? []) : [];
-  const embeddingModelOptions = effectiveEmbeddingBackend ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
-  const llmModelOptions = effectiveLlmBackend ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
+  const embeddingModelOptions = effectiveEmbeddingBackend !== "none" ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
+  const llmModelOptions = effectiveLlmBackend !== "none" ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
   const effectiveChunkingStrategy = chunkingStrategy ?? (defaults?.chunking_strategy as ChunkingStrategy | undefined) ?? "auto";
   const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? false;
@@ -116,12 +129,12 @@ export function ProjectDefaultsForm({
   const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8;
   const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000;
 
-  // Per-section hasChanges
+  // Per-section hasChanges (compare against persisted defaults, not system defaults)
   const hasModelsChanges =
-    effectiveEmbeddingBackend !== (defaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "") ||
-    effectiveEmbeddingModel !== (defaults?.embedding_model ?? systemDefaults?.embedding_model ?? "") ||
-    effectiveLlmBackend !== (defaults?.llm_backend ?? systemDefaults?.llm_backend ?? "") ||
-    effectiveLlmModel !== (defaults?.llm_model ?? systemDefaults?.llm_model ?? "") ||
+    effectiveEmbeddingBackend !== ((defaults?.embedding_backend ?? "") || "none") ||
+    effectiveEmbeddingModel !== ((defaults?.embedding_model ?? "") || "none") ||
+    effectiveLlmBackend !== ((defaults?.llm_backend ?? "") || "none") ||
+    effectiveLlmModel !== ((defaults?.llm_model ?? "") || "none") ||
     embeddingCredentialId !== undefined ||
     llmCredentialId !== undefined;
 
@@ -144,19 +157,19 @@ export function ProjectDefaultsForm({
     effectiveChatHistoryWindowSize !== (defaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8) ||
     effectiveChatHistoryMaxChars !== (defaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000);
 
-  const hasModelsConfigured = inheritedDefaults !== undefined && (
+  const hasModelsConfigured = showReset && (
     defaults?.embedding_backend != null || defaults?.llm_backend != null
   );
-  const hasIndexingConfigured = inheritedDefaults !== undefined && (
+  const hasIndexingConfigured = showReset && (
     defaults?.chunking_strategy != null || defaults?.parent_child_chunking != null
   );
-  const hasRetrievalConfigured = inheritedDefaults !== undefined && (
+  const hasRetrievalConfigured = showReset && (
     defaults?.retrieval_strategy != null || defaults?.retrieval_top_k != null || defaults?.retrieval_min_score != null
   );
-  const hasRerankingConfigured = inheritedDefaults !== undefined && (
+  const hasRerankingConfigured = showReset && (
     defaults?.reranking_enabled != null || defaults?.reranker_backend != null
   );
-  const hasHistoryConfigured = inheritedDefaults !== undefined && (
+  const hasHistoryConfigured = showReset && (
     defaults?.chat_history_window_size != null || defaults?.chat_history_max_chars != null
   );
 
@@ -183,6 +196,9 @@ export function ProjectDefaultsForm({
     };
   }
 
+  const hasAnyChanges = hasModelsChanges || hasIndexingChanges || hasRetrievalChanges || hasRerankingChanges || hasHistoryChanges;
+  const hasAnyConfigured = hasModelsConfigured || hasIndexingConfigured || hasRetrievalConfigured || hasRerankingConfigured || hasHistoryConfigured;
+
   const id = (field: string) => `${idPrefix}-${field}`;
 
   return (
@@ -207,45 +223,64 @@ export function ProjectDefaultsForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={id("embeddingBackend")}>{tSettings("models.embeddingBackendLabel")}</Label>
-                  <select
-                    id={id("embeddingBackend")}
+                  <Select
                     value={effectiveEmbeddingBackend}
-                    onChange={(e) => { setEmbeddingBackend((e.target.value || "") as ProjectEmbeddingBackend | ""); setEmbeddingModel(""); setEmbeddingCredentialId(""); }}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    onValueChange={(val) => {
+                      setEmbeddingBackend((val === "none" ? "" : val) as ProjectEmbeddingBackend | "");
+                      setEmbeddingModel("");
+                      setEmbeddingCredentialId("");
+                    }}
                   >
-                    <option value="">—</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="gemini">Gemini</option>
-                    <option value="ollama">Ollama</option>
-                    <option value="inmemory">InMemory</option>
-                  </select>
+                    <SelectTrigger id={id("embeddingBackend")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{renderDefaultPlaceholder(systemDefaults?.embedding_backend) ?? "—"}</SelectItem>
+                      <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
+                      <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
+                      <SelectItem value="ollama">{BACKEND_LABELS.ollama}</SelectItem>
+                      <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {effectiveEmbeddingBackend ? (
+                {effectiveEmbeddingBackend !== "none" ? (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor={id("embeddingCredentialId")}>{tSettings("models.embeddingApiKeyLabel")}</Label>
-                      <select
-                        id={id("embeddingCredentialId")}
-                        value={effectiveEmbeddingCredentialId}
-                        onChange={(e) => setEmbeddingCredentialId(e.target.value)}
+                      <Select
+                        value={effectiveEmbeddingCredentialId || "none"}
+                        onValueChange={(val) => setEmbeddingCredentialId(val === "none" ? "" : val)}
                         disabled={!embeddingProviderForHints}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                       >
-                        <option value="">{embeddingProviderForHints ? tSettings("models.noSelection") : tSettings("models.selectEmbeddingFirst")}</option>
-                        {embeddingCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
-                      </select>
+                        <SelectTrigger id={id("embeddingCredentialId")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {embeddingProviderForHints ? tSettings("models.noSelection") : tSettings("models.selectEmbeddingFirst")}
+                          </SelectItem>
+                          {embeddingCredentialOptions.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>{item.masked_key}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={id("embeddingModel")}>{tSettings("models.embeddingModelLabel")}</Label>
-                      <select
-                        id={id("embeddingModel")}
-                        value={effectiveEmbeddingModel}
-                        onChange={(e) => setEmbeddingModel(e.target.value)}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      <Select
+                        value={embeddingModelOptions.some(m => m.id === effectiveEmbeddingModel) ? effectiveEmbeddingModel : "none"}
+                        onValueChange={(val) => setEmbeddingModel(val === "none" ? "" : val)}
                       >
-                        <option value="">{tSettings("models.selectModel")}</option>
-                        {embeddingModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
+                        <SelectTrigger id={id("embeddingModel")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{renderDefaultPlaceholder(systemDefaults?.embedding_model) ?? tSettings("models.selectModel")}</SelectItem>
+                          {embeddingModelOptions.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </>
                 ) : null}
@@ -254,81 +289,68 @@ export function ProjectDefaultsForm({
                 <p className="text-sm text-muted-foreground">{tSettings("models.llmDescription")}</p>
                 <div className="space-y-2">
                   <Label htmlFor={id("llmBackend")}>{tSettings("models.llmBackendLabel")}</Label>
-                  <select
-                    id={id("llmBackend")}
+                  <Select
                     value={effectiveLlmBackend}
-                    onChange={(e) => { setLlmBackend((e.target.value || "") as ProjectLLMBackend | ""); setLlmModel(""); setLlmCredentialId(""); }}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    onValueChange={(val) => {
+                      setLlmBackend((val === "none" ? "" : val) as ProjectLLMBackend | "");
+                      setLlmModel("");
+                      setLlmCredentialId("");
+                    }}
                   >
-                    <option value="">—</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="gemini">Gemini</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="ollama">Ollama</option>
-                    <option value="inmemory">InMemory</option>
-                  </select>
+                    <SelectTrigger id={id("llmBackend")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{renderDefaultPlaceholder(systemDefaults?.llm_backend) ?? "—"}</SelectItem>
+                      <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
+                      <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
+                      <SelectItem value="anthropic">{BACKEND_LABELS.anthropic}</SelectItem>
+                      <SelectItem value="ollama">{BACKEND_LABELS.ollama}</SelectItem>
+                      <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {effectiveLlmBackend ? (
+                {effectiveLlmBackend !== "none" ? (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor={id("llmCredentialId")}>{tSettings("models.llmApiKeyLabel")}</Label>
-                      <select
-                        id={id("llmCredentialId")}
-                        value={effectiveLlmCredentialId}
-                        onChange={(e) => setLlmCredentialId(e.target.value)}
+                      <Select
+                        value={effectiveLlmCredentialId || "none"}
+                        onValueChange={(val) => setLlmCredentialId(val === "none" ? "" : val)}
                         disabled={!llmProviderForHints}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                       >
-                        <option value="">{llmProviderForHints ? tSettings("models.noSelection") : tSettings("models.selectLlmFirst")}</option>
-                        {llmCredentialOptions.map((item) => <option key={item.id} value={item.id}>{item.masked_key}</option>)}
-                      </select>
+                        <SelectTrigger id={id("llmCredentialId")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {llmProviderForHints ? tSettings("models.noSelection") : tSettings("models.selectLlmFirst")}
+                          </SelectItem>
+                          {llmCredentialOptions.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>{item.masked_key}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={id("llmModel")}>{tSettings("models.llmModelLabel")}</Label>
-                      <select
-                        id={id("llmModel")}
-                        value={effectiveLlmModel}
-                        onChange={(e) => setLlmModel(e.target.value)}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      <Select
+                        value={llmModelOptions.some(m => m.id === effectiveLlmModel) ? effectiveLlmModel : "none"}
+                        onValueChange={(val) => setLlmModel(val === "none" ? "" : val)}
                       >
-                        <option value="">{tSettings("models.selectModel")}</option>
-                        {llmModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
+                        <SelectTrigger id={id("llmModel")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{renderDefaultPlaceholder(systemDefaults?.llm_model) ?? tSettings("models.selectModel")}</SelectItem>
+                          {llmModelOptions.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </>
                 ) : null}
-                <div className="flex gap-2">
-                  <Button
-                    className="cursor-pointer"
-                    disabled={!hasModelsChanges || isPending}
-                    onClick={() => onSave(
-                      {
-                        ...buildBasePayload(),
-                        embedding_backend: (effectiveEmbeddingBackend as ProjectEmbeddingBackend) || null,
-                        embedding_model: effectiveEmbeddingModel || null,
-                        embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
-                        llm_backend: (effectiveLlmBackend as ProjectLLMBackend) || null,
-                        llm_model: effectiveLlmModel || null,
-                        llm_api_key_credential_id: effectiveLlmCredentialId || null,
-                      },
-                      {
-                        onSuccess: () => { setEmbeddingCredentialId(undefined); setLlmCredentialId(undefined); },
-                      },
-                    )}
-                  >
-                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                  </Button>
-                  {hasModelsConfigured && (
-                    <Button
-                      variant="outline"
-                      className="cursor-pointer"
-                      disabled={isPending}
-                      onClick={() => onSave({ ...buildBasePayload(), embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null, llm_backend: null, llm_model: null, llm_api_key_credential_id: null })}
-                    >
-                      {tSettings("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -340,18 +362,21 @@ export function ProjectDefaultsForm({
               <div className="space-y-4 pb-2">
                 <div className="space-y-2">
                   <Label htmlFor={id("chunkingStrategy")}>{tSettings("knowledgeIndexing.chunkingLabel")}</Label>
-                  <select
-                    id={id("chunkingStrategy")}
+                  <Select
                     value={effectiveChunkingStrategy}
-                    onChange={(e) => setChunkingStrategy(e.target.value as ChunkingStrategy)}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    onValueChange={(val) => setChunkingStrategy(val as ChunkingStrategy)}
                   >
-                    <option value="auto">{tForm("chunkingAuto")}</option>
-                    <option value="fixed_window">{tForm("chunkingFixed")}</option>
-                    <option value="paragraph">{tForm("chunkingParagraph")}</option>
-                    <option value="heading_section">{tForm("chunkingHeading")}</option>
-                    <option value="semantic">{tForm("chunkingSemantic")}</option>
-                  </select>
+                    <SelectTrigger id={id("chunkingStrategy")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">{tForm("chunkingAuto")}</SelectItem>
+                      <SelectItem value="fixed_window">{tForm("chunkingFixed")}</SelectItem>
+                      <SelectItem value="paragraph">{tForm("chunkingParagraph")}</SelectItem>
+                      <SelectItem value="heading_section">{tForm("chunkingHeading")}</SelectItem>
+                      <SelectItem value="semantic">{tForm("chunkingSemantic")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch
@@ -360,29 +385,6 @@ export function ProjectDefaultsForm({
                     onCheckedChange={setParentChildChunking}
                   />
                   <Label htmlFor={id("parentChildChunking")}>{tSettings("knowledgeIndexing.parentChildLabel")}</Label>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    className="cursor-pointer"
-                    disabled={!hasIndexingChanges || isPending}
-                    onClick={() => onSave({
-                      ...buildBasePayload(),
-                      chunking_strategy: effectiveChunkingStrategy,
-                      parent_child_chunking: effectiveParentChildChunking,
-                    })}
-                  >
-                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                  </Button>
-                  {hasIndexingConfigured && (
-                    <Button
-                      variant="outline"
-                      className="cursor-pointer"
-                      disabled={isPending}
-                      onClick={() => onSave({ ...buildBasePayload(), chunking_strategy: null, parent_child_chunking: null })}
-                    >
-                      {tSettings("resetToInherited")}
-                    </Button>
-                  )}
                 </div>
               </div>
             </AccordionContent>
@@ -396,16 +398,19 @@ export function ProjectDefaultsForm({
                 <p className="text-sm text-muted-foreground">{tSettings("contextRetrieval.description")}</p>
                 <div className="space-y-2">
                   <Label htmlFor={id("retrievalStrategy")}>{tSettings("contextRetrieval.searchTypeLabel")}</Label>
-                  <select
-                    id={id("retrievalStrategy")}
+                  <Select
                     value={effectiveRetrievalStrategy}
-                    onChange={(e) => setRetrievalStrategy(e.target.value as RetrievalStrategy)}
-                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    onValueChange={(val) => setRetrievalStrategy(val as RetrievalStrategy)}
                   >
-                    <option value="hybrid">{tSettings("contextRetrieval.hybrid")}</option>
-                    <option value="vector">{tSettings("contextRetrieval.vector")}</option>
-                    <option value="fulltext">{tSettings("contextRetrieval.fulltext")}</option>
-                  </select>
+                    <SelectTrigger id={id("retrievalStrategy")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hybrid">{tSettings("contextRetrieval.hybrid")}</SelectItem>
+                      <SelectItem value="vector">{tSettings("contextRetrieval.vector")}</SelectItem>
+                      <SelectItem value="fulltext">{tSettings("contextRetrieval.fulltext")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={id("retrievalTopK")}>{tSettings("contextRetrieval.topKLabel")}</Label>
@@ -430,30 +435,6 @@ export function ProjectDefaultsForm({
                     onChange={(e) => { const v = Number.parseFloat(e.target.value); if (!Number.isNaN(v)) setRetrievalMinScore(Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    className="cursor-pointer"
-                    disabled={!hasRetrievalChanges || isPending}
-                    onClick={() => onSave({
-                      ...buildBasePayload(),
-                      retrieval_strategy: effectiveRetrievalStrategy,
-                      retrieval_top_k: effectiveRetrievalTopK,
-                      retrieval_min_score: effectiveRetrievalMinScore,
-                    })}
-                  >
-                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                  </Button>
-                  {hasRetrievalConfigured && (
-                    <Button
-                      variant="outline"
-                      className="cursor-pointer"
-                      disabled={isPending}
-                      onClick={() => onSave({ ...buildBasePayload(), retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null })}
-                    >
-                      {tSettings("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -475,30 +456,43 @@ export function ProjectDefaultsForm({
                   <>
                     <div className="space-y-2">
                       <Label htmlFor={id("rerankerBackend")}>{tSettings("contextAugmentation.rerankerBackendLabel")}</Label>
-                      <select
-                        id={id("rerankerBackend")}
+                      <Select
                         value={effectiveRerankerBackend}
-                        onChange={(e) => { setRerankerBackend(e.target.value as ProjectRerankerBackend); setRerankerModel(""); }}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                        onValueChange={(val) => {
+                          setRerankerBackend(val as ProjectRerankerBackend);
+                          setRerankerModel("");
+                        }}
                       >
-                        <option value="none">{tSettings("contextAugmentation.rerankerNone")}</option>
-                        <option value="cross_encoder">{tSettings("contextAugmentation.rerankerCrossEncoder")}</option>
-                        <option value="inmemory">{tSettings("contextAugmentation.rerankerInMemory")}</option>
-                        <option value="mmr">{tSettings("contextAugmentation.rerankerMmr")}</option>
-                      </select>
+                        <SelectTrigger id={id("rerankerBackend")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{tSettings("contextAugmentation.rerankerNone")}</SelectItem>
+                          <SelectItem value="cross_encoder">{tSettings("contextAugmentation.rerankerCrossEncoder")}</SelectItem>
+                          <SelectItem value="inmemory">{tSettings("contextAugmentation.rerankerInMemory")}</SelectItem>
+                          <SelectItem value="mmr">{tSettings("contextAugmentation.rerankerMmr")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={id("rerankerModel")}>{tSettings("contextAugmentation.rerankerModelLabel")}</Label>
-                      <select
-                        id={id("rerankerModel")}
-                        value={effectiveRerankerModel}
-                        onChange={(e) => setRerankerModel(e.target.value)}
+                      <Select
+                        value={rerankerModelOptions.some(m => m.id === effectiveRerankerModel) ? effectiveRerankerModel : "none"}
+                        onValueChange={(val) => setRerankerModel(val === "none" ? "" : val)}
                         disabled={effectiveRerankerBackend === "none"}
-                        className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm disabled:opacity-60"
                       >
-                        <option value="">{effectiveRerankerBackend === "none" ? tSettings("contextAugmentation.selectRerankerBackend") : tSettings("contextAugmentation.selectModel")}</option>
-                        {rerankerModelOptions.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-                      </select>
+                        <SelectTrigger id={id("rerankerModel")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            {effectiveRerankerBackend === "none" ? tSettings("contextAugmentation.selectRerankerBackend") : tSettings("contextAugmentation.selectModel")}
+                          </SelectItem>
+                          {rerankerModelOptions.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={id("rerankerCandidateMultiplier")}>{tSettings("contextAugmentation.candidateMultiplierLabel")}</Label>
@@ -513,31 +507,6 @@ export function ProjectDefaultsForm({
                     </div>
                   </>
                 )}
-                <div className="flex gap-2">
-                  <Button
-                    className="cursor-pointer"
-                    disabled={!hasRerankingChanges || isPending}
-                    onClick={() => onSave({
-                      ...buildBasePayload(),
-                      reranking_enabled: effectiveRerankingEnabled,
-                      reranker_backend: effectiveRerankerBackend,
-                      reranker_model: effectiveRerankerModel || null,
-                      reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
-                    })}
-                  >
-                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                  </Button>
-                  {hasRerankingConfigured && (
-                    <Button
-                      variant="outline"
-                      className="cursor-pointer"
-                      disabled={isPending}
-                      onClick={() => onSave({ ...buildBasePayload(), reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null })}
-                    >
-                      {tSettings("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -571,34 +540,58 @@ export function ProjectDefaultsForm({
                   />
                   <p className="text-xs text-muted-foreground">{tSettings("answerGeneration.chatHistoryMaxCharsNote")}</p>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    className="cursor-pointer"
-                    disabled={!hasHistoryChanges || isPending}
-                    onClick={() => onSave({
-                      ...buildBasePayload(),
-                      chat_history_window_size: effectiveChatHistoryWindowSize,
-                      chat_history_max_chars: effectiveChatHistoryMaxChars,
-                    })}
-                  >
-                    {isPending ? tCommon("saving") : tSettings("saveChanges")}
-                  </Button>
-                  {hasHistoryConfigured && (
-                    <Button
-                      variant="outline"
-                      className="cursor-pointer"
-                      disabled={isPending}
-                      onClick={() => onSave({ ...buildBasePayload(), chat_history_window_size: null, chat_history_max_chars: null })}
-                    >
-                      {tSettings("resetToInherited")}
-                    </Button>
-                  )}
-                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
 
         </Accordion>
+        <div className="flex gap-2 px-1 pb-4 pt-2">
+          <Button
+            className="cursor-pointer"
+            disabled={!hasAnyChanges || isPending}
+            onClick={() => onSave(
+              {
+                embedding_backend: effectiveEmbeddingBackend === "none" ? null : (effectiveEmbeddingBackend as ProjectEmbeddingBackend),
+                embedding_model: effectiveEmbeddingModel === "none" ? null : effectiveEmbeddingModel,
+                embedding_api_key_credential_id: effectiveEmbeddingCredentialId || null,
+                llm_backend: effectiveLlmBackend === "none" ? null : (effectiveLlmBackend as ProjectLLMBackend),
+                llm_model: effectiveLlmModel === "none" ? null : effectiveLlmModel,
+                llm_api_key_credential_id: effectiveLlmCredentialId || null,
+                chunking_strategy: effectiveChunkingStrategy,
+                parent_child_chunking: effectiveParentChildChunking,
+                retrieval_strategy: effectiveRetrievalStrategy,
+                retrieval_top_k: effectiveRetrievalTopK,
+                retrieval_min_score: effectiveRetrievalMinScore,
+                reranking_enabled: effectiveRerankingEnabled,
+                reranker_backend: effectiveRerankerBackend,
+                reranker_model: effectiveRerankerModel || null,
+                reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
+                chat_history_window_size: effectiveChatHistoryWindowSize,
+                chat_history_max_chars: effectiveChatHistoryMaxChars,
+              },
+              { onSuccess: () => { setEmbeddingCredentialId(undefined); setLlmCredentialId(undefined); } },
+            )}
+          >
+            {isPending ? tCommon("saving") : tSettings("saveChanges")}
+          </Button>
+          {hasAnyConfigured && (
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              disabled={isPending}
+              onClick={() => onSave({
+                embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null,
+                llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
+                chunking_strategy: null, parent_child_chunking: null,
+                retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null,
+                reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null,
+                chat_history_window_size: null, chat_history_max_chars: null,
+              })}
+            >
+              {tSettings("resetToInherited")}
+            </Button>
+          )}
+        </div>
       </Card>
     </div>
   );
