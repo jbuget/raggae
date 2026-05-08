@@ -44,10 +44,15 @@
     "typescript": "^5",
     "vitest": "^4.0.18"
   },
+  "packageManager": "pnpm@10.29.2",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "msw"
+      "msw",
+      "@parcel/watcher",
+      "@swc/core",
+      "sharp",
+      "unrs-resolver"
     ]
   }
 }
