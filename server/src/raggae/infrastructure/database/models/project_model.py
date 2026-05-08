@@ -78,4 +78,34 @@ class ProjectModel(Base):
         ForeignKey("org_model_provider_credentials.id", ondelete="SET NULL"),
         nullable=True,
     )
+    overrides_models_from_org: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_indexing_from_org: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_retrieval_from_org: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_reranking_from_org: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_chat_history_from_org: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_models_from_user: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_indexing_from_user: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_retrieval_from_user: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_reranking_from_user: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
+    overrides_chat_history_from_user: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=False, server_default="false"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

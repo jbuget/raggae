@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { OrganizationProfileForm } from "@/components/molecules/organization/organization-profile-form";
 import { OrgCredentialsPanel } from "@/components/organisms/organization/org-credentials-panel";
+import { OrgProjectDefaultsPanel } from "@/components/organisms/organization/org-project-defaults-panel";
 import { OrganizationMembersPanel } from "@/components/organisms/organization/organization-members-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,7 @@ import {
 import { useOrganizationMembers } from "@/lib/hooks/use-organization-members";
 import { useAuth } from "@/lib/hooks/use-auth";
 
-const ORG_SETTINGS_TABS = ["General", "Members", "API Keys"] as const;
+const ORG_SETTINGS_TABS = ["General", "Members", "API Keys", "Projects"] as const;
 type OrgSettingsTab = (typeof ORG_SETTINGS_TABS)[number];
 
 type OrganizationSettingsProps = {
@@ -57,6 +58,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
     General: t("tabGeneral"),
     Members: t("tabMembers"),
     "API Keys": t("tabApiKeys"),
+    Projects: t("tabProjects"),
   };
 
   if (isLoading || isMembersLoading) {
@@ -79,8 +81,8 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex border-b">
+    <div className="max-w-3xl space-y-6">
+      <div className="flex flex-wrap items-end gap-4 border-b">
         {ORG_SETTINGS_TABS.map((tab) => {
           const isActive = activeTab === tab;
           return (
@@ -90,7 +92,7 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
               role="tab"
               aria-selected={isActive}
               className={[
-                "cursor-pointer border-b-2 px-1 py-3 text-sm whitespace-nowrap transition-colors mr-4",
+                "cursor-pointer border-b-2 px-1 py-3 text-sm whitespace-nowrap transition-colors",
                 isActive
                   ? "border-primary text-foreground font-medium"
                   : "border-transparent text-muted-foreground hover:text-foreground",
@@ -162,6 +164,8 @@ export function OrganizationSettings({ organizationId }: OrganizationSettingsPro
       {activeTab === "API Keys" && <OrgCredentialsPanel organizationId={organizationId} />}
 
       {activeTab === "Members" && <OrganizationMembersPanel organizationId={organizationId} />}
+
+      {activeTab === "Projects" && <OrgProjectDefaultsPanel organizationId={organizationId} />}
     </div>
   );
 }

@@ -43,7 +43,7 @@ describe("ProjectAdvancedPanel", () => {
       http.get("/api/v1/credentials", () => HttpResponse.json([])),
     );
     renderWithProviders(<ProjectAdvancedPanel projectId="proj-1" />);
-    expect(await screen.findByRole("heading", { name: /embedding/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Models/i })).toBeInTheDocument();
   });
 
   it("should render the retrieval section heading", async () => {

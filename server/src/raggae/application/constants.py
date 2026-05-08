@@ -1,3 +1,11 @@
+SUPPORTED_EMBEDDING_BACKENDS: frozenset[str] = frozenset({"openai", "gemini", "ollama", "inmemory"})
+SUPPORTED_LLM_BACKENDS: frozenset[str] = frozenset({"openai", "gemini", "anthropic", "ollama", "inmemory"})
+SUPPORTED_RETRIEVAL_STRATEGIES: frozenset[str] = frozenset({"vector", "fulltext", "hybrid"})
+SUPPORTED_RERANKER_BACKENDS: frozenset[str] = frozenset({"none", "cross_encoder", "inmemory", "mmr"})
+SUPPORTED_CHUNKING_STRATEGIES: frozenset[str] = frozenset(
+    {"auto", "fixed_window", "paragraph", "heading_section", "semantic"}
+)
+
 ALLOWED_LLM_MODELS: dict[str, frozenset[str]] = {
     "openai": frozenset(
         {

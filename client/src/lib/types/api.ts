@@ -105,6 +105,16 @@ export interface UpdateProjectRequest {
   reranker_backend?: ProjectRerankerBackend | null;
   reranker_model?: string | null;
   reranker_candidate_multiplier?: number | null;
+  overrides_models_from_org?: boolean;
+  overrides_indexing_from_org?: boolean;
+  overrides_retrieval_from_org?: boolean;
+  overrides_reranking_from_org?: boolean;
+  overrides_chat_history_from_org?: boolean;
+  overrides_models_from_user?: boolean;
+  overrides_indexing_from_user?: boolean;
+  overrides_retrieval_from_user?: boolean;
+  overrides_reranking_from_user?: boolean;
+  overrides_chat_history_from_user?: boolean;
 }
 
 export interface ProjectResponse {
@@ -140,6 +150,16 @@ export interface ProjectResponse {
   reranker_backend?: ProjectRerankerBackend | null;
   reranker_model?: string | null;
   reranker_candidate_multiplier: number;
+  overrides_models_from_org: boolean;
+  overrides_indexing_from_org: boolean;
+  overrides_retrieval_from_org: boolean;
+  overrides_reranking_from_org: boolean;
+  overrides_chat_history_from_org: boolean;
+  overrides_models_from_user: boolean;
+  overrides_indexing_from_user: boolean;
+  overrides_retrieval_from_user: boolean;
+  overrides_reranking_from_user: boolean;
+  overrides_chat_history_from_user: boolean;
 }
 
 export interface ReindexProjectResponse {
@@ -234,6 +254,104 @@ export interface UserPendingOrganizationInvitationResponse {
 
 export interface AcceptOrganizationInvitationRequest {
   token: string;
+}
+
+export interface OrganizationProjectDefaultsResponse {
+  organization_id: string;
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: ChunkingStrategy | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+}
+
+export interface UpsertOrganizationProjectDefaultsRequest {
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: ChunkingStrategy | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+}
+
+export interface UserProjectDefaultsResponse {
+  user_id: string;
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: ChunkingStrategy | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+}
+
+export interface UpsertUserProjectDefaultsRequest {
+  embedding_backend?: ProjectEmbeddingBackend | null;
+  embedding_model?: string | null;
+  embedding_api_key_credential_id?: string | null;
+  llm_backend?: ProjectLLMBackend | null;
+  llm_model?: string | null;
+  llm_api_key_credential_id?: string | null;
+  chunking_strategy?: ChunkingStrategy | null;
+  parent_child_chunking?: boolean | null;
+  retrieval_strategy?: RetrievalStrategy | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
+  reranking_enabled?: boolean | null;
+  reranker_backend?: ProjectRerankerBackend | null;
+  reranker_model?: string | null;
+  reranker_candidate_multiplier?: number | null;
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+}
+
+// System
+export interface SystemDefaultsResponse {
+  llm_backend: string;
+  llm_model: string;
+  embedding_backend: string;
+  embedding_model: string;
+  retrieval_strategy: string;
+  retrieval_top_k: number;
+  retrieval_min_score: number;
+  reranker_backend: string;
+  reranker_model: string;
+  reranker_candidate_multiplier: number;
+  chat_history_window_size: number;
+  chat_history_max_chars: number;
 }
 
 // Documents
