@@ -47,7 +47,11 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "msw"
+      "msw",
+      "@parcel/watcher",
+      "@swc/core",
+      "sharp",
+      "unrs-resolver"
     ]
   }
 }
