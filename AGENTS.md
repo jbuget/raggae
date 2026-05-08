@@ -234,6 +234,7 @@ Read these before coding:
 
 Pour les projets GitHub, veuillez utiliser l'expérience « Projects » nouvelle (new Projects experience) au lieu de l'expérience classique (GraphQL: Projects (classic)) qui est dépréciée. Voir : https://github.blog/changelog/2024-05-23-sunset-notice-projects-classic/
 
+
 ## Commande "envoie en prod"
 
 Quand l'utilisateur dit **"envoie en prod"**, exécuter dans l'ordre :
