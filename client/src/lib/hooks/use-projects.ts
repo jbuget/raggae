@@ -13,7 +13,7 @@ import {
   updateProject,
   updateProjectConfiguration,
 } from "@/lib/api/projects";
-import type { CreateProjectRequest, Project, UpdateAgentConfigurationRequest, UpdateProjectRequest } from "@/lib/types/api";
+import type { CreateProjectRequest, ProjectResponse, UpdateAgentConfigurationRequest, UpdateProjectRequest } from "@/lib/types/api";
 import { useAuth } from "./use-auth";
 
 export function useProjects() {
@@ -87,7 +87,7 @@ export function useReindexProject(projectId: string) {
     mutationFn: () => reindexProject(token!, projectId),
     onMutate: () => {
       // Optimistically set status to in_progress so refetchInterval starts polling immediately
-      queryClient.setQueryData<Project>(["projects", projectId], (old) =>
+      queryClient.setQueryData<ProjectResponse>(["projects", projectId], (old) =>
         old ? { ...old, reindex_status: "in_progress", reindex_progress: 0 } : old,
       );
     },
