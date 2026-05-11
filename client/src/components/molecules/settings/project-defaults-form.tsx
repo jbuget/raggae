@@ -88,6 +88,15 @@ export function ProjectDefaultsForm({
   const [chatHistoryWindowSize, setChatHistoryWindowSize] = useState<number | undefined>(undefined);
   const [chatHistoryMaxChars, setChatHistoryMaxChars] = useState<number | undefined>(undefined);
 
+  function resetLocalState() {
+    setEmbeddingBackend(undefined); setEmbeddingModel(undefined); setEmbeddingCredentialId(undefined);
+    setLlmBackend(undefined); setLlmModel(undefined); setLlmCredentialId(undefined);
+    setChunkingStrategy(undefined); setParentChildChunking(undefined);
+    setRetrievalStrategy(undefined); setRetrievalTopK(undefined); setRetrievalMinScore(undefined);
+    setRerankingEnabled(undefined); setRerankerBackend(undefined); setRerankerModel(undefined); setRerankerCandidateMultiplier(undefined);
+    setChatHistoryWindowSize(undefined); setChatHistoryMaxChars(undefined);
+  }
+
   // Effective values = local state ?? persisted defaults (no system fallback for backends/models — use placeholder instead)
   const effectiveEmbeddingBackend = (embeddingBackend === undefined ? (defaults?.embedding_backend ?? "") : embeddingBackend) || "none";
   const effectiveLlmBackend = (llmBackend === undefined ? (defaults?.llm_backend ?? "") : llmBackend) || "none";
@@ -114,7 +123,7 @@ export function ProjectDefaultsForm({
   const llmModelOptions = effectiveLlmBackend !== "none" ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
   const effectiveChunkingStrategy = chunkingStrategy ?? (defaults?.chunking_strategy as ChunkingStrategy | undefined) ?? "auto";
-  const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? false;
+  const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true;
 
   const effectiveRetrievalStrategy = retrievalStrategy ?? (defaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? (systemDefaults?.retrieval_strategy as RetrievalStrategy | undefined) ?? "hybrid";
   const effectiveRetrievalTopK = retrievalTopK ?? defaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8;
@@ -140,7 +149,7 @@ export function ProjectDefaultsForm({
 
   const hasIndexingChanges =
     effectiveChunkingStrategy !== (defaults?.chunking_strategy ?? "auto") ||
-    effectiveParentChildChunking !== (defaults?.parent_child_chunking ?? false);
+    effectiveParentChildChunking !== (defaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true);
 
   const hasRetrievalChanges =
     effectiveRetrievalStrategy !== (defaults?.retrieval_strategy ?? systemDefaults?.retrieval_strategy ?? "hybrid") ||
@@ -579,14 +588,17 @@ export function ProjectDefaultsForm({
               variant="outline"
               className="cursor-pointer"
               disabled={isPending}
-              onClick={() => onSave({
-                embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null,
-                llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
-                chunking_strategy: null, parent_child_chunking: null,
-                retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null,
-                reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null,
-                chat_history_window_size: null, chat_history_max_chars: null,
-              })}
+              onClick={() => {
+                resetLocalState();
+                onSave({
+                  embedding_backend: null, embedding_model: null, embedding_api_key_credential_id: null,
+                  llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
+                  chunking_strategy: null, parent_child_chunking: null,
+                  retrieval_strategy: null, retrieval_top_k: null, retrieval_min_score: null,
+                  reranking_enabled: null, reranker_backend: null, reranker_model: null, reranker_candidate_multiplier: null,
+                  chat_history_window_size: null, chat_history_max_chars: null,
+                });
+              }}
             >
               {tSettings("resetToInherited")}
             </Button>
