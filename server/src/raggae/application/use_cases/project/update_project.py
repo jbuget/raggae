@@ -98,7 +98,7 @@ class UpdateProject:
                 # If agent_config is None, we pass an empty one to ConfigExtractor
                 # so it can still resolve from parent/app
                 base_config = agent_config or AgentConfiguration(
-                    id=uuid4(), owner_id=updated_project.id, type=AgentConfigurationType.PROJECT
+                    id=uuid4(), owner_id=updated_project.id, owner_type=AgentConfigurationType.PROJECT
                 )
                 resolved_config = ConfigExtractor.resolve(base_config, parent_config, app_config)
 

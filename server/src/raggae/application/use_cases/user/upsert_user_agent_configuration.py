@@ -78,7 +78,7 @@ class UpsertUserAgentConfiguration:
         config = AgentConfiguration(
             id=existing.id if existing else uuid4(),
             owner_id=user_id,
-            type=AgentConfigurationType.USER,
+            owner_type=AgentConfigurationType.USER,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,

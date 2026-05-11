@@ -70,7 +70,7 @@ class CreateProject:
         project_config = AgentConfiguration(
             id=uuid4(),
             owner_id=project_id,
-            type=AgentConfigurationType.PROJECT,
+            owner_type=AgentConfigurationType.PROJECT,
         )
         await self._agent_configuration_repository.save(project_config)
 

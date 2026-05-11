@@ -44,7 +44,7 @@ def _make_agent_config(owner_id, config_type=AgentConfigurationType.USER, **kwar
     return AgentConfiguration(
         id=uuid4(),
         owner_id=owner_id,
-        type=config_type,
+        owner_type=config_type,
         **kwargs,
     )
 
@@ -91,7 +91,7 @@ class TestGetUserAgentConfiguration:
         # Then
         assert result is not None
         assert result.owner_id == user.id
-        assert result.type == AgentConfigurationType.USER
+        assert result.owner_type == AgentConfigurationType.USER
         assert result.llm_backend == "anthropic"
         assert result.embedding_backend == "openai"
 
@@ -173,7 +173,7 @@ class TestUpsertUserAgentConfiguration:
 
         # Then
         assert result.owner_id == user.id
-        assert result.type == AgentConfigurationType.USER
+        assert result.owner_type == AgentConfigurationType.USER
         assert result.llm_backend == "openai"
         assert result.llm_model == "gpt-4.1"
         assert result.embedding_backend == "openai"
@@ -213,7 +213,7 @@ class TestUpsertUserAgentConfiguration:
         result = await use_case.execute(user_id=user.id)
 
         # Then
-        assert result.type == AgentConfigurationType.USER
+        assert result.owner_type == AgentConfigurationType.USER
         saved = await config_repo.find_by_owner(user.id, AgentConfigurationType.USER)
         assert saved is not None
-        assert saved.type == AgentConfigurationType.USER
+        assert saved.owner_type == AgentConfigurationType.USER

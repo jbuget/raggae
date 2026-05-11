@@ -42,7 +42,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
         config = AgentConfiguration(
             id=uuid4(),
             owner_id=owner_id,
-            type=AgentConfigurationType.PROJECT,
+            owner_type=AgentConfigurationType.PROJECT,
             embedding_backend="openai",
             embedding_model="text-embedding-3-small",
             llm_backend="openai",
@@ -65,7 +65,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
         assert found is not None
         assert found.id == config.id
         assert found.owner_id == owner_id
-        assert found.type == AgentConfigurationType.PROJECT
+        assert found.owner_type == AgentConfigurationType.PROJECT
         assert found.embedding_backend == "openai"
         assert found.embedding_model == "text-embedding-3-small"
         assert found.llm_backend == "openai"
@@ -97,7 +97,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
         config_v1 = AgentConfiguration(
             id=config_id,
             owner_id=owner_id,
-            type=AgentConfigurationType.USER,
+            owner_type=AgentConfigurationType.USER,
             llm_backend="openai",
         )
         await repo.save(config_v1)
@@ -106,7 +106,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
         config_v2 = AgentConfiguration(
             id=config_id,
             owner_id=owner_id,
-            type=AgentConfigurationType.USER,
+            owner_type=AgentConfigurationType.USER,
             llm_backend="ollama",
             llm_model="mistral",
         )
@@ -128,7 +128,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
         config = AgentConfiguration(
             id=uuid4(),
             owner_id=owner_id,
-            type=AgentConfigurationType.ORGA,
+            owner_type=AgentConfigurationType.ORGA,
             llm_backend="openai",
         )
         await repo.save(config)
@@ -148,7 +148,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
         app_config = AgentConfiguration(
             id=uuid4(),
             owner_id=SYSTEM_OWNER_ID,
-            type=AgentConfigurationType.APP,
+            owner_type=AgentConfigurationType.APP,
             embedding_backend="openai",
             llm_backend="openai",
             llm_model="gpt-4o-mini",
@@ -160,7 +160,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
 
         # Then
         assert found is not None
-        assert found.type == AgentConfigurationType.APP
+        assert found.owner_type == AgentConfigurationType.APP
         assert found.owner_id == SYSTEM_OWNER_ID
         assert found.embedding_backend == "openai"
         assert found.llm_model == "gpt-4o-mini"
@@ -177,7 +177,7 @@ class TestSQLAlchemyAgentConfigurationRepository:
 
         # Then — fallback returns an APP config built from env vars (never None)
         assert found is not None
-        assert found.type == AgentConfigurationType.APP
+        assert found.owner_type == AgentConfigurationType.APP
         assert found.owner_id == SYSTEM_OWNER_ID
 
     @pytest.mark.integration

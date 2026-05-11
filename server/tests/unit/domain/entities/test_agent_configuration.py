@@ -7,8 +7,8 @@ from raggae.domain.entities.agent_configuration import SYSTEM_OWNER_ID, AgentCon
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 
 
-def _make(type: AgentConfigurationType = AgentConfigurationType.USER, **kwargs) -> AgentConfiguration:
-    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), type=type, **kwargs)
+def _make(owner_type: AgentConfigurationType = AgentConfigurationType.USER, **kwargs) -> AgentConfiguration:
+    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), owner_type=owner_type, **kwargs)
 
 
 class TestAgentConfiguration:
@@ -34,17 +34,17 @@ class TestAgentConfiguration:
         assert cfg.chat_history_max_chars is None
 
     def test_type_user(self) -> None:
-        assert _make(AgentConfigurationType.USER).type == AgentConfigurationType.USER
+        assert _make(AgentConfigurationType.USER).owner_type == AgentConfigurationType.USER
 
     def test_type_orga(self) -> None:
-        assert _make(AgentConfigurationType.ORGA).type == AgentConfigurationType.ORGA
+        assert _make(AgentConfigurationType.ORGA).owner_type == AgentConfigurationType.ORGA
 
     def test_type_project(self) -> None:
-        assert _make(AgentConfigurationType.PROJECT).type == AgentConfigurationType.PROJECT
+        assert _make(AgentConfigurationType.PROJECT).owner_type == AgentConfigurationType.PROJECT
 
     def test_type_app(self) -> None:
-        cfg = AgentConfiguration(id=uuid4(), owner_id=SYSTEM_OWNER_ID, type=AgentConfigurationType.APP)
-        assert cfg.type == AgentConfigurationType.APP
+        cfg = AgentConfiguration(id=uuid4(), owner_id=SYSTEM_OWNER_ID, owner_type=AgentConfigurationType.APP)
+        assert cfg.owner_type == AgentConfigurationType.APP
 
     def test_system_owner_id_is_sentinel(self) -> None:
         assert str(SYSTEM_OWNER_ID) == "00000000-0000-0000-0000-000000000001"

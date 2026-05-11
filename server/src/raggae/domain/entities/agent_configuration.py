@@ -12,7 +12,7 @@ class AgentConfiguration:
 
     id: UUID
     owner_id: UUID
-    type: AgentConfigurationType
+    owner_type: AgentConfigurationType
     # Models
     embedding_backend: str | None = None
     embedding_model: str | None = None

@@ -92,11 +92,11 @@ class ReindexProject:
                 file_content, _ = await self._file_storage_service.download_file(document.storage_key)
                 
                 embedding_service = None
-                if self._project_embedding_service_resolver is not None and resolved:
-                    encrypted_api_key = await self._resolve_embedding_api_key(resolved, project, user_id)
+                if self._project_embedding_service_resolver is not None:
+                    encrypted_api_key = await self._resolve_embedding_api_key(resolved, project, user_id) if resolved else None
                     embedding_service = self._project_embedding_service_resolver.resolve(
-                        backend=resolved.embedding_backend,
-                        model=resolved.embedding_model,
+                        backend=resolved.embedding_backend if resolved else None,
+                        model=resolved.embedding_model if resolved else None,
                         encrypted_api_key=encrypted_api_key,
                     )
 
@@ -138,7 +138,7 @@ class ReindexProject:
         # If project_config is None, we still want to resolve from parent/app
         from uuid import uuid4
         base_config = project_config or AgentConfiguration(
-            id=uuid4(), owner_id=project.id, type=AgentConfigurationType.PROJECT
+            id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
         )
 
         if project.organization_id is not None:

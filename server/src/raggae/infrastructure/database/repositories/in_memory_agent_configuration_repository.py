@@ -19,7 +19,7 @@ class InMemoryAgentConfigurationRepository:
         return self._store.get((SYSTEM_OWNER_ID, AgentConfigurationType.APP))
 
     async def save(self, config: AgentConfiguration) -> None:
-        self._store[(config.owner_id, config.type)] = config
+        self._store[(config.owner_id, config.owner_type)] = config
 
     async def delete_by_owner(self, owner_id: UUID, owner_type: AgentConfigurationType) -> None:
         self._store.pop((owner_id, owner_type), None)

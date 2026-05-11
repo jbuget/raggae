@@ -43,7 +43,7 @@ def _make_agent_config(owner_id, config_type=AgentConfigurationType.PROJECT, **k
     return AgentConfiguration(
         id=uuid4(),
         owner_id=owner_id,
-        type=config_type,
+        owner_type=config_type,
         **kwargs,
     )
 
@@ -104,7 +104,7 @@ class TestGetProjectConfiguration:
         # Then
         assert result is not None
         assert result.owner_id == project.id
-        assert result.type == AgentConfigurationType.PROJECT
+        assert result.owner_type == AgentConfigurationType.PROJECT
         assert result.llm_backend == "openai"
         assert result.retrieval_strategy == "hybrid"
 
@@ -210,7 +210,7 @@ class TestUpdateProjectConfiguration:
 
         # Then
         assert result.owner_id == project.id
-        assert result.type == AgentConfigurationType.PROJECT
+        assert result.owner_type == AgentConfigurationType.PROJECT
         assert result.llm_backend == "anthropic"
         assert result.retrieval_strategy == "vector"
         assert result.retrieval_top_k == 10
@@ -256,7 +256,7 @@ class TestUpdateProjectConfiguration:
         result = await use_case.execute(project_id=project.id, user_id=user_id)
 
         # Then
-        assert result.type == AgentConfigurationType.PROJECT
+        assert result.owner_type == AgentConfigurationType.PROJECT
         saved = await config_repo.find_by_owner(project.id, AgentConfigurationType.PROJECT)
         assert saved is not None
-        assert saved.type == AgentConfigurationType.PROJECT
+        assert saved.owner_type == AgentConfigurationType.PROJECT

@@ -123,7 +123,7 @@ class DocumentIndexingService:
 
         document_chunks: list[DocumentChunk] = []
         if chunks:
-            use_parent_child = parent_child_chunking
+            use_parent_child = parent_child_chunking and self._parent_child_chunking_service is not None
 
             if use_parent_child:
                 document_chunks = await self._build_parent_child_chunks(

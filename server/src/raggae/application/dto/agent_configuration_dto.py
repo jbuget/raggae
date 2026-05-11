@@ -10,7 +10,7 @@ class AgentConfigurationDTO:
     """Data Transfer Object for AgentConfiguration."""
 
     owner_id: UUID
-    type: AgentConfigurationType
+    owner_type: AgentConfigurationType
     # Models
     embedding_backend: str | None
     embedding_model: str | None
@@ -38,7 +38,7 @@ class AgentConfigurationDTO:
     def from_entity(cls, entity: AgentConfiguration) -> "AgentConfigurationDTO":
         return cls(
             owner_id=entity.owner_id,
-            type=entity.type,
+            owner_type=entity.owner_type,
             embedding_backend=entity.embedding_backend,
             embedding_model=entity.embedding_model,
             embedding_api_key_credential_id=entity.embedding_api_key_credential_id,

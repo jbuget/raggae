@@ -367,7 +367,7 @@ class UploadDocument:
         # If project_config is None, we still want to resolve from parent/app
         from uuid import uuid4
         base_config = project_config or AgentConfiguration(
-            id=uuid4(), owner_id=project.id, type=AgentConfigurationType.PROJECT
+            id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
         )
 
         if project.organization_id is not None:

@@ -98,7 +98,7 @@ class UpsertOrgAgentConfiguration:
         config = AgentConfiguration(
             id=existing.id if existing else uuid4(),
             owner_id=organization_id,
-            type=AgentConfigurationType.ORGA,
+            owner_type=AgentConfigurationType.ORGA,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,

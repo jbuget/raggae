@@ -7,15 +7,15 @@ from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAge
 
 
 def _project(**kwargs) -> AgentConfiguration:
-    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), type=AgentConfigurationType.PROJECT, **kwargs)
+    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), owner_type=AgentConfigurationType.PROJECT, **kwargs)
 
 
 def _parent(**kwargs) -> AgentConfiguration:
-    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), type=AgentConfigurationType.ORGA, **kwargs)
+    return AgentConfiguration(id=uuid4(), owner_id=uuid4(), owner_type=AgentConfigurationType.ORGA, **kwargs)
 
 
 def _app(**kwargs) -> AgentConfiguration:
-    return AgentConfiguration(id=uuid4(), owner_id=SYSTEM_OWNER_ID, type=AgentConfigurationType.APP, **kwargs)
+    return AgentConfiguration(id=uuid4(), owner_id=SYSTEM_OWNER_ID, owner_type=AgentConfigurationType.APP, **kwargs)
 
 
 class TestConfigExtractor:

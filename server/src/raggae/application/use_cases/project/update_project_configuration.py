@@ -86,7 +86,7 @@ class UpdateProjectConfiguration:
         config = AgentConfiguration(
             id=existing.id if existing else uuid4(),
             owner_id=project_id,
-            type=AgentConfigurationType.PROJECT,
+            owner_type=AgentConfigurationType.PROJECT,
             embedding_backend=embedding_backend,
             embedding_model=embedding_model,
             embedding_api_key_credential_id=embedding_api_key_credential_id,

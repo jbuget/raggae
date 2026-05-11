@@ -43,7 +43,7 @@ class SQLAlchemyAgentConfigurationRepository:
         async with self._session_factory() as session:
             stmt = select(AgentConfigurationModel).where(
                 AgentConfigurationModel.owner_id == config.owner_id,
-                AgentConfigurationModel.owner_type == config.type.value,
+                AgentConfigurationModel.owner_type == config.owner_type.value,
             )
             result = await session.execute(stmt)
             model = result.scalar_one_or_none()
@@ -51,7 +51,7 @@ class SQLAlchemyAgentConfigurationRepository:
                 model = AgentConfigurationModel(
                     id=config.id,
                     owner_id=config.owner_id,
-                    owner_type=config.type.value,
+                    owner_type=config.owner_type.value,
                 )
                 session.add(model)
             model.embedding_backend = config.embedding_backend
@@ -87,7 +87,7 @@ class SQLAlchemyAgentConfigurationRepository:
         return AgentConfiguration(
             id=model.id,
             owner_id=model.owner_id,
-            type=AgentConfigurationType(model.owner_type),
+            owner_type=AgentConfigurationType(model.owner_type),
             embedding_backend=model.embedding_backend,
             embedding_model=model.embedding_model,
             embedding_api_key_credential_id=model.embedding_api_key_credential_id,
@@ -112,7 +112,7 @@ class SQLAlchemyAgentConfigurationRepository:
         return AgentConfiguration(
             id=uuid4(),
             owner_id=SYSTEM_OWNER_ID,
-            type=AgentConfigurationType.APP,
+            owner_type=AgentConfigurationType.APP,
             embedding_backend=settings.default_embedding_provider,
             embedding_model=settings.default_embedding_model,
             llm_backend=settings.default_llm_provider,
