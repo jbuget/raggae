@@ -9,6 +9,7 @@ const systemDefaults = {
   llm_model: "gemini-1.5-flash",
   embedding_backend: "gemini",
   embedding_model: "text-embedding-004",
+  parent_child_chunking: true,
   retrieval_strategy: "hybrid",
   retrieval_top_k: 8,
   retrieval_min_score: 0.3,
