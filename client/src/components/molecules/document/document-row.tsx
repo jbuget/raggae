@@ -122,10 +122,10 @@ export function DocumentRow({
             {document.id}
           </span>
           <span>{formatFileSize(document.file_size)}</span>
-          {document.status === "error" && document.error_message && (
-            <span className="text-destructive">{document.error_message}</span>
-          )}
         </div>
+        {document.status === "error" && document.error_message && (
+          <p className="text-xs text-destructive">{document.error_message}</p>
+        )}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>{t("indexDate")} {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "-"}</span>
           <span>{t("embedding")} {embeddingBackendLabel} / {embeddingModelLabel}</span>
