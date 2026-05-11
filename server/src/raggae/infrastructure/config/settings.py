@@ -94,6 +94,7 @@ class Settings(BaseSettings):
     model_config = {
         "env_file": (_SERVER_ROOT / ".env", ".env"),
         "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
 
 
