@@ -17,7 +17,6 @@ from raggae.application.interfaces.repositories.project_snapshot_repository impo
 )
 from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
-from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
@@ -25,6 +24,7 @@ from raggae.domain.exceptions.project_exceptions import (
     InvalidProjectRetrievalStrategyError,
     ProjectNotFoundError,
 )
+from raggae.domain.services.config_extractor import ConfigExtractor
 from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 
 

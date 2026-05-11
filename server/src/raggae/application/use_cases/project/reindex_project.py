@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from raggae.application.dto.reindex_project_result_dto import ReindexProjectResultDTO
 from raggae.application.interfaces.repositories.agent_configuration_repository import (
@@ -17,6 +17,7 @@ from raggae.application.interfaces.services.project_embedding_service_resolver i
     ProjectEmbeddingServiceResolver,
 )
 from raggae.application.services.document_indexing_service import DocumentIndexingService
+from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import (
     DocumentExtractionError,
@@ -138,9 +139,6 @@ class ReindexProject:
         project_config = await self._agent_configuration_repository.find_by_owner(
             project.id, AgentConfigurationType.PROJECT
         )
-
-        # If project_config is None, we still want to resolve from parent/app
-        from uuid import uuid4
 
         base_config = project_config or AgentConfiguration(
             id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT

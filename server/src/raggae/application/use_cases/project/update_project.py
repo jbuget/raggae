@@ -3,24 +3,24 @@ from uuid import UUID, uuid4
 
 from raggae.application.constants import MAX_PROJECT_SYSTEM_PROMPT_LENGTH
 from raggae.application.dto.project_dto import ProjectDTO
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
-from raggae.application.interfaces.repositories.agent_configuration_repository import (
-    AgentConfigurationRepository,
-)
 from raggae.application.interfaces.repositories.project_snapshot_repository import (
     ProjectSnapshotRepository,
 )
 from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
-from raggae.domain.services.config_extractor import ConfigExtractor
-from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectSystemPromptTooLongError,
 )
+from raggae.domain.services.config_extractor import ConfigExtractor
+from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 
 

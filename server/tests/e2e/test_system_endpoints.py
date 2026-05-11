@@ -1,4 +1,3 @@
-import os
 
 import pytest
 from httpx import AsyncClient
@@ -35,6 +34,7 @@ class TestSystemDefaultsEndpoint:
 
         # Reload settings after env change
         import importlib
+
         import raggae.infrastructure.config.settings as settings_module
         import raggae.presentation.api.v1.endpoints.system as system_module
 
