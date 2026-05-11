@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.domain.entities.project import Project
+from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,7 @@ class ProjectSnapshot:
         project: Project,
         version_number: int,
         created_by_user_id: UUID,
-        agent_config: object | None = None,
+        agent_config: ResolvedAgentConfiguration | None = None,
         label: str | None = None,
         restored_from_version: int | None = None,
     ) -> "ProjectSnapshot":
