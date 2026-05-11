@@ -41,6 +41,7 @@ import type {
 } from "@/lib/types/api";
 import { BACKEND_LABELS } from "@/lib/constants/backends";
 import { InlineAlert } from "@/components/atoms/feedback/inline-alert";
+import { DirtyDot } from "@/components/atoms/feedback/dirty-dot";
 
 export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const t = useTranslations("projects.settings");
@@ -68,7 +69,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const renderInheritedValue = (val: string | number | undefined | null, defaultValue?: string | number) => {
     const normalizedVal = val === "" ? undefined : val;
     const finalVal = normalizedVal ?? defaultValue;
-    const inheritsFromApp = (normalizedVal === undefined || normalizedVal === null) && defaultValue !== undefined && defaultValue !== null;
+    const inheritsFromApp = normalizedVal === undefined || normalizedVal === null;
     const label = inheritsFromApp
       ? t("inherited.default")
       : (currentOwnerType === "USER" ? t("inherited.user") : t("inherited.organization"));
@@ -136,22 +137,22 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   // --- Models computed values ---
   const effectiveEmbeddingBackend = (embeddingBackend === undefined
-    ? (projectConfig?.embedding_backend ?? inheritedDefaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "")
+    ? (projectConfig?.embedding_backend ?? "")
     : embeddingBackend) || "none";
   const effectiveLlmBackend = (llmBackend === undefined
-    ? (projectConfig?.llm_backend ?? inheritedDefaults?.llm_backend ?? systemDefaults?.llm_backend ?? "")
+    ? (projectConfig?.llm_backend ?? "")
     : llmBackend) || "none";
   const effectiveEmbeddingModel = (embeddingModel === undefined
-    ? (projectConfig?.embedding_model ?? inheritedDefaults?.embedding_model ?? systemDefaults?.embedding_model ?? "")
+    ? (projectConfig?.embedding_model ?? "")
     : (embeddingModel ?? "")) || "none";
   const effectiveLlmModel = (llmModel === undefined
-    ? (projectConfig?.llm_model ?? inheritedDefaults?.llm_model ?? systemDefaults?.llm_model ?? "")
+    ? (projectConfig?.llm_model ?? "")
     : (llmModel ?? "")) || "none";
   const effectiveEmbeddingCredentialId = (embeddingCredentialId === undefined
-    ? (projectConfig?.embedding_api_key_credential_id ?? inheritedDefaults?.embedding_api_key_credential_id ?? "")
+    ? (projectConfig?.embedding_api_key_credential_id ?? "")
     : (embeddingCredentialId ?? "")) || "none";
   const effectiveLlmCredentialId = (llmCredentialId === undefined
-    ? (projectConfig?.llm_api_key_credential_id ?? inheritedDefaults?.llm_api_key_credential_id ?? "")
+    ? (projectConfig?.llm_api_key_credential_id ?? "")
     : (llmCredentialId ?? "")) || "none";
 
   const credentialsByProvider = (credentials ?? [])
@@ -167,12 +168,12 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const embeddingModelOptions = (effectiveEmbeddingBackend && effectiveEmbeddingBackend !== "none") ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
   const llmModelOptions = (effectiveLlmBackend && effectiveLlmBackend !== "none") ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
-  const storedEmbeddingBackend = projectConfig?.embedding_backend ?? inheritedDefaults?.embedding_backend ?? systemDefaults?.embedding_backend ?? "";
-  const storedLlmBackend = projectConfig?.llm_backend ?? inheritedDefaults?.llm_backend ?? systemDefaults?.llm_backend ?? "";
-  const storedEmbeddingModel = projectConfig?.embedding_model ?? inheritedDefaults?.embedding_model ?? systemDefaults?.embedding_model ?? "";
-  const storedLlmModel = projectConfig?.llm_model ?? inheritedDefaults?.llm_model ?? systemDefaults?.llm_model ?? "";
-  const storedEmbeddingCredentialId = projectConfig?.embedding_api_key_credential_id ?? inheritedDefaults?.embedding_api_key_credential_id ?? "";
-  const storedLlmCredentialId = projectConfig?.llm_api_key_credential_id ?? inheritedDefaults?.llm_api_key_credential_id ?? "";
+  const storedEmbeddingBackend = projectConfig?.embedding_backend ?? "";
+  const storedLlmBackend = projectConfig?.llm_backend ?? "";
+  const storedEmbeddingModel = projectConfig?.embedding_model ?? "";
+  const storedLlmModel = projectConfig?.llm_model ?? "";
+  const storedEmbeddingCredentialId = projectConfig?.embedding_api_key_credential_id ?? "";
+  const storedLlmCredentialId = projectConfig?.llm_api_key_credential_id ?? "";
 
   const hasModelsChanges =
     (effectiveEmbeddingBackend === "none" ? "" : effectiveEmbeddingBackend) !== storedEmbeddingBackend ||
@@ -191,11 +192,11 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     ? (projectConfig?.chunking_strategy as ChunkingStrategy | null ?? null)
     : chunkingStrategy) ?? "none";
   const effectiveParentChildChunking = parentChildChunking === undefined
-    ? (projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? false)
-    : (parentChildChunking ?? false);
+    ? (projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true)
+    : (parentChildChunking ?? true);
 
   const storedChunkingStrategy = projectConfig?.chunking_strategy as ChunkingStrategy | null ?? null;
-  const storedParentChildChunking = projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? false;
+  const storedParentChildChunking = projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true;
 
   const hasIndexingChanges =
     (effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy) !== storedChunkingStrategy ||
@@ -216,15 +217,15 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     ? (projectConfig?.retrieval_strategy as RetrievalStrategy | null ?? null)
     : retrievalStrategy) ?? "none";
   const effectiveRetrievalTopK = retrievalTopK === undefined
-    ? projectConfig?.retrieval_top_k ?? null
+    ? (projectConfig?.retrieval_top_k ?? inheritedDefaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? null)
     : retrievalTopK;
   const effectiveRetrievalMinScore = retrievalMinScore === undefined
-    ? projectConfig?.retrieval_min_score ?? null
+    ? (projectConfig?.retrieval_min_score ?? inheritedDefaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? null)
     : retrievalMinScore;
 
   const storedRetrievalStrategy = projectConfig?.retrieval_strategy as RetrievalStrategy | null ?? null;
-  const storedRetrievalTopK = projectConfig?.retrieval_top_k ?? null;
-  const storedRetrievalMinScore = projectConfig?.retrieval_min_score ?? null;
+  const storedRetrievalTopK = projectConfig?.retrieval_top_k ?? inheritedDefaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? null;
+  const storedRetrievalMinScore = projectConfig?.retrieval_min_score ?? inheritedDefaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? null;
 
   const hasRetrievalChanges =
     (effectiveRetrievalStrategy === "none" ? null : effectiveRetrievalStrategy) !== storedRetrievalStrategy ||
@@ -247,13 +248,13 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     ? (projectConfig?.reranker_model ?? "")
     : (rerankerModel ?? "")) || "none";
   const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier === undefined
-    ? projectConfig?.reranker_candidate_multiplier ?? null
+    ? (projectConfig?.reranker_candidate_multiplier ?? inheritedDefaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? null)
     : rerankerCandidateMultiplier;
 
   const storedRerankingEnabled = projectConfig?.reranking_enabled ?? inheritedDefaults?.reranking_enabled ?? false;
   const storedRerankerBackend = projectConfig?.reranker_backend as ProjectRerankerBackend | null ?? null;
   const storedRerankerModel = projectConfig?.reranker_model ?? "";
-  const storedRerankerCandidateMultiplier = projectConfig?.reranker_candidate_multiplier ?? null;
+  const storedRerankerCandidateMultiplier = projectConfig?.reranker_candidate_multiplier ?? inheritedDefaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? null;
 
   const rerankerModelOptions = (effectiveRerankerBackend && effectiveRerankerBackend !== "none") ? (modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? []) : [];
 
@@ -269,14 +270,14 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   // --- History computed values ---
   const effectiveChatHistoryWindowSize = chatHistoryWindowSize === undefined
-    ? projectConfig?.chat_history_window_size ?? null
+    ? (projectConfig?.chat_history_window_size ?? inheritedDefaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? null)
     : chatHistoryWindowSize;
   const effectiveChatHistoryMaxChars = chatHistoryMaxChars === undefined
-    ? projectConfig?.chat_history_max_chars ?? null
+    ? (projectConfig?.chat_history_max_chars ?? inheritedDefaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? null)
     : chatHistoryMaxChars;
 
-  const storedChatHistoryWindowSize = projectConfig?.chat_history_window_size ?? null;
-  const storedChatHistoryMaxChars = projectConfig?.chat_history_max_chars ?? null;
+  const storedChatHistoryWindowSize = projectConfig?.chat_history_window_size ?? inheritedDefaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? null;
+  const storedChatHistoryMaxChars = projectConfig?.chat_history_max_chars ?? inheritedDefaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? null;
 
   const hasHistoryChanges =
     effectiveChatHistoryWindowSize !== storedChatHistoryWindowSize ||
@@ -286,8 +287,62 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     projectConfig?.chat_history_window_size != null ||
     projectConfig?.chat_history_max_chars != null;
 
+  const hasInheritedModels = inheritedDefaults?.embedding_backend != null || inheritedDefaults?.llm_backend != null;
+  const hasInheritedIndexing = inheritedDefaults?.chunking_strategy != null || inheritedDefaults?.parent_child_chunking != null;
+  const hasInheritedRetrieval = inheritedDefaults?.retrieval_strategy != null || inheritedDefaults?.retrieval_top_k != null || inheritedDefaults?.retrieval_min_score != null;
+  const hasInheritedReranking = inheritedDefaults?.reranking_enabled != null || inheritedDefaults?.reranker_backend != null;
+  const hasInheritedHistory = inheritedDefaults?.chat_history_window_size != null || inheritedDefaults?.chat_history_max_chars != null;
+
+  const isOrgProject = project?.organization_id != null;
+
+  const allModelsOverridden = hasInheritedModels &&
+    (inheritedDefaults?.embedding_backend == null || projectConfig?.embedding_backend != null) &&
+    (inheritedDefaults?.llm_backend == null || projectConfig?.llm_backend != null);
+  const allIndexingOverridden = hasInheritedIndexing &&
+    (inheritedDefaults?.chunking_strategy == null || projectConfig?.chunking_strategy != null) &&
+    (inheritedDefaults?.parent_child_chunking == null || projectConfig?.parent_child_chunking != null);
+  const allRetrievalOverridden = hasInheritedRetrieval &&
+    (inheritedDefaults?.retrieval_strategy == null || projectConfig?.retrieval_strategy != null) &&
+    (inheritedDefaults?.retrieval_top_k == null || projectConfig?.retrieval_top_k != null) &&
+    (inheritedDefaults?.retrieval_min_score == null || projectConfig?.retrieval_min_score != null);
+  const allRerankingOverridden = hasInheritedReranking &&
+    (inheritedDefaults?.reranking_enabled == null || projectConfig?.reranking_enabled != null) &&
+    (inheritedDefaults?.reranker_backend == null || projectConfig?.reranker_backend != null);
+  const allHistoryOverridden = hasInheritedHistory &&
+    (inheritedDefaults?.chat_history_window_size == null || projectConfig?.chat_history_window_size != null) &&
+    (inheritedDefaults?.chat_history_max_chars == null || projectConfig?.chat_history_max_chars != null);
+
+  function parentOverrideMessage(hasConfigured: boolean, hasInherited: boolean, allOverridden: boolean) {
+    if (!hasInherited) return null;
+    if (!hasConfigured) {
+      return <p className="text-xs text-muted-foreground">{t(isOrgProject ? "orgDefaultsActive" : "userDefaultsActive")}</p>;
+    }
+    if (isOrgProject) {
+      return <p className="text-xs text-muted-foreground">{t(allOverridden ? "orgOverrideAll" : "orgOverrideSome")}</p>;
+    }
+    return <p className="text-xs text-muted-foreground">{t(allOverridden ? "userOverrideAll" : "userOverrideSome")}</p>;
+  }
+
   const hasAnyChanges = hasModelsChanges || hasIndexingChanges || hasRetrievalChanges || hasAugmentationChanges || hasHistoryChanges;
   const hasAnyConfigured = hasModelsConfigured || hasIndexingConfigured || hasRetrievalConfigured || hasRerankingConfigured || hasHistoryConfigured;
+
+  const dirtyEmbeddingBackend = (effectiveEmbeddingBackend === "none" ? "" : effectiveEmbeddingBackend) !== storedEmbeddingBackend;
+  const dirtyEmbeddingModel = (effectiveEmbeddingModel === "none" ? "" : effectiveEmbeddingModel) !== storedEmbeddingModel;
+  const dirtyEmbeddingCredentialId = (effectiveEmbeddingCredentialId === "none" ? "" : effectiveEmbeddingCredentialId) !== storedEmbeddingCredentialId;
+  const dirtyLlmBackend = (effectiveLlmBackend === "none" ? "" : effectiveLlmBackend) !== storedLlmBackend;
+  const dirtyLlmModel = (effectiveLlmModel === "none" ? "" : effectiveLlmModel) !== storedLlmModel;
+  const dirtyLlmCredentialId = (effectiveLlmCredentialId === "none" ? "" : effectiveLlmCredentialId) !== storedLlmCredentialId;
+  const dirtyChunkingStrategy = (effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy) !== storedChunkingStrategy;
+  const dirtyParentChildChunking = effectiveParentChildChunking !== storedParentChildChunking;
+  const dirtyRetrievalStrategy = (effectiveRetrievalStrategy === "none" ? null : effectiveRetrievalStrategy) !== storedRetrievalStrategy;
+  const dirtyRetrievalTopK = effectiveRetrievalTopK !== storedRetrievalTopK;
+  const dirtyRetrievalMinScore = effectiveRetrievalMinScore !== storedRetrievalMinScore;
+  const dirtyRerankingEnabled = effectiveRerankingEnabled !== storedRerankingEnabled;
+  const dirtyRerankerBackend = (effectiveRerankerBackend === "none" ? null : effectiveRerankerBackend) !== storedRerankerBackend;
+  const dirtyRerankerModel = (effectiveRerankerModel === "none" ? "" : effectiveRerankerModel) !== storedRerankerModel;
+  const dirtyRerankerCandidateMultiplier = effectiveRerankerCandidateMultiplier !== storedRerankerCandidateMultiplier;
+  const dirtyChatHistoryWindowSize = effectiveChatHistoryWindowSize !== storedChatHistoryWindowSize;
+  const dirtyChatHistoryMaxChars = effectiveChatHistoryMaxChars !== storedChatHistoryMaxChars;
 
   function handleSaveAll() {
     const payload: UpdateAgentConfigurationRequest = {
@@ -338,7 +393,8 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.models")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {(!hasModelsConfigured && systemDefaults) && (
+                {parentOverrideMessage(hasModelsConfigured, hasInheritedModels, allModelsOverridden)}
+                {(!hasModelsConfigured && !hasInheritedModels && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <div className="space-y-1">
@@ -346,7 +402,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   <p className="text-sm text-muted-foreground">{t("models.embeddingDescription")}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}</Label>
+                  <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}<DirtyDot dirty={dirtyEmbeddingBackend} /></Label>
                   <Select
                     value={effectiveEmbeddingBackend}
                     onValueChange={(val) => {
@@ -372,7 +428,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 {effectiveEmbeddingBackend !== "none" ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}</Label>
+                      <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}<DirtyDot dirty={dirtyEmbeddingCredentialId} /></Label>
                       <Select
                         value={effectiveEmbeddingCredentialId}
                         onValueChange={setEmbeddingCredentialId}
@@ -394,7 +450,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}</Label>
+                      <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}<DirtyDot dirty={dirtyEmbeddingModel} /></Label>
                       <Select
                         value={embeddingModelOptions.some(m => m.id === effectiveEmbeddingModel) ? effectiveEmbeddingModel : "none"}
                         onValueChange={setEmbeddingModel}
@@ -420,7 +476,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   <p className="text-sm text-muted-foreground">{t("models.llmDescription")}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}</Label>
+                  <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}<DirtyDot dirty={dirtyLlmBackend} /></Label>
                   <Select
                     value={effectiveLlmBackend}
                     onValueChange={(val) => {
@@ -447,7 +503,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 {effectiveLlmBackend !== "none" ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}</Label>
+                      <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}<DirtyDot dirty={dirtyLlmCredentialId} /></Label>
                       <Select
                         value={effectiveLlmCredentialId}
                         onValueChange={setLlmCredentialId}
@@ -469,7 +525,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="llmModel">{t("models.llmModelLabel")}</Label>
+                      <Label htmlFor="llmModel">{t("models.llmModelLabel")}<DirtyDot dirty={dirtyLlmModel} /></Label>
                       <Select
                         value={llmModelOptions.some(m => m.id === effectiveLlmModel) ? effectiveLlmModel : "none"}
                         onValueChange={setLlmModel}
@@ -503,8 +559,12 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
                   </InlineAlert>
                 )}
+                {parentOverrideMessage(hasIndexingConfigured, hasInheritedIndexing, allIndexingOverridden)}
+                {(!hasIndexingConfigured && !hasInheritedIndexing && systemDefaults && !isOrgProject) && (
+                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
+                )}
                 <div className="space-y-2">
-                  <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}</Label>
+                  <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}<DirtyDot dirty={dirtyChunkingStrategy} /></Label>
                   <Select
                     value={effectiveChunkingStrategy}
                     onValueChange={(val) => setChunkingStrategy(val === "none" ? null : val as ChunkingStrategy)}
@@ -514,7 +574,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.chunking_strategy)}
+                        {renderInheritedValue(inheritedDefaults?.chunking_strategy, systemDefaults?.chunking_strategy)}
                       </SelectItem>
                       <SelectItem value="auto">{tForm("chunkingAuto")}</SelectItem>
                       <SelectItem value="fixed_window">{tForm("chunkingFixed")}</SelectItem>
@@ -526,7 +586,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
-                  <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}</Label>
+                  <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}<DirtyDot dirty={dirtyParentChildChunking} /></Label>
                 </div>
                 <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
                 {isSemanticRecommended && <InlineAlert>{t("knowledgeIndexing.parentChildWarning")}</InlineAlert>}
@@ -551,12 +611,13 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.contextRetrieval")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {(!hasRetrievalConfigured && systemDefaults) && (
+                {parentOverrideMessage(hasRetrievalConfigured, hasInheritedRetrieval, allRetrievalOverridden)}
+                {(!hasRetrievalConfigured && !hasInheritedRetrieval && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
                 <div className="space-y-2">
-                  <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}</Label>
+                  <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}<DirtyDot dirty={dirtyRetrievalStrategy} /></Label>
                   <Select
                     value={effectiveRetrievalStrategy}
                     onValueChange={(val) => setRetrievalStrategy(val === "none" ? null : val as RetrievalStrategy)}
@@ -575,19 +636,17 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}</Label>
+                  <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}<DirtyDot dirty={dirtyRetrievalTopK} /></Label>
                   <Input id="retrievalTopK" type="number" min={1} max={40}
                     value={effectiveRetrievalTopK ?? ""}
-                    placeholder={String(inheritedDefaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8)}
                     onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setRetrievalTopK(Number.isNaN(v) ? null : Math.max(1, Math.min(40, v))); }}
                   />
                   <p className="text-xs text-muted-foreground">{t("contextRetrieval.topKNote")}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="retrievalMinScore">{t("contextRetrieval.minScoreLabel")}</Label>
+                  <Label htmlFor="retrievalMinScore">{t("contextRetrieval.minScoreLabel")}<DirtyDot dirty={dirtyRetrievalMinScore} /></Label>
                   <Input id="retrievalMinScore" type="number" min={0} max={1} step={0.05}
                     value={effectiveRetrievalMinScore ?? ""}
-                    placeholder={String(inheritedDefaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3)}
                     onChange={(e) => { const v = Number.parseFloat(e.target.value); setRetrievalMinScore(Number.isNaN(v) ? null : Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
                   />
                   <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
@@ -601,17 +660,18 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.contextAugmentation")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {(!hasRerankingConfigured && systemDefaults) && (
+                {parentOverrideMessage(hasRerankingConfigured, hasInheritedReranking, allRerankingOverridden)}
+                {(!hasRerankingConfigured && !hasInheritedReranking && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <div className="flex items-center gap-2">
                   <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
-                  <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}</Label>
+                  <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}<DirtyDot dirty={dirtyRerankingEnabled} /></Label>
                 </div>
                 {effectiveRerankingEnabled && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}</Label>
+                      <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}<DirtyDot dirty={dirtyRerankerBackend} /></Label>
                       <Select
                         value={effectiveRerankerBackend}
                         onValueChange={(val) => {
@@ -631,7 +691,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}</Label>
+                      <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}<DirtyDot dirty={dirtyRerankerModel} /></Label>
                       <Select
                         value={rerankerModelOptions.some(m => m.id === effectiveRerankerModel) ? effectiveRerankerModel : "none"}
                         onValueChange={setRerankerModel}
@@ -653,10 +713,9 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}</Label>
+                      <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}<DirtyDot dirty={dirtyRerankerCandidateMultiplier} /></Label>
                       <Input id="rerankerCandidateMultiplier" type="number" min={1} max={10}
                         value={effectiveRerankerCandidateMultiplier ?? ""}
-                        placeholder={String(inheritedDefaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? 3)}
                         onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setRerankerCandidateMultiplier(Number.isNaN(v) ? null : Math.max(1, Math.min(10, v))); }}
                       />
                       <p className="text-xs text-muted-foreground">{t("contextAugmentation.candidateMultiplierNote")}</p>
@@ -672,23 +731,22 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.answerGeneration")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {(!hasHistoryConfigured && systemDefaults) && (
+                {parentOverrideMessage(hasHistoryConfigured, hasInheritedHistory, allHistoryOverridden)}
+                {(!hasHistoryConfigured && !hasInheritedHistory && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}</Label>
+                  <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}<DirtyDot dirty={dirtyChatHistoryWindowSize} /></Label>
                   <Input id="chatHistoryWindowSize" type="number" min={1} max={40}
                     value={effectiveChatHistoryWindowSize ?? ""}
-                    placeholder={String(inheritedDefaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8)}
                     onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setChatHistoryWindowSize(Number.isNaN(v) ? null : Math.max(1, Math.min(40, v))); }}
                   />
                   <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryWindowNote")}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="chatHistoryMaxChars">{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>
+                  <Label htmlFor="chatHistoryMaxChars">{t("answerGeneration.chatHistoryMaxCharsLabel")}<DirtyDot dirty={dirtyChatHistoryMaxChars} /></Label>
                   <Input id="chatHistoryMaxChars" type="number" min={128} max={16000}
                     value={effectiveChatHistoryMaxChars ?? ""}
-                    placeholder={String(inheritedDefaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000)}
                     onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setChatHistoryMaxChars(Number.isNaN(v) ? null : Math.max(128, Math.min(16000, v))); }}
                   />
                   <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
@@ -723,7 +781,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                 { onSuccess: () => { resetLocalState(); toast.success(t("updateSuccess")); }, onError: () => toast.error(t("updateError")) },
               )}
             >
-              {t("resetToInherited")}
+              {t(isOrgProject ? "resetToOrg" : "resetToUser")}
             </Button>
           )}
         </div>

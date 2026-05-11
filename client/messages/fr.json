@@ -184,6 +184,13 @@
       "overrideUserDefaults": "Surcharger vos paramètres utilisateur",
       "userDefaultsApplied": "Vos paramètres utilisateur s'appliquent à cette section. Activez la surcharge pour les personnaliser.",
       "systemDefaultsApplied": "Aucun paramètre configuré — les valeurs système sont utilisées.",
+      "orgDefaultsActive": "Aucun paramètre modifié, les paramètres de l'organisation s'appliquent.",
+      "userDefaultsActive": "Aucun paramètre modifié, les paramètres utilisateur s'appliquent.",
+      "unsavedChange": "Modification à enregistrer",
+      "orgOverrideAll": "Tous les paramètres de l'organisation sont surchargés.",
+      "orgOverrideSome": "Certains paramètres de l'organisation sont modifiés.",
+      "userOverrideAll": "Tous les paramètres utilisateur sont surchargés.",
+      "userOverrideSome": "Certains paramètres utilisateur sont modifiés.",
       "inherited": {
         "default": "Par défaut",
         "user": "Défini par l'utilisateur",
@@ -192,6 +199,8 @@
       },
       "saveChanges": "Enregistrer",
       "resetToInherited": "Réinitialiser",
+      "resetToOrg": "Réinitialiser aux paramètres de l'organisation",
+      "resetToUser": "Réinitialiser aux paramètres utilisateur",
       "updateSuccess": "Projet mis à jour",
       "updateError": "Erreur lors de la mise à jour du projet",
       "general": {
