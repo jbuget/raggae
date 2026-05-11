@@ -144,6 +144,7 @@ class DocumentIndexingService:
         await self._document_chunk_repository.replace_document_chunks(document.id, document_chunks)
 
         return document
+
     async def _prepare_document_for_chunking(
         self,
         document: Document,

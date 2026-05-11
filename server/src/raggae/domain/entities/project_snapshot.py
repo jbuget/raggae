@@ -65,7 +65,9 @@ class ProjectSnapshot:
             restored_from_version=restored_from_version,
             embedding_backend=agent_config.embedding_backend if agent_config else None,
             embedding_model=agent_config.embedding_model if agent_config else None,
-            embedding_api_key_credential_id=agent_config.embedding_api_key_credential_id if agent_config else None,
+            embedding_api_key_credential_id=agent_config.embedding_api_key_credential_id
+            if agent_config
+            else None,
             llm_backend=agent_config.llm_backend if agent_config else None,
             llm_model=agent_config.llm_model if agent_config else None,
             llm_api_key_credential_id=agent_config.llm_api_key_credential_id if agent_config else None,
@@ -77,7 +79,9 @@ class ProjectSnapshot:
             reranking_enabled=agent_config.reranking_enabled if agent_config else None,
             reranker_backend=agent_config.reranker_backend if agent_config else None,
             reranker_model=agent_config.reranker_model if agent_config else None,
-            reranker_candidate_multiplier=agent_config.reranker_candidate_multiplier if agent_config else None,
+            reranker_candidate_multiplier=agent_config.reranker_candidate_multiplier
+            if agent_config
+            else None,
             chat_history_window_size=agent_config.chat_history_window_size if agent_config else None,
             chat_history_max_chars=agent_config.chat_history_max_chars if agent_config else None,
         )

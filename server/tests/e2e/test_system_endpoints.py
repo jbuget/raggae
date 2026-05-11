@@ -49,9 +49,7 @@ class TestSystemDefaultsEndpoint:
         assert data["llm_backend"] == data["llm_backend"].lower()
         assert data["embedding_backend"] == data["embedding_backend"].lower()
 
-    async def test_get_system_defaults_backends_are_always_lowercase(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_get_system_defaults_backends_are_always_lowercase(self, client: AsyncClient) -> None:
         # Given / When
         response = await client.get("/api/v1/system/defaults")
 
@@ -61,9 +59,7 @@ class TestSystemDefaultsEndpoint:
         assert data["embedding_backend"] == data["embedding_backend"].lower()
         assert data["reranker_backend"] == data["reranker_backend"].lower()
 
-    async def test_get_system_defaults_retrieval_top_k_is_positive_integer(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_get_system_defaults_retrieval_top_k_is_positive_integer(self, client: AsyncClient) -> None:
         # Given / When
         response = await client.get("/api/v1/system/defaults")
 

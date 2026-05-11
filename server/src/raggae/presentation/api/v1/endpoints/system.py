@@ -26,7 +26,9 @@ async def get_system_defaults(
         llm_model=app_config.llm_model or settings.default_llm_model
         if app_config
         else settings.default_llm_model,
-        embedding_backend=_backend(app_config.embedding_backend if app_config else None, settings.default_embedding_provider),
+        embedding_backend=_backend(
+            app_config.embedding_backend if app_config else None, settings.default_embedding_provider
+        ),
         embedding_model=app_config.embedding_model or settings.default_embedding_model
         if app_config
         else settings.default_embedding_model,
@@ -42,7 +44,9 @@ async def get_system_defaults(
         retrieval_min_score=app_config.retrieval_min_score
         if app_config and app_config.retrieval_min_score is not None
         else settings.retrieval_min_score,
-        reranker_backend=_backend(app_config.reranker_backend if app_config else None, settings.reranker_backend),
+        reranker_backend=_backend(
+            app_config.reranker_backend if app_config else None, settings.reranker_backend
+        ),
         reranker_model=app_config.reranker_model or settings.reranker_model
         if app_config
         else settings.reranker_model,

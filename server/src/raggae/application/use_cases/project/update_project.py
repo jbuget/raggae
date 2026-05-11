@@ -83,7 +83,7 @@ class UpdateProject:
                     owner_id=updated_project.id,
                     owner_type=AgentConfigurationType.PROJECT,
                 )
-                
+
                 parent_config = None
                 if updated_project.organization_id is not None:
                     parent_config = await self._agent_configuration_repository.find_by_owner(
@@ -94,7 +94,7 @@ class UpdateProject:
                         user_id, AgentConfigurationType.USER
                     )
                 app_config = await self._agent_configuration_repository.find_app_defaults()
-                
+
                 # If agent_config is None, we pass an empty one to ConfigExtractor
                 # so it can still resolve from parent/app
                 base_config = agent_config or AgentConfiguration(

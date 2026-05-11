@@ -126,7 +126,7 @@ class UpdateProjectConfiguration:
                 project=project,
                 version_number=version_number,
                 created_by_user_id=user_id,
-                agent_config=resolved, # Pass resolved instead of overrides
+                agent_config=resolved,  # Pass resolved instead of overrides
             )
             await self._snapshot_repository.save(snapshot)
 

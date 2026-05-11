@@ -310,8 +310,8 @@ class UploadDocument:
                 )
                 resolved = await self._resolve_config(project, user_id)
                 parent_child_chunking = (
-                    resolved.parent_child_chunking 
-                    if resolved and resolved.parent_child_chunking is not None 
+                    resolved.parent_child_chunking
+                    if resolved and resolved.parent_child_chunking is not None
                     else settings.default_parent_child_chunking
                 )
                 chunking_strategy = None
@@ -363,9 +363,10 @@ class UploadDocument:
         project_config = await self._agent_configuration_repository.find_by_owner(
             project.id, AgentConfigurationType.PROJECT
         )
-        
+
         # If project_config is None, we still want to resolve from parent/app
         from uuid import uuid4
+
         base_config = project_config or AgentConfiguration(
             id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
         )

@@ -94,8 +94,8 @@ class ReindexDocument:
 
         resolved = await self._resolve_config(project, user_id)
         parent_child_chunking = (
-            resolved.parent_child_chunking 
-            if resolved and resolved.parent_child_chunking is not None 
+            resolved.parent_child_chunking
+            if resolved and resolved.parent_child_chunking is not None
             else settings.default_parent_child_chunking
         )
         chunking_strategy = None
@@ -111,10 +111,12 @@ class ReindexDocument:
                 await self._document_repository.save(document)
 
             file_content, _ = await self._file_storage_service.download_file(document.storage_key)
-            
+
             embedding_service = None
             if self._project_embedding_service_resolver is not None:
-                encrypted_api_key = await self._resolve_embedding_api_key(resolved, project, user_id) if resolved else None
+                encrypted_api_key = (
+                    await self._resolve_embedding_api_key(resolved, project, user_id) if resolved else None
+                )
                 embedding_service = self._project_embedding_service_resolver.resolve(
                     backend=resolved.embedding_backend if resolved else None,
                     model=resolved.embedding_model if resolved else None,
@@ -142,9 +144,10 @@ class ReindexDocument:
         project_config = await self._agent_configuration_repository.find_by_owner(
             project.id, AgentConfigurationType.PROJECT
         )
-        
+
         # If project_config is None, we still want to resolve from parent/app
         from uuid import uuid4
+
         base_config = project_config or AgentConfiguration(
             id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
         )
@@ -166,7 +169,7 @@ class ReindexDocument:
     ) -> str | None:
         if resolved.embedding_api_key_credential_id is None:
             return None
-        
+
         credential_id = resolved.embedding_api_key_credential_id
         if project.organization_id is not None and self._org_provider_credential_repository is not None:
             org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)

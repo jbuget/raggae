@@ -38,7 +38,9 @@ class SQLAlchemyProjectSnapshotRepository:
                 parent_child_chunking=snapshot.parent_child_chunking or False,
                 retrieval_strategy=snapshot.retrieval_strategy or "hybrid",
                 retrieval_top_k=snapshot.retrieval_top_k or 8,
-                retrieval_min_score=snapshot.retrieval_min_score if snapshot.retrieval_min_score is not None else 0.3,
+                retrieval_min_score=snapshot.retrieval_min_score
+                if snapshot.retrieval_min_score is not None
+                else 0.3,
                 reranking_enabled=snapshot.reranking_enabled or False,
                 reranker_backend=snapshot.reranker_backend,
                 reranker_model=snapshot.reranker_model,
