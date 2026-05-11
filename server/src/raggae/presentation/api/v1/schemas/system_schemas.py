@@ -6,6 +6,7 @@ class SystemDefaultsResponse(BaseModel):
     llm_model: str
     embedding_backend: str
     embedding_model: str
+    chunking_strategy: str
     parent_child_chunking: bool
     retrieval_strategy: str
     retrieval_top_k: int

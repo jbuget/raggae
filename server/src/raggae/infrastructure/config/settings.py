@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     default_embedding_api_key: str = Field(default="", alias="DEFAULT_EMBEDDING_API_KEY")
     default_embedding_model: str = Field(default="", alias="DEFAULT_EMBEDDING_MODEL")
     default_parent_child_chunking: bool = Field(default=False, alias="DEFAULT_PARENT_CHILD_CHUNKING")
+    default_chunking_strategy: str = Field(default="auto", alias="DEFAULT_CHUNKING_STRATEGY")
 
     @field_validator("default_llm_provider", "default_embedding_provider", mode="before")
     @classmethod
