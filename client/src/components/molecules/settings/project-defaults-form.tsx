@@ -154,7 +154,10 @@ export function ProjectDefaultsForm({
     defaults?.retrieval_strategy != null || defaults?.retrieval_top_k != null || defaults?.retrieval_min_score != null
   );
   const hasRerankingConfigured = showReset && (
-    defaults?.reranking_enabled != null || defaults?.reranker_backend != null
+    defaults?.reranking_enabled != null ||
+    defaults?.reranker_backend != null ||
+    defaults?.reranker_model != null ||
+    defaults?.reranker_candidate_multiplier != null
   );
   const hasHistoryConfigured = showReset && (
     defaults?.chat_history_window_size != null || defaults?.chat_history_max_chars != null
