@@ -37,16 +37,24 @@ class SQLAlchemyProjectSnapshotRepository:
                 chunking_strategy=snapshot.chunking_strategy or "auto",
                 parent_child_chunking=snapshot.parent_child_chunking or False,
                 retrieval_strategy=snapshot.retrieval_strategy or "hybrid",
-                retrieval_top_k=snapshot.retrieval_top_k or 8,
+                retrieval_top_k=snapshot.retrieval_top_k if snapshot.retrieval_top_k is not None else 8,
                 retrieval_min_score=snapshot.retrieval_min_score
                 if snapshot.retrieval_min_score is not None
                 else 0.3,
-                reranking_enabled=snapshot.reranking_enabled or False,
+                reranking_enabled=snapshot.reranking_enabled
+                if snapshot.reranking_enabled is not None
+                else False,
                 reranker_backend=snapshot.reranker_backend,
                 reranker_model=snapshot.reranker_model,
-                reranker_candidate_multiplier=snapshot.reranker_candidate_multiplier or 3,
-                chat_history_window_size=snapshot.chat_history_window_size or 8,
-                chat_history_max_chars=snapshot.chat_history_max_chars or 4000,
+                reranker_candidate_multiplier=snapshot.reranker_candidate_multiplier
+                if snapshot.reranker_candidate_multiplier is not None
+                else 3,
+                chat_history_window_size=snapshot.chat_history_window_size
+                if snapshot.chat_history_window_size is not None
+                else 8,
+                chat_history_max_chars=snapshot.chat_history_max_chars
+                if snapshot.chat_history_max_chars is not None
+                else 4000,
             )
             session.add(model)
             await session.commit()
