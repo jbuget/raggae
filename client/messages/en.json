@@ -198,9 +198,10 @@
         "emptyValue": "—"
       },
       "saveChanges": "Save changes",
-      "resetToInherited": "Reset to inherited",
-      "resetToOrg": "Reset to organization settings",
-      "resetToUser": "Reset to user settings",
+      "cancelChanges": "Discard changes",
+      "resetToInherited": "Reset to defaults",
+      "resetToOrg": "Reset to defaults",
+      "resetToUser": "Reset to defaults",
       "updateSuccess": "Project updated",
       "updateError": "Failed to update project",
       "general": {

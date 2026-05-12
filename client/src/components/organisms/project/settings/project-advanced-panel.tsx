@@ -787,6 +787,16 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
           >
             {updateProjectConfig.isPending ? tCommon("saving") : t("saveChanges")}
           </Button>
+          {hasAnyChanges && (
+            <Button
+              variant="ghost"
+              className="cursor-pointer"
+              disabled={updateProjectConfig.isPending}
+              onClick={resetLocalState}
+            >
+              {t("cancelChanges")}
+            </Button>
+          )}
           {hasAnyConfigured && (
             <Button
               variant="outline"
