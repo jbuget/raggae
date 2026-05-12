@@ -295,32 +295,55 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   const isOrgProject = project?.organization_id != null;
 
+  const differs = <T,>(proj: T | null | undefined, inherited: T | null | undefined): boolean =>
+    proj != null && proj !== inherited;
+
+  const embeddingBackendDiffers = differs(projectConfig?.embedding_backend, inheritedDefaults?.embedding_backend);
+  const llmBackendDiffers = differs(projectConfig?.llm_backend, inheritedDefaults?.llm_backend);
+  const hasModelsModified = embeddingBackendDiffers || llmBackendDiffers;
   const allModelsOverridden = hasInheritedModels &&
-    (inheritedDefaults?.embedding_backend == null || projectConfig?.embedding_backend != null) &&
-    (inheritedDefaults?.llm_backend == null || projectConfig?.llm_backend != null);
+    (inheritedDefaults?.embedding_backend == null || embeddingBackendDiffers) &&
+    (inheritedDefaults?.llm_backend == null || llmBackendDiffers);
+
+  const chunkingStrategyDiffers = differs(projectConfig?.chunking_strategy, inheritedDefaults?.chunking_strategy);
+  const parentChildDiffers = differs(projectConfig?.parent_child_chunking, inheritedDefaults?.parent_child_chunking);
+  const hasIndexingModified = chunkingStrategyDiffers || parentChildDiffers;
   const allIndexingOverridden = hasInheritedIndexing &&
-    (inheritedDefaults?.chunking_strategy == null || projectConfig?.chunking_strategy != null) &&
-    (inheritedDefaults?.parent_child_chunking == null || projectConfig?.parent_child_chunking != null);
+    (inheritedDefaults?.chunking_strategy == null || chunkingStrategyDiffers) &&
+    (inheritedDefaults?.parent_child_chunking == null || parentChildDiffers);
+
+  const retrievalStrategyDiffers = differs(projectConfig?.retrieval_strategy, inheritedDefaults?.retrieval_strategy);
+  const retrievalTopKDiffers = differs(projectConfig?.retrieval_top_k, inheritedDefaults?.retrieval_top_k);
+  const retrievalMinScoreDiffers = differs(projectConfig?.retrieval_min_score, inheritedDefaults?.retrieval_min_score);
+  const hasRetrievalModified = retrievalStrategyDiffers || retrievalTopKDiffers || retrievalMinScoreDiffers;
   const allRetrievalOverridden = hasInheritedRetrieval &&
-    (inheritedDefaults?.retrieval_strategy == null || projectConfig?.retrieval_strategy != null) &&
-    (inheritedDefaults?.retrieval_top_k == null || projectConfig?.retrieval_top_k != null) &&
-    (inheritedDefaults?.retrieval_min_score == null || projectConfig?.retrieval_min_score != null);
+    (inheritedDefaults?.retrieval_strategy == null || retrievalStrategyDiffers) &&
+    (inheritedDefaults?.retrieval_top_k == null || retrievalTopKDiffers) &&
+    (inheritedDefaults?.retrieval_min_score == null || retrievalMinScoreDiffers);
+
+  const rerankingEnabledDiffers = differs(projectConfig?.reranking_enabled, inheritedDefaults?.reranking_enabled);
+  const rerankerBackendDiffers = differs(projectConfig?.reranker_backend, inheritedDefaults?.reranker_backend);
+  const hasRerankingModified = rerankingEnabledDiffers || rerankerBackendDiffers;
   const allRerankingOverridden = hasInheritedReranking &&
-    (inheritedDefaults?.reranking_enabled == null || projectConfig?.reranking_enabled != null) &&
-    (inheritedDefaults?.reranker_backend == null || projectConfig?.reranker_backend != null);
+    (inheritedDefaults?.reranking_enabled == null || rerankingEnabledDiffers) &&
+    (inheritedDefaults?.reranker_backend == null || rerankerBackendDiffers);
+
+  const historyWindowSizeDiffers = differs(projectConfig?.chat_history_window_size, inheritedDefaults?.chat_history_window_size);
+  const historyMaxCharsDiffers = differs(projectConfig?.chat_history_max_chars, inheritedDefaults?.chat_history_max_chars);
+  const hasHistoryModified = historyWindowSizeDiffers || historyMaxCharsDiffers;
   const allHistoryOverridden = hasInheritedHistory &&
-    (inheritedDefaults?.chat_history_window_size == null || projectConfig?.chat_history_window_size != null) &&
-    (inheritedDefaults?.chat_history_max_chars == null || projectConfig?.chat_history_max_chars != null);
+    (inheritedDefaults?.chat_history_window_size == null || historyWindowSizeDiffers) &&
+    (inheritedDefaults?.chat_history_max_chars == null || historyMaxCharsDiffers);
 
   function parentOverrideMessage(hasConfigured: boolean, hasInherited: boolean, allOverridden: boolean) {
     if (!hasInherited) return null;
     if (!hasConfigured) {
-      return <p className="text-xs text-muted-foreground">{t(isOrgProject ? "orgDefaultsActive" : "userDefaultsActive")}</p>;
+      return <p className="text-xs mb-4 text-muted-foreground">{t(isOrgProject ? "orgDefaultsActive" : "userDefaultsActive")}</p>;
     }
     if (isOrgProject) {
-      return <p className="text-xs text-muted-foreground">{t(allOverridden ? "orgOverrideAll" : "orgOverrideSome")}</p>;
+      return <p className="text-xs mb-4 text-muted-foreground">{t(allOverridden ? "orgOverrideAll" : "orgOverrideSome")}</p>;
     }
-    return <p className="text-xs text-muted-foreground">{t(allOverridden ? "userOverrideAll" : "userOverrideSome")}</p>;
+    return <p className="text-xs mb-4 text-muted-foreground">{t(allOverridden ? "userOverrideAll" : "userOverrideSome")}</p>;
   }
 
   const hasAnyChanges = hasModelsChanges || hasIndexingChanges || hasRetrievalChanges || hasAugmentationChanges || hasHistoryChanges;
@@ -393,7 +416,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.models")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasModelsConfigured, hasInheritedModels, allModelsOverridden)}
+                {parentOverrideMessage(hasModelsModified, hasInheritedModels, allModelsOverridden)}
                 {(!hasModelsConfigured && !hasInheritedModels && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
@@ -559,7 +582,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
                   </InlineAlert>
                 )}
-                {parentOverrideMessage(hasIndexingConfigured, hasInheritedIndexing, allIndexingOverridden)}
+                {parentOverrideMessage(hasIndexingModified, hasInheritedIndexing, allIndexingOverridden)}
                 {(!hasIndexingConfigured && !hasInheritedIndexing && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
@@ -611,7 +634,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.contextRetrieval")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasRetrievalConfigured, hasInheritedRetrieval, allRetrievalOverridden)}
+                {parentOverrideMessage(hasRetrievalModified, hasInheritedRetrieval, allRetrievalOverridden)}
                 {(!hasRetrievalConfigured && !hasInheritedRetrieval && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
@@ -660,7 +683,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.contextAugmentation")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasRerankingConfigured, hasInheritedReranking, allRerankingOverridden)}
+                {parentOverrideMessage(hasRerankingModified, hasInheritedReranking, allRerankingOverridden)}
                 {(!hasRerankingConfigured && !hasInheritedReranking && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
@@ -731,7 +754,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.answerGeneration")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasHistoryConfigured, hasInheritedHistory, allHistoryOverridden)}
+                {parentOverrideMessage(hasHistoryModified, hasInheritedHistory, allHistoryOverridden)}
                 {(!hasHistoryConfigured && !hasInheritedHistory && systemDefaults && !isOrgProject) && (
                   <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
                 )}
