@@ -10,7 +10,7 @@ type PageTemplateProps = {
 export function PageTemplate({ title, description, actions, children }: PageTemplateProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="sticky top-0 z-20 -mx-6 flex items-start justify-between gap-4 border-b bg-background px-6 py-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">{title}</h1>
           {description && (

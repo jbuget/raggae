@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ProjectAdvancedPanel } from "@/components/organisms/project/settings/project-advanced-panel";
+import type { AgentConfigurationResponse } from "@/lib/types/api";
 import { renderWithProviders } from "../../../../helpers/render";
 import { server } from "../../../../helpers/msw-server";
 
@@ -37,7 +38,7 @@ const userProject = {
 
 const orgProject = { ...userProject, organization_id: ORG_ID };
 
-const emptyConfig = {
+const emptyConfig: AgentConfigurationResponse = {
   owner_id: PROJECT_ID,
   embedding_backend: null,
   embedding_model: null,
@@ -87,7 +88,7 @@ const emptyModelCatalog = {
 
 interface SetupOptions {
   project?: typeof userProject | typeof orgProject;
-  projectConfig?: typeof emptyConfig;
+  projectConfig?: AgentConfigurationResponse;
   userDefaults?: object | null;
   orgDefaults?: object | null;
 }
@@ -479,533 +480,336 @@ describe("ProjectAdvancedPanel – smoke", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Inheritance messages — user project
+// FieldHint per-field inheritance indicators — user project
 // ---------------------------------------------------------------------------
 
-describe("ProjectAdvancedPanel – inheritance messages (user project)", () => {
+describe("ProjectAdvancedPanel – FieldHint (user project)", () => {
   describe("Models section", () => {
-    it("shows system defaults message when no user defaults and no project config", async () => {
+    it("shows no field hint for embedding_backend when user has no defaults", async () => {
       setup({ project: userProject });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("No settings configured — system defaults are used."),
-      ).toBeInTheDocument();
+      await screen.findByLabelText(/embedding backend/i);
+      expect(screen.queryByText("Inherited from user")).not.toBeInTheDocument();
     });
 
-    it("shows userDefaultsActive when user has models but project has none", async () => {
+    it("shows 'Inherited from user' for embedding_backend when user has it but project has none", async () => {
       setup({
         project: userProject,
-        userDefaults: { user_id: "user-1", embedding_backend: "openai", llm_backend: null },
+        userDefaults: { user_id: "user-1", embedding_backend: "gemini" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from user")).toBeInTheDocument();
     });
 
-    it("does NOT show override message when project has the same value as user (same value ≠ override)", async () => {
+    it("shows 'Inherited from user' when project has same embedding_backend as user (not customized)", async () => {
       setup({
         project: userProject,
         projectConfig: { ...emptyConfig, embedding_backend: "openai" },
-        userDefaults: { user_id: "user-1", embedding_backend: "openai", llm_backend: null },
+        userDefaults: { user_id: "user-1", embedding_backend: "openai" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByText(/user settings are/i),
-      ).not.toBeInTheDocument();
+      expect(await screen.findByText("Inherited from user")).toBeInTheDocument();
+      expect(screen.queryByText(/Customized/)).not.toBeInTheDocument();
     });
 
-    it("shows userOverrideSome when project overrides only one model field", async () => {
+    it("shows 'Customized · user default: Gemini' when project overrides embedding_backend", async () => {
       setup({
         project: userProject,
         projectConfig: { ...emptyConfig, embedding_backend: "openai" },
-        userDefaults: { user_id: "user-1", embedding_backend: "gemini", llm_backend: "gemini" },
+        userDefaults: { user_id: "user-1", embedding_backend: "gemini" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("Some user settings are modified."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Gemini")).toBeInTheDocument();
     });
 
-    it("shows userOverrideAll when project overrides all model fields", async () => {
+    it("shows 'Customized · user default: Gemini' for llm_backend when project differs from user", async () => {
       setup({
         project: userProject,
-        projectConfig: { ...emptyConfig, embedding_backend: "openai", llm_backend: "openai" },
-        userDefaults: { user_id: "user-1", embedding_backend: "gemini", llm_backend: "gemini" },
+        projectConfig: { ...emptyConfig, llm_backend: "openai" },
+        userDefaults: { user_id: "user-1", llm_backend: "gemini" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("All user settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Gemini")).toBeInTheDocument();
     });
   });
 
   describe("Retrieval section", () => {
-    it("shows system defaults message when no user defaults and no project config", async () => {
+    it("shows no field hint for retrieval fields when user has no defaults", async () => {
       setup({ project: userProject });
       await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("No settings configured — system defaults are used."),
-      ).toBeInTheDocument();
+      await screen.findByLabelText(/top-k/i);
+      expect(screen.queryByText("Inherited from user")).not.toBeInTheDocument();
     });
 
-    it("shows userDefaultsActive when user has retrieval params but project has none", async () => {
+    it("shows 'Inherited from user' for retrieval_strategy when user has it and project has none", async () => {
       setup({
         project: userProject,
-        userDefaults: { user_id: "user-1", retrieval_top_k: 10, retrieval_min_score: 0.5 },
+        userDefaults: { user_id: "user-1", retrieval_strategy: "hybrid" },
       });
       await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from user")).toBeInTheDocument();
     });
 
-    it("does NOT show override message when project has the same retrieval values as user", async () => {
-      setup({
-        project: userProject,
-        projectConfig: { ...emptyConfig, retrieval_top_k: 10, retrieval_min_score: 0.5 },
-        userDefaults: { user_id: "user-1", retrieval_top_k: 10, retrieval_min_score: 0.5 },
-      });
-      await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows userOverrideSome when project overrides only retrieval_top_k", async () => {
+    it("shows 'Customized · user default: 10' when project overrides retrieval_top_k", async () => {
       setup({
         project: userProject,
         projectConfig: { ...emptyConfig, retrieval_top_k: 20 },
-        userDefaults: {
-          user_id: "user-1",
-          retrieval_strategy: "hybrid",
-          retrieval_top_k: 10,
-          retrieval_min_score: 0.5,
-        },
+        userDefaults: { user_id: "user-1", retrieval_top_k: 10 },
       });
       await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("Some user settings are modified."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
+      expect(await screen.findByText("10")).toBeInTheDocument();
     });
 
-    it("shows userOverrideAll when project overrides all retrieval params", async () => {
+    it("shows 'Customized · user default: Hybrid' when project overrides retrieval_strategy", async () => {
       setup({
         project: userProject,
-        projectConfig: {
-          ...emptyConfig,
-          retrieval_strategy: "vector",
-          retrieval_top_k: 20,
-          retrieval_min_score: 0.8,
-        },
-        userDefaults: {
-          user_id: "user-1",
-          retrieval_strategy: "hybrid",
-          retrieval_top_k: 10,
-          retrieval_min_score: 0.5,
-        },
+        projectConfig: { ...emptyConfig, retrieval_strategy: "vector" },
+        userDefaults: { user_id: "user-1", retrieval_strategy: "hybrid" },
       });
       await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("All user settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Hybrid")).toBeInTheDocument();
     });
   });
 
   describe("Knowledge indexing section", () => {
-    it("shows userDefaultsActive when user has chunking strategy but project has none", async () => {
+    it("shows 'Inherited from user' for chunking_strategy when user has it and project has none", async () => {
       setup({
         project: userProject,
-        userDefaults: { user_id: "user-1", chunking_strategy: "paragraph", parent_child_chunking: true },
+        userDefaults: { user_id: "user-1", chunking_strategy: "paragraph" },
       });
       await openSection(/knowledge indexing/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from user")).toBeInTheDocument();
     });
 
-    it("shows userOverrideSome when project overrides only chunking_strategy", async () => {
+    it("shows 'Customized · user default: Paragraph' when project overrides chunking_strategy", async () => {
       setup({
         project: userProject,
         projectConfig: { ...emptyConfig, chunking_strategy: "fixed_window" },
-        userDefaults: {
-          user_id: "user-1",
-          chunking_strategy: "paragraph",
-          parent_child_chunking: true,
-        },
+        userDefaults: { user_id: "user-1", chunking_strategy: "paragraph" },
       });
       await openSection(/knowledge indexing/i);
-      expect(
-        await screen.findByText("Some user settings are modified."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows userOverrideAll when project overrides all indexing params", async () => {
-      setup({
-        project: userProject,
-        projectConfig: { ...emptyConfig, chunking_strategy: "fixed_window", parent_child_chunking: false },
-        userDefaults: {
-          user_id: "user-1",
-          chunking_strategy: "paragraph",
-          parent_child_chunking: true,
-        },
-      });
-      await openSection(/knowledge indexing/i);
-      expect(
-        await screen.findByText("All user settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Paragraph")).toBeInTheDocument();
     });
   });
 
   describe("Context augmentation section", () => {
-    it("shows system defaults message when no user defaults and no project config", async () => {
+    it("shows no field hint for reranking when user has no defaults", async () => {
       setup({ project: userProject });
       await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("No settings configured — system defaults are used."),
-      ).toBeInTheDocument();
+      await screen.findByLabelText(/reranking/i);
+      expect(screen.queryByText("Inherited from user")).not.toBeInTheDocument();
     });
 
-    it("shows userDefaultsActive when user has reranking params but project has none", async () => {
+    it("shows 'Inherited from user' for reranking_enabled when user has it and project has none", async () => {
       setup({
         project: userProject,
-        userDefaults: { user_id: "user-1", reranking_enabled: true, reranker_backend: "cross_encoder" },
+        userDefaults: { user_id: "user-1", reranking_enabled: true },
       });
       await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from user")).toBeInTheDocument();
     });
 
-    it("shows userOverrideSome when project overrides only reranking_enabled", async () => {
+    it("shows 'Customized · user default: false' when project overrides reranking_enabled", async () => {
       setup({
         project: userProject,
-        projectConfig: { ...emptyConfig, reranking_enabled: false },
-        userDefaults: { user_id: "user-1", reranking_enabled: true, reranker_backend: "cross_encoder" },
+        projectConfig: { ...emptyConfig, reranking_enabled: true },
+        userDefaults: { user_id: "user-1", reranking_enabled: false },
       });
       await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("Some user settings are modified."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows userOverrideAll when project overrides all reranking params", async () => {
-      setup({
-        project: userProject,
-        projectConfig: { ...emptyConfig, reranking_enabled: false, reranker_backend: "inmemory" },
-        userDefaults: { user_id: "user-1", reranking_enabled: true, reranker_backend: "cross_encoder" },
-      });
-      await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("All user settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
     });
   });
 
   describe("Answer generation section", () => {
-    it("shows system defaults message when no user defaults and no project config", async () => {
+    it("shows no field hint for history fields when user has no defaults", async () => {
       setup({ project: userProject });
       await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("No settings configured — system defaults are used."),
-      ).toBeInTheDocument();
+      await screen.findByLabelText(/max chars/i);
+      expect(screen.queryByText("Inherited from user")).not.toBeInTheDocument();
     });
 
-    it("shows userDefaultsActive when user has history params but project has none", async () => {
+    it("shows 'Inherited from user' for chat_history_max_chars when user has it and project has none", async () => {
       setup({
         project: userProject,
-        userDefaults: { user_id: "user-1", chat_history_window_size: 16, chat_history_max_chars: 8000 },
+        userDefaults: { user_id: "user-1", chat_history_max_chars: 8000 },
       });
       await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("No parameters modified, user settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from user")).toBeInTheDocument();
     });
 
-    it("shows userOverrideSome when project overrides only window size", async () => {
+    it("shows 'Customized · user default: 8000' when project overrides chat_history_max_chars", async () => {
       setup({
         project: userProject,
-        projectConfig: { ...emptyConfig, chat_history_window_size: 4 },
-        userDefaults: { user_id: "user-1", chat_history_window_size: 16, chat_history_max_chars: 8000 },
+        projectConfig: { ...emptyConfig, chat_history_max_chars: 2000 },
+        userDefaults: { user_id: "user-1", chat_history_max_chars: 8000 },
       });
       await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("Some user settings are modified."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows userOverrideAll when project overrides all history params", async () => {
-      setup({
-        project: userProject,
-        projectConfig: { ...emptyConfig, chat_history_window_size: 4, chat_history_max_chars: 2000 },
-        userDefaults: { user_id: "user-1", chat_history_window_size: 16, chat_history_max_chars: 8000 },
-      });
-      await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("All user settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · user default:/)).toBeInTheDocument();
+      expect(await screen.findByText("8000")).toBeInTheDocument();
     });
   });
 });
 
 // ---------------------------------------------------------------------------
-// Inheritance messages — org project
+// FieldHint per-field inheritance indicators — org project
 // ---------------------------------------------------------------------------
 
-describe("ProjectAdvancedPanel – inheritance messages (org project)", () => {
+describe("ProjectAdvancedPanel – FieldHint (org project)", () => {
   describe("Models section", () => {
-    it("does NOT show system defaults message for org projects even with no org config", async () => {
-      setup({ project: orgProject });
-      await openSection(/models/i);
-      await screen.findByRole("button", { name: /models/i });
-      expect(
-        screen.queryByText("No settings configured — system defaults are used."),
-      ).not.toBeInTheDocument();
-    });
-
-    it("shows orgDefaultsActive when org has models but project has none", async () => {
+    it("shows 'Inherited from organization' for embedding_backend when org has it and project has none", async () => {
       setup({
         project: orgProject,
-        orgDefaults: {
-          organization_id: ORG_ID,
-          embedding_backend: "openai",
-          llm_backend: null,
-        },
+        orgDefaults: { organization_id: ORG_ID, embedding_backend: "openai" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from organization")).toBeInTheDocument();
     });
 
-    it("does NOT show override message when project has the same value as org", async () => {
+    it("shows 'Inherited from organization' when project has same embedding_backend as org", async () => {
       setup({
         project: orgProject,
         projectConfig: { ...emptyConfig, embedding_backend: "openai" },
-        orgDefaults: {
-          organization_id: ORG_ID,
-          embedding_backend: "openai",
-          llm_backend: null,
-        },
+        orgDefaults: { organization_id: ORG_ID, embedding_backend: "openai" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from organization")).toBeInTheDocument();
+      expect(screen.queryByText(/Customized/)).not.toBeInTheDocument();
     });
 
-    it("shows orgOverrideSome when project overrides only embedding_backend", async () => {
+    it("shows 'Customized · org default: Gemini' when project overrides embedding_backend", async () => {
       setup({
         project: orgProject,
         projectConfig: { ...emptyConfig, embedding_backend: "openai" },
-        orgDefaults: {
-          organization_id: ORG_ID,
-          embedding_backend: "gemini",
-          llm_backend: "gemini",
-        },
+        orgDefaults: { organization_id: ORG_ID, embedding_backend: "gemini" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("Some organization settings are modified."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Gemini")).toBeInTheDocument();
     });
 
-    it("shows orgOverrideAll when project overrides both model fields", async () => {
+    it("shows 'Customized · org default: Gemini' for llm_backend when project differs from org", async () => {
       setup({
         project: orgProject,
-        projectConfig: { ...emptyConfig, embedding_backend: "openai", llm_backend: "openai" },
-        orgDefaults: {
-          organization_id: ORG_ID,
-          embedding_backend: "gemini",
-          llm_backend: "gemini",
-        },
+        projectConfig: { ...emptyConfig, llm_backend: "anthropic" },
+        orgDefaults: { organization_id: ORG_ID, llm_backend: "gemini" },
       });
       await openSection(/models/i);
-      expect(
-        await screen.findByText("All organization settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Gemini")).toBeInTheDocument();
     });
   });
 
   describe("Retrieval section", () => {
-    it("shows orgDefaultsActive when org has retrieval params but project has none", async () => {
+    it("shows 'Inherited from organization' for retrieval_strategy when org has it and project has none", async () => {
       setup({
         project: orgProject,
-        orgDefaults: {
-          organization_id: ORG_ID,
-          retrieval_top_k: 15,
-          retrieval_min_score: 0.4,
-        },
+        orgDefaults: { organization_id: ORG_ID, retrieval_strategy: "hybrid" },
       });
       await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from organization")).toBeInTheDocument();
     });
 
-    it("does NOT show override message when project has the same retrieval values as org", async () => {
+    it("shows 'Customized · org default: Hybrid' when project overrides retrieval_strategy", async () => {
       setup({
         project: orgProject,
-        projectConfig: { ...emptyConfig, retrieval_top_k: 15 },
+        projectConfig: { ...emptyConfig, retrieval_strategy: "vector" },
+        orgDefaults: { organization_id: ORG_ID, retrieval_strategy: "hybrid" },
+      });
+      await openSection(/context retrieval/i);
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Hybrid")).toBeInTheDocument();
+    });
+
+    it("shows 'Customized · org default: 15' when project overrides retrieval_top_k", async () => {
+      setup({
+        project: orgProject,
+        projectConfig: { ...emptyConfig, retrieval_top_k: 5 },
         orgDefaults: { organization_id: ORG_ID, retrieval_top_k: 15 },
       });
       await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows orgOverrideSome when project overrides only retrieval_top_k", async () => {
-      setup({
-        project: orgProject,
-        projectConfig: { ...emptyConfig, retrieval_top_k: 20 },
-        orgDefaults: {
-          organization_id: ORG_ID,
-          retrieval_strategy: "hybrid",
-          retrieval_top_k: 10,
-          retrieval_min_score: 0.5,
-        },
-      });
-      await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("Some organization settings are modified."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows orgOverrideAll when project overrides all retrieval params", async () => {
-      setup({
-        project: orgProject,
-        projectConfig: {
-          ...emptyConfig,
-          retrieval_strategy: "fulltext",
-          retrieval_top_k: 20,
-          retrieval_min_score: 0.9,
-        },
-        orgDefaults: {
-          organization_id: ORG_ID,
-          retrieval_strategy: "hybrid",
-          retrieval_top_k: 10,
-          retrieval_min_score: 0.5,
-        },
-      });
-      await openSection(/context retrieval/i);
-      expect(
-        await screen.findByText("All organization settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("15")).toBeInTheDocument();
     });
   });
 
   describe("Knowledge indexing section", () => {
-    it("shows orgDefaultsActive when org has chunking params but project has none", async () => {
+    it("shows 'Inherited from organization' for chunking_strategy when org has it and project has none", async () => {
       setup({
         project: orgProject,
-        orgDefaults: { organization_id: ORG_ID, chunking_strategy: "paragraph", parent_child_chunking: true },
+        orgDefaults: { organization_id: ORG_ID, chunking_strategy: "paragraph" },
       });
       await openSection(/knowledge indexing/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from organization")).toBeInTheDocument();
     });
 
-    it("shows orgOverrideSome when project overrides only chunking_strategy", async () => {
+    it("shows 'Customized · org default: Paragraph' when project overrides chunking_strategy", async () => {
       setup({
         project: orgProject,
         projectConfig: { ...emptyConfig, chunking_strategy: "fixed_window" },
-        orgDefaults: { organization_id: ORG_ID, chunking_strategy: "paragraph", parent_child_chunking: true },
+        orgDefaults: { organization_id: ORG_ID, chunking_strategy: "paragraph" },
       });
       await openSection(/knowledge indexing/i);
-      expect(
-        await screen.findByText("Some organization settings are modified."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows orgOverrideAll when project overrides all indexing params", async () => {
-      setup({
-        project: orgProject,
-        projectConfig: { ...emptyConfig, chunking_strategy: "fixed_window", parent_child_chunking: false },
-        orgDefaults: { organization_id: ORG_ID, chunking_strategy: "paragraph", parent_child_chunking: true },
-      });
-      await openSection(/knowledge indexing/i);
-      expect(
-        await screen.findByText("All organization settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("Paragraph")).toBeInTheDocument();
     });
   });
 
   describe("Context augmentation section", () => {
-    it("shows orgDefaultsActive when org has reranking params but project has none", async () => {
+    it("shows 'Inherited from organization' for reranking_enabled when org has it and project has none", async () => {
       setup({
         project: orgProject,
-        orgDefaults: { organization_id: ORG_ID, reranking_enabled: true, reranker_backend: "cross_encoder" },
+        orgDefaults: { organization_id: ORG_ID, reranking_enabled: false },
       });
       await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from organization")).toBeInTheDocument();
     });
 
-    it("shows orgOverrideSome when project overrides only reranking_enabled", async () => {
+    it("shows 'Customized · org default: false' when project overrides reranking_enabled", async () => {
       setup({
         project: orgProject,
-        projectConfig: { ...emptyConfig, reranking_enabled: false },
-        orgDefaults: { organization_id: ORG_ID, reranking_enabled: true, reranker_backend: "cross_encoder" },
+        projectConfig: { ...emptyConfig, reranking_enabled: true },
+        orgDefaults: { organization_id: ORG_ID, reranking_enabled: false },
       });
       await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("Some organization settings are modified."),
-      ).toBeInTheDocument();
-    });
-
-    it("shows orgOverrideAll when project overrides all reranking params", async () => {
-      setup({
-        project: orgProject,
-        projectConfig: { ...emptyConfig, reranking_enabled: false, reranker_backend: "inmemory" },
-        orgDefaults: { organization_id: ORG_ID, reranking_enabled: true, reranker_backend: "cross_encoder" },
-      });
-      await openSection(/context augmentation/i);
-      expect(
-        await screen.findByText("All organization settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
     });
   });
 
   describe("Answer generation section", () => {
-    it("shows orgDefaultsActive when org has history params but project has none", async () => {
+    it("shows 'Inherited from organization' for chat_history_window_size when org has it and project has none", async () => {
       setup({
         project: orgProject,
-        orgDefaults: { organization_id: ORG_ID, chat_history_window_size: 20, chat_history_max_chars: 6000 },
+        orgDefaults: { organization_id: ORG_ID, chat_history_window_size: 20 },
       });
       await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("No parameters modified, organization settings apply."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Inherited from organization")).toBeInTheDocument();
     });
 
-    it("shows orgOverrideSome when project overrides only window size", async () => {
+    it("shows 'Customized · org default: 20' when project overrides chat_history_window_size", async () => {
       setup({
         project: orgProject,
         projectConfig: { ...emptyConfig, chat_history_window_size: 4 },
-        orgDefaults: { organization_id: ORG_ID, chat_history_window_size: 20, chat_history_max_chars: 6000 },
+        orgDefaults: { organization_id: ORG_ID, chat_history_window_size: 20 },
       });
       await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("Some organization settings are modified."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("20")).toBeInTheDocument();
     });
 
-    it("shows orgOverrideAll when project overrides all history params", async () => {
+    it("shows 'Customized · org default: 6000' when project overrides chat_history_max_chars", async () => {
       setup({
         project: orgProject,
-        projectConfig: { ...emptyConfig, chat_history_window_size: 4, chat_history_max_chars: 2000 },
-        orgDefaults: { organization_id: ORG_ID, chat_history_window_size: 20, chat_history_max_chars: 6000 },
+        projectConfig: { ...emptyConfig, chat_history_max_chars: 2000 },
+        orgDefaults: { organization_id: ORG_ID, chat_history_max_chars: 6000 },
       });
       await openSection(/answer generation/i);
-      expect(
-        await screen.findByText("All organization settings are overridden."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/Customized · org default:/)).toBeInTheDocument();
+      expect(await screen.findByText("6000")).toBeInTheDocument();
     });
   });
 });

@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ProjectDefaultsForm } from "@/components/molecules/settings/project-defaults-form";
+import type { ProjectDefaultsConfig } from "@/lib/types/api";
 import { renderWithProviders } from "../../../helpers/render";
 
 const systemDefaults = {
@@ -9,6 +10,7 @@ const systemDefaults = {
   llm_model: "gemini-1.5-flash",
   embedding_backend: "gemini",
   embedding_model: "text-embedding-004",
+  chunking_strategy: "auto",
   parent_child_chunking: true,
   retrieval_strategy: "hybrid",
   retrieval_top_k: 8,
@@ -61,7 +63,7 @@ describe("ProjectDefaultsForm", () => {
   });
 
   it("should show model select when embedding backend is explicitly set in defaults", async () => {
-    const defaults = {
+    const defaults: ProjectDefaultsConfig = {
       embedding_backend: "gemini", embedding_model: null, embedding_api_key_credential_id: null,
       llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
       chunking_strategy: null, parent_child_chunking: null,
@@ -96,7 +98,7 @@ describe("ProjectDefaultsForm", () => {
   });
 
   it("should show reset button when showReset is true and defaults have a value configured", async () => {
-    const defaults = {
+    const defaults: ProjectDefaultsConfig = {
       embedding_backend: "gemini", embedding_model: null, embedding_api_key_credential_id: null,
       llm_backend: null, llm_model: null, llm_api_key_credential_id: null,
       chunking_strategy: null, parent_child_chunking: null,
@@ -118,7 +120,7 @@ describe("ProjectDefaultsForm", () => {
 
   it("should call onSave with all null values when reset button is clicked", async () => {
     const onSave = vi.fn();
-    const defaults = {
+    const defaults: ProjectDefaultsConfig = {
       embedding_backend: "gemini", embedding_model: "text-embedding-004",
       embedding_api_key_credential_id: null,
       llm_backend: "gemini", llm_model: "gemini-1.5-flash", llm_api_key_credential_id: null,

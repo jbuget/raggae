@@ -8,16 +8,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { useModelCredentials } from "@/lib/hooks/use-model-credentials";
 import { useOrgModelCredentials } from "@/lib/hooks/use-org-model-credentials";
@@ -39,9 +29,12 @@ import type {
   RetrievalStrategy,
   UpdateAgentConfigurationRequest,
 } from "@/lib/types/api";
-import { BACKEND_LABELS } from "@/lib/constants/backends";
 import { InlineAlert } from "@/components/atoms/feedback/inline-alert";
-import { DirtyDot } from "@/components/atoms/feedback/dirty-dot";
+import { ModelSettingsFields } from "@/components/molecules/settings/model-settings-fields";
+import { IndexingSettingsFields } from "@/components/molecules/settings/indexing-settings-fields";
+import { RetrievalSettingsFields } from "@/components/molecules/settings/retrieval-settings-fields";
+import { AugmentationSettingsFields } from "@/components/molecules/settings/augmentation-settings-fields";
+import { HistorySettingsFields } from "@/components/molecules/settings/history-settings-fields";
 
 export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const t = useTranslations("projects.settings");
@@ -63,22 +56,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const credentials = project?.organization_id ? orgCredentials : userCredentials;
 
   const inheritedDefaults = project?.organization_id ? orgDefaults : userDefaults;
-
-  const currentOwnerType = project?.organization_id ? "ORGANIZATION" : "USER";
-
-  const renderInheritedValue = (val: string | number | undefined | null, defaultValue?: string | number) => {
-    const normalizedVal = val === "" ? undefined : val;
-    const finalVal = normalizedVal ?? defaultValue;
-    const inheritsFromApp = normalizedVal === undefined || normalizedVal === null;
-    const label = inheritsFromApp
-      ? t("inherited.default")
-      : (currentOwnerType === "USER" ? t("inherited.user") : t("inherited.organization"));
-    if (finalVal === undefined || finalVal === null || finalVal === "") {
-      return <span>{label} ({t("inherited.emptyValue")})</span>;
-    }
-    const displayVal = typeof finalVal === "string" ? (BACKEND_LABELS[finalVal] ?? finalVal) : finalVal;
-    return <span>{label} ({displayVal})</span>;
-  };
 
   // Indexation state
   const [chunkingStrategy, setChunkingStrategy] = useState<ChunkingStrategy | null | undefined>(undefined);
@@ -154,19 +131,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const effectiveLlmCredentialId = (llmCredentialId === undefined
     ? (projectConfig?.llm_api_key_credential_id ?? "")
     : (llmCredentialId ?? "")) || "none";
-
-  const credentialsByProvider = (credentials ?? [])
-    .filter((c) => c.is_active)
-    .reduce<Record<string, Array<{ id: string; masked_key: string }>>>(
-      (acc, c) => { (acc[c.provider] ??= []).push({ id: c.id, masked_key: c.masked_key }); return acc; },
-      {},
-    );
-  const embeddingProviderForHints = effectiveEmbeddingBackend === "openai" || effectiveEmbeddingBackend === "gemini" ? effectiveEmbeddingBackend : null;
-  const llmProviderForHints = effectiveLlmBackend === "openai" || effectiveLlmBackend === "gemini" || effectiveLlmBackend === "anthropic" ? effectiveLlmBackend : null;
-  const embeddingCredentialOptions = embeddingProviderForHints ? (credentialsByProvider[embeddingProviderForHints] ?? []) : [];
-  const llmCredentialOptions = llmProviderForHints ? (credentialsByProvider[llmProviderForHints] ?? []) : [];
-  const embeddingModelOptions = (effectiveEmbeddingBackend && effectiveEmbeddingBackend !== "none") ? (modelCatalog?.embedding[effectiveEmbeddingBackend as ProjectEmbeddingBackend] ?? []) : [];
-  const llmModelOptions = (effectiveLlmBackend && effectiveLlmBackend !== "none") ? (modelCatalog?.llm[effectiveLlmBackend as ProjectLLMBackend] ?? []) : [];
 
   const storedEmbeddingBackend = projectConfig?.embedding_backend ?? "";
   const storedLlmBackend = projectConfig?.llm_backend ?? "";
@@ -256,8 +220,6 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const storedRerankerModel = projectConfig?.reranker_model ?? "";
   const storedRerankerCandidateMultiplier = projectConfig?.reranker_candidate_multiplier ?? inheritedDefaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? null;
 
-  const rerankerModelOptions = (effectiveRerankerBackend && effectiveRerankerBackend !== "none") ? (modelCatalog?.reranker[effectiveRerankerBackend as ProjectRerankerBackend] ?? []) : [];
-
   const hasAugmentationChanges =
     effectiveRerankingEnabled !== storedRerankingEnabled ||
     (effectiveRerankerBackend === "none" ? null : effectiveRerankerBackend) !== storedRerankerBackend ||
@@ -287,64 +249,8 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     projectConfig?.chat_history_window_size != null ||
     projectConfig?.chat_history_max_chars != null;
 
-  const hasInheritedModels = inheritedDefaults?.embedding_backend != null || inheritedDefaults?.llm_backend != null;
-  const hasInheritedIndexing = inheritedDefaults?.chunking_strategy != null || inheritedDefaults?.parent_child_chunking != null;
-  const hasInheritedRetrieval = inheritedDefaults?.retrieval_strategy != null || inheritedDefaults?.retrieval_top_k != null || inheritedDefaults?.retrieval_min_score != null;
-  const hasInheritedReranking = inheritedDefaults?.reranking_enabled != null || inheritedDefaults?.reranker_backend != null;
-  const hasInheritedHistory = inheritedDefaults?.chat_history_window_size != null || inheritedDefaults?.chat_history_max_chars != null;
-
   const isOrgProject = project?.organization_id != null;
-
-  const differs = <T,>(proj: T | null | undefined, inherited: T | null | undefined): boolean =>
-    proj != null && proj !== inherited;
-
-  const embeddingBackendDiffers = differs(projectConfig?.embedding_backend, inheritedDefaults?.embedding_backend);
-  const llmBackendDiffers = differs(projectConfig?.llm_backend, inheritedDefaults?.llm_backend);
-  const hasModelsModified = embeddingBackendDiffers || llmBackendDiffers;
-  const allModelsOverridden = hasInheritedModels &&
-    (inheritedDefaults?.embedding_backend == null || embeddingBackendDiffers) &&
-    (inheritedDefaults?.llm_backend == null || llmBackendDiffers);
-
-  const chunkingStrategyDiffers = differs(projectConfig?.chunking_strategy, inheritedDefaults?.chunking_strategy);
-  const parentChildDiffers = differs(projectConfig?.parent_child_chunking, inheritedDefaults?.parent_child_chunking);
-  const hasIndexingModified = chunkingStrategyDiffers || parentChildDiffers;
-  const allIndexingOverridden = hasInheritedIndexing &&
-    (inheritedDefaults?.chunking_strategy == null || chunkingStrategyDiffers) &&
-    (inheritedDefaults?.parent_child_chunking == null || parentChildDiffers);
-
-  const retrievalStrategyDiffers = differs(projectConfig?.retrieval_strategy, inheritedDefaults?.retrieval_strategy);
-  const retrievalTopKDiffers = differs(projectConfig?.retrieval_top_k, inheritedDefaults?.retrieval_top_k);
-  const retrievalMinScoreDiffers = differs(projectConfig?.retrieval_min_score, inheritedDefaults?.retrieval_min_score);
-  const hasRetrievalModified = retrievalStrategyDiffers || retrievalTopKDiffers || retrievalMinScoreDiffers;
-  const allRetrievalOverridden = hasInheritedRetrieval &&
-    (inheritedDefaults?.retrieval_strategy == null || retrievalStrategyDiffers) &&
-    (inheritedDefaults?.retrieval_top_k == null || retrievalTopKDiffers) &&
-    (inheritedDefaults?.retrieval_min_score == null || retrievalMinScoreDiffers);
-
-  const rerankingEnabledDiffers = differs(projectConfig?.reranking_enabled, inheritedDefaults?.reranking_enabled);
-  const rerankerBackendDiffers = differs(projectConfig?.reranker_backend, inheritedDefaults?.reranker_backend);
-  const hasRerankingModified = rerankingEnabledDiffers || rerankerBackendDiffers;
-  const allRerankingOverridden = hasInheritedReranking &&
-    (inheritedDefaults?.reranking_enabled == null || rerankingEnabledDiffers) &&
-    (inheritedDefaults?.reranker_backend == null || rerankerBackendDiffers);
-
-  const historyWindowSizeDiffers = differs(projectConfig?.chat_history_window_size, inheritedDefaults?.chat_history_window_size);
-  const historyMaxCharsDiffers = differs(projectConfig?.chat_history_max_chars, inheritedDefaults?.chat_history_max_chars);
-  const hasHistoryModified = historyWindowSizeDiffers || historyMaxCharsDiffers;
-  const allHistoryOverridden = hasInheritedHistory &&
-    (inheritedDefaults?.chat_history_window_size == null || historyWindowSizeDiffers) &&
-    (inheritedDefaults?.chat_history_max_chars == null || historyMaxCharsDiffers);
-
-  function parentOverrideMessage(hasConfigured: boolean, hasInherited: boolean, allOverridden: boolean) {
-    if (!hasInherited) return null;
-    if (!hasConfigured) {
-      return <p className="text-xs mb-4 text-muted-foreground">{t(isOrgProject ? "orgDefaultsActive" : "userDefaultsActive")}</p>;
-    }
-    if (isOrgProject) {
-      return <p className="text-xs mb-4 text-muted-foreground">{t(allOverridden ? "orgOverrideAll" : "orgOverrideSome")}</p>;
-    }
-    return <p className="text-xs mb-4 text-muted-foreground">{t(allOverridden ? "userOverrideAll" : "userOverrideSome")}</p>;
-  }
+  const ownerType = isOrgProject ? "org" as const : "user" as const;
 
   const hasAnyChanges = hasModelsChanges || hasIndexingChanges || hasRetrievalChanges || hasAugmentationChanges || hasHistoryChanges;
   const hasAnyConfigured = hasModelsConfigured || hasIndexingConfigured || hasRetrievalConfigured || hasRerankingConfigured || hasHistoryConfigured;
@@ -416,158 +322,39 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.models")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasModelsModified, hasInheritedModels, allModelsOverridden)}
-                {(!hasModelsConfigured && !hasInheritedModels && systemDefaults && !isOrgProject) && (
-                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
-                )}
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t("models.embeddingTitle")}</p>
-                  <p className="text-sm text-muted-foreground">{t("models.embeddingDescription")}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="embeddingBackend">{t("models.embeddingBackendLabel")}<DirtyDot dirty={dirtyEmbeddingBackend} /></Label>
-                  <Select
-                    value={effectiveEmbeddingBackend}
-                    onValueChange={(val) => {
-                      setEmbeddingBackend((val === "none" ? "" : val) as ProjectEmbeddingBackend | "");
-                      setEmbeddingModel("");
-                      setEmbeddingCredentialId("");
-                    }}
-                  >
-                    <SelectTrigger id="embeddingBackend">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.embedding_backend, systemDefaults?.embedding_backend)}
-                      </SelectItem>
-                      <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
-                      <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
-                      <SelectItem value="ollama">{BACKEND_LABELS.ollama}</SelectItem>
-                      <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {effectiveEmbeddingBackend !== "none" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="embeddingCredentialId">{t("models.embeddingApiKeyLabel")}<DirtyDot dirty={dirtyEmbeddingCredentialId} /></Label>
-                      <Select
-                        value={effectiveEmbeddingCredentialId}
-                        onValueChange={setEmbeddingCredentialId}
-                        disabled={!embeddingProviderForHints}
-                      >
-                        <SelectTrigger id="embeddingCredentialId">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            {embeddingProviderForHints ? t("models.noSelection") : t("models.selectEmbeddingFirst")}
-                          </SelectItem>
-                          {embeddingCredentialOptions.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.masked_key}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="embeddingModel">{t("models.embeddingModelLabel")}<DirtyDot dirty={dirtyEmbeddingModel} /></Label>
-                      <Select
-                        value={embeddingModelOptions.some(m => m.id === effectiveEmbeddingModel) ? effectiveEmbeddingModel : "none"}
-                        onValueChange={setEmbeddingModel}
-                      >
-                        <SelectTrigger id="embeddingModel">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("models.selectModel")}</SelectItem>
-                          {embeddingModelOptions.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                ) : null}
-                <hr className="border-border" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{t("models.llmTitle")}</p>
-                  <p className="text-sm text-muted-foreground">{t("models.llmDescription")}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="llmBackend">{t("models.llmBackendLabel")}<DirtyDot dirty={dirtyLlmBackend} /></Label>
-                  <Select
-                    value={effectiveLlmBackend}
-                    onValueChange={(val) => {
-                      setLlmBackend((val === "none" ? "" : val) as ProjectLLMBackend | "");
-                      setLlmModel("");
-                      setLlmCredentialId("");
-                    }}
-                  >
-                    <SelectTrigger id="llmBackend">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.llm_backend, systemDefaults?.llm_backend)}
-                      </SelectItem>
-                      <SelectItem value="openai">{BACKEND_LABELS.openai}</SelectItem>
-                      <SelectItem value="gemini">{BACKEND_LABELS.gemini}</SelectItem>
-                      <SelectItem value="anthropic">{BACKEND_LABELS.anthropic}</SelectItem>
-                      <SelectItem value="ollama">{BACKEND_LABELS.ollama}</SelectItem>
-                      <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {effectiveLlmBackend !== "none" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="llmCredentialId">{t("models.llmApiKeyLabel")}<DirtyDot dirty={dirtyLlmCredentialId} /></Label>
-                      <Select
-                        value={effectiveLlmCredentialId}
-                        onValueChange={setLlmCredentialId}
-                        disabled={!llmProviderForHints}
-                      >
-                        <SelectTrigger id="llmCredentialId">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            {llmProviderForHints ? t("models.noSelection") : t("models.selectLlmFirst")}
-                          </SelectItem>
-                          {llmCredentialOptions.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.masked_key}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="llmModel">{t("models.llmModelLabel")}<DirtyDot dirty={dirtyLlmModel} /></Label>
-                      <Select
-                        value={llmModelOptions.some(m => m.id === effectiveLlmModel) ? effectiveLlmModel : "none"}
-                        onValueChange={setLlmModel}
-                      >
-                        <SelectTrigger id="llmModel">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("models.selectModel")}</SelectItem>
-                          {llmModelOptions.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                ) : null}
+                <ModelSettingsFields
+                  idPrefix={projectId}
+                  values={{
+                    embeddingBackend: effectiveEmbeddingBackend,
+                    embeddingModel: effectiveEmbeddingModel,
+                    embeddingCredentialId: effectiveEmbeddingCredentialId,
+                    llmBackend: effectiveLlmBackend,
+                    llmModel: effectiveLlmModel,
+                    llmCredentialId: effectiveLlmCredentialId,
+                  }}
+                  storedValues={projectConfig}
+                  inheritedValues={inheritedDefaults}
+                  fallbackValues={systemDefaults}
+                  ownerType={ownerType}
+                  dirty={{
+                    embeddingBackend: dirtyEmbeddingBackend,
+                    embeddingModel: dirtyEmbeddingModel,
+                    embeddingCredentialId: dirtyEmbeddingCredentialId,
+                    llmBackend: dirtyLlmBackend,
+                    llmModel: dirtyLlmModel,
+                    llmCredentialId: dirtyLlmCredentialId,
+                  }}
+                  onChange={{
+                    embeddingBackend: (val) => setEmbeddingBackend((val === "none" ? "" : val) as ProjectEmbeddingBackend | ""),
+                    embeddingModel: (val) => setEmbeddingModel(val === "none" ? "" : val),
+                    embeddingCredentialId: (val) => setEmbeddingCredentialId(val === "none" ? "" : val),
+                    llmBackend: (val) => setLlmBackend((val === "none" ? "" : val) as ProjectLLMBackend | ""),
+                    llmModel: (val) => setLlmModel(val === "none" ? "" : val),
+                    llmCredentialId: (val) => setLlmCredentialId(val === "none" ? "" : val),
+                  }}
+                  modelCatalog={modelCatalog}
+                  credentials={credentials ?? []}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -582,35 +369,25 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                     {t("reindexingWarning", { progress: project.reindex_progress, total: project.reindex_total })}
                   </InlineAlert>
                 )}
-                {parentOverrideMessage(hasIndexingModified, hasInheritedIndexing, allIndexingOverridden)}
-                {(!hasIndexingConfigured && !hasInheritedIndexing && systemDefaults && !isOrgProject) && (
-                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="chunkingStrategy">{t("knowledgeIndexing.chunkingLabel")}<DirtyDot dirty={dirtyChunkingStrategy} /></Label>
-                  <Select
-                    value={effectiveChunkingStrategy}
-                    onValueChange={(val) => setChunkingStrategy(val === "none" ? null : val as ChunkingStrategy)}
-                  >
-                    <SelectTrigger id="chunkingStrategy">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.chunking_strategy, systemDefaults?.chunking_strategy)}
-                      </SelectItem>
-                      <SelectItem value="auto">{tForm("chunkingAuto")}</SelectItem>
-                      <SelectItem value="fixed_window">{tForm("chunkingFixed")}</SelectItem>
-                      <SelectItem value="paragraph">{tForm("chunkingParagraph")}</SelectItem>
-                      <SelectItem value="heading_section">{tForm("chunkingHeading")}</SelectItem>
-                      <SelectItem value="semantic">{tForm("chunkingSemantic")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch id="parentChildChunking" checked={effectiveParentChildChunking} onCheckedChange={setParentChildChunking} />
-                  <Label htmlFor="parentChildChunking">{t("knowledgeIndexing.parentChildLabel")}<DirtyDot dirty={dirtyParentChildChunking} /></Label>
-                </div>
+                <IndexingSettingsFields
+                  idPrefix={projectId}
+                  values={{
+                    chunkingStrategy: effectiveChunkingStrategy,
+                    parentChildChunking: effectiveParentChildChunking,
+                  }}
+                  storedValues={projectConfig}
+                  inheritedValues={inheritedDefaults}
+                  fallbackValues={systemDefaults}
+                  ownerType={ownerType}
+                  dirty={{
+                    chunkingStrategy: dirtyChunkingStrategy,
+                    parentChildChunking: dirtyParentChildChunking,
+                  }}
+                  onChange={{
+                    chunkingStrategy: setChunkingStrategy,
+                    parentChildChunking: setParentChildChunking,
+                  }}
+                />
                 <p className="text-xs text-muted-foreground">{t("knowledgeIndexing.parentChildRecommendation")}</p>
                 {isSemanticRecommended && <InlineAlert>{t("knowledgeIndexing.parentChildWarning")}</InlineAlert>}
                 <div className="space-y-3 rounded-md border p-4">
@@ -634,46 +411,28 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.contextRetrieval")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasRetrievalModified, hasInheritedRetrieval, allRetrievalOverridden)}
-                {(!hasRetrievalConfigured && !hasInheritedRetrieval && systemDefaults && !isOrgProject) && (
-                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
-                )}
-                <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
-                <div className="space-y-2">
-                  <Label htmlFor="retrievalStrategy">{t("contextRetrieval.searchTypeLabel")}<DirtyDot dirty={dirtyRetrievalStrategy} /></Label>
-                  <Select
-                    value={effectiveRetrievalStrategy}
-                    onValueChange={(val) => setRetrievalStrategy(val === "none" ? null : val as RetrievalStrategy)}
-                  >
-                    <SelectTrigger id="retrievalStrategy">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        {renderInheritedValue(inheritedDefaults?.retrieval_strategy, systemDefaults?.retrieval_strategy ?? "hybrid")}
-                      </SelectItem>
-                      <SelectItem value="hybrid">{t("contextRetrieval.hybrid")}</SelectItem>
-                      <SelectItem value="vector">{t("contextRetrieval.vector")}</SelectItem>
-                      <SelectItem value="fulltext">{t("contextRetrieval.fulltext")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="retrievalTopK">{t("contextRetrieval.topKLabel")}<DirtyDot dirty={dirtyRetrievalTopK} /></Label>
-                  <Input id="retrievalTopK" type="number" min={1} max={40}
-                    value={effectiveRetrievalTopK ?? ""}
-                    onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setRetrievalTopK(Number.isNaN(v) ? null : Math.max(1, Math.min(40, v))); }}
-                  />
-                  <p className="text-xs text-muted-foreground">{t("contextRetrieval.topKNote")}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="retrievalMinScore">{t("contextRetrieval.minScoreLabel")}<DirtyDot dirty={dirtyRetrievalMinScore} /></Label>
-                  <Input id="retrievalMinScore" type="number" min={0} max={1} step={0.05}
-                    value={effectiveRetrievalMinScore ?? ""}
-                    onChange={(e) => { const v = Number.parseFloat(e.target.value); setRetrievalMinScore(Number.isNaN(v) ? null : Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
-                  />
-                  <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
-                </div>
+                <RetrievalSettingsFields
+                  idPrefix={projectId}
+                  values={{
+                    retrievalStrategy: effectiveRetrievalStrategy,
+                    retrievalTopK: effectiveRetrievalTopK,
+                    retrievalMinScore: effectiveRetrievalMinScore,
+                  }}
+                  storedValues={projectConfig}
+                  inheritedValues={inheritedDefaults}
+                  fallbackValues={systemDefaults}
+                  ownerType={ownerType}
+                  dirty={{
+                    retrievalStrategy: dirtyRetrievalStrategy,
+                    retrievalTopK: dirtyRetrievalTopK,
+                    retrievalMinScore: dirtyRetrievalMinScore,
+                  }}
+                  onChange={{
+                    retrievalStrategy: setRetrievalStrategy,
+                    retrievalTopK: setRetrievalTopK,
+                    retrievalMinScore: setRetrievalMinScore,
+                  }}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -683,68 +442,31 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.contextAugmentation")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasRerankingModified, hasInheritedReranking, allRerankingOverridden)}
-                {(!hasRerankingConfigured && !hasInheritedReranking && systemDefaults && !isOrgProject) && (
-                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
-                )}
-                <div className="flex items-center gap-2">
-                  <Switch id="rerankingEnabled" checked={effectiveRerankingEnabled} onCheckedChange={setRerankingEnabled} />
-                  <Label htmlFor="rerankingEnabled">{t("contextAugmentation.rerankingLabel")}<DirtyDot dirty={dirtyRerankingEnabled} /></Label>
-                </div>
-                {effectiveRerankingEnabled && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="rerankerBackend">{t("contextAugmentation.rerankerBackendLabel")}<DirtyDot dirty={dirtyRerankerBackend} /></Label>
-                      <Select
-                        value={effectiveRerankerBackend}
-                        onValueChange={(val) => {
-                          setRerankerBackend(val === "none" ? null : val as ProjectRerankerBackend);
-                          setRerankerModel("");
-                        }}
-                      >
-                        <SelectTrigger id="rerankerBackend">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">{t("contextAugmentation.rerankerNone")}</SelectItem>
-                          <SelectItem value="cross_encoder">{t("contextAugmentation.rerankerCrossEncoder")}</SelectItem>
-                          <SelectItem value="inmemory">{t("contextAugmentation.rerankerInMemory")}</SelectItem>
-                          <SelectItem value="mmr">{t("contextAugmentation.rerankerMmr")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rerankerModel">{t("contextAugmentation.rerankerModelLabel")}<DirtyDot dirty={dirtyRerankerModel} /></Label>
-                      <Select
-                        value={rerankerModelOptions.some(m => m.id === effectiveRerankerModel) ? effectiveRerankerModel : "none"}
-                        onValueChange={setRerankerModel}
-                        disabled={effectiveRerankerBackend === "none" || effectiveRerankerBackend === null}
-                      >
-                        <SelectTrigger id="rerankerModel">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            {effectiveRerankerBackend === "none" || effectiveRerankerBackend === null ? t("contextAugmentation.selectRerankerBackend") : t("contextAugmentation.selectModel")}
-                          </SelectItem>
-                          {rerankerModelOptions.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rerankerCandidateMultiplier">{t("contextAugmentation.candidateMultiplierLabel")}<DirtyDot dirty={dirtyRerankerCandidateMultiplier} /></Label>
-                      <Input id="rerankerCandidateMultiplier" type="number" min={1} max={10}
-                        value={effectiveRerankerCandidateMultiplier ?? ""}
-                        onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setRerankerCandidateMultiplier(Number.isNaN(v) ? null : Math.max(1, Math.min(10, v))); }}
-                      />
-                      <p className="text-xs text-muted-foreground">{t("contextAugmentation.candidateMultiplierNote")}</p>
-                    </div>
-                  </>
-                )}
+                <AugmentationSettingsFields
+                  idPrefix={projectId}
+                  values={{
+                    rerankingEnabled: effectiveRerankingEnabled,
+                    rerankerBackend: effectiveRerankerBackend,
+                    rerankerModel: effectiveRerankerModel,
+                    rerankerCandidateMultiplier: effectiveRerankerCandidateMultiplier,
+                  }}
+                  storedValues={projectConfig}
+                  inheritedValues={inheritedDefaults}
+                  ownerType={ownerType}
+                  dirty={{
+                    rerankingEnabled: dirtyRerankingEnabled,
+                    rerankerBackend: dirtyRerankerBackend,
+                    rerankerModel: dirtyRerankerModel,
+                    rerankerCandidateMultiplier: dirtyRerankerCandidateMultiplier,
+                  }}
+                  onChange={{
+                    rerankingEnabled: (val) => setRerankingEnabled(val),
+                    rerankerBackend: setRerankerBackend,
+                    rerankerModel: (val) => setRerankerModel(val),
+                    rerankerCandidateMultiplier: setRerankerCandidateMultiplier,
+                  }}
+                  modelCatalog={modelCatalog}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -754,26 +476,24 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
             <AccordionTrigger className="text-base">{t("tabs.answerGeneration")}</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                {parentOverrideMessage(hasHistoryModified, hasInheritedHistory, allHistoryOverridden)}
-                {(!hasHistoryConfigured && !hasInheritedHistory && systemDefaults && !isOrgProject) && (
-                  <p className="text-xs text-foreground">{t("systemDefaultsApplied")}</p>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="chatHistoryWindowSize">{t("answerGeneration.chatHistoryWindowLabel")}<DirtyDot dirty={dirtyChatHistoryWindowSize} /></Label>
-                  <Input id="chatHistoryWindowSize" type="number" min={1} max={40}
-                    value={effectiveChatHistoryWindowSize ?? ""}
-                    onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setChatHistoryWindowSize(Number.isNaN(v) ? null : Math.max(1, Math.min(40, v))); }}
-                  />
-                  <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryWindowNote")}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="chatHistoryMaxChars">{t("answerGeneration.chatHistoryMaxCharsLabel")}<DirtyDot dirty={dirtyChatHistoryMaxChars} /></Label>
-                  <Input id="chatHistoryMaxChars" type="number" min={128} max={16000}
-                    value={effectiveChatHistoryMaxChars ?? ""}
-                    onChange={(e) => { const v = Number.parseInt(e.target.value, 10); setChatHistoryMaxChars(Number.isNaN(v) ? null : Math.max(128, Math.min(16000, v))); }}
-                  />
-                  <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
-                </div>
+                <HistorySettingsFields
+                  idPrefix={projectId}
+                  values={{
+                    chatHistoryWindowSize: effectiveChatHistoryWindowSize,
+                    chatHistoryMaxChars: effectiveChatHistoryMaxChars,
+                  }}
+                  storedValues={projectConfig}
+                  inheritedValues={inheritedDefaults}
+                  ownerType={ownerType}
+                  dirty={{
+                    chatHistoryWindowSize: dirtyChatHistoryWindowSize,
+                    chatHistoryMaxChars: dirtyChatHistoryMaxChars,
+                  }}
+                  onChange={{
+                    chatHistoryWindowSize: setChatHistoryWindowSize,
+                    chatHistoryMaxChars: setChatHistoryMaxChars,
+                  }}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>

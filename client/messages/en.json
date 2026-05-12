@@ -191,6 +191,15 @@
       "orgOverrideSome": "Some organization settings are modified.",
       "userOverrideAll": "All user settings are overridden.",
       "userOverrideSome": "Some user settings are modified.",
+      "fieldHint": {
+        "inheritedFromOrg": "Inherited from organization",
+        "inheritedFromUser": "Inherited from user",
+        "customizedOrg": "Customized · org default:",
+        "customizedUser": "Customized · user default:",
+        "inheritedFromSystem": "Inherited from system",
+        "customizedSystem": "Customized · system default:",
+        "modified": "Modified — unsaved"
+      },
       "inherited": {
         "default": "Default",
         "user": "Set by user",
