@@ -196,8 +196,8 @@
         "inheritedFromUser": "Hérité de l'utilisateur",
         "customizedOrg": "Personnalisé · défaut org :",
         "customizedUser": "Personnalisé · défaut utilisateur :",
-        "inheritedFromSystem": "Hérité du système",
-        "customizedSystem": "Personnalisé · défaut système :",
+        "inheritedFromSystem": "Par défaut",
+        "customizedSystem": "Personnalisé · par défaut :",
         "modified": "Modifié — non sauvegardé"
       },
       "inherited": {

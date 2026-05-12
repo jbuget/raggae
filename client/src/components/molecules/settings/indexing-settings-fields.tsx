@@ -9,6 +9,7 @@ import {
 import type { ChunkingStrategy } from "@/lib/types/api";
 import { BACKEND_LABELS } from "@/lib/constants/backends";
 import { FieldHint } from "@/components/atoms/feedback/field-hint";
+import { SettingsFieldRow } from "@/components/atoms/settings/settings-field-row";
 
 type IndexingValues = {
   chunkingStrategy: string;
@@ -79,13 +80,16 @@ export function IndexingSettingsFields({
 
   return (
     <>
-      <div className="space-y-2">
-        <Label htmlFor={id("chunkingStrategy")}>{t("knowledgeIndexing.chunkingLabel")}</Label>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("chunkingStrategy")}>{t("knowledgeIndexing.chunkingLabel")}</Label>}
+        dirty={dirty.chunkingStrategy}
+        hint={<FieldHint projectValue={storedValues?.chunking_strategy} inheritedValue={inheritedValues?.chunking_strategy} ownerType={ownerType} dirty={dirty.chunkingStrategy} />}
+      >
         <Select
           value={values.chunkingStrategy}
           onValueChange={(val) => onChange.chunkingStrategy(val === "none" ? null : val as ChunkingStrategy)}
         >
-          <SelectTrigger id={id("chunkingStrategy")}>
+          <SelectTrigger id={id("chunkingStrategy")} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -97,17 +101,18 @@ export function IndexingSettingsFields({
             <SelectItem value="semantic">{tForm("chunkingSemantic")}</SelectItem>
           </SelectContent>
         </Select>
-        <FieldHint projectValue={storedValues?.chunking_strategy} inheritedValue={inheritedValues?.chunking_strategy} ownerType={ownerType} dirty={dirty.chunkingStrategy} />
-      </div>
-      <div className="flex items-center gap-2">
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("parentChildChunking")}>{t("knowledgeIndexing.parentChildLabel")}</Label>}
+        dirty={dirty.parentChildChunking}
+        hint={<FieldHint projectValue={storedValues?.parent_child_chunking} inheritedValue={inheritedValues?.parent_child_chunking} ownerType={ownerType} dirty={dirty.parentChildChunking} />}
+      >
         <Switch
           id={id("parentChildChunking")}
           checked={values.parentChildChunking}
           onCheckedChange={onChange.parentChildChunking}
         />
-        <Label htmlFor={id("parentChildChunking")}>{t("knowledgeIndexing.parentChildLabel")}</Label>
-      </div>
-      <FieldHint projectValue={storedValues?.parent_child_chunking} inheritedValue={inheritedValues?.parent_child_chunking} ownerType={ownerType} dirty={dirty.parentChildChunking} />
+      </SettingsFieldRow>
     </>
   );
 }

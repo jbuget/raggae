@@ -8,6 +8,7 @@ import {
 import type { ModelCatalogResponse, ModelProvider, ProjectEmbeddingBackend, ProjectLLMBackend } from "@/lib/types/api";
 import { BACKEND_LABELS } from "@/lib/constants/backends";
 import { FieldHint } from "@/components/atoms/feedback/field-hint";
+import { SettingsFieldRow } from "@/components/atoms/settings/settings-field-row";
 
 type Credential = { id: string; provider: ModelProvider; masked_key: string; is_active: boolean };
 
@@ -125,8 +126,11 @@ export function ModelSettingsFields({
         <p className="text-sm font-medium">{tSettings("models.embeddingTitle")}</p>
         <p className="text-sm text-muted-foreground">{tSettings("models.embeddingDescription")}</p>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={id("embeddingBackend")}>{tSettings("models.embeddingBackendLabel")}</Label>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("embeddingBackend")}>{tSettings("models.embeddingBackendLabel")}</Label>}
+        dirty={dirty.embeddingBackend}
+        hint={<FieldHint projectValue={storedValues?.embedding_backend} inheritedValue={inheritedValues?.embedding_backend} ownerType={ownerType} dirty={dirty.embeddingBackend} />}
+      >
         <Select
           value={values.embeddingBackend}
           onValueChange={(val) => {
@@ -135,7 +139,7 @@ export function ModelSettingsFields({
             onChange.embeddingCredentialId("none");
           }}
         >
-          <SelectTrigger id={id("embeddingBackend")}>
+          <SelectTrigger id={id("embeddingBackend")} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -148,18 +152,19 @@ export function ModelSettingsFields({
             <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
           </SelectContent>
         </Select>
-        <FieldHint projectValue={storedValues?.embedding_backend} inheritedValue={inheritedValues?.embedding_backend} ownerType={ownerType} dirty={dirty.embeddingBackend} />
-      </div>
+      </SettingsFieldRow>
       {values.embeddingBackend !== "none" && (
         <>
-          <div className="space-y-2">
-            <Label htmlFor={id("embeddingCredentialId")}>{tSettings("models.embeddingApiKeyLabel")}</Label>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("embeddingCredentialId")}>{tSettings("models.embeddingApiKeyLabel")}</Label>}
+            dirty={dirty.embeddingCredentialId}
+          >
             <Select
               value={values.embeddingCredentialId || "none"}
               onValueChange={(val) => onChange.embeddingCredentialId(val === "none" ? "" : val)}
               disabled={!embeddingProviderForHints}
             >
-              <SelectTrigger id={id("embeddingCredentialId")}>
+              <SelectTrigger id={id("embeddingCredentialId")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -171,14 +176,17 @@ export function ModelSettingsFields({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={id("embeddingModel")}>{tSettings("models.embeddingModelLabel")}</Label>
+          </SettingsFieldRow>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("embeddingModel")}>{tSettings("models.embeddingModelLabel")}</Label>}
+            dirty={dirty.embeddingModel}
+            hint={<FieldHint projectValue={storedValues?.embedding_model} inheritedValue={inheritedValues?.embedding_model} ownerType={ownerType} dirty={dirty.embeddingModel} />}
+          >
             <Select
               value={embeddingModelOptions.some(m => m.id === values.embeddingModel) ? values.embeddingModel : "none"}
               onValueChange={(val) => onChange.embeddingModel(val === "none" ? "" : val)}
             >
-              <SelectTrigger id={id("embeddingModel")}>
+              <SelectTrigger id={id("embeddingModel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -188,8 +196,7 @@ export function ModelSettingsFields({
                 ))}
               </SelectContent>
             </Select>
-            <FieldHint projectValue={storedValues?.embedding_model} inheritedValue={inheritedValues?.embedding_model} ownerType={ownerType} dirty={dirty.embeddingModel} />
-          </div>
+          </SettingsFieldRow>
         </>
       )}
       <hr className="border-border" />
@@ -197,8 +204,11 @@ export function ModelSettingsFields({
         <p className="text-sm font-medium">{tSettings("models.llmTitle")}</p>
         <p className="text-sm text-muted-foreground">{tSettings("models.llmDescription")}</p>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={id("llmBackend")}>{tSettings("models.llmBackendLabel")}</Label>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("llmBackend")}>{tSettings("models.llmBackendLabel")}</Label>}
+        dirty={dirty.llmBackend}
+        hint={<FieldHint projectValue={storedValues?.llm_backend} inheritedValue={inheritedValues?.llm_backend} ownerType={ownerType} dirty={dirty.llmBackend} />}
+      >
         <Select
           value={values.llmBackend}
           onValueChange={(val) => {
@@ -207,7 +217,7 @@ export function ModelSettingsFields({
             onChange.llmCredentialId("none");
           }}
         >
-          <SelectTrigger id={id("llmBackend")}>
+          <SelectTrigger id={id("llmBackend")} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -221,18 +231,19 @@ export function ModelSettingsFields({
             <SelectItem value="inmemory">{BACKEND_LABELS.inmemory}</SelectItem>
           </SelectContent>
         </Select>
-        <FieldHint projectValue={storedValues?.llm_backend} inheritedValue={inheritedValues?.llm_backend} ownerType={ownerType} dirty={dirty.llmBackend} />
-      </div>
+      </SettingsFieldRow>
       {values.llmBackend !== "none" && (
         <>
-          <div className="space-y-2">
-            <Label htmlFor={id("llmCredentialId")}>{tSettings("models.llmApiKeyLabel")}</Label>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("llmCredentialId")}>{tSettings("models.llmApiKeyLabel")}</Label>}
+            dirty={dirty.llmCredentialId}
+          >
             <Select
               value={values.llmCredentialId || "none"}
               onValueChange={(val) => onChange.llmCredentialId(val === "none" ? "" : val)}
               disabled={!llmProviderForHints}
             >
-              <SelectTrigger id={id("llmCredentialId")}>
+              <SelectTrigger id={id("llmCredentialId")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -244,14 +255,17 @@ export function ModelSettingsFields({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={id("llmModel")}>{tSettings("models.llmModelLabel")}</Label>
+          </SettingsFieldRow>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("llmModel")}>{tSettings("models.llmModelLabel")}</Label>}
+            dirty={dirty.llmModel}
+            hint={<FieldHint projectValue={storedValues?.llm_model} inheritedValue={inheritedValues?.llm_model} ownerType={ownerType} dirty={dirty.llmModel} />}
+          >
             <Select
               value={llmModelOptions.some(m => m.id === values.llmModel) ? values.llmModel : "none"}
               onValueChange={(val) => onChange.llmModel(val === "none" ? "" : val)}
             >
-              <SelectTrigger id={id("llmModel")}>
+              <SelectTrigger id={id("llmModel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -261,8 +275,7 @@ export function ModelSettingsFields({
                 ))}
               </SelectContent>
             </Select>
-            <FieldHint projectValue={storedValues?.llm_model} inheritedValue={inheritedValues?.llm_model} ownerType={ownerType} dirty={dirty.llmModel} />
-          </div>
+          </SettingsFieldRow>
         </>
       )}
     </>

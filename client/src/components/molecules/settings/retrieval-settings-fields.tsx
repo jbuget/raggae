@@ -9,6 +9,7 @@ import {
 import type { RetrievalStrategy } from "@/lib/types/api";
 import { BACKEND_LABELS } from "@/lib/constants/backends";
 import { FieldHint } from "@/components/atoms/feedback/field-hint";
+import { SettingsFieldRow } from "@/components/atoms/settings/settings-field-row";
 
 type RetrievalValues = {
   retrievalStrategy: string;
@@ -84,13 +85,16 @@ export function RetrievalSettingsFields({
   return (
     <>
       <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
-      <div className="space-y-2">
-        <Label htmlFor={id("retrievalStrategy")}>{t("contextRetrieval.searchTypeLabel")}</Label>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("retrievalStrategy")}>{t("contextRetrieval.searchTypeLabel")}</Label>}
+        dirty={dirty.retrievalStrategy}
+        hint={<FieldHint projectValue={storedValues?.retrieval_strategy} inheritedValue={inheritedValues?.retrieval_strategy} ownerType={ownerType} dirty={dirty.retrievalStrategy} />}
+      >
         <Select
           value={values.retrievalStrategy}
           onValueChange={(val) => onChange.retrievalStrategy(val === "none" ? null : val as RetrievalStrategy)}
         >
-          <SelectTrigger id={id("retrievalStrategy")}>
+          <SelectTrigger id={id("retrievalStrategy")} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -100,35 +104,40 @@ export function RetrievalSettingsFields({
             <SelectItem value="fulltext">{t("contextRetrieval.fulltext")}</SelectItem>
           </SelectContent>
         </Select>
-        <FieldHint projectValue={storedValues?.retrieval_strategy} inheritedValue={inheritedValues?.retrieval_strategy} ownerType={ownerType} dirty={dirty.retrievalStrategy} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={id("retrievalTopK")}>{t("contextRetrieval.topKLabel")}</Label>
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("retrievalTopK")}>{t("contextRetrieval.topKLabel")}</Label>}
+        description={t("contextRetrieval.topKNote")}
+        dirty={dirty.retrievalTopK}
+        hint={<FieldHint projectValue={storedValues?.retrieval_top_k} inheritedValue={inheritedValues?.retrieval_top_k} ownerType={ownerType} dirty={dirty.retrievalTopK} />}
+      >
         <Input
           id={id("retrievalTopK")}
           type="number"
           min={1}
           max={40}
+          className="w-full"
           value={values.retrievalTopK ?? ""}
           onChange={(e) => { const v = Number.parseInt(e.target.value, 10); onChange.retrievalTopK(Number.isNaN(v) ? null : Math.max(1, Math.min(40, v))); }}
         />
-        <FieldHint projectValue={storedValues?.retrieval_top_k} inheritedValue={inheritedValues?.retrieval_top_k} ownerType={ownerType} dirty={dirty.retrievalTopK} />
-        <p className="text-xs text-muted-foreground">{t("contextRetrieval.topKNote")}</p>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={id("retrievalMinScore")}>{t("contextRetrieval.minScoreLabel")}</Label>
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("retrievalMinScore")}>{t("contextRetrieval.minScoreLabel")}</Label>}
+        description={t("contextRetrieval.minScoreNote")}
+        dirty={dirty.retrievalMinScore}
+        hint={<FieldHint projectValue={storedValues?.retrieval_min_score} inheritedValue={inheritedValues?.retrieval_min_score} ownerType={ownerType} dirty={dirty.retrievalMinScore} />}
+      >
         <Input
           id={id("retrievalMinScore")}
           type="number"
           min={0}
           max={1}
           step={0.05}
+          className="w-full"
           value={values.retrievalMinScore ?? ""}
           onChange={(e) => { const v = Number.parseFloat(e.target.value); onChange.retrievalMinScore(Number.isNaN(v) ? null : Math.round(Math.max(0, Math.min(1, v)) * 100) / 100); }}
         />
-        <FieldHint projectValue={storedValues?.retrieval_min_score} inheritedValue={inheritedValues?.retrieval_min_score} ownerType={ownerType} dirty={dirty.retrievalMinScore} />
-        <p className="text-xs text-muted-foreground">{t("contextRetrieval.minScoreNote")}</p>
-      </div>
+      </SettingsFieldRow>
     </>
   );
 }

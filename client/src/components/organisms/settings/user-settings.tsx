@@ -35,7 +35,7 @@ export function UserSettings() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-wrap items-end gap-4 border-b">
         {USER_SETTINGS_TABS.map((tab) => {
           const isActive = activeTab === tab;

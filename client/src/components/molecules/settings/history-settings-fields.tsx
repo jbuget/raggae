@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldHint } from "@/components/atoms/feedback/field-hint";
+import { SettingsFieldRow } from "@/components/atoms/settings/settings-field-row";
 
 type HistoryValues = {
   chatHistoryWindowSize: number | null;
@@ -55,32 +56,38 @@ export function HistorySettingsFields({
 
   return (
     <>
-      <div className="space-y-2">
-        <Label htmlFor={id("chatHistoryWindowSize")}>{t("answerGeneration.chatHistoryWindowLabel")}</Label>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("chatHistoryWindowSize")}>{t("answerGeneration.chatHistoryWindowLabel")}</Label>}
+        description={t("answerGeneration.chatHistoryWindowNote")}
+        dirty={dirty.chatHistoryWindowSize}
+        hint={<FieldHint projectValue={storedValues?.chat_history_window_size} inheritedValue={inheritedValues?.chat_history_window_size} ownerType={ownerType} dirty={dirty.chatHistoryWindowSize} />}
+      >
         <Input
           id={id("chatHistoryWindowSize")}
           type="number"
           min={1}
           max={40}
+          className="w-full"
           value={values.chatHistoryWindowSize ?? ""}
           onChange={(e) => { const v = Number.parseInt(e.target.value, 10); onChange.chatHistoryWindowSize(Number.isNaN(v) ? null : Math.max(1, Math.min(40, v))); }}
         />
-        <FieldHint projectValue={storedValues?.chat_history_window_size} inheritedValue={inheritedValues?.chat_history_window_size} ownerType={ownerType} dirty={dirty.chatHistoryWindowSize} />
-        <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryWindowNote")}</p>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={id("chatHistoryMaxChars")}>{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        label={<Label htmlFor={id("chatHistoryMaxChars")}>{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>}
+        description={t("answerGeneration.chatHistoryMaxCharsNote")}
+        dirty={dirty.chatHistoryMaxChars}
+        hint={<FieldHint projectValue={storedValues?.chat_history_max_chars} inheritedValue={inheritedValues?.chat_history_max_chars} ownerType={ownerType} dirty={dirty.chatHistoryMaxChars} />}
+      >
         <Input
           id={id("chatHistoryMaxChars")}
           type="number"
           min={128}
           max={16000}
+          className="w-full"
           value={values.chatHistoryMaxChars ?? ""}
           onChange={(e) => { const v = Number.parseInt(e.target.value, 10); onChange.chatHistoryMaxChars(Number.isNaN(v) ? null : Math.max(128, Math.min(16000, v))); }}
         />
-        <FieldHint projectValue={storedValues?.chat_history_max_chars} inheritedValue={inheritedValues?.chat_history_max_chars} ownerType={ownerType} dirty={dirty.chatHistoryMaxChars} />
-        <p className="text-xs text-muted-foreground">{t("answerGeneration.chatHistoryMaxCharsNote")}</p>
-      </div>
+      </SettingsFieldRow>
     </>
   );
 }

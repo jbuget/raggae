@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import type { ModelCatalogResponse, ProjectRerankerBackend } from "@/lib/types/api";
 import { FieldHint } from "@/components/atoms/feedback/field-hint";
+import { SettingsFieldRow } from "@/components/atoms/settings/settings-field-row";
 
 type AugmentationValues = {
   rerankingEnabled: boolean;
@@ -73,19 +74,24 @@ export function AugmentationSettingsFields({
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <SettingsFieldRow
+        label={<Label htmlFor={id("rerankingEnabled")}>{t("contextAugmentation.rerankingLabel")}</Label>}
+        dirty={dirty.rerankingEnabled}
+        hint={<FieldHint projectValue={storedValues?.reranking_enabled} inheritedValue={inheritedValues?.reranking_enabled} ownerType={ownerType} dirty={dirty.rerankingEnabled} />}
+      >
         <Switch
           id={id("rerankingEnabled")}
           checked={values.rerankingEnabled}
           onCheckedChange={onChange.rerankingEnabled}
         />
-        <Label htmlFor={id("rerankingEnabled")}>{t("contextAugmentation.rerankingLabel")}</Label>
-      </div>
-      <FieldHint projectValue={storedValues?.reranking_enabled} inheritedValue={inheritedValues?.reranking_enabled} ownerType={ownerType} dirty={dirty.rerankingEnabled} />
+      </SettingsFieldRow>
       {values.rerankingEnabled && (
         <>
-          <div className="space-y-2">
-            <Label htmlFor={id("rerankerBackend")}>{t("contextAugmentation.rerankerBackendLabel")}</Label>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("rerankerBackend")}>{t("contextAugmentation.rerankerBackendLabel")}</Label>}
+            dirty={dirty.rerankerBackend}
+            hint={<FieldHint projectValue={storedValues?.reranker_backend} inheritedValue={inheritedValues?.reranker_backend} ownerType={ownerType} dirty={dirty.rerankerBackend} />}
+          >
             <Select
               value={values.rerankerBackend}
               onValueChange={(val) => {
@@ -93,7 +99,7 @@ export function AugmentationSettingsFields({
                 onChange.rerankerModel("");
               }}
             >
-              <SelectTrigger id={id("rerankerBackend")}>
+              <SelectTrigger id={id("rerankerBackend")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -103,16 +109,17 @@ export function AugmentationSettingsFields({
                 <SelectItem value="mmr">{t("contextAugmentation.rerankerMmr")}</SelectItem>
               </SelectContent>
             </Select>
-            <FieldHint projectValue={storedValues?.reranker_backend} inheritedValue={inheritedValues?.reranker_backend} ownerType={ownerType} dirty={dirty.rerankerBackend} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={id("rerankerModel")}>{t("contextAugmentation.rerankerModelLabel")}</Label>
+          </SettingsFieldRow>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("rerankerModel")}>{t("contextAugmentation.rerankerModelLabel")}</Label>}
+            dirty={dirty.rerankerModel}
+          >
             <Select
               value={rerankerModelOptions.some(m => m.id === values.rerankerModel) ? values.rerankerModel : "none"}
               onValueChange={(val) => onChange.rerankerModel(val === "none" ? "" : val)}
               disabled={values.rerankerBackend === "none"}
             >
-              <SelectTrigger id={id("rerankerModel")}>
+              <SelectTrigger id={id("rerankerModel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -124,20 +131,23 @@ export function AugmentationSettingsFields({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={id("rerankerCandidateMultiplier")}>{t("contextAugmentation.candidateMultiplierLabel")}</Label>
+          </SettingsFieldRow>
+          <SettingsFieldRow
+            label={<Label htmlFor={id("rerankerCandidateMultiplier")}>{t("contextAugmentation.candidateMultiplierLabel")}</Label>}
+            description={t("contextAugmentation.candidateMultiplierNote")}
+            dirty={dirty.rerankerCandidateMultiplier}
+            hint={<FieldHint projectValue={storedValues?.reranker_candidate_multiplier} inheritedValue={inheritedValues?.reranker_candidate_multiplier} ownerType={ownerType} dirty={dirty.rerankerCandidateMultiplier} />}
+          >
             <Input
               id={id("rerankerCandidateMultiplier")}
               type="number"
               min={1}
               max={10}
+              className="w-full"
               value={values.rerankerCandidateMultiplier ?? ""}
               onChange={(e) => { const v = Number.parseInt(e.target.value, 10); onChange.rerankerCandidateMultiplier(Number.isNaN(v) ? null : Math.max(1, Math.min(10, v))); }}
             />
-            <FieldHint projectValue={storedValues?.reranker_candidate_multiplier} inheritedValue={inheritedValues?.reranker_candidate_multiplier} ownerType={ownerType} dirty={dirty.rerankerCandidateMultiplier} />
-            <p className="text-xs text-muted-foreground">{t("contextAugmentation.candidateMultiplierNote")}</p>
-          </div>
+          </SettingsFieldRow>
         </>
       )}
     </>
