@@ -3,6 +3,19 @@
 Revision ID: 20260506_45
 Revises: 20260505_44
 Create Date: 2026-05-06
+
+⚠️  IRRÉVERSIBILITÉ PARTIELLE — lire avant d'appliquer en production
+-----------------------------------------------------------------------
+Le upgrade() déplace les données de config depuis projects vers
+agent_configurations puis supprime les colonnes de projects. Le downgrade()
+restaure les données via un UPDATE depuis agent_configurations avant de les
+supprimer, mais les colonnes *_encrypted (clés API chiffrées) ne peuvent pas
+être restaurées — elles sont perdues définitivement au upgrade.
+
+Prérequis avant migration en production :
+  1. Effectuer un pg_dump complet de la base de données.
+  2. Pour une table projects volumineuse, prévoir une fenêtre de maintenance :
+     l'INSERT … SELECT gen_random_uuid() peut poser des verrous sur la table.
 """
 
 import os
@@ -10,7 +23,6 @@ import uuid
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -104,74 +116,52 @@ def upgrade() -> None:
         op.drop_column("projects", col)
 
 
+def _add_col(col: str) -> None:
+    """Helper idempotent pour restaurer une colonne projets dans le downgrade."""
+    op.execute(sa.text(f"ALTER TABLE projects ADD COLUMN IF NOT EXISTS {col}"))
+
+
 def downgrade() -> None:
-    # 1. Restore override flag columns
+    # 1. Restore override flag columns (idempotent si downgrade partiel)
     for col in reversed(OVERRIDE_COLS):
-        op.add_column(
-            "projects",
-            sa.Column(col, sa.Boolean(), nullable=False, server_default=sa.text("false")),
-        )
+        _add_col(f"{col} BOOLEAN NOT NULL DEFAULT false")
 
     # 2. Restore org credential columns
-    op.add_column(
-        "projects",
-        sa.Column("org_llm_api_key_credential_id", postgresql.UUID(as_uuid=True), nullable=True),
-    )
-    op.add_column(
-        "projects",
-        sa.Column("org_embedding_api_key_credential_id", postgresql.UUID(as_uuid=True), nullable=True),
-    )
-    op.create_foreign_key(
-        "fk_projects_org_embedding_credential",
-        "projects",
-        "org_model_provider_credentials",
-        ["org_embedding_api_key_credential_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
-    op.create_foreign_key(
-        "fk_projects_org_llm_credential",
-        "projects",
-        "org_model_provider_credentials",
-        ["org_llm_api_key_credential_id"],
-        ["id"],
-        ondelete="SET NULL",
-    )
+    cred_ref = "org_model_provider_credentials(id) ON DELETE SET NULL"
+    _add_col(f"org_llm_api_key_credential_id UUID REFERENCES {cred_ref}")
+    _add_col(f"org_embedding_api_key_credential_id UUID REFERENCES {cred_ref}")
 
-    # 3. Restore encrypted key columns
-    op.add_column("projects", sa.Column("llm_api_key_encrypted", sa.Text(), nullable=True))
-    op.add_column("projects", sa.Column("embedding_api_key_encrypted", sa.Text(), nullable=True))
+    # 3. Restore encrypted key columns (contenu non restaurable — voir docstring)
+    _add_col("llm_api_key_encrypted TEXT")
+    _add_col("embedding_api_key_encrypted TEXT")
 
-    # 4. Restore config columns (nullable, so no server_default needed)
+    # 4. Restore config columns
     nullable_config = [
-        ("embedding_backend", sa.String(32)),
-        ("embedding_model", sa.String(128)),
-        ("embedding_api_key_credential_id", postgresql.UUID(as_uuid=True)),
-        ("llm_backend", sa.String(32)),
-        ("llm_model", sa.String(128)),
-        ("llm_api_key_credential_id", postgresql.UUID(as_uuid=True)),
-        ("reranker_backend", sa.String(32)),
-        ("reranker_model", sa.String(255)),
+        ("embedding_backend", "VARCHAR(32)"),
+        ("embedding_model", "VARCHAR(128)"),
+        ("embedding_api_key_credential_id", "UUID"),
+        ("llm_backend", "VARCHAR(32)"),
+        ("llm_model", "VARCHAR(128)"),
+        ("llm_api_key_credential_id", "UUID"),
+        ("reranker_backend", "VARCHAR(32)"),
+        ("reranker_model", "VARCHAR(255)"),
     ]
     for col_name, col_type in nullable_config:
-        op.add_column("projects", sa.Column(col_name, col_type, nullable=True))
+        _add_col(f"{col_name} {col_type}")
 
     nonnull_config = [
-        ("chunking_strategy", sa.String(32), sa.text("'auto'")),
-        ("parent_child_chunking", sa.Boolean(), sa.text("true")),
-        ("retrieval_strategy", sa.String(16), sa.text("'hybrid'")),
-        ("retrieval_top_k", sa.Integer(), sa.text("8")),
-        ("retrieval_min_score", sa.Float(), sa.text("0.3")),
-        ("reranking_enabled", sa.Boolean(), sa.text("false")),
-        ("reranker_candidate_multiplier", sa.Integer(), sa.text("3")),
-        ("chat_history_window_size", sa.Integer(), sa.text("8")),
-        ("chat_history_max_chars", sa.Integer(), sa.text("4000")),
+        ("chunking_strategy", "VARCHAR(32)", "'auto'"),
+        ("parent_child_chunking", "BOOLEAN", "true"),
+        ("retrieval_strategy", "VARCHAR(16)", "'hybrid'"),
+        ("retrieval_top_k", "INTEGER", "8"),
+        ("retrieval_min_score", "FLOAT", "0.3"),
+        ("reranking_enabled", "BOOLEAN", "false"),
+        ("reranker_candidate_multiplier", "INTEGER", "3"),
+        ("chat_history_window_size", "INTEGER", "8"),
+        ("chat_history_max_chars", "INTEGER", "4000"),
     ]
-    for col_name, col_type, server_default in nonnull_config:
-        op.add_column(
-            "projects",
-            sa.Column(col_name, col_type, nullable=False, server_default=server_default),
-        )
+    for col_name, col_type, default in nonnull_config:
+        _add_col(f"{col_name} {col_type} NOT NULL DEFAULT {default}")
 
     # 5. Copy config data back from PROJECT rows in agent_configurations
     cols_assignment = ", ".join(f"{c} = ac.{c}" for c in CONFIG_COLS)
@@ -203,7 +193,9 @@ def _insert_app_row() -> None:
     row_id = str(uuid.uuid4())
     llm_backend = env("DEFAULT_LLM_PROVIDER").lower() if env("DEFAULT_LLM_PROVIDER") else None
     llm_model = env("DEFAULT_LLM_MODEL")
-    embedding_backend = env("DEFAULT_EMBEDDING_PROVIDER").lower() if env("DEFAULT_EMBEDDING_PROVIDER") else None
+    embedding_backend = (
+        env("DEFAULT_EMBEDDING_PROVIDER").lower() if env("DEFAULT_EMBEDDING_PROVIDER") else None
+    )
     embedding_model = env("DEFAULT_EMBEDDING_MODEL")
     retrieval_strategy = env("RETRIEVAL_DEFAULT_STRATEGY", "hybrid")
     retrieval_top_k_raw = env("RETRIEVAL_DEFAULT_CHUNK_LIMIT", "8")
