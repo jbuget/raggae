@@ -228,7 +228,9 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
 
   const hasRerankingConfigured =
     projectConfig?.reranking_enabled != null ||
-    projectConfig?.reranker_backend != null;
+    projectConfig?.reranker_backend != null ||
+    projectConfig?.reranker_model != null ||
+    projectConfig?.reranker_candidate_multiplier != null;
 
   // --- History computed values ---
   const effectiveChatHistoryWindowSize = chatHistoryWindowSize === undefined
@@ -452,6 +454,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   }}
                   storedValues={projectConfig}
                   inheritedValues={inheritedDefaults}
+                  fallbackValues={systemDefaults}
                   ownerType={ownerType}
                   dirty={{
                     rerankingEnabled: dirtyRerankingEnabled,
@@ -484,6 +487,7 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
                   }}
                   storedValues={projectConfig}
                   inheritedValues={inheritedDefaults}
+                  fallbackValues={systemDefaults}
                   ownerType={ownerType}
                   dirty={{
                     chatHistoryWindowSize: dirtyChatHistoryWindowSize,

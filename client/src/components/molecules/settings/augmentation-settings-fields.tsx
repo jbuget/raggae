@@ -30,6 +30,11 @@ type AugmentationInheritedValues = {
   reranker_candidate_multiplier?: number | null;
 };
 
+type AugmentationFallbackValues = {
+  reranking_enabled?: boolean | null;
+  reranker_candidate_multiplier?: number | null;
+};
+
 type AugmentationDirty = {
   rerankingEnabled: boolean;
   rerankerBackend: boolean;
@@ -49,6 +54,7 @@ export type AugmentationSettingsFieldsProps = {
   values: AugmentationValues;
   storedValues?: AugmentationStoredValues | null;
   inheritedValues?: AugmentationInheritedValues | null;
+  fallbackValues?: AugmentationFallbackValues | null;
   ownerType: "org" | "user" | "system";
   dirty: AugmentationDirty;
   onChange: AugmentationOnChange;
@@ -60,6 +66,7 @@ export function AugmentationSettingsFields({
   values,
   storedValues,
   inheritedValues,
+  fallbackValues,
   ownerType,
   dirty,
   onChange,
@@ -70,6 +77,11 @@ export function AugmentationSettingsFields({
   const rerankerModelOptions = (values.rerankerBackend && values.rerankerBackend !== "none")
     ? (modelCatalog?.reranker[values.rerankerBackend as ProjectRerankerBackend] ?? []) : [];
 
+  const effectiveInheritedRerankingEnabled = inheritedValues?.reranking_enabled ?? fallbackValues?.reranking_enabled;
+  const rerankingEnabledOwnerType = inheritedValues?.reranking_enabled != null ? ownerType : "system" as const;
+  const effectiveInheritedCandidateMultiplier = inheritedValues?.reranker_candidate_multiplier ?? fallbackValues?.reranker_candidate_multiplier;
+  const candidateMultiplierOwnerType = inheritedValues?.reranker_candidate_multiplier != null ? ownerType : "system" as const;
+
   const id = (field: string) => `${idPrefix}-${field}`;
 
   return (
@@ -77,7 +89,7 @@ export function AugmentationSettingsFields({
       <SettingsFieldRow
         label={<Label htmlFor={id("rerankingEnabled")}>{t("contextAugmentation.rerankingLabel")}</Label>}
         dirty={dirty.rerankingEnabled}
-        hint={<FieldHint projectValue={storedValues?.reranking_enabled} inheritedValue={inheritedValues?.reranking_enabled} ownerType={ownerType} dirty={dirty.rerankingEnabled} />}
+        hint={<FieldHint projectValue={storedValues?.reranking_enabled} inheritedValue={effectiveInheritedRerankingEnabled} ownerType={rerankingEnabledOwnerType} dirty={dirty.rerankingEnabled} />}
       >
         <Switch
           id={id("rerankingEnabled")}
@@ -136,7 +148,7 @@ export function AugmentationSettingsFields({
             label={<Label htmlFor={id("rerankerCandidateMultiplier")}>{t("contextAugmentation.candidateMultiplierLabel")}</Label>}
             description={t("contextAugmentation.candidateMultiplierNote")}
             dirty={dirty.rerankerCandidateMultiplier}
-            hint={<FieldHint projectValue={storedValues?.reranker_candidate_multiplier} inheritedValue={inheritedValues?.reranker_candidate_multiplier} ownerType={ownerType} dirty={dirty.rerankerCandidateMultiplier} />}
+            hint={<FieldHint projectValue={storedValues?.reranker_candidate_multiplier} inheritedValue={effectiveInheritedCandidateMultiplier} ownerType={candidateMultiplierOwnerType} dirty={dirty.rerankerCandidateMultiplier} />}
           >
             <Input
               id={id("rerankerCandidateMultiplier")}

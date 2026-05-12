@@ -28,6 +28,7 @@ type IndexingInheritedValues = {
 
 type IndexingFallbackValues = {
   chunking_strategy?: string | null;
+  parent_child_chunking?: boolean | null;
 };
 
 type IndexingDirty = {
@@ -76,6 +77,9 @@ export function IndexingSettingsFields({
     ? `${chunkingPrefix} (${BACKEND_LABELS[chunkingVal] ?? chunkingVal})`
     : "—";
 
+  const effectiveInheritedParentChild = inheritedValues?.parent_child_chunking ?? fallbackValues?.parent_child_chunking;
+  const parentChildOwnerType = inheritedValues?.parent_child_chunking != null ? ownerType : "system" as const;
+
   const id = (field: string) => `${idPrefix}-${field}`;
 
   return (
@@ -105,7 +109,7 @@ export function IndexingSettingsFields({
       <SettingsFieldRow
         label={<Label htmlFor={id("parentChildChunking")}>{t("knowledgeIndexing.parentChildLabel")}</Label>}
         dirty={dirty.parentChildChunking}
-        hint={<FieldHint projectValue={storedValues?.parent_child_chunking} inheritedValue={inheritedValues?.parent_child_chunking} ownerType={ownerType} dirty={dirty.parentChildChunking} />}
+        hint={<FieldHint projectValue={storedValues?.parent_child_chunking} inheritedValue={effectiveInheritedParentChild} ownerType={parentChildOwnerType} dirty={dirty.parentChildChunking} />}
       >
         <Switch
           id={id("parentChildChunking")}

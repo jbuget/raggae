@@ -31,6 +31,8 @@ type RetrievalInheritedValues = {
 
 type RetrievalFallbackValues = {
   retrieval_strategy?: string | null;
+  retrieval_top_k?: number | null;
+  retrieval_min_score?: number | null;
 };
 
 type RetrievalDirty = {
@@ -80,6 +82,11 @@ export function RetrievalSettingsFields({
     ? `${strategyPrefix} (${BACKEND_LABELS[strategyVal] ?? strategyVal})`
     : "—";
 
+  const effectiveInheritedTopK = inheritedValues?.retrieval_top_k ?? fallbackValues?.retrieval_top_k;
+  const topKOwnerType = inheritedValues?.retrieval_top_k != null ? ownerType : "system" as const;
+  const effectiveInheritedMinScore = inheritedValues?.retrieval_min_score ?? fallbackValues?.retrieval_min_score;
+  const minScoreOwnerType = inheritedValues?.retrieval_min_score != null ? ownerType : "system" as const;
+
   const id = (field: string) => `${idPrefix}-${field}`;
 
   return (
@@ -109,7 +116,7 @@ export function RetrievalSettingsFields({
         label={<Label htmlFor={id("retrievalTopK")}>{t("contextRetrieval.topKLabel")}</Label>}
         description={t("contextRetrieval.topKNote")}
         dirty={dirty.retrievalTopK}
-        hint={<FieldHint projectValue={storedValues?.retrieval_top_k} inheritedValue={inheritedValues?.retrieval_top_k} ownerType={ownerType} dirty={dirty.retrievalTopK} />}
+        hint={<FieldHint projectValue={storedValues?.retrieval_top_k} inheritedValue={effectiveInheritedTopK} ownerType={topKOwnerType} dirty={dirty.retrievalTopK} />}
       >
         <Input
           id={id("retrievalTopK")}
@@ -125,7 +132,7 @@ export function RetrievalSettingsFields({
         label={<Label htmlFor={id("retrievalMinScore")}>{t("contextRetrieval.minScoreLabel")}</Label>}
         description={t("contextRetrieval.minScoreNote")}
         dirty={dirty.retrievalMinScore}
-        hint={<FieldHint projectValue={storedValues?.retrieval_min_score} inheritedValue={inheritedValues?.retrieval_min_score} ownerType={ownerType} dirty={dirty.retrievalMinScore} />}
+        hint={<FieldHint projectValue={storedValues?.retrieval_min_score} inheritedValue={effectiveInheritedMinScore} ownerType={minScoreOwnerType} dirty={dirty.retrievalMinScore} />}
       >
         <Input
           id={id("retrievalMinScore")}

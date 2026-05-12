@@ -21,6 +21,11 @@ type HistoryInheritedValues = {
   chat_history_max_chars?: number | null;
 };
 
+type HistoryFallbackValues = {
+  chat_history_window_size?: number | null;
+  chat_history_max_chars?: number | null;
+};
+
 type HistoryDirty = {
   chatHistoryWindowSize: boolean;
   chatHistoryMaxChars: boolean;
@@ -36,6 +41,7 @@ export type HistorySettingsFieldsProps = {
   values: HistoryValues;
   storedValues?: HistoryStoredValues | null;
   inheritedValues?: HistoryInheritedValues | null;
+  fallbackValues?: HistoryFallbackValues | null;
   ownerType: "org" | "user" | "system";
   dirty: HistoryDirty;
   onChange: HistoryOnChange;
@@ -46,11 +52,17 @@ export function HistorySettingsFields({
   values,
   storedValues,
   inheritedValues,
+  fallbackValues,
   ownerType,
   dirty,
   onChange,
 }: HistorySettingsFieldsProps) {
   const t = useTranslations("projects.settings");
+
+  const effectiveInheritedWindowSize = inheritedValues?.chat_history_window_size ?? fallbackValues?.chat_history_window_size;
+  const windowSizeOwnerType = inheritedValues?.chat_history_window_size != null ? ownerType : "system" as const;
+  const effectiveInheritedMaxChars = inheritedValues?.chat_history_max_chars ?? fallbackValues?.chat_history_max_chars;
+  const maxCharsOwnerType = inheritedValues?.chat_history_max_chars != null ? ownerType : "system" as const;
 
   const id = (field: string) => `${idPrefix}-${field}`;
 
@@ -60,7 +72,7 @@ export function HistorySettingsFields({
         label={<Label htmlFor={id("chatHistoryWindowSize")}>{t("answerGeneration.chatHistoryWindowLabel")}</Label>}
         description={t("answerGeneration.chatHistoryWindowNote")}
         dirty={dirty.chatHistoryWindowSize}
-        hint={<FieldHint projectValue={storedValues?.chat_history_window_size} inheritedValue={inheritedValues?.chat_history_window_size} ownerType={ownerType} dirty={dirty.chatHistoryWindowSize} />}
+        hint={<FieldHint projectValue={storedValues?.chat_history_window_size} inheritedValue={effectiveInheritedWindowSize} ownerType={windowSizeOwnerType} dirty={dirty.chatHistoryWindowSize} />}
       >
         <Input
           id={id("chatHistoryWindowSize")}
@@ -76,7 +88,7 @@ export function HistorySettingsFields({
         label={<Label htmlFor={id("chatHistoryMaxChars")}>{t("answerGeneration.chatHistoryMaxCharsLabel")}</Label>}
         description={t("answerGeneration.chatHistoryMaxCharsNote")}
         dirty={dirty.chatHistoryMaxChars}
-        hint={<FieldHint projectValue={storedValues?.chat_history_max_chars} inheritedValue={inheritedValues?.chat_history_max_chars} ownerType={ownerType} dirty={dirty.chatHistoryMaxChars} />}
+        hint={<FieldHint projectValue={storedValues?.chat_history_max_chars} inheritedValue={effectiveInheritedMaxChars} ownerType={maxCharsOwnerType} dirty={dirty.chatHistoryMaxChars} />}
       >
         <Input
           id={id("chatHistoryMaxChars")}
