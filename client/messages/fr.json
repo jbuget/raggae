@@ -138,6 +138,8 @@
     "notFound": "Projet introuvable",
     "list": {
       "createTitle": "Créer un projet",
+      "createIn": "Créer dans",
+      "createInPersonal": "Mes projets (personnel)",
       "createSuccess": "Projet créé",
       "createError": "Erreur lors de la création du projet",
       "createFirst": "Créer votre premier projet",

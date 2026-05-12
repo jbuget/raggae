@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewToggle, type ViewMode } from "@/components/atoms/layout/view-toggle";
@@ -68,9 +71,9 @@ export function ProjectList() {
   const shouldOpenFromQuery = searchParams.get("create") === "1";
   const organizationIdFromQuery = searchParams.get("organizationId");
   const [createOpen, setCreateOpen] = useState(false);
-  const [createOrgId, setCreateOrgId] = useState<string | null>(null);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const effectiveCreateOpen = createOpen || shouldOpenFromQuery;
-  const effectiveOrgId = createOrgId ?? organizationIdFromQuery;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode);
@@ -80,14 +83,22 @@ export function ProjectList() {
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
   }
 
+  function toggleSection(id: string) {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   function openCreateDialog(orgId: string | null = null) {
-    setCreateOrgId(orgId);
+    setSelectedOrgId(orgId ?? organizationIdFromQuery);
     setCreateOpen(true);
   }
 
   function closeCreateDialog() {
     setCreateOpen(false);
-    setCreateOrgId(null);
+    setSelectedOrgId(null);
     setName("");
     setDescription("");
     if (shouldOpenFromQuery) {
@@ -144,6 +155,29 @@ export function ProjectList() {
                 rows={3}
               />
             </div>
+            {organizationSections.some((s) => s.canEdit) && (
+              <div className="space-y-2">
+                <Label htmlFor="new-project-org">{t("list.createIn")}</Label>
+                <Select
+                  value={selectedOrgId ?? "personal"}
+                  onValueChange={(val) => setSelectedOrgId(val === "personal" ? null : val)}
+                >
+                  <SelectTrigger id="new-project-org">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">{t("list.createInPersonal")}</SelectItem>
+                    {organizationSections
+                      .filter((s) => s.canEdit)
+                      .map((s) => (
+                        <SelectItem key={s.organization.id} value={s.organization.id}>
+                          {s.organization.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -153,7 +187,7 @@ export function ProjectList() {
                   {
                     name: name.trim(),
                     description,
-                    organization_id: effectiveOrgId,
+                    organization_id: selectedOrgId,
                   },
                   {
                     onSuccess: (project) => {
@@ -193,19 +227,49 @@ export function ProjectList() {
         <div className="space-y-8">
           {personalProjects.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold mb-4">{t("list.myProjects")}</h2>
-              <ProjectSection
-                projects={personalProjects}
-                viewMode={viewMode}
-                showSettings={true}
-              />
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 text-lg font-semibold hover:text-muted-foreground transition-colors"
+                  onClick={() => toggleSection("personal")}
+                >
+                  {collapsedSections.has("personal")
+                    ? <ChevronRight className="size-4" />
+                    : <ChevronDown className="size-4" />}
+                  {t("list.myProjects")}
+                </button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openCreateDialog(null)}
+                >
+                  <Plus className="mr-1 size-4" />
+                  {t("new")}
+                </Button>
+              </div>
+              {!collapsedSections.has("personal") && (
+                <ProjectSection
+                  projects={personalProjects}
+                  viewMode={viewMode}
+                  showSettings={true}
+                />
+              )}
             </section>
           )}
 
           {nonEmptySections.map(({ organization, projects, canEdit }) => (
             <section key={organization.id}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">{organization.name}</h2>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 text-lg font-semibold hover:text-muted-foreground transition-colors"
+                  onClick={() => toggleSection(organization.id)}
+                >
+                  {collapsedSections.has(organization.id)
+                    ? <ChevronRight className="size-4" />
+                    : <ChevronDown className="size-4" />}
+                  {organization.name}
+                </button>
                 {canEdit && (
                   <Button
                     variant="outline"
@@ -217,11 +281,13 @@ export function ProjectList() {
                   </Button>
                 )}
               </div>
-              <ProjectSection
-                projects={projects}
-                viewMode={viewMode}
-                showSettings={canEdit}
-              />
+              {!collapsedSections.has(organization.id) && (
+                <ProjectSection
+                  projects={projects}
+                  viewMode={viewMode}
+                  showSettings={canEdit}
+                />
+              )}
             </section>
           ))}
         </div>

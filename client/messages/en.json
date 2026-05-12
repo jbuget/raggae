@@ -138,6 +138,8 @@
     "notFound": "Project not found",
     "list": {
       "createTitle": "Create project",
+      "createIn": "Create in",
+      "createInPersonal": "My projects (personal)",
       "createSuccess": "Project created",
       "createError": "Failed to create project",
       "createFirst": "Create your first project",
