@@ -146,10 +146,12 @@ export function ProjectDefaultsForm({
   // Per-field dirty flags (effective value differs from persisted default)
   const dirtyEmbeddingBackend = effectiveEmbeddingBackend !== ((defaults?.embedding_backend ?? "") || "none");
   const dirtyEmbeddingModel = effectiveEmbeddingModel !== ((defaults?.embedding_model ?? "") || "none");
-  const dirtyEmbeddingCredentialId = embeddingCredentialId !== undefined;
+  const dirtyEmbeddingCredentialId = embeddingCredentialId !== undefined &&
+    (embeddingCredentialId || null) !== (defaults?.embedding_api_key_credential_id ?? null);
   const dirtyLlmBackend = effectiveLlmBackend !== ((defaults?.llm_backend ?? "") || "none");
   const dirtyLlmModel = effectiveLlmModel !== ((defaults?.llm_model ?? "") || "none");
-  const dirtyLlmCredentialId = llmCredentialId !== undefined;
+  const dirtyLlmCredentialId = llmCredentialId !== undefined &&
+    (llmCredentialId || null) !== (defaults?.llm_api_key_credential_id ?? null);
   const dirtyChunkingStrategy = effectiveChunkingStrategy !== (defaults?.chunking_strategy ?? "none");
   const dirtyParentChildChunking = effectiveParentChildChunking !== (defaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true);
   const dirtyRetrievalStrategy = effectiveRetrievalStrategy !== (defaults?.retrieval_strategy ?? "none");
@@ -286,7 +288,7 @@ export function ProjectDefaultsForm({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">{renderDefaultPlaceholder(systemDefaults?.embedding_model) ?? tSettings("models.selectModel")}</SelectItem>
+                          <SelectItem value="none">{tSettings("models.selectModel")}</SelectItem>
                           {embeddingModelOptions.map((m) => (
                             <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
                           ))}
@@ -353,7 +355,7 @@ export function ProjectDefaultsForm({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">{renderDefaultPlaceholder(systemDefaults?.llm_model) ?? tSettings("models.selectModel")}</SelectItem>
+                          <SelectItem value="none">{tSettings("models.selectModel")}</SelectItem>
                           {llmModelOptions.map((m) => (
                             <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
                           ))}
@@ -563,6 +565,7 @@ export function ProjectDefaultsForm({
             className="cursor-pointer"
             disabled={!hasAnyChanges || isPending}
             onClick={() => onSave(
+
               {
                 embedding_backend: effectiveEmbeddingBackend === "none" ? null : (effectiveEmbeddingBackend as ProjectEmbeddingBackend),
                 embedding_model: effectiveEmbeddingModel === "none" ? null : effectiveEmbeddingModel,
@@ -592,6 +595,16 @@ export function ProjectDefaultsForm({
               )}
             </span>
           </Button>
+          {hasAnyChanges && (
+            <Button
+              variant="ghost"
+              className="cursor-pointer"
+              disabled={isPending}
+              onClick={resetLocalState}
+            >
+              {tSettings("cancelChanges")}
+            </Button>
+          )}
           {hasAnyConfigured && (
             <Button
               variant="outline"
