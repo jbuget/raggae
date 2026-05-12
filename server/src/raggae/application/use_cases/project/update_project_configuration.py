@@ -18,6 +18,7 @@ from raggae.application.interfaces.repositories.project_snapshot_repository impo
 from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChunkingStrategyError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRerankerBackendError,
@@ -72,7 +73,7 @@ class UpdateProjectConfiguration:
         if llm_backend is not None and llm_backend not in SUPPORTED_LLM_BACKENDS:
             raise InvalidProjectLLMBackendError(f"Unsupported LLM backend: {llm_backend}")
         if chunking_strategy is not None and chunking_strategy not in SUPPORTED_CHUNKING_STRATEGIES:
-            raise ValueError(f"Unsupported chunking strategy: {chunking_strategy}")
+            raise InvalidProjectChunkingStrategyError(f"Unsupported chunking strategy: {chunking_strategy}")
         if retrieval_strategy is not None and retrieval_strategy not in SUPPORTED_RETRIEVAL_STRATEGIES:
             raise InvalidProjectRetrievalStrategyError(
                 f"Unsupported retrieval strategy: {retrieval_strategy}"

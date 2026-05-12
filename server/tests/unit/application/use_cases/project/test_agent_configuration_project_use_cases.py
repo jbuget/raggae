@@ -12,6 +12,7 @@ from raggae.application.use_cases.project.update_project_configuration import (
 from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.project_exceptions import (
+    InvalidProjectChunkingStrategyError,
     InvalidProjectEmbeddingBackendError,
     InvalidProjectLLMBackendError,
     InvalidProjectRerankerBackendError,
@@ -188,6 +189,21 @@ class TestUpdateProjectConfiguration:
         with pytest.raises(InvalidProjectRerankerBackendError):
             await use_case.execute(
                 project_id=project.id, user_id=user_id, reranker_backend="unsupported_reranker"
+            )
+
+    async def test_raises_invalid_chunking_strategy_error(self) -> None:
+        # Given
+        project_repo = InMemoryProjectRepository()
+        config_repo = InMemoryAgentConfigurationRepository()
+        user_id = uuid4()
+        project = _make_project(user_id=user_id)
+        await project_repo.save(project)
+        use_case = UpdateProjectConfiguration(project_repo, config_repo)
+
+        # When / Then
+        with pytest.raises(InvalidProjectChunkingStrategyError):
+            await use_case.execute(
+                project_id=project.id, user_id=user_id, chunking_strategy="invalid_strategy"
             )
 
     async def test_creates_config_when_none_exists(self) -> None:

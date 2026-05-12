@@ -34,6 +34,10 @@ class InvalidProjectEmbeddingModelError(ValueError):
     """Raised when project embedding model is not in the allowed list for its backend."""
 
 
+class InvalidProjectChunkingStrategyError(ValueError):
+    """Raised when project chunking strategy is unsupported."""
+
+
 class InvalidProjectRetrievalStrategyError(ValueError):
     """Raised when project retrieval strategy is unsupported."""
 

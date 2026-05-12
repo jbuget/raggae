@@ -7,6 +7,7 @@ from raggae.application.use_cases.user.get_user_project_defaults import GetUserP
 from raggae.application.use_cases.user.upsert_user_project_defaults import UpsertUserProjectDefaults
 from raggae.domain.entities.project_defaults import ProjectDefaults
 from raggae.domain.entities.user import User
+from raggae.domain.exceptions.project_exceptions import InvalidProjectChunkingStrategyError
 from raggae.domain.exceptions.user_exceptions import UserNotFoundError
 from raggae.domain.value_objects.locale import Locale
 from raggae.domain.value_objects.project_defaults_owner_type import ProjectDefaultsOwnerType
@@ -159,3 +160,19 @@ class TestUpsertUserProjectDefaults:
         # When / Then
         with pytest.raises(UserNotFoundError):
             await use_case.execute(user_id=uuid4(), llm_backend="openai")
+
+    @pytest.mark.asyncio
+    async def test_raises_invalid_chunking_strategy_error(self) -> None:
+        # Given
+        user = _make_user()
+        user_repo = InMemoryUserRepository()
+        await user_repo.save(user)
+        defaults_repo = InMemoryProjectDefaultsRepository()
+        use_case = UpsertUserProjectDefaults(
+            user_repository=user_repo,
+            project_defaults_repository=defaults_repo,
+        )
+
+        # When / Then
+        with pytest.raises(InvalidProjectChunkingStrategyError):
+            await use_case.execute(user_id=user.id, chunking_strategy="invalid_strategy")
