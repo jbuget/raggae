@@ -39,7 +39,7 @@ le panneau affiche un message contextuel selon l'état d'héritage :
 
 ---
 
-## Scénarios de tests
+## Scénarios de tests — Messages d'héritage
 
 ### Projets utilisateur — Section Modèles
 
@@ -88,18 +88,171 @@ le panneau affiche un message contextuel selon l'état d'héritage :
 | 21 | `retrieval_strategy: hybrid`, `retrieval_top_k: 10`, `retrieval_min_score: 0.5` | `retrieval_top_k: 20` | "Some organization settings are modified." |
 | 22 | `retrieval_strategy: hybrid`, `retrieval_top_k: 10`, `retrieval_min_score: 0.5` | `retrieval_strategy: fulltext`, `retrieval_top_k: 20`, `retrieval_min_score: 0.9` | "All organization settings are overridden." |
 
+### Projets utilisateur — Section Reclassement (Context augmentation)
+
+| # | Données utilisateur | Données projet | Message attendu |
+|---|---------------------|----------------|-----------------|
+| 23 | Aucun | Aucun | "No settings configured — system defaults are used." |
+| 24 | `reranking_enabled: true`, `reranker_backend: cross_encoder` | Aucun | "No parameters modified, user settings apply." |
+| 25 | `reranking_enabled: true`, `reranker_backend: cross_encoder` | `reranking_enabled: false` | "Some user settings are modified." |
+| 26 | `reranking_enabled: true`, `reranker_backend: cross_encoder` | `reranking_enabled: false`, `reranker_backend: inmemory` | "All user settings are overridden." |
+
+### Projets utilisateur — Section Historique (Answer generation)
+
+| # | Données utilisateur | Données projet | Message attendu |
+|---|---------------------|----------------|-----------------|
+| 27 | Aucun | Aucun | "No settings configured — system defaults are used." |
+| 28 | `chat_history_window_size: 16`, `chat_history_max_chars: 8000` | Aucun | "No parameters modified, user settings apply." |
+| 29 | `chat_history_window_size: 16`, `chat_history_max_chars: 8000` | `chat_history_window_size: 4` | "Some user settings are modified." |
+| 30 | `chat_history_window_size: 16`, `chat_history_max_chars: 8000` | `chat_history_window_size: 4`, `chat_history_max_chars: 2000` | "All user settings are overridden." |
+
+### Projets organisation — Section Indexation
+
+| # | Données org | Données projet | Message attendu |
+|---|-------------|----------------|-----------------|
+| 31 | `chunking_strategy: paragraph`, `parent_child_chunking: true` | Aucun | "No parameters modified, organization settings apply." |
+| 32 | `chunking_strategy: paragraph`, `parent_child_chunking: true` | `chunking_strategy: fixed_window` | "Some organization settings are modified." |
+| 33 | `chunking_strategy: paragraph`, `parent_child_chunking: true` | `chunking_strategy: fixed_window`, `parent_child_chunking: false` | "All organization settings are overridden." |
+
+### Projets organisation — Section Reclassement (Context augmentation)
+
+| # | Données org | Données projet | Message attendu |
+|---|-------------|----------------|-----------------|
+| 34 | `reranking_enabled: true`, `reranker_backend: cross_encoder` | Aucun | "No parameters modified, organization settings apply." |
+| 35 | `reranking_enabled: true`, `reranker_backend: cross_encoder` | `reranking_enabled: false` | "Some organization settings are modified." |
+| 36 | `reranking_enabled: true`, `reranker_backend: cross_encoder` | `reranking_enabled: false`, `reranker_backend: inmemory` | "All organization settings are overridden." |
+
+### Projets organisation — Section Historique (Answer generation)
+
+| # | Données org | Données projet | Message attendu |
+|---|-------------|----------------|-----------------|
+| 37 | `chat_history_window_size: 20`, `chat_history_max_chars: 6000` | Aucun | "No parameters modified, organization settings apply." |
+| 38 | `chat_history_window_size: 20`, `chat_history_max_chars: 6000` | `chat_history_window_size: 4` | "Some organization settings are modified." |
+| 39 | `chat_history_window_size: 20`, `chat_history_max_chars: 6000` | `chat_history_window_size: 4`, `chat_history_max_chars: 2000` | "All organization settings are overridden." |
+
+---
+
+## Scénarios de tests — Valeurs des champs
+
+Ces tests vérifient que la valeur effective affichée dans chaque champ respecte la chaîne
+d'héritage : la valeur projet prime, sinon la valeur parent (org ou utilisateur), sinon la
+valeur système.
+
+### Retrieval — Champ Top-K
+
+| # | Projet | Valeur parent | Valeur projet | Valeur affichée |
+|---|--------|---------------|---------------|-----------------|
+| V1 | Utilisateur | *(système : 8)* | Aucun | 8 |
+| V2 | Utilisateur | Utilisateur : 12 | Aucun | 12 |
+| V3 | Organisation | Org : 15 | Aucun | 15 |
+| V4 | Utilisateur | Utilisateur : 12 | 20 | 20 |
+| V5 | Organisation | Org : 15 | 5 | 5 |
+
+### Retrieval — Champ Min Score
+
+| # | Projet | Valeur parent | Valeur projet | Valeur affichée |
+|---|--------|---------------|---------------|-----------------|
+| V6 | Utilisateur | *(système : 0.3)* | Aucun | 0.3 |
+| V7 | Utilisateur | Utilisateur : 0.7 | Aucun | 0.7 |
+| V8 | Organisation | Org : 0.6 | Aucun | 0.6 |
+| V9 | Utilisateur | Utilisateur : 0.7 | 0.9 | 0.9 |
+
+### Indexation — Switch Parent-child chunking
+
+| # | Projet | Valeur parent | Valeur projet | État du switch |
+|---|--------|---------------|---------------|----------------|
+| V10 | Utilisateur | *(système : false)* | Aucun | décoché |
+| V11 | Utilisateur | Utilisateur : true | Aucun | coché |
+| V12 | Utilisateur | Utilisateur : false | Aucun | décoché |
+| V13 | Organisation | Org : true | Aucun | coché |
+| V14 | Utilisateur | Utilisateur : false | true | coché |
+| V15 | Organisation | Org : true | false | décoché |
+
+### Historique — Champ Window Size
+
+| # | Projet | Valeur parent | Valeur projet | Valeur affichée |
+|---|--------|---------------|---------------|-----------------|
+| V16 | Utilisateur | *(système : 8)* | Aucun | 8 |
+| V17 | Utilisateur | Utilisateur : 16 | Aucun | 16 |
+| V18 | Organisation | Org : 20 | Aucun | 20 |
+| V19 | Utilisateur | Utilisateur : 16 | 4 | 4 |
+
+### Modèles — Label du select Embedding Backend
+
+Le select affiche un label contextuel : `"Default (Backend)"` si aucun parent ne configure
+le backend, `"Set by user (Backend)"` ou `"Set by organization (Backend)"` selon l'origine.
+
+| # | Projet | Config parent | Config projet | Label affiché |
+|---|--------|---------------|---------------|---------------|
+| V20 | Utilisateur | *(système : gemini)* | Aucun | "Default (Gemini)" |
+| V21 | Utilisateur | Utilisateur : openai | Aucun | "Set by user (OpenAI)" |
+| V22 | Organisation | Org : openai | Aucun | "Set by organization (OpenAI)" |
+| V23 | Utilisateur | Utilisateur : null | Aucun | "Default (Gemini)" |
+
+> **Note Radix UI** : le select rend le contenu de l'item sélectionné à plusieurs endroits
+> du DOM (trigger + liste cachée). Tous les tests de labels de select utilisent `findAllByText`
+> au lieu de `findByText` pour éviter l'erreur "Found multiple elements".
+
+### Modèles — Label du select LLM Backend
+
+| # | Projet | Config parent | Config projet | Label affiché |
+|---|--------|---------------|---------------|---------------|
+| V24 | Utilisateur | *(système : gemini)* | Aucun | "Default (Gemini)" |
+| V25 | Utilisateur | Utilisateur : gemini | Aucun | "Set by user (Gemini)" |
+| V26 | Organisation | Org : openai | Aucun | "Set by organization (OpenAI)" |
+
+### Indexation — Label du select Chunking Strategy
+
+| # | Projet | Config parent | Config projet | Label affiché |
+|---|--------|---------------|---------------|---------------|
+| V27 | Utilisateur | *(système : auto)* | Aucun | "Default (Auto)" |
+| V28 | Utilisateur | Utilisateur : paragraph | Aucun | "Set by user (Paragraph)" |
+| V29 | Organisation | Org : fixed_window | Aucun | "Set by organization (Fixed window)" |
+
+### Retrieval — Label du select Stratégie
+
+| # | Projet | Config parent | Config projet | Label affiché |
+|---|--------|---------------|---------------|---------------|
+| V30 | Utilisateur | *(système : hybrid)* | Aucun | "Default (Hybrid)" |
+| V31 | Utilisateur | Utilisateur : vector | Aucun | "Set by user (Vector)" |
+| V32 | Organisation | Org : fulltext | Aucun | "Set by organization (Fulltext)" |
+
+### Historique — Champ Max Chars
+
+| # | Projet | Valeur parent | Valeur projet | Valeur affichée |
+|---|--------|---------------|---------------|-----------------|
+| V33 | Utilisateur | *(système : 4000)* | Aucun | 4000 |
+| V34 | Utilisateur | Utilisateur : 8000 | Aucun | 8000 |
+| V35 | Organisation | Org : 6000 | Aucun | 6000 |
+| V36 | Utilisateur | Utilisateur : 8000 | 2000 | 2000 |
+
 ---
 
 ## Structure du fichier de test
 
 ```
 tests/components/organisms/project/settings/project-advanced-panel.test.tsx
-├── Smoke                              — rendu de base, accès aux sections
-├── User project / Models section      — scénarios 1–5
-├── User project / Retrieval section   — scénarios 6–10
-├── User project / Indexing section    — scénarios 11–13
-├── Org project / Models section       — scénarios 14–18
-└── Org project / Retrieval section    — scénarios 19–22
+├── Field values inheritance          — valeurs effectives affichées (V1–V27)
+│   ├── Retrieval — Top-K input
+│   ├── Retrieval — Min score input
+│   ├── Knowledge indexing — Parent-child chunking switch
+│   ├── Answer generation — Chat history window size
+│   ├── Models — Embedding backend inherited label
+│   ├── Models — LLM backend inherited label
+│   ├── Knowledge indexing — Chunking strategy inherited label
+│   ├── Retrieval — Strategy inherited label
+│   └── Answer generation — Chat history max chars
+├── Smoke                             — rendu de base, accès aux sections
+├── User project / Models section     — messages 1–5
+├── User project / Retrieval section  — messages 6–10
+├── User project / Indexing section   — messages 11–13
+├── User project / Context augmentation — messages reranking (user)
+├── User project / Answer generation  — messages historique (user)
+├── Org project / Models section      — messages 14–18
+├── Org project / Retrieval section   — messages 19–22
+├── Org project / Knowledge indexing  — messages indexation (org)
+├── Org project / Context augmentation — messages reranking (org)
+└── Org project / Answer generation   — messages historique (org)
 ```
 
 ### Mocks et helpers
