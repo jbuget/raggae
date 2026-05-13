@@ -29,6 +29,7 @@ import type {
   RetrievalStrategy,
   UpdateAgentConfigurationRequest,
 } from "@/lib/types/api";
+import { resolveField, resolveStringField } from "@/lib/utils/settings";
 import { InlineAlert } from "@/components/atoms/feedback/inline-alert";
 import { ModelSettingsFields } from "@/components/molecules/settings/model-settings-fields";
 import { IndexingSettingsFields } from "@/components/molecules/settings/indexing-settings-fields";
@@ -113,57 +114,41 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const isProjectReindexing = project.reindex_status === "in_progress";
 
   // --- Models computed values ---
-  const effectiveEmbeddingBackend = (embeddingBackend === undefined
-    ? (projectConfig?.embedding_backend ?? "")
-    : embeddingBackend) || "none";
-  const effectiveLlmBackend = (llmBackend === undefined
-    ? (projectConfig?.llm_backend ?? "")
-    : llmBackend) || "none";
-  const effectiveEmbeddingModel = (embeddingModel === undefined
-    ? (projectConfig?.embedding_model ?? "")
-    : (embeddingModel ?? "")) || "none";
-  const effectiveLlmModel = (llmModel === undefined
-    ? (projectConfig?.llm_model ?? "")
-    : (llmModel ?? "")) || "none";
-  const effectiveEmbeddingCredentialId = (embeddingCredentialId === undefined
-    ? (projectConfig?.embedding_api_key_credential_id ?? "")
-    : (embeddingCredentialId ?? "")) || "none";
-  const effectiveLlmCredentialId = (llmCredentialId === undefined
-    ? (projectConfig?.llm_api_key_credential_id ?? "")
-    : (llmCredentialId ?? "")) || "none";
+  const effectiveEmbeddingBackend = resolveStringField(embeddingBackend, projectConfig?.embedding_backend);
+  const effectiveLlmBackend = resolveStringField(llmBackend, projectConfig?.llm_backend);
+  const effectiveEmbeddingModel = resolveStringField(embeddingModel, projectConfig?.embedding_model);
+  const effectiveLlmModel = resolveStringField(llmModel, projectConfig?.llm_model);
+  const effectiveEmbeddingCredentialId = resolveStringField(embeddingCredentialId, projectConfig?.embedding_api_key_credential_id);
+  const effectiveLlmCredentialId = resolveStringField(llmCredentialId, projectConfig?.llm_api_key_credential_id);
 
-  const storedEmbeddingBackend = projectConfig?.embedding_backend ?? "";
-  const storedLlmBackend = projectConfig?.llm_backend ?? "";
-  const storedEmbeddingModel = projectConfig?.embedding_model ?? "";
-  const storedLlmModel = projectConfig?.llm_model ?? "";
-  const storedEmbeddingCredentialId = projectConfig?.embedding_api_key_credential_id ?? "";
-  const storedLlmCredentialId = projectConfig?.llm_api_key_credential_id ?? "";
+  const storedEmbeddingBackend = resolveStringField(undefined, projectConfig?.embedding_backend);
+  const storedLlmBackend = resolveStringField(undefined, projectConfig?.llm_backend);
+  const storedEmbeddingModel = resolveStringField(undefined, projectConfig?.embedding_model);
+  const storedLlmModel = resolveStringField(undefined, projectConfig?.llm_model);
+  const storedEmbeddingCredentialId = resolveStringField(undefined, projectConfig?.embedding_api_key_credential_id);
+  const storedLlmCredentialId = resolveStringField(undefined, projectConfig?.llm_api_key_credential_id);
 
   const hasModelsChanges =
-    (effectiveEmbeddingBackend === "none" ? "" : effectiveEmbeddingBackend) !== storedEmbeddingBackend ||
-    (effectiveEmbeddingModel === "none" ? "" : effectiveEmbeddingModel) !== storedEmbeddingModel ||
-    (effectiveLlmBackend === "none" ? "" : effectiveLlmBackend) !== storedLlmBackend ||
-    (effectiveLlmModel === "none" ? "" : effectiveLlmModel) !== storedLlmModel ||
-    (effectiveEmbeddingCredentialId === "none" ? "" : effectiveEmbeddingCredentialId) !== storedEmbeddingCredentialId ||
-    (effectiveLlmCredentialId === "none" ? "" : effectiveLlmCredentialId) !== storedLlmCredentialId;
+    effectiveEmbeddingBackend !== storedEmbeddingBackend ||
+    effectiveEmbeddingModel !== storedEmbeddingModel ||
+    effectiveLlmBackend !== storedLlmBackend ||
+    effectiveLlmModel !== storedLlmModel ||
+    effectiveEmbeddingCredentialId !== storedEmbeddingCredentialId ||
+    effectiveLlmCredentialId !== storedLlmCredentialId;
 
   const hasModelsConfigured =
     projectConfig?.embedding_backend != null ||
     projectConfig?.llm_backend != null;
 
   // --- Indexation computed values ---
-  const effectiveChunkingStrategy = (chunkingStrategy === undefined
-    ? (projectConfig?.chunking_strategy as ChunkingStrategy | null ?? null)
-    : chunkingStrategy) ?? "none";
-  const effectiveParentChildChunking = parentChildChunking === undefined
-    ? (projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true)
-    : (parentChildChunking ?? true);
+  const effectiveChunkingStrategy = resolveStringField(chunkingStrategy, projectConfig?.chunking_strategy);
+  const effectiveParentChildChunking = resolveField(parentChildChunking, projectConfig?.parent_child_chunking, inheritedDefaults?.parent_child_chunking, systemDefaults?.parent_child_chunking) ?? true;
 
-  const storedChunkingStrategy = projectConfig?.chunking_strategy as ChunkingStrategy | null ?? null;
-  const storedParentChildChunking = projectConfig?.parent_child_chunking ?? inheritedDefaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true;
+  const storedChunkingStrategy = resolveStringField(undefined, projectConfig?.chunking_strategy);
+  const storedParentChildChunking = resolveField(undefined, projectConfig?.parent_child_chunking, inheritedDefaults?.parent_child_chunking, systemDefaults?.parent_child_chunking) ?? true;
 
   const hasIndexingChanges =
-    (effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy) !== storedChunkingStrategy ||
+    effectiveChunkingStrategy !== storedChunkingStrategy ||
     effectiveParentChildChunking !== storedParentChildChunking;
   const isSemanticRecommended = effectiveParentChildChunking && effectiveChunkingStrategy !== "semantic";
 
@@ -177,22 +162,16 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   };
 
   // --- Retrieval computed values ---
-  const effectiveRetrievalStrategy = (retrievalStrategy === undefined
-    ? (projectConfig?.retrieval_strategy as RetrievalStrategy | null ?? null)
-    : retrievalStrategy) ?? "none";
-  const effectiveRetrievalTopK = retrievalTopK === undefined
-    ? (projectConfig?.retrieval_top_k ?? inheritedDefaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? null)
-    : retrievalTopK;
-  const effectiveRetrievalMinScore = retrievalMinScore === undefined
-    ? (projectConfig?.retrieval_min_score ?? inheritedDefaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? null)
-    : retrievalMinScore;
+  const effectiveRetrievalStrategy = resolveStringField(retrievalStrategy, projectConfig?.retrieval_strategy);
+  const effectiveRetrievalTopK = resolveField(retrievalTopK, projectConfig?.retrieval_top_k, inheritedDefaults?.retrieval_top_k, systemDefaults?.retrieval_top_k);
+  const effectiveRetrievalMinScore = resolveField(retrievalMinScore, projectConfig?.retrieval_min_score, inheritedDefaults?.retrieval_min_score, systemDefaults?.retrieval_min_score);
 
-  const storedRetrievalStrategy = projectConfig?.retrieval_strategy as RetrievalStrategy | null ?? null;
-  const storedRetrievalTopK = projectConfig?.retrieval_top_k ?? inheritedDefaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? null;
-  const storedRetrievalMinScore = projectConfig?.retrieval_min_score ?? inheritedDefaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? null;
+  const storedRetrievalStrategy = resolveStringField(undefined, projectConfig?.retrieval_strategy);
+  const storedRetrievalTopK = resolveField(undefined, projectConfig?.retrieval_top_k, inheritedDefaults?.retrieval_top_k, systemDefaults?.retrieval_top_k);
+  const storedRetrievalMinScore = resolveField(undefined, projectConfig?.retrieval_min_score, inheritedDefaults?.retrieval_min_score, systemDefaults?.retrieval_min_score);
 
   const hasRetrievalChanges =
-    (effectiveRetrievalStrategy === "none" ? null : effectiveRetrievalStrategy) !== storedRetrievalStrategy ||
+    effectiveRetrievalStrategy !== storedRetrievalStrategy ||
     effectiveRetrievalTopK !== storedRetrievalTopK ||
     effectiveRetrievalMinScore !== storedRetrievalMinScore;
 
@@ -202,28 +181,20 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     projectConfig?.retrieval_min_score != null;
 
   // --- Augmentation computed values ---
-  const effectiveRerankingEnabled = rerankingEnabled === undefined
-    ? (projectConfig?.reranking_enabled ?? inheritedDefaults?.reranking_enabled ?? false)
-    : (rerankingEnabled ?? false);
-  const effectiveRerankerBackend = (rerankerBackend === undefined
-    ? (projectConfig?.reranker_backend as ProjectRerankerBackend | null ?? null)
-    : rerankerBackend) ?? "none";
-  const effectiveRerankerModel = (rerankerModel === undefined
-    ? (projectConfig?.reranker_model ?? "")
-    : (rerankerModel ?? "")) || "none";
-  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier === undefined
-    ? (projectConfig?.reranker_candidate_multiplier ?? inheritedDefaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? null)
-    : rerankerCandidateMultiplier;
+  const effectiveRerankingEnabled = resolveField(rerankingEnabled, projectConfig?.reranking_enabled, inheritedDefaults?.reranking_enabled) ?? false;
+  const effectiveRerankerBackend = resolveStringField(rerankerBackend, projectConfig?.reranker_backend);
+  const effectiveRerankerModel = resolveStringField(rerankerModel, projectConfig?.reranker_model);
+  const effectiveRerankerCandidateMultiplier = resolveField(rerankerCandidateMultiplier, projectConfig?.reranker_candidate_multiplier, inheritedDefaults?.reranker_candidate_multiplier, systemDefaults?.reranker_candidate_multiplier);
 
-  const storedRerankingEnabled = projectConfig?.reranking_enabled ?? inheritedDefaults?.reranking_enabled ?? false;
-  const storedRerankerBackend = projectConfig?.reranker_backend as ProjectRerankerBackend | null ?? null;
-  const storedRerankerModel = projectConfig?.reranker_model ?? "";
-  const storedRerankerCandidateMultiplier = projectConfig?.reranker_candidate_multiplier ?? inheritedDefaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? null;
+  const storedRerankingEnabled = resolveField(undefined, projectConfig?.reranking_enabled, inheritedDefaults?.reranking_enabled) ?? false;
+  const storedRerankerBackend = resolveStringField(undefined, projectConfig?.reranker_backend);
+  const storedRerankerModel = resolveStringField(undefined, projectConfig?.reranker_model);
+  const storedRerankerCandidateMultiplier = resolveField(undefined, projectConfig?.reranker_candidate_multiplier, inheritedDefaults?.reranker_candidate_multiplier, systemDefaults?.reranker_candidate_multiplier);
 
   const hasAugmentationChanges =
     effectiveRerankingEnabled !== storedRerankingEnabled ||
-    (effectiveRerankerBackend === "none" ? null : effectiveRerankerBackend) !== storedRerankerBackend ||
-    (effectiveRerankerModel === "none" ? "" : effectiveRerankerModel) !== storedRerankerModel ||
+    effectiveRerankerBackend !== storedRerankerBackend ||
+    effectiveRerankerModel !== storedRerankerModel ||
     effectiveRerankerCandidateMultiplier !== storedRerankerCandidateMultiplier;
 
   const hasRerankingConfigured =
@@ -233,15 +204,11 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
     projectConfig?.reranker_candidate_multiplier != null;
 
   // --- History computed values ---
-  const effectiveChatHistoryWindowSize = chatHistoryWindowSize === undefined
-    ? (projectConfig?.chat_history_window_size ?? inheritedDefaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? null)
-    : chatHistoryWindowSize;
-  const effectiveChatHistoryMaxChars = chatHistoryMaxChars === undefined
-    ? (projectConfig?.chat_history_max_chars ?? inheritedDefaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? null)
-    : chatHistoryMaxChars;
+  const effectiveChatHistoryWindowSize = resolveField(chatHistoryWindowSize, projectConfig?.chat_history_window_size, inheritedDefaults?.chat_history_window_size, systemDefaults?.chat_history_window_size);
+  const effectiveChatHistoryMaxChars = resolveField(chatHistoryMaxChars, projectConfig?.chat_history_max_chars, inheritedDefaults?.chat_history_max_chars, systemDefaults?.chat_history_max_chars);
 
-  const storedChatHistoryWindowSize = projectConfig?.chat_history_window_size ?? inheritedDefaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? null;
-  const storedChatHistoryMaxChars = projectConfig?.chat_history_max_chars ?? inheritedDefaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? null;
+  const storedChatHistoryWindowSize = resolveField(undefined, projectConfig?.chat_history_window_size, inheritedDefaults?.chat_history_window_size, systemDefaults?.chat_history_window_size);
+  const storedChatHistoryMaxChars = resolveField(undefined, projectConfig?.chat_history_max_chars, inheritedDefaults?.chat_history_max_chars, systemDefaults?.chat_history_max_chars);
 
   const hasHistoryChanges =
     effectiveChatHistoryWindowSize !== storedChatHistoryWindowSize ||
@@ -257,20 +224,20 @@ export function ProjectAdvancedPanel({ projectId }: { projectId: string }) {
   const hasAnyChanges = hasModelsChanges || hasIndexingChanges || hasRetrievalChanges || hasAugmentationChanges || hasHistoryChanges;
   const hasAnyConfigured = hasModelsConfigured || hasIndexingConfigured || hasRetrievalConfigured || hasRerankingConfigured || hasHistoryConfigured;
 
-  const dirtyEmbeddingBackend = (effectiveEmbeddingBackend === "none" ? "" : effectiveEmbeddingBackend) !== storedEmbeddingBackend;
-  const dirtyEmbeddingModel = (effectiveEmbeddingModel === "none" ? "" : effectiveEmbeddingModel) !== storedEmbeddingModel;
-  const dirtyEmbeddingCredentialId = (effectiveEmbeddingCredentialId === "none" ? "" : effectiveEmbeddingCredentialId) !== storedEmbeddingCredentialId;
-  const dirtyLlmBackend = (effectiveLlmBackend === "none" ? "" : effectiveLlmBackend) !== storedLlmBackend;
-  const dirtyLlmModel = (effectiveLlmModel === "none" ? "" : effectiveLlmModel) !== storedLlmModel;
-  const dirtyLlmCredentialId = (effectiveLlmCredentialId === "none" ? "" : effectiveLlmCredentialId) !== storedLlmCredentialId;
-  const dirtyChunkingStrategy = (effectiveChunkingStrategy === "none" ? null : effectiveChunkingStrategy) !== storedChunkingStrategy;
+  const dirtyEmbeddingBackend = effectiveEmbeddingBackend !== storedEmbeddingBackend;
+  const dirtyEmbeddingModel = effectiveEmbeddingModel !== storedEmbeddingModel;
+  const dirtyEmbeddingCredentialId = effectiveEmbeddingCredentialId !== storedEmbeddingCredentialId;
+  const dirtyLlmBackend = effectiveLlmBackend !== storedLlmBackend;
+  const dirtyLlmModel = effectiveLlmModel !== storedLlmModel;
+  const dirtyLlmCredentialId = effectiveLlmCredentialId !== storedLlmCredentialId;
+  const dirtyChunkingStrategy = effectiveChunkingStrategy !== storedChunkingStrategy;
   const dirtyParentChildChunking = effectiveParentChildChunking !== storedParentChildChunking;
-  const dirtyRetrievalStrategy = (effectiveRetrievalStrategy === "none" ? null : effectiveRetrievalStrategy) !== storedRetrievalStrategy;
+  const dirtyRetrievalStrategy = effectiveRetrievalStrategy !== storedRetrievalStrategy;
   const dirtyRetrievalTopK = effectiveRetrievalTopK !== storedRetrievalTopK;
   const dirtyRetrievalMinScore = effectiveRetrievalMinScore !== storedRetrievalMinScore;
   const dirtyRerankingEnabled = effectiveRerankingEnabled !== storedRerankingEnabled;
-  const dirtyRerankerBackend = (effectiveRerankerBackend === "none" ? null : effectiveRerankerBackend) !== storedRerankerBackend;
-  const dirtyRerankerModel = (effectiveRerankerModel === "none" ? "" : effectiveRerankerModel) !== storedRerankerModel;
+  const dirtyRerankerBackend = effectiveRerankerBackend !== storedRerankerBackend;
+  const dirtyRerankerModel = effectiveRerankerModel !== storedRerankerModel;
   const dirtyRerankerCandidateMultiplier = effectiveRerankerCandidateMultiplier !== storedRerankerCandidateMultiplier;
   const dirtyChatHistoryWindowSize = effectiveChatHistoryWindowSize !== storedChatHistoryWindowSize;
   const dirtyChatHistoryMaxChars = effectiveChatHistoryMaxChars !== storedChatHistoryMaxChars;

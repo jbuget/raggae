@@ -16,6 +16,7 @@ import type {
   RetrievalStrategy,
   SystemDefaultsResponse,
 } from "@/lib/types/api";
+import { resolveField, resolveStringField } from "@/lib/utils/settings";
 import { ModelSettingsFields } from "./model-settings-fields";
 import { IndexingSettingsFields } from "./indexing-settings-fields";
 import { RetrievalSettingsFields } from "./retrieval-settings-fields";
@@ -90,32 +91,28 @@ export function ProjectDefaultsForm({
     setChatHistoryWindowSize(undefined); setChatHistoryMaxChars(undefined);
   }
 
-  // Effective values = local state ?? persisted defaults (no system fallback for backends/models — use placeholder instead)
-  const effectiveEmbeddingBackend = (embeddingBackend === undefined ? (defaults?.embedding_backend ?? "") : embeddingBackend) || "none";
-  const effectiveLlmBackend = (llmBackend === undefined ? (defaults?.llm_backend ?? "") : llmBackend) || "none";
-  const effectiveEmbeddingModel = (embeddingModel === undefined ? (defaults?.embedding_model ?? "") : (embeddingModel ?? "")) || "none";
-  const effectiveLlmModel = (llmModel === undefined ? (defaults?.llm_model ?? "") : (llmModel ?? "")) || "none";
+  // Effective values: local state → persisted defaults → system defaults → hardcoded fallback
+  const effectiveEmbeddingBackend = resolveStringField(embeddingBackend, defaults?.embedding_backend);
+  const effectiveLlmBackend = resolveStringField(llmBackend, defaults?.llm_backend);
+  const effectiveEmbeddingModel = resolveStringField(embeddingModel, defaults?.embedding_model);
+  const effectiveLlmModel = resolveStringField(llmModel, defaults?.llm_model);
   const effectiveEmbeddingCredentialId = embeddingCredentialId ?? (defaults?.embedding_api_key_credential_id ?? "");
   const effectiveLlmCredentialId = llmCredentialId ?? (defaults?.llm_api_key_credential_id ?? "");
 
-  const effectiveChunkingStrategy = chunkingStrategy === undefined
-    ? (defaults?.chunking_strategy ?? "none")
-    : (chunkingStrategy ?? "none");
-  const effectiveParentChildChunking = parentChildChunking ?? defaults?.parent_child_chunking ?? systemDefaults?.parent_child_chunking ?? true;
+  const effectiveChunkingStrategy = resolveStringField(chunkingStrategy, defaults?.chunking_strategy);
+  const effectiveParentChildChunking = resolveField(parentChildChunking, defaults?.parent_child_chunking, systemDefaults?.parent_child_chunking) ?? true;
 
-  const effectiveRetrievalStrategy = retrievalStrategy === undefined
-    ? (defaults?.retrieval_strategy ?? "none")
-    : (retrievalStrategy ?? "none");
-  const effectiveRetrievalTopK = retrievalTopK ?? defaults?.retrieval_top_k ?? systemDefaults?.retrieval_top_k ?? 8;
-  const effectiveRetrievalMinScore = retrievalMinScore ?? defaults?.retrieval_min_score ?? systemDefaults?.retrieval_min_score ?? 0.3;
+  const effectiveRetrievalStrategy = resolveStringField(retrievalStrategy, defaults?.retrieval_strategy);
+  const effectiveRetrievalTopK = resolveField(retrievalTopK, defaults?.retrieval_top_k, systemDefaults?.retrieval_top_k) ?? 8;
+  const effectiveRetrievalMinScore = resolveField(retrievalMinScore, defaults?.retrieval_min_score, systemDefaults?.retrieval_min_score) ?? 0.3;
 
-  const effectiveRerankingEnabled = rerankingEnabled ?? defaults?.reranking_enabled ?? false;
-  const effectiveRerankerBackend = rerankerBackend ?? (defaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? (systemDefaults?.reranker_backend as ProjectRerankerBackend | undefined) ?? "none";
-  const effectiveRerankerModel = rerankerModel ?? defaults?.reranker_model ?? systemDefaults?.reranker_model ?? "";
-  const effectiveRerankerCandidateMultiplier = rerankerCandidateMultiplier ?? defaults?.reranker_candidate_multiplier ?? systemDefaults?.reranker_candidate_multiplier ?? 3;
+  const effectiveRerankingEnabled = resolveField(rerankingEnabled, defaults?.reranking_enabled) ?? false;
+  const effectiveRerankerBackend = resolveStringField(rerankerBackend, defaults?.reranker_backend, systemDefaults?.reranker_backend);
+  const effectiveRerankerModel = resolveField(rerankerModel, defaults?.reranker_model, systemDefaults?.reranker_model) ?? "";
+  const effectiveRerankerCandidateMultiplier = resolveField(rerankerCandidateMultiplier, defaults?.reranker_candidate_multiplier, systemDefaults?.reranker_candidate_multiplier) ?? 3;
 
-  const effectiveChatHistoryWindowSize = chatHistoryWindowSize ?? defaults?.chat_history_window_size ?? systemDefaults?.chat_history_window_size ?? 8;
-  const effectiveChatHistoryMaxChars = chatHistoryMaxChars ?? defaults?.chat_history_max_chars ?? systemDefaults?.chat_history_max_chars ?? 4000;
+  const effectiveChatHistoryWindowSize = resolveField(chatHistoryWindowSize, defaults?.chat_history_window_size, systemDefaults?.chat_history_window_size) ?? 8;
+  const effectiveChatHistoryMaxChars = resolveField(chatHistoryMaxChars, defaults?.chat_history_max_chars, systemDefaults?.chat_history_max_chars) ?? 4000;
 
   // Per-field dirty flags (effective value differs from persisted default)
   const dirtyEmbeddingBackend = effectiveEmbeddingBackend !== ((defaults?.embedding_backend ?? "") || "none");
@@ -358,7 +355,7 @@ export function ProjectDefaultsForm({
                 retrieval_top_k: effectiveRetrievalTopK,
                 retrieval_min_score: effectiveRetrievalMinScore,
                 reranking_enabled: effectiveRerankingEnabled,
-                reranker_backend: effectiveRerankerBackend,
+                reranker_backend: effectiveRerankerBackend as ProjectRerankerBackend,
                 reranker_model: effectiveRerankerModel || null,
                 reranker_candidate_multiplier: effectiveRerankerCandidateMultiplier,
                 chat_history_window_size: effectiveChatHistoryWindowSize,
