@@ -3,6 +3,7 @@ from raggae.infrastructure.database.models.conversation_model import Conversatio
 from raggae.infrastructure.database.models.document_chunk_model import DocumentChunkModel
 from raggae.infrastructure.database.models.document_model import DocumentModel
 from raggae.infrastructure.database.models.message_model import MessageModel
+from raggae.infrastructure.database.models.org_mcp_server_model import OrgMcpServerModel
 from raggae.infrastructure.database.models.organization_invitation_model import (
     OrganizationInvitationModel,
 )
@@ -10,6 +11,9 @@ from raggae.infrastructure.database.models.organization_member_model import (
     OrganizationMemberModel,
 )
 from raggae.infrastructure.database.models.organization_model import OrganizationModel
+from raggae.infrastructure.database.models.project_mcp_activation_model import (
+    ProjectMcpActivationModel,
+)
 from raggae.infrastructure.database.models.project_model import ProjectModel
 from raggae.infrastructure.database.models.project_snapshot_model import ProjectSnapshotModel
 from raggae.infrastructure.database.models.user_model import UserModel
@@ -23,9 +27,11 @@ __all__ = [
     "DocumentChunkModel",
     "DocumentModel",
     "MessageModel",
+    "OrgMcpServerModel",
     "OrganizationInvitationModel",
     "OrganizationMemberModel",
     "OrganizationModel",
+    "ProjectMcpActivationModel",
     "ProjectModel",
     "ProjectSnapshotModel",
     "UserModel",
