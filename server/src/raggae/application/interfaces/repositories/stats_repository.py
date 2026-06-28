@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from raggae.application.dto.stats_dto import StatsDTO
+from raggae.application.dto.stats_dto import StatsDTO, StatsTimeSeriesDTO
 
 
 class StatsRepository(ABC):
@@ -9,3 +9,7 @@ class StatsRepository(ABC):
     @abstractmethod
     async def get_stats(self) -> StatsDTO:
         """Return aggregated platform statistics."""
+
+    @abstractmethod
+    async def get_timeseries(self, days: int) -> StatsTimeSeriesDTO:
+        """Return daily time series for the last `days` days (inclusive of today)."""

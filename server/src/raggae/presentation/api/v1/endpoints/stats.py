@@ -1,14 +1,21 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
-from raggae.presentation.api.dependencies import get_current_user_id, get_get_public_stats_use_case
+from raggae.application.use_cases.stats.get_stats_timeseries import GetStatsTimeSeries
+from raggae.presentation.api.dependencies import (
+    get_current_user_id,
+    get_get_public_stats_use_case,
+    get_get_stats_timeseries_use_case,
+)
 from raggae.presentation.api.v1.schemas.stats_schemas import (
     StatsFonctionnementResponse,
     StatsImpactResponse,
     StatsResponse,
+    StatsTimeSeriesResponse,
     StatsUsageResponse,
+    TimeSeriesPointResponse,
 )
 
 router = APIRouter(prefix="/stats", tags=["stats"], dependencies=[Depends(get_current_user_id)])
@@ -47,4 +54,28 @@ async def get_stats(
             multi_turn_conversations_rate_percent=dto.impact.multi_turn_conversations_rate_percent,
             average_sources_per_answer=dto.impact.average_sources_per_answer,
         ),
+    )
+
+
+@router.get("/timeseries", response_model=StatsTimeSeriesResponse)
+async def get_stats_timeseries(
+    use_case: Annotated[GetStatsTimeSeries, Depends(get_get_stats_timeseries_use_case)],
+    days: int = Query(90, ge=1, le=365),
+) -> StatsTimeSeriesResponse:
+    """Return daily time series for the last `days` days. Authentication required."""
+    dto = await use_case.execute(days=days)
+
+    def _points(series: list) -> list[TimeSeriesPointResponse]:  # type: ignore[type-arg]
+        return [TimeSeriesPointResponse(date=p.date, value=p.value) for p in series]
+
+    return StatsTimeSeriesResponse(
+        generated_at=dto.generated_at,
+        from_date=dto.from_date,
+        to_date=dto.to_date,
+        user_messages=_points(dto.user_messages),
+        conversations=_points(dto.conversations),
+        daily_active_users=_points(dto.daily_active_users),
+        reliable_answers=_points(dto.reliable_answers),
+        documents_indexed=_points(dto.documents_indexed),
+        projects_created=_points(dto.projects_created),
     )

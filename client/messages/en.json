@@ -708,6 +708,16 @@
       "relevantAnswersRate": "Relevance rate",
       "multiTurnRate": "Multi-turn conversations",
       "averageSources": "Sources / answer"
+    },
+    "timeseries": {
+      "title": "Last 90 days",
+      "description": "Daily volume over the last 90 days.",
+      "userMessages": "Messages sent",
+      "conversations": "Conversations created",
+      "dailyActiveUsers": "Daily active users",
+      "reliableAnswers": "Reliable answers",
+      "documentsIndexed": "Documents indexed",
+      "projectsCreated": "Projects created"
     }
   },
   "errors": {

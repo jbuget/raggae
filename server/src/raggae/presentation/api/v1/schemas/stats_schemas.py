@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -36,3 +36,20 @@ class StatsResponse(BaseModel):
     fonctionnement: StatsFonctionnementResponse
     usage: StatsUsageResponse
     impact: StatsImpactResponse
+
+
+class TimeSeriesPointResponse(BaseModel):
+    date: date
+    value: int
+
+
+class StatsTimeSeriesResponse(BaseModel):
+    generated_at: datetime
+    from_date: date
+    to_date: date
+    user_messages: list[TimeSeriesPointResponse]
+    conversations: list[TimeSeriesPointResponse]
+    daily_active_users: list[TimeSeriesPointResponse]
+    reliable_answers: list[TimeSeriesPointResponse]
+    documents_indexed: list[TimeSeriesPointResponse]
+    projects_created: list[TimeSeriesPointResponse]

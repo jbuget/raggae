@@ -1,10 +1,12 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from raggae.application.dto.stats_dto import (
     StatsDTO,
     StatsFonctionnementDTO,
     StatsImpactDTO,
+    StatsTimeSeriesDTO,
     StatsUsageDTO,
+    TimeSeriesPoint,
 )
 from raggae.application.interfaces.repositories.stats_repository import StatsRepository
 
@@ -40,4 +42,20 @@ class InMemoryStatsRepository(StatsRepository):
                 multi_turn_conversations_rate_percent=0.0,
                 average_sources_per_answer=0.0,
             ),
+        )
+
+    async def get_timeseries(self, days: int) -> StatsTimeSeriesDTO:
+        today = datetime.now(UTC).date()
+        from_date = today - timedelta(days=days - 1)
+        empty_series = [TimeSeriesPoint(date=from_date + timedelta(days=i), value=0) for i in range(days)]
+        return StatsTimeSeriesDTO(
+            generated_at=datetime.now(UTC),
+            from_date=from_date,
+            to_date=today,
+            user_messages=list(empty_series),
+            conversations=list(empty_series),
+            daily_active_users=list(empty_series),
+            reliable_answers=list(empty_series),
+            documents_indexed=list(empty_series),
+            projects_created=list(empty_series),
         )
