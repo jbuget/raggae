@@ -98,6 +98,8 @@ from raggae.application.services.chunking_strategy_selector import (
     DeterministicChunkingStrategySelector,
 )
 from raggae.application.services.document_indexing_service import DocumentIndexingService
+from raggae.application.services.mcp_tool_executor import McpToolExecutor
+from raggae.application.services.mcp_tool_resolver import McpToolResolver
 from raggae.application.services.parent_child_chunking_service import (
     ParentChildChunkingService,
 )
@@ -1272,6 +1274,22 @@ def get_deactivate_project_mcp_use_case() -> DeactivateProjectMcp:
         org_mcp_server_repository=_org_mcp_server_repository,
         project_mcp_activation_repository=_project_mcp_activation_repository,
         organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_mcp_tool_resolver() -> McpToolResolver:
+    return McpToolResolver(
+        project_repository=_project_repository,
+        org_mcp_server_repository=_org_mcp_server_repository,
+        project_mcp_activation_repository=_project_mcp_activation_repository,
+    )
+
+
+def get_mcp_tool_executor() -> McpToolExecutor:
+    return McpToolExecutor(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        mcp_client=_mcp_client,
+        bearer_token_crypto_service=_mcp_bearer_token_crypto_service,
     )
 
 
