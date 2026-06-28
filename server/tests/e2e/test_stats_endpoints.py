@@ -128,3 +128,91 @@ class TestStatsEndpoints:
         assert data["north_star_reliable_answers"] == 0
         assert data["usage"]["users_total"] == 0
         assert data["usage"]["conversations_total"] == 0
+
+    async def test_e2e_stats_timeseries_returns_401_without_authentication(self, client: AsyncClient) -> None:
+        # When
+        response = await client.get("/api/v1/stats/timeseries")
+
+        # Then
+        assert response.status_code == 401
+
+    async def test_e2e_stats_timeseries_returns_200_with_authentication(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get("/api/v1/stats/timeseries", headers=headers)
+
+        # Then
+        assert response.status_code == 200
+
+    async def test_e2e_stats_timeseries_response_has_expected_structure(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get("/api/v1/stats/timeseries", headers=headers)
+
+        # Then
+        data = response.json()
+        assert "generated_at" in data
+        assert "from_date" in data
+        assert "to_date" in data
+        for series_key in (
+            "user_messages",
+            "conversations",
+            "daily_active_users",
+            "reliable_answers",
+            "documents_indexed",
+            "projects_created",
+        ):
+            assert series_key in data
+            assert isinstance(data[series_key], list)
+
+    async def test_e2e_stats_timeseries_defaults_to_90_buckets(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get("/api/v1/stats/timeseries", headers=headers)
+
+        # Then
+        data = response.json()
+        assert len(data["user_messages"]) == 90
+        assert len(data["conversations"]) == 90
+        assert len(data["projects_created"]) == 90
+
+    async def test_e2e_stats_timeseries_respects_days_query_param(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get("/api/v1/stats/timeseries?days=7", headers=headers)
+
+        # Then
+        data = response.json()
+        assert len(data["user_messages"]) == 7
+
+    async def test_e2e_stats_timeseries_rejects_out_of_range_days(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When / Then
+        too_low = await client.get("/api/v1/stats/timeseries?days=0", headers=headers)
+        too_high = await client.get("/api/v1/stats/timeseries?days=366", headers=headers)
+        assert too_low.status_code == 422
+        assert too_high.status_code == 422
+
+    async def test_e2e_stats_timeseries_points_have_date_and_value(self, client: AsyncClient) -> None:
+        # Given
+        headers = await self._auth_headers(client)
+
+        # When
+        response = await client.get("/api/v1/stats/timeseries?days=3", headers=headers)
+
+        # Then
+        data = response.json()
+        for point in data["user_messages"]:
+            assert "date" in point
+            assert "value" in point
+            assert isinstance(point["value"], int)

@@ -203,6 +203,7 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
     SaveProviderApiKey,
 )
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
+from raggae.application.use_cases.stats.get_stats_timeseries import GetStatsTimeSeries
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
 from raggae.application.use_cases.user.get_user_agent_configuration import GetUserAgentConfiguration
 from raggae.application.use_cases.user.handle_oauth_callback import HandleOAuthCallback
@@ -1192,6 +1193,10 @@ def get_agent_configuration_repository() -> AgentConfigurationRepository:
 
 def get_get_public_stats_use_case() -> GetPublicStats:
     return GetPublicStats(stats_repository=_stats_repository)
+
+
+def get_get_stats_timeseries_use_case() -> GetStatsTimeSeries:
+    return GetStatsTimeSeries(stats_repository=_stats_repository)
 
 
 def get_current_user_id(
