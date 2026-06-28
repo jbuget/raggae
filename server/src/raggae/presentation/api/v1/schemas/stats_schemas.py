@@ -53,3 +53,10 @@ class StatsTimeSeriesResponse(BaseModel):
     reliable_answers: list[TimeSeriesPointResponse]
     documents_indexed: list[TimeSeriesPointResponse]
     projects_created: list[TimeSeriesPointResponse]
+
+
+class McpStatsResponse(BaseModel):
+    org_servers_total: int
+    org_servers_active: int
+    project_activations_active: int
+    projects_with_at_least_one_activation: int
