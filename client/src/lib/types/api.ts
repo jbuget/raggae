@@ -513,3 +513,8 @@ export interface UpdateOrgMcpServerRequest {
   auth_type: McpAuthType | null;
   bearer_token: string | null;
 }
+
+export interface ProjectMcpActivationViewResponse {
+  org_mcp_server: OrgMcpServerResponse;
+  is_activated: boolean;
+}

@@ -9,11 +9,18 @@ import { PageTemplate } from "@/components/templates/page-template";
 import { ProjectGeneralPanel } from "@/components/organisms/project/settings/project-general-panel";
 import { ProjectInstructionsPanel } from "@/components/organisms/project/settings/project-instructions-panel";
 import { ProjectKnowledgePanel } from "@/components/organisms/project/settings/project-knowledge-panel";
+import { ProjectMcpPanel } from "@/components/organisms/project/settings/project-mcp-panel";
 import { ProjectAdvancedPanel } from "@/components/organisms/project/settings/project-advanced-panel";
 import { ProjectName } from "@/components/organisms/project/project-name";
 import { ProjectSnapshotsSheet } from "@/components/organisms/project/project-snapshots-sheet";
 
-const SETTINGS_TABS = ["General", "Instructions", "Knowledge", "Advanced"] as const;
+const SETTINGS_TABS = [
+  "General",
+  "Instructions",
+  "Knowledge",
+  "MCP",
+  "Advanced",
+] as const;
 type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 interface ProjectSettingsTemplateProps {
@@ -35,6 +42,7 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
     General: t("tabs.general"),
     Instructions: t("tabs.instructions"),
     Knowledge: t("tabs.knowledge"),
+    MCP: t("tabs.mcp"),
     Advanced: t("tabs.advanced"),
   };
 
@@ -89,6 +97,7 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
         {activeTab === "General" && <ProjectGeneralPanel projectId={projectId} />}
         {activeTab === "Instructions" && <ProjectInstructionsPanel projectId={projectId} />}
         {activeTab === "Knowledge" && <ProjectKnowledgePanel projectId={projectId} />}
+        {activeTab === "MCP" && <ProjectMcpPanel projectId={projectId} />}
         {activeTab === "Advanced" && <ProjectAdvancedPanel projectId={projectId} />}
       </div>
 
