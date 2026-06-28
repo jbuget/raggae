@@ -23,6 +23,9 @@ from raggae.presentation.api.v1.endpoints.org_model_credentials import (
     router as org_model_credentials_router,
 )
 from raggae.presentation.api.v1.endpoints.organizations import router as organizations_router
+from raggae.presentation.api.v1.endpoints.project_mcp_activations import (
+    router as project_mcp_activations_router,
+)
 from raggae.presentation.api.v1.endpoints.project_snapshots import (
     router as project_snapshots_router,
 )
@@ -85,6 +88,7 @@ app.include_router(model_catalog_router, prefix="/api/v1")
 app.include_router(model_credentials_router, prefix="/api/v1")
 app.include_router(org_model_credentials_router, prefix="/api/v1")
 app.include_router(org_mcp_servers_router, prefix="/api/v1")
+app.include_router(project_mcp_activations_router, prefix="/api/v1")
 app.include_router(stats_router, prefix="/api/v1")
 app.include_router(system_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")

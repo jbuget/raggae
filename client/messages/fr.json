@@ -164,10 +164,24 @@
     },
     "settings": {
       "notFound": "Projet introuvable",
+      "mcp": {
+        "title": "Serveurs MCP",
+        "description": "Activez les serveurs MCP déclarés par votre organisation. Leurs outils seront exposés au LLM pendant les conversations.",
+        "providerWarning": "Le tool calling requiert un provider compatible (OpenAI, Anthropic, Gemini, Mistral). Les autres backends ignoreront les serveurs MCP activés.",
+        "empty": "Aucun serveur MCP n'est disponible pour ce projet. Demandez à un owner de l'organisation d'en déclarer un.",
+        "toolsCount": "{count} outils",
+        "viewTools": "Voir les outils",
+        "toolsTitle": "Outils exposés par {name}",
+        "toolsLastRefresh": "Dernier rafraîchissement le {date}",
+        "activated": "Serveur MCP activé pour ce projet",
+        "deactivated": "Serveur MCP désactivé pour ce projet",
+        "toggleError": "Erreur lors du basculement du serveur MCP"
+      },
       "tabs": {
         "general": "Général",
         "instructions": "Instructions",
         "knowledge": "Connaissances",
+        "mcp": "MCP",
         "advanced": "Avancé",
         "publication": "Publication",
         "models": "Modèles",
