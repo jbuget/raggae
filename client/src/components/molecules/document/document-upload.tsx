@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProgressBar } from "@/components/atoms/feedback/progress-bar";
 import { formatFileSize } from "@/lib/utils/format";
 
 const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".pptx", ".txt", ".md", ".csv", ".xlsx", ".xls"] as const;
@@ -127,12 +128,7 @@ export function DocumentUpload({ onUpload, isUploading, uploadProgress = 0, disa
               </span>
               <span>{uploadProgress}%</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
+            <ProgressBar value={uploadProgress} max={100} label={t("uploading")} />
           </div>
         )}
 

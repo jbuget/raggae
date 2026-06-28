@@ -216,6 +216,7 @@
       "updateSuccess": "Project updated",
       "updateError": "Failed to update project",
       "general": {
+        "identityTitle": "Identity",
         "nameLabel": "Name *",
         "namePlaceholder": "My project",
         "descriptionLabel": "Description",

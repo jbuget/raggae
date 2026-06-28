@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { InlineAlert } from "@/components/atoms/feedback/inline-alert";
@@ -45,7 +46,7 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
   const hasEmbeddingModel = !!effectiveEmbeddingBackend;
 
   return (
-    <div className="max-w-4xl space-y-4">
+    <div className="space-y-4">
       {!hasEmbeddingModel && (
         <InlineAlert>{t("documentIngestion.noEmbeddingModel")}</InlineAlert>
       )}
@@ -106,7 +107,10 @@ export function ProjectKnowledgePanel({ projectId }: { projectId: string }) {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{t("documentIngestion.empty")}</p>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed py-10 px-4 text-center">
+          <FileText className="size-8 text-muted-foreground/60" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">{t("documentIngestion.empty")}</p>
+        </div>
       )}
 
 

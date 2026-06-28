@@ -76,9 +76,9 @@ export function ProjectSettingsTemplate({ projectId }: ProjectSettingsTemplatePr
           })}
           </div>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="mb-1 gap-1.5"
+            className="mb-2 gap-1.5"
             onClick={() => setVersionsOpen(true)}
           >
             <History className="size-4" />
