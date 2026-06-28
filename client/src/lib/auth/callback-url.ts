@@ -6,9 +6,9 @@ export function getSafeAuthCallbackUrl(value: string | null) {
 }
 
 export function buildAuthRedirectPath(path: "/login" | "/register", callbackUrl: string | null) {
-  const safeCallbackUrl = getSafeAuthCallbackUrl(callbackUrl);
-  if (!callbackUrl || safeCallbackUrl === "/projects") {
+  if (!callbackUrl) {
     return path;
   }
+  const safeCallbackUrl = getSafeAuthCallbackUrl(callbackUrl);
   return `${path}?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`;
 }
