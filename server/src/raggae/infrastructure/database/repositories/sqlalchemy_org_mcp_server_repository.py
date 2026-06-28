@@ -94,6 +94,26 @@ class SQLAlchemyOrgMcpServerRepository:
             )
             await session.commit()
 
+    async def count_all(self) -> int:
+        from sqlalchemy import func
+        from sqlalchemy import select as sa_select
+
+        async with self._session_factory() as session:
+            result = await session.execute(sa_select(func.count()).select_from(OrgMcpServerModel))
+            return int(result.scalar_one() or 0)
+
+    async def count_active(self) -> int:
+        from sqlalchemy import func
+        from sqlalchemy import select as sa_select
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                sa_select(func.count())
+                .select_from(OrgMcpServerModel)
+                .where(OrgMcpServerModel.is_active.is_(True))
+            )
+            return int(result.scalar_one() or 0)
+
 
 def _tools_to_json(tools: list[McpToolSnapshot]) -> list[dict[str, Any]]:
     return [{"name": t.name, "description": t.description, "input_schema": t.input_schema} for t in tools]

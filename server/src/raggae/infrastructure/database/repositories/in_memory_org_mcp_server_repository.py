@@ -32,3 +32,9 @@ class InMemoryOrgMcpServerRepository:
         if server is None or server.organization_id != organization_id:
             return
         del self._servers[server_id]
+
+    async def count_all(self) -> int:
+        return len(self._servers)
+
+    async def count_active(self) -> int:
+        return sum(1 for s in self._servers.values() if s.is_active)
