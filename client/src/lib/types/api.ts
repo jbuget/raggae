@@ -472,3 +472,44 @@ export interface ModelCatalogResponse {
   llm: Record<ProjectLLMBackend, ModelEntry[]>;
   reranker: Record<ProjectRerankerBackend, ModelEntry[]>;
 }
+
+// Organization MCP servers
+export type McpAuthType = "none" | "bearer";
+
+export interface McpToolSnapshotResponse {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+}
+
+export interface OrgMcpServerResponse {
+  id: string;
+  organization_id: string;
+  name: string;
+  slug: string;
+  url: string;
+  auth_type: McpAuthType;
+  masked_token: string | null;
+  is_active: boolean;
+  tools_snapshot: McpToolSnapshotResponse[];
+  tools_snapshot_at: string;
+  timeout_seconds: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeclareOrgMcpServerRequest {
+  name: string;
+  url: string;
+  auth_type: McpAuthType;
+  bearer_token: string | null;
+  timeout_seconds: number;
+}
+
+export interface UpdateOrgMcpServerRequest {
+  name: string;
+  url: string;
+  timeout_seconds: number;
+  auth_type: McpAuthType | null;
+  bearer_token: string | null;
+}
