@@ -9,23 +9,14 @@ from raggae.application.dto.chat_stream_event import (
     ChatStreamToken,
 )
 from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
-from raggae.application.interfaces.repositories.agent_configuration_repository import (
-    AgentConfigurationRepository,
-)
 from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
-from raggae.application.interfaces.repositories.org_provider_credential_repository import (
-    OrgProviderCredentialRepository,
-)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
-from raggae.application.interfaces.repositories.provider_credential_repository import (
-    ProviderCredentialRepository,
-)
 from raggae.application.interfaces.services.chat_security_policy import ChatSecurityPolicy
 from raggae.application.interfaces.services.conversation_title_generator import (
     ConversationTitleGenerator,
@@ -40,9 +31,11 @@ from raggae.application.interfaces.services.project_reranker_service_resolver im
 from raggae.application.interfaces.services.provider_api_key_resolver import (
     ProviderApiKeyResolver,
 )
+from raggae.application.services.agent_configuration_resolver import (
+    AgentConfigurationResolver,
+)
 from raggae.application.services.chat_security_policy import StaticChatSecurityPolicy
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
-from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
 from raggae.domain.entities.project import Project
@@ -52,8 +45,6 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
-from raggae.domain.services.config_extractor import ConfigExtractor
-from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
@@ -76,9 +67,7 @@ class SendMessage:
         project_llm_service_resolver: ProjectLLMServiceResolver | None = None,
         project_reranker_service_resolver: ProjectRerankerServiceResolver | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
-        agent_configuration_repository: AgentConfigurationRepository | None = None,
-        org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
-        provider_credential_repository: ProviderCredentialRepository | None = None,
+        agent_configuration_resolver: AgentConfigurationResolver | None = None,
         llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
@@ -96,9 +85,7 @@ class SendMessage:
         self._project_llm_service_resolver = project_llm_service_resolver
         self._project_reranker_service_resolver = project_reranker_service_resolver
         self._organization_member_repository = organization_member_repository
-        self._agent_configuration_repository = agent_configuration_repository
-        self._org_provider_credential_repository = org_provider_credential_repository
-        self._provider_credential_repository = provider_credential_repository
+        self._agent_configuration_resolver = agent_configuration_resolver
         self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
@@ -553,24 +540,9 @@ class SendMessage:
         )
 
     async def _resolve_config(self, project: Project, user_id: UUID) -> ResolvedAgentConfiguration | None:
-        if self._agent_configuration_repository is None:
+        if self._agent_configuration_resolver is None:
             return None
-        project_config = await self._agent_configuration_repository.find_by_owner(
-            project.id, AgentConfigurationType.PROJECT
-        )
-        base_config = project_config or AgentConfiguration(
-            id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
-        )
-        if project.organization_id is not None:
-            parent_config = await self._agent_configuration_repository.find_by_owner(
-                project.organization_id, AgentConfigurationType.ORGA
-            )
-        else:
-            parent_config = await self._agent_configuration_repository.find_by_owner(
-                user_id, AgentConfigurationType.USER
-            )
-        app_config = await self._agent_configuration_repository.find_app_defaults()
-        return ConfigExtractor.resolve(base_config, parent_config, app_config)
+        return await self._agent_configuration_resolver.resolve(project=project, user_id=user_id)
 
     async def _resolve_llm_service(
         self,
@@ -583,29 +555,16 @@ class SendMessage:
         backend = resolved_config.llm_backend if resolved_config else None
         model = resolved_config.llm_model if resolved_config else None
         credential_id = resolved_config.llm_api_key_credential_id if resolved_config else None
-        encrypted_api_key = await self._fetch_encrypted_api_key(
-            credential_id=credential_id, project=project, user_id=user_id
+        encrypted_api_key = (
+            await self._agent_configuration_resolver.fetch_encrypted_api_key(
+                credential_id=credential_id, project=project, user_id=user_id
+            )
+            if self._agent_configuration_resolver is not None
+            else None
         )
         return self._project_llm_service_resolver.resolve(
             backend=backend, model=model, encrypted_api_key=encrypted_api_key
         )
-
-    async def _fetch_encrypted_api_key(
-        self, credential_id: UUID | None, project: Project, user_id: UUID
-    ) -> str | None:
-        if credential_id is None:
-            return None
-        if project.organization_id is not None and self._org_provider_credential_repository is not None:
-            org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
-            org_cred = next((c for c in org_creds if c.id == credential_id), None)
-            if org_cred is not None:
-                return org_cred.encrypted_api_key
-        if self._provider_credential_repository is not None:
-            user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
-            user_cred = next((c for c in user_creds if c.id == credential_id), None)
-            if user_cred is not None:
-                return user_cred.encrypted_api_key
-        return None
 
     async def _build_conversation_title(
         self,

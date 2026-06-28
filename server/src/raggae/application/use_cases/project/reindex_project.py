@@ -1,23 +1,16 @@
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from raggae.application.dto.reindex_project_result_dto import ReindexProjectResultDTO
-from raggae.application.interfaces.repositories.agent_configuration_repository import (
-    AgentConfigurationRepository,
-)
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
-from raggae.application.interfaces.repositories.org_provider_credential_repository import (
-    OrgProviderCredentialRepository,
-)
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
-from raggae.application.interfaces.repositories.provider_credential_repository import (
-    ProviderCredentialRepository,
-)
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver,
 )
+from raggae.application.services.agent_configuration_resolver import (
+    AgentConfigurationResolver,
+)
 from raggae.application.services.document_indexing_service import DocumentIndexingService
-from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import (
     DocumentExtractionError,
@@ -27,8 +20,6 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
-from raggae.domain.services.config_extractor import ConfigExtractor
-from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
 from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
@@ -45,18 +36,14 @@ class ReindexProject:
         file_storage_service: FileStorageService,
         document_indexing_service: DocumentIndexingService,
         project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
-        agent_configuration_repository: AgentConfigurationRepository | None = None,
-        org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
-        provider_credential_repository: ProviderCredentialRepository | None = None,
+        agent_configuration_resolver: AgentConfigurationResolver | None = None,
     ) -> None:
         self._project_repository = project_repository
         self._document_repository = document_repository
         self._file_storage_service = file_storage_service
         self._document_indexing_service = document_indexing_service
         self._project_embedding_service_resolver = project_embedding_service_resolver
-        self._agent_configuration_repository = agent_configuration_repository
-        self._org_provider_credential_repository = org_provider_credential_repository
-        self._provider_credential_repository = provider_credential_repository
+        self._agent_configuration_resolver = agent_configuration_resolver
 
     async def execute(self, project_id: UUID, user_id: UUID) -> ReindexProjectResultDTO:
         project = await self._project_repository.find_by_id(project_id)
@@ -134,43 +121,17 @@ class ReindexProject:
         )
 
     async def _resolve_config(self, project: Project, user_id: UUID) -> ResolvedAgentConfiguration | None:
-        if self._agent_configuration_repository is None:
+        if self._agent_configuration_resolver is None:
             return None
-        project_config = await self._agent_configuration_repository.find_by_owner(
-            project.id, AgentConfigurationType.PROJECT
-        )
-
-        base_config = project_config or AgentConfiguration(
-            id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
-        )
-
-        if project.organization_id is not None:
-            parent_config = await self._agent_configuration_repository.find_by_owner(
-                project.organization_id, AgentConfigurationType.ORGA
-            )
-        else:
-            parent_config = await self._agent_configuration_repository.find_by_owner(
-                user_id, AgentConfigurationType.USER
-            )
-
-        app_config = await self._agent_configuration_repository.find_app_defaults()
-        return ConfigExtractor.resolve(base_config, parent_config, app_config)
+        return await self._agent_configuration_resolver.resolve(project=project, user_id=user_id)
 
     async def _resolve_embedding_api_key(
         self, resolved: ResolvedAgentConfiguration, project: Project, user_id: UUID
     ) -> str | None:
-        if resolved.embedding_api_key_credential_id is None:
+        if self._agent_configuration_resolver is None:
             return None
-
-        credential_id = resolved.embedding_api_key_credential_id
-        if project.organization_id is not None and self._org_provider_credential_repository is not None:
-            org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
-            org_cred = next((c for c in org_creds if c.id == credential_id), None)
-            if org_cred is not None:
-                return org_cred.encrypted_api_key
-        if self._provider_credential_repository is not None:
-            user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
-            user_cred = next((c for c in user_creds if c.id == credential_id), None)
-            if user_cred is not None:
-                return user_cred.encrypted_api_key
-        return None
+        return await self._agent_configuration_resolver.fetch_encrypted_api_key(
+            credential_id=resolved.embedding_api_key_credential_id,
+            project=project,
+            user_id=user_id,
+        )

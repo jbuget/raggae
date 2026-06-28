@@ -971,6 +971,9 @@ class TestSendMessageResolvesProjectLLMConfig:
             QueryRelevantChunksResultDTO,
         )
         from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
+        from raggae.application.services.agent_configuration_resolver import (
+            AgentConfigurationResolver,
+        )
         from raggae.application.use_cases.chat.send_message import SendMessage
         from raggae.domain.entities.agent_configuration import AgentConfiguration
         from raggae.domain.entities.conversation import Conversation
@@ -1065,6 +1068,10 @@ class TestSendMessageResolvesProjectLLMConfig:
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "title"
 
+        agent_configuration_resolver = AgentConfigurationResolver(
+            agent_configuration_repository=agent_configuration_repository,
+            provider_credential_repository=provider_credential_repository,
+        )
         use_case = SendMessage(
             query_relevant_chunks_use_case=retrieval_use_case,
             llm_service=AsyncMock(),
@@ -1073,8 +1080,7 @@ class TestSendMessageResolvesProjectLLMConfig:
             conversation_repository=conversation_repository,
             message_repository=message_repository,
             project_llm_service_resolver=project_llm_service_resolver,
-            agent_configuration_repository=agent_configuration_repository,
-            provider_credential_repository=provider_credential_repository,
+            agent_configuration_resolver=agent_configuration_resolver,
         )
 
         # When
