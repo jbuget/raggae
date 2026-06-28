@@ -5,12 +5,13 @@ import type { NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
   const token = await getToken({ req: request });
   const { pathname } = request.nextUrl;
+  const protectedPrefixes = ["/projects", "/invitations"];
 
   // Protected routes
-  if (pathname.startsWith("/projects")) {
+  if (protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
     if (!token) {
       const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
+      loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`);
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -24,5 +25,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/projects/:path*", "/login", "/register"],
+  matcher: ["/projects/:path*", "/invitations/:path*", "/login", "/register"],
 };

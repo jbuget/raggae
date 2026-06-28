@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { buildAuthRedirectPath, getSafeAuthCallbackUrl } from "@/lib/auth/callback-url";
 
 function MicrosoftIcon() {
   return (
@@ -44,6 +45,9 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
   const t = useTranslations("auth.login");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const rawCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = getSafeAuthCallbackUrl(rawCallbackUrl);
+  const registerHref = buildAuthRedirectPath("/register", rawCallbackUrl);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
@@ -72,7 +76,7 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
             document.cookie = `raggae_locale=${user.locale};path=/;max-age=${maxAge};SameSite=Lax`;
           }
         }
-        router.push("/projects");
+        router.push(callbackUrl);
       }
     } catch {
       setError(t("unexpectedError"));
@@ -116,7 +120,7 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {t("noAccount")}{" "}
-            <a href="/register" className="text-primary hover:underline">{t("register")}</a>
+            <a href={registerHref} className="text-primary hover:underline">{t("register")}</a>
           </p>
           {entraEnabled && (
             <>
@@ -130,7 +134,7 @@ export function LoginForm({ entraEnabled = false, backendUrl = "http://localhost
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  window.location.href = `${backendUrl}/api/v1/auth/entra/login?redirect_url=/projects`;
+                  window.location.href = `${backendUrl}/api/v1/auth/entra/login?redirect_url=${encodeURIComponent(callbackUrl)}`;
                 }}
               >
                 <MicrosoftIcon />

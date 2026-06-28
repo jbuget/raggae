@@ -11,6 +11,7 @@ from raggae.application.interfaces.repositories.organization_member_repository i
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
 )
+from raggae.application.interfaces.repositories.user_repository import UserRepository
 from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.exceptions.organization_exceptions import (
     OrganizationInvitationInvalidError,
@@ -26,10 +27,12 @@ class AcceptOrganizationInvitation:
 
     def __init__(
         self,
+        user_repository: UserRepository,
         organization_repository: OrganizationRepository,
         organization_member_repository: OrganizationMemberRepository,
         organization_invitation_repository: OrganizationInvitationRepository,
     ) -> None:
+        self._user_repository = user_repository
         self._organization_repository = organization_repository
         self._organization_member_repository = organization_member_repository
         self._organization_invitation_repository = organization_invitation_repository
@@ -44,9 +47,12 @@ class AcceptOrganizationInvitation:
             raise OrganizationNotFoundError(f"Organization {invitation.organization_id} not found")
 
         now = datetime.now(UTC)
+        user = await self._user_repository.find_by_id(user_id)
+        if user is None or invitation.email.strip().lower() != user.email.strip().lower():
+            raise OrganizationInvitationInvalidError("Invitation not found")
         if invitation.status != OrganizationInvitationStatus.PENDING:
             raise OrganizationInvitationInvalidError("Invitation is not pending")
-        if invitation.expires_at < now:
+        if invitation.is_expired(now):
             expired = invitation.with_status(
                 status=OrganizationInvitationStatus.EXPIRED,
                 updated_at=now,

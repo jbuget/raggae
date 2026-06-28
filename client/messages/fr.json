@@ -520,6 +520,9 @@
       "loading": "Acceptation de l'invitation en cours…",
       "success": "Invitation acceptée ! Vous avez rejoint l'organisation.",
       "goToOrganizations": "Voir mes organisations",
+      "unauthenticated": "Connectez-vous ou créez un compte pour accepter cette invitation.",
+      "signIn": "Se connecter",
+      "createAccount": "Créer un compte",
       "invalidToken": "Ce lien d'invitation est invalide ou a expiré.",
       "missingToken": "Lien invalide : token manquant.",
       "error": "Une erreur est survenue lors de l'acceptation de l'invitation."

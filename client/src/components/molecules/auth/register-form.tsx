@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,16 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buildAuthRedirectPath } from "@/lib/auth/callback-url";
 import { register } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 
 export function RegisterForm() {
   const t = useTranslations("auth.register");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawCallbackUrl = searchParams.get("callbackUrl");
+  const loginHref = buildAuthRedirectPath("/login", rawCallbackUrl);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -40,7 +44,7 @@ export function RegisterForm() {
 
     try {
       await register({ email, password, full_name: fullName });
-      router.push("/login");
+      router.push(loginHref);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setError(t("emailAlreadyExists"));
@@ -100,7 +104,7 @@ export function RegisterForm() {
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {t("alreadyHaveAccount")}{" "}
-            <a href="/login" className="text-primary hover:underline">{t("signIn")}</a>
+            <a href={loginHref} className="text-primary hover:underline">{t("signIn")}</a>
           </p>
         </form>
       </CardContent>
