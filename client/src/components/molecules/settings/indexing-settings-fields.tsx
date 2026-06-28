@@ -86,6 +86,7 @@ export function IndexingSettingsFields({
     <>
       <SettingsFieldRow
         label={<Label htmlFor={id("chunkingStrategy")}>{t("knowledgeIndexing.chunkingLabel")}</Label>}
+        description={t("knowledgeIndexing.chunkingNote")}
         dirty={dirty.chunkingStrategy}
         hint={<FieldHint projectValue={storedValues?.chunking_strategy} inheritedValue={inheritedValues?.chunking_strategy} ownerType={ownerType} dirty={dirty.chunkingStrategy} />}
       >
@@ -108,6 +109,7 @@ export function IndexingSettingsFields({
       </SettingsFieldRow>
       <SettingsFieldRow
         label={<Label htmlFor={id("parentChildChunking")}>{t("knowledgeIndexing.parentChildLabel")}</Label>}
+        description={t("knowledgeIndexing.parentChildNote")}
         dirty={dirty.parentChildChunking}
         hint={<FieldHint projectValue={storedValues?.parent_child_chunking} inheritedValue={effectiveInheritedParentChild} ownerType={parentChildOwnerType} dirty={dirty.parentChildChunking} />}
       >

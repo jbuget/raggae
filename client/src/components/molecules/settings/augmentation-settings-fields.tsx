@@ -88,6 +88,7 @@ export function AugmentationSettingsFields({
     <>
       <SettingsFieldRow
         label={<Label htmlFor={id("rerankingEnabled")}>{t("contextAugmentation.rerankingLabel")}</Label>}
+        description={t("contextAugmentation.rerankingNote")}
         dirty={dirty.rerankingEnabled}
         hint={<FieldHint projectValue={storedValues?.reranking_enabled} inheritedValue={effectiveInheritedRerankingEnabled} ownerType={rerankingEnabledOwnerType} dirty={dirty.rerankingEnabled} />}
       >
@@ -101,6 +102,7 @@ export function AugmentationSettingsFields({
         <>
           <SettingsFieldRow
             label={<Label htmlFor={id("rerankerBackend")}>{t("contextAugmentation.rerankerBackendLabel")}</Label>}
+            description={t("contextAugmentation.rerankerBackendNote")}
             dirty={dirty.rerankerBackend}
             hint={<FieldHint projectValue={storedValues?.reranker_backend} inheritedValue={inheritedValues?.reranker_backend} ownerType={ownerType} dirty={dirty.rerankerBackend} />}
           >
@@ -124,6 +126,7 @@ export function AugmentationSettingsFields({
           </SettingsFieldRow>
           <SettingsFieldRow
             label={<Label htmlFor={id("rerankerModel")}>{t("contextAugmentation.rerankerModelLabel")}</Label>}
+            description={t("contextAugmentation.rerankerModelNote")}
             dirty={dirty.rerankerModel}
           >
             <Select
