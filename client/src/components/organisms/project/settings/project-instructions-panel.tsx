@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProgressBar } from "@/components/atoms/feedback/progress-bar";
 import { useProject, useUpdateProject } from "@/lib/hooks/use-projects";
 
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
@@ -25,7 +26,15 @@ export function ProjectInstructionsPanel({ projectId }: { projectId: string }) {
   const effectiveSystemPrompt = systemPrompt ?? (project.system_prompt ?? "");
   const hasChanges = effectiveSystemPrompt !== (project.system_prompt ?? "");
   const systemPromptLength = effectiveSystemPrompt.length;
-  const nearLimit = systemPromptLength >= 7000;
+  const fillRatio = systemPromptLength / MAX_SYSTEM_PROMPT_LENGTH;
+  const counterColor =
+    fillRatio >= 0.95
+      ? "text-red-600"
+      : fillRatio >= 0.75
+        ? "text-amber-700"
+        : "text-muted-foreground";
+  const progressVariant: "default" | "warning" | "danger" =
+    fillRatio >= 0.95 ? "danger" : fillRatio >= 0.75 ? "warning" : "default";
 
   function handleSave() {
     updateProject.mutate(
@@ -38,12 +47,12 @@ export function ProjectInstructionsPanel({ projectId }: { projectId: string }) {
   }
 
   return (
-    <Card className="max-w-3xl">
+    <Card>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="systemPrompt">{t("answerGeneration.promptLabel")}</Label>
-            <span className={`text-xs ${nearLimit ? "text-amber-700" : "text-muted-foreground"}`}>
+            <span className={`text-xs tabular-nums ${counterColor}`}>
               {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
             </span>
           </div>
@@ -54,6 +63,13 @@ export function ProjectInstructionsPanel({ projectId }: { projectId: string }) {
             placeholder={t("answerGeneration.promptPlaceholder")}
             rows={16}
             maxLength={MAX_SYSTEM_PROMPT_LENGTH}
+          />
+          <ProgressBar
+            value={systemPromptLength}
+            max={MAX_SYSTEM_PROMPT_LENGTH}
+            variant={progressVariant}
+            size="sm"
+            label={t("answerGeneration.promptLabel")}
           />
           <p className="text-xs text-muted-foreground">{t("answerGeneration.promptLimit")}</p>
         </div>
