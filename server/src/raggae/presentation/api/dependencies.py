@@ -80,6 +80,9 @@ from raggae.application.interfaces.services.text_chunker_service import TextChun
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
 )
+from raggae.application.services.agent_configuration_resolver import (
+    AgentConfigurationResolver,
+)
 from raggae.application.services.chunking_strategy_selector import (
     DeterministicChunkingStrategySelector,
 )
@@ -597,6 +600,11 @@ _project_llm_service_resolver: ProjectLLMServiceResolver = RuntimeProjectLLMServ
     provider_api_key_crypto_service=_provider_api_key_crypto_service,
     default_llm_service=_llm_service,
 )
+_agent_configuration_resolver = AgentConfigurationResolver(
+    agent_configuration_repository=_agent_configuration_repository,
+    org_provider_credential_repository=_org_credential_repository,
+    provider_credential_repository=_provider_credential_repository,
+)
 if settings.reranker_backend == "cross_encoder":
     from raggae.infrastructure.services.cross_encoder_reranker_service import (
         CrossEncoderRerankerService,
@@ -758,9 +766,7 @@ def get_reindex_project_use_case() -> ReindexProject:
         file_storage_service=_file_storage_service,
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
-        agent_configuration_repository=_agent_configuration_repository,
-        org_provider_credential_repository=_org_credential_repository,
-        provider_credential_repository=_provider_credential_repository,
+        agent_configuration_resolver=_agent_configuration_resolver,
     )
 
 
@@ -776,9 +782,7 @@ def get_upload_document_use_case() -> UploadDocument:
         project_embedding_service_resolver=_project_embedding_service_resolver,
         max_documents_per_project=settings.max_documents_per_project,
         organization_member_repository=_organization_member_repository,
-        agent_configuration_repository=_agent_configuration_repository,
-        org_provider_credential_repository=_org_credential_repository,
-        provider_credential_repository=_provider_credential_repository,
+        agent_configuration_resolver=_agent_configuration_resolver,
     )
 
 
@@ -790,9 +794,7 @@ def get_reindex_document_use_case() -> ReindexDocument:
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
         organization_member_repository=_organization_member_repository,
-        agent_configuration_repository=_agent_configuration_repository,
-        org_provider_credential_repository=_org_credential_repository,
-        provider_credential_repository=_provider_credential_repository,
+        agent_configuration_resolver=_agent_configuration_resolver,
     )
 
 
@@ -859,6 +861,7 @@ def get_send_message_use_case() -> SendMessage:
         project_llm_service_resolver=_project_llm_service_resolver,
         project_reranker_service_resolver=_project_reranker_service_resolver,
         organization_member_repository=_organization_member_repository,
+        agent_configuration_resolver=_agent_configuration_resolver,
         llm_provider=settings.default_llm_provider,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,

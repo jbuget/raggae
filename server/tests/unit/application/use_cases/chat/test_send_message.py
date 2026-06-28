@@ -957,3 +957,143 @@ class TestSendMessage:
         retrieval_query = call_kwargs["query"]
         assert "peux-tu me détailler le formalisme ?" in retrieval_query
         assert "CRAFT" in retrieval_query  # context from previous user message
+
+
+class TestSendMessageResolvesProjectLLMConfig:
+    """The chat must use the project's resolved AgentConfiguration to pick the LLM."""
+
+    async def test_send_message_passes_resolved_llm_config_to_resolver(self) -> None:
+        from datetime import UTC, datetime
+        from unittest.mock import AsyncMock, Mock
+        from uuid import uuid4
+
+        from raggae.application.dto.query_relevant_chunks_result_dto import (
+            QueryRelevantChunksResultDTO,
+        )
+        from raggae.application.dto.retrieved_chunk_dto import RetrievedChunkDTO
+        from raggae.application.services.agent_configuration_resolver import (
+            AgentConfigurationResolver,
+        )
+        from raggae.application.use_cases.chat.send_message import SendMessage
+        from raggae.domain.entities.agent_configuration import AgentConfiguration
+        from raggae.domain.entities.conversation import Conversation
+        from raggae.domain.entities.project import Project
+        from raggae.domain.entities.user_model_provider_credential import (
+            UserModelProviderCredential,
+        )
+        from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+        from raggae.domain.value_objects.model_provider import ModelProvider
+
+        # Given — project with its own AgentConfiguration referencing a user credential
+        project_id = uuid4()
+        project_user_id = uuid4()
+        credential_id = uuid4()
+        project = Project(
+            id=project_id,
+            user_id=project_user_id,
+            name="Project",
+            description="",
+            system_prompt="prompt",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        project_config = AgentConfiguration(
+            id=uuid4(),
+            owner_id=project_id,
+            owner_type=AgentConfigurationType.PROJECT,
+            llm_backend="openai",
+            llm_model="gpt-4o-mini",
+            llm_api_key_credential_id=credential_id,
+        )
+        user_credential = UserModelProviderCredential(
+            id=credential_id,
+            user_id=project_user_id,
+            provider=ModelProvider("openai"),
+            encrypted_api_key="encrypted-secret",
+            key_fingerprint="fp",
+            key_suffix="abcd",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+
+        doc_id = uuid4()
+        retrieval_use_case = AsyncMock()
+        retrieval_use_case.execute.return_value = QueryRelevantChunksResultDTO(
+            chunks=[
+                RetrievedChunkDTO(
+                    chunk_id=uuid4(),
+                    document_id=doc_id,
+                    content="chunk",
+                    score=0.9,
+                    chunk_index=0,
+                ),
+            ],
+            strategy_used="hybrid",
+            execution_time_ms=1.0,
+        )
+
+        conversation_repository = AsyncMock()
+        conversation_repository.find_by_project_and_user.return_value = []
+        conversation_repository.create.return_value = Conversation(
+            id=uuid4(),
+            project_id=project_id,
+            user_id=project_user_id,
+            created_at=datetime.now(UTC),
+        )
+        message_repository = AsyncMock()
+        message_repository.count_by_conversation_id.return_value = 0
+        message_repository.find_by_conversation_id.return_value = []
+        project_repository = AsyncMock()
+        project_repository.find_by_id.return_value = project
+
+        agent_configuration_repository = AsyncMock()
+
+        async def find_by_owner(owner_id, owner_type):
+            if owner_id == project_id and owner_type == AgentConfigurationType.PROJECT:
+                return project_config
+            return None
+
+        agent_configuration_repository.find_by_owner.side_effect = find_by_owner
+        agent_configuration_repository.find_app_defaults.return_value = None
+
+        provider_credential_repository = AsyncMock()
+        provider_credential_repository.list_by_user_id.return_value = [user_credential]
+
+        resolved_llm_service = AsyncMock()
+        resolved_llm_service.generate_answer.return_value = "real answer"
+        project_llm_service_resolver = Mock()
+        project_llm_service_resolver.resolve.return_value = resolved_llm_service
+
+        title_generator = AsyncMock()
+        title_generator.generate_title.return_value = "title"
+
+        agent_configuration_resolver = AgentConfigurationResolver(
+            agent_configuration_repository=agent_configuration_repository,
+            provider_credential_repository=provider_credential_repository,
+        )
+        use_case = SendMessage(
+            query_relevant_chunks_use_case=retrieval_use_case,
+            llm_service=AsyncMock(),
+            conversation_title_generator=title_generator,
+            project_repository=project_repository,
+            conversation_repository=conversation_repository,
+            message_repository=message_repository,
+            project_llm_service_resolver=project_llm_service_resolver,
+            agent_configuration_resolver=agent_configuration_resolver,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=project_user_id,
+            message="hello",
+            limit=1,
+        )
+
+        # Then — resolver invoked with values from the project's AgentConfiguration
+        primary_call = project_llm_service_resolver.resolve.call_args_list[0]
+        assert primary_call.kwargs["backend"] == "openai"
+        assert primary_call.kwargs["model"] == "gpt-4o-mini"
+        assert primary_call.kwargs["encrypted_api_key"] == "encrypted-secret"
+        assert result.answer == "real answer"

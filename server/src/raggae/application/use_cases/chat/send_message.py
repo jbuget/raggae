@@ -31,6 +31,9 @@ from raggae.application.interfaces.services.project_reranker_service_resolver im
 from raggae.application.interfaces.services.provider_api_key_resolver import (
     ProviderApiKeyResolver,
 )
+from raggae.application.services.agent_configuration_resolver import (
+    AgentConfigurationResolver,
+)
 from raggae.application.services.chat_security_policy import StaticChatSecurityPolicy
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.conversation import Conversation
@@ -43,6 +46,7 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectReindexInProgressError,
 )
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
@@ -63,6 +67,7 @@ class SendMessage:
         project_llm_service_resolver: ProjectLLMServiceResolver | None = None,
         project_reranker_service_resolver: ProjectRerankerServiceResolver | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
+        agent_configuration_resolver: AgentConfigurationResolver | None = None,
         llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
@@ -80,6 +85,7 @@ class SendMessage:
         self._project_llm_service_resolver = project_llm_service_resolver
         self._project_reranker_service_resolver = project_reranker_service_resolver
         self._organization_member_repository = organization_member_repository
+        self._agent_configuration_resolver = agent_configuration_resolver
         self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
@@ -175,6 +181,7 @@ class SendMessage:
                     user_message=message,
                     assistant_answer=refusal_answer,
                     project=project,
+                    user_id=user_id,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             return ChatMessageResponseDTO(
@@ -226,6 +233,7 @@ class SendMessage:
                     user_message=message,
                     assistant_answer=fallback_answer,
                     project=project,
+                    user_id=user_id,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             return ChatMessageResponseDTO(
@@ -260,10 +268,9 @@ class SendMessage:
                 user_id=user_id,
                 provider=effective_llm_provider,
             )
-        llm_service = (
-            self._project_llm_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
-            if self._project_llm_service_resolver is not None
-            else self._llm_service
+        resolved_config = await self._resolve_config(project=project, user_id=user_id)
+        llm_service = await self._resolve_llm_service(
+            resolved_config=resolved_config, project=project, user_id=user_id
         )
         answer = await llm_service.generate_answer(prompt)
         sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
@@ -291,6 +298,7 @@ class SendMessage:
                 user_message=message,
                 assistant_answer=answer,
                 project=project,
+                user_id=user_id,
             )
             await self._conversation_repository.update_title(conversation.id, title)
         return ChatMessageResponseDTO(
@@ -390,6 +398,7 @@ class SendMessage:
                     user_message=message,
                     assistant_answer=refusal_answer,
                     project=project,
+                    user_id=user_id,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             yield ChatStreamToken(token=refusal_answer)
@@ -441,6 +450,7 @@ class SendMessage:
                     user_message=message,
                     assistant_answer=fallback_answer,
                     project=project,
+                    user_id=user_id,
                 )
                 await self._conversation_repository.update_title(conversation.id, title)
             yield ChatStreamToken(token=fallback_answer)
@@ -475,10 +485,9 @@ class SendMessage:
                 user_id=user_id,
                 provider=effective_llm_provider,
             )
-        llm_service = (
-            self._project_llm_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
-            if self._project_llm_service_resolver is not None
-            else self._llm_service
+        resolved_config = await self._resolve_config(project=project, user_id=user_id)
+        llm_service = await self._resolve_llm_service(
+            resolved_config=resolved_config, project=project, user_id=user_id
         )
         accumulated_answer = ""
         try:
@@ -517,6 +526,7 @@ class SendMessage:
                 user_message=message,
                 assistant_answer=accumulated_answer,
                 project=project,
+                user_id=user_id,
             )
             await self._conversation_repository.update_title(conversation.id, title)
         yield ChatStreamDone(
@@ -529,14 +539,46 @@ class SendMessage:
             chunks_used=len(relevant_chunks),
         )
 
+    async def _resolve_config(self, project: Project, user_id: UUID) -> ResolvedAgentConfiguration | None:
+        if self._agent_configuration_resolver is None:
+            return None
+        return await self._agent_configuration_resolver.resolve(project=project, user_id=user_id)
+
+    async def _resolve_llm_service(
+        self,
+        resolved_config: ResolvedAgentConfiguration | None,
+        project: Project,
+        user_id: UUID,
+    ) -> LLMService:
+        if self._project_llm_service_resolver is None:
+            return self._llm_service
+        backend = resolved_config.llm_backend if resolved_config else None
+        model = resolved_config.llm_model if resolved_config else None
+        credential_id = resolved_config.llm_api_key_credential_id if resolved_config else None
+        encrypted_api_key = (
+            await self._agent_configuration_resolver.fetch_encrypted_api_key(
+                credential_id=credential_id, project=project, user_id=user_id
+            )
+            if self._agent_configuration_resolver is not None
+            else None
+        )
+        return self._project_llm_service_resolver.resolve(
+            backend=backend, model=model, encrypted_api_key=encrypted_api_key
+        )
+
     async def _build_conversation_title(
-        self, user_message: str, assistant_answer: str, project: Project | None = None
+        self,
+        user_message: str,
+        assistant_answer: str,
+        project: Project | None = None,
+        user_id: UUID | None = None,
     ) -> str:
         fallback = self._normalize_title(user_message)
         try:
-            if project is not None and self._project_llm_service_resolver is not None:
-                llm_service = self._project_llm_service_resolver.resolve(
-                    backend=None, model=None, encrypted_api_key=None
+            if project is not None and user_id is not None and self._project_llm_service_resolver is not None:
+                resolved_config = await self._resolve_config(project=project, user_id=user_id)
+                llm_service = await self._resolve_llm_service(
+                    resolved_config=resolved_config, project=project, user_id=user_id
                 )
                 title_prompt = (
                     "Generate a short conversation title (max 8 words). "
