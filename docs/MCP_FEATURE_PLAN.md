@@ -312,6 +312,14 @@ Aucun endpoint, aucune migration, aucune UI.
 **Branche** : `feat/mcp-chat-tool-calling`
 **Dépend de** : PR 4 mergée.
 
+> **Note de re-scoping (2026-06-29)** — Le wiring complet dans `send_message.py`
+> (modification de l'interface `LLMService`, boucle de tool-calling avec
+> streaming, adapters par provider) représente un chantier trop large pour
+> tenir dans une PR sereinement mergeable. La PR 5 livre les **fondations
+> isolées et testables** : le `McpToolResolver` et le `McpToolExecutor`,
+> branchés en DI. Le wiring final dans `send_message.py` est reporté à une
+> PR dédiée ("PR 5b") qui pourra réutiliser ces services tels quels.
+
 Cœur de la valeur utilisateur : les tools MCP deviennent effectivement appelables par le LLM.
 
 #### Domain / Application
