@@ -67,7 +67,12 @@ class SQLAlchemyProjectRepository:
 
     async def find_by_user_id(self, user_id: UUID) -> list[Project]:
         async with self._session_factory() as session:
-            result = await session.execute(select(ProjectModel).where(ProjectModel.user_id == user_id))
+            result = await session.execute(
+                select(ProjectModel).where(
+                    ProjectModel.user_id == user_id,
+                    ProjectModel.organization_id.is_(None),
+                )
+            )
             return [self._to_entity(m) for m in result.scalars().all()]
 
     async def find_by_organization_id(self, organization_id: UUID) -> list[Project]:
