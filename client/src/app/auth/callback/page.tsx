@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Suspense } from "react";
+import { getSafeAuthCallbackUrl } from "@/lib/auth/callback-url";
 
 function EntraCallback() {
   const router = useRouter();
@@ -15,7 +16,7 @@ function EntraCallback() {
     called.current = true;
 
     const code = searchParams.get("code");
-    const redirect = searchParams.get("redirect") || "/projects";
+    const redirect = getSafeAuthCallbackUrl(searchParams.get("redirect"));
 
     if (!code) {
       router.replace("/login");

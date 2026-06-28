@@ -218,6 +218,77 @@ class TestEntraCallbackEndpoint:
         assert resp.headers["location"].startswith("http://localhost:3000/auth/callback")
         assert "code=" in resp.headers["location"]
 
+    async def test_e2e_entra_callback_sanitizes_malicious_redirect_url(
+        self, entra_client: AsyncClient
+    ) -> None:
+        # Given — login asks for a protocol-relative redirect_url
+        mock_app = make_msal_app()
+        with patch(
+            "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
+            return_value=mock_app,
+        ):
+            login_resp = await entra_client.get(
+                "/api/v1/auth/entra/login",
+                params={"redirect_url": "//evil.com"},
+                follow_redirects=False,
+            )
+        assert login_resp.status_code == 302
+        csrf_token = mock_app.initiate_auth_code_flow.call_args.kwargs["state"]
+        raw_cookie = login_resp.cookies["oauth_state"]
+
+        # When
+        with patch(
+            "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
+            return_value=mock_app,
+        ):
+            resp = await entra_client.get(
+                "/api/v1/auth/entra/callback",
+                params={"code": "auth-code", "state": csrf_token},
+                cookies={"oauth_state": raw_cookie},
+                follow_redirects=False,
+            )
+
+        # Then — frontend callback location does not embed the malicious target
+        assert resp.status_code == 302
+        location = resp.headers["location"]
+        assert location.startswith("http://localhost:3000/auth/callback?")
+        query = parse_qs(urlparse(location).query)
+        assert query["redirect"] == ["/"]
+        assert "evil.com" not in location
+
+    async def test_e2e_entra_callback_url_encodes_redirect_query(self, entra_client: AsyncClient) -> None:
+        # Given — legitimate redirect_url contains chars that must be URL-encoded
+        mock_app = make_msal_app()
+        with patch(
+            "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
+            return_value=mock_app,
+        ):
+            login_resp = await entra_client.get(
+                "/api/v1/auth/entra/login",
+                params={"redirect_url": "/invitations/accept?token=abc"},
+                follow_redirects=False,
+            )
+        csrf_token = mock_app.initiate_auth_code_flow.call_args.kwargs["state"]
+        raw_cookie = login_resp.cookies["oauth_state"]
+
+        # When
+        with patch(
+            "raggae.infrastructure.services.entra_oauth_provider.msal.ConfidentialClientApplication",
+            return_value=mock_app,
+        ):
+            resp = await entra_client.get(
+                "/api/v1/auth/entra/callback",
+                params={"code": "auth-code", "state": csrf_token},
+                cookies={"oauth_state": raw_cookie},
+                follow_redirects=False,
+            )
+
+        # Then — redirect param is preserved intact thanks to URL-encoding
+        assert resp.status_code == 302
+        location = resp.headers["location"]
+        query = parse_qs(urlparse(location).query)
+        assert query["redirect"] == ["/invitations/accept?token=abc"]
+
     async def test_e2e_entra_callback_clears_oauth_state_cookie(self, entra_client: AsyncClient) -> None:
         # Given
         mock_app = make_msal_app()

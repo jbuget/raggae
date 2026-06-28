@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from urllib.parse import urlencode
 from uuid import uuid4
 
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
@@ -56,6 +57,13 @@ def _not_implemented() -> Response:
     )
 
 
+def _sanitize_redirect_url(value: str | None) -> str:
+    """Restrict redirect_url to internal relative paths (defense against open redirect)."""
+    if not value or not value.startswith("/") or value.startswith("//"):
+        return "/"
+    return value
+
+
 @router.get("/login")
 async def entra_login(
     request: Request,
@@ -65,8 +73,9 @@ async def entra_login(
     if not settings.entra_enabled:
         return _not_implemented()
 
+    safe_redirect_url = _sanitize_redirect_url(redirect_url)
     use_case = get_initiate_oauth_login_use_case()
-    result = await use_case.execute(redirect_url=redirect_url)
+    result = await use_case.execute(redirect_url=safe_redirect_url)
 
     signed_state = _serialize_state(result.state)
     response = RedirectResponse(url=result.authorization_url, status_code=302)
@@ -130,8 +139,9 @@ async def entra_callback(
     code_store = get_oauth_code_store()
     await code_store.store(one_time_code, login_result, ttl_seconds=30)
 
-    redirect_url = parsed_state.redirect_url or "/"
-    frontend_callback = f"{settings.frontend_url}/auth/callback?code={one_time_code}&redirect={redirect_url}"
+    safe_redirect_url = _sanitize_redirect_url(parsed_state.redirect_url)
+    query = urlencode({"code": one_time_code, "redirect": safe_redirect_url})
+    frontend_callback = f"{settings.frontend_url}/auth/callback?{query}"
 
     response = RedirectResponse(url=frontend_callback, status_code=302)
     response.delete_cookie(key=_COOKIE_NAME)
