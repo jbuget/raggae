@@ -7,6 +7,7 @@ import { StatCard } from "@/components/atoms/stats/stat-card";
 import { getStats } from "@/lib/api/stats";
 import type { StatsResponse } from "@/lib/api/stats";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { StatsTimeseriesSection } from "@/components/organisms/stats/stats-timeseries-section";
 
 function StatsSkeleton() {
   return (
@@ -139,6 +140,9 @@ function StatsContent({ stats }: { stats: StatsResponse }) {
           />
         </div>
       </section>
+
+      {/* Timeseries (fetched independently) */}
+      <StatsTimeseriesSection />
 
       <p className="text-center text-xs text-muted-foreground">
         {t("generatedAt", {

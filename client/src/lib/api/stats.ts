@@ -38,3 +38,27 @@ export interface StatsResponse {
 export function getStats(token: string): Promise<StatsResponse> {
   return apiFetch<StatsResponse>("/stats", { token });
 }
+
+export interface TimeSeriesPoint {
+  date: string;
+  value: number;
+}
+
+export interface StatsTimeSeriesResponse {
+  generated_at: string;
+  from_date: string;
+  to_date: string;
+  user_messages: TimeSeriesPoint[];
+  conversations: TimeSeriesPoint[];
+  daily_active_users: TimeSeriesPoint[];
+  reliable_answers: TimeSeriesPoint[];
+  documents_indexed: TimeSeriesPoint[];
+  projects_created: TimeSeriesPoint[];
+}
+
+export function getStatsTimeseries(
+  token: string,
+  days: number = 90,
+): Promise<StatsTimeSeriesResponse> {
+  return apiFetch<StatsTimeSeriesResponse>(`/stats/timeseries?days=${days}`, { token });
+}
