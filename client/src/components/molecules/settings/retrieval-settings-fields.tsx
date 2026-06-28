@@ -94,6 +94,7 @@ export function RetrievalSettingsFields({
       <p className="text-sm text-muted-foreground">{t("contextRetrieval.description")}</p>
       <SettingsFieldRow
         label={<Label htmlFor={id("retrievalStrategy")}>{t("contextRetrieval.searchTypeLabel")}</Label>}
+        description={t("contextRetrieval.searchTypeNote")}
         dirty={dirty.retrievalStrategy}
         hint={<FieldHint projectValue={storedValues?.retrieval_strategy} inheritedValue={inheritedValues?.retrieval_strategy} ownerType={ownerType} dirty={dirty.retrievalStrategy} />}
       >

@@ -128,6 +128,7 @@ export function ModelSettingsFields({
       </div>
       <SettingsFieldRow
         label={<Label htmlFor={id("embeddingBackend")}>{tSettings("models.embeddingBackendLabel")}</Label>}
+        description={tSettings("models.embeddingBackendNote")}
         dirty={dirty.embeddingBackend}
         hint={<FieldHint projectValue={storedValues?.embedding_backend} inheritedValue={inheritedValues?.embedding_backend} ownerType={ownerType} dirty={dirty.embeddingBackend} />}
       >
@@ -157,6 +158,7 @@ export function ModelSettingsFields({
         <>
           <SettingsFieldRow
             label={<Label htmlFor={id("embeddingCredentialId")}>{tSettings("models.embeddingApiKeyLabel")}</Label>}
+            description={tSettings("models.embeddingApiKeyNote")}
             dirty={dirty.embeddingCredentialId}
           >
             <Select
@@ -179,6 +181,7 @@ export function ModelSettingsFields({
           </SettingsFieldRow>
           <SettingsFieldRow
             label={<Label htmlFor={id("embeddingModel")}>{tSettings("models.embeddingModelLabel")}</Label>}
+            description={tSettings("models.embeddingModelNote")}
             dirty={dirty.embeddingModel}
             hint={<FieldHint projectValue={storedValues?.embedding_model} inheritedValue={inheritedValues?.embedding_model} ownerType={ownerType} dirty={dirty.embeddingModel} />}
           >
@@ -206,6 +209,7 @@ export function ModelSettingsFields({
       </div>
       <SettingsFieldRow
         label={<Label htmlFor={id("llmBackend")}>{tSettings("models.llmBackendLabel")}</Label>}
+        description={tSettings("models.llmBackendNote")}
         dirty={dirty.llmBackend}
         hint={<FieldHint projectValue={storedValues?.llm_backend} inheritedValue={inheritedValues?.llm_backend} ownerType={ownerType} dirty={dirty.llmBackend} />}
       >
@@ -236,6 +240,7 @@ export function ModelSettingsFields({
         <>
           <SettingsFieldRow
             label={<Label htmlFor={id("llmCredentialId")}>{tSettings("models.llmApiKeyLabel")}</Label>}
+            description={tSettings("models.llmApiKeyNote")}
             dirty={dirty.llmCredentialId}
           >
             <Select
@@ -258,6 +263,7 @@ export function ModelSettingsFields({
           </SettingsFieldRow>
           <SettingsFieldRow
             label={<Label htmlFor={id("llmModel")}>{tSettings("models.llmModelLabel")}</Label>}
+            description={tSettings("models.llmModelNote")}
             dirty={dirty.llmModel}
             hint={<FieldHint projectValue={storedValues?.llm_model} inheritedValue={inheritedValues?.llm_model} ownerType={ownerType} dirty={dirty.llmModel} />}
           >
