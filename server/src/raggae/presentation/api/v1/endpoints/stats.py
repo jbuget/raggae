@@ -2,14 +2,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
+from raggae.application.use_cases.stats.get_mcp_stats import GetMcpStats
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
 from raggae.application.use_cases.stats.get_stats_timeseries import GetStatsTimeSeries
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
+    get_get_mcp_stats_use_case,
     get_get_public_stats_use_case,
     get_get_stats_timeseries_use_case,
 )
 from raggae.presentation.api.v1.schemas.stats_schemas import (
+    McpStatsResponse,
     StatsFonctionnementResponse,
     StatsImpactResponse,
     StatsResponse,
@@ -78,4 +81,18 @@ async def get_stats_timeseries(
         reliable_answers=_points(dto.reliable_answers),
         documents_indexed=_points(dto.documents_indexed),
         projects_created=_points(dto.projects_created),
+    )
+
+
+@router.get("/mcp", response_model=McpStatsResponse)
+async def get_mcp_stats(
+    use_case: Annotated[GetMcpStats, Depends(get_get_mcp_stats_use_case)],
+) -> McpStatsResponse:
+    """Aggregated MCP usage stats. Authentication required."""
+    dto = await use_case.execute()
+    return McpStatsResponse(
+        org_servers_total=dto.org_servers_total,
+        org_servers_active=dto.org_servers_active,
+        project_activations_active=dto.project_activations_active,
+        projects_with_at_least_one_activation=dto.projects_with_at_least_one_activation,
     )

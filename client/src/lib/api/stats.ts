@@ -62,3 +62,14 @@ export function getStatsTimeseries(
 ): Promise<StatsTimeSeriesResponse> {
   return apiFetch<StatsTimeSeriesResponse>(`/stats/timeseries?days=${days}`, { token });
 }
+
+export interface McpStatsResponse {
+  org_servers_total: number;
+  org_servers_active: number;
+  project_activations_active: number;
+  projects_with_at_least_one_activation: number;
+}
+
+export function getMcpStats(token: string): Promise<McpStatsResponse> {
+  return apiFetch<McpStatsResponse>("/stats/mcp", { token });
+}

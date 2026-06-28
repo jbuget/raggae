@@ -28,3 +28,9 @@ class InMemoryProjectMcpActivationRepository:
         keys_to_remove = [key for key in self._activations if key[1] == org_mcp_server_id]
         for key in keys_to_remove:
             self._activations.pop(key, None)
+
+    async def count_active_activations(self) -> int:
+        return sum(1 for a in self._activations.values() if a.is_active)
+
+    async def count_distinct_active_projects(self) -> int:
+        return len({a.project_id for a in self._activations.values() if a.is_active})

@@ -245,6 +245,7 @@ from raggae.application.use_cases.provider_credentials.list_provider_api_keys im
 from raggae.application.use_cases.provider_credentials.save_provider_api_key import (
     SaveProviderApiKey,
 )
+from raggae.application.use_cases.stats.get_mcp_stats import GetMcpStats
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
 from raggae.application.use_cases.stats.get_stats_timeseries import GetStatsTimeSeries
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
@@ -1290,6 +1291,13 @@ def get_mcp_tool_executor() -> McpToolExecutor:
         org_mcp_server_repository=_org_mcp_server_repository,
         mcp_client=_mcp_client,
         bearer_token_crypto_service=_mcp_bearer_token_crypto_service,
+    )
+
+
+def get_get_mcp_stats_use_case() -> GetMcpStats:
+    return GetMcpStats(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        project_mcp_activation_repository=_project_mcp_activation_repository,
     )
 
 

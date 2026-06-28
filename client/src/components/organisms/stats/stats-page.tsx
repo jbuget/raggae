@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/atoms/stats/stat-card";
-import { getStats } from "@/lib/api/stats";
-import type { StatsResponse } from "@/lib/api/stats";
+import { getMcpStats, getStats } from "@/lib/api/stats";
+import type { McpStatsResponse, StatsResponse } from "@/lib/api/stats";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { StatsTimeseriesSection } from "@/components/organisms/stats/stats-timeseries-section";
 
@@ -36,6 +36,34 @@ function fmt(value: number, decimals = 0): string {
     maximumFractionDigits: decimals,
   });
 }
+
+function McpStatsSection({ stats }: { stats: McpStatsResponse }) {
+  const t = useTranslations("stats");
+  return (
+    <section className="space-y-4">
+      <h2 className="text-xl font-semibold">{t("mcp.title")}</h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label={t("mcp.orgServersTotal")}
+          value={fmt(stats.org_servers_total)}
+        />
+        <StatCard
+          label={t("mcp.orgServersActive")}
+          value={fmt(stats.org_servers_active)}
+        />
+        <StatCard
+          label={t("mcp.projectActivationsActive")}
+          value={fmt(stats.project_activations_active)}
+        />
+        <StatCard
+          label={t("mcp.projectsWithActivations")}
+          value={fmt(stats.projects_with_at_least_one_activation)}
+        />
+      </div>
+    </section>
+  );
+}
+
 
 function StatsContent({ stats }: { stats: StatsResponse }) {
   const t = useTranslations("stats");
@@ -165,6 +193,12 @@ export function StatsPage() {
     enabled: !!token,
     staleTime: 5 * 60 * 1000,
   });
+  const { data: mcpStats } = useQuery({
+    queryKey: ["stats", "mcp"],
+    queryFn: () => getMcpStats(token!),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -174,7 +208,16 @@ export function StatsPage() {
         <p className="text-destructive">{t("loadError")}</p>
       )}
 
-      {data && <StatsContent stats={data} />}
+      {data && (
+        <>
+          <StatsContent stats={data} />
+          {mcpStats && (
+            <div className="mt-12">
+              <McpStatsSection stats={mcpStats} />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

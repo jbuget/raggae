@@ -758,6 +758,13 @@
       "multiTurnRate": "Multi-turn conversations",
       "averageSources": "Sources / answer"
     },
+    "mcp": {
+      "title": "MCP servers",
+      "orgServersTotal": "Declared",
+      "orgServersActive": "Active",
+      "projectActivationsActive": "Active activations",
+      "projectsWithActivations": "Projects using MCP"
+    },
     "timeseries": {
       "title": "Last 90 days",
       "description": "Daily volume over the last 90 days.",

@@ -77,6 +77,30 @@ class SQLAlchemyProjectMcpActivationRepository:
             )
             await session.commit()
 
+    async def count_active_activations(self) -> int:
+        from sqlalchemy import func
+        from sqlalchemy import select as sa_select
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                sa_select(func.count())
+                .select_from(ProjectMcpActivationModel)
+                .where(ProjectMcpActivationModel.is_active.is_(True))
+            )
+            return int(result.scalar_one() or 0)
+
+    async def count_distinct_active_projects(self) -> int:
+        from sqlalchemy import func
+        from sqlalchemy import select as sa_select
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                sa_select(func.count(func.distinct(ProjectMcpActivationModel.project_id))).where(
+                    ProjectMcpActivationModel.is_active.is_(True)
+                )
+            )
+            return int(result.scalar_one() or 0)
+
 
 def _to_domain(model: ProjectMcpActivationModel) -> ProjectMcpActivation:
     return ProjectMcpActivation(

@@ -22,3 +22,11 @@ class ProjectMcpActivationRepository(Protocol):
     async def delete_by_org_mcp_server_id(self, org_mcp_server_id: UUID) -> None:
         """Delete all activations for a given MCP server (cascade on server removal)."""
         ...
+
+    async def count_active_activations(self) -> int:
+        """Count all project activations marked `is_active=true` across the platform."""
+        ...
+
+    async def count_distinct_active_projects(self) -> int:
+        """Count distinct projects with at least one `is_active=true` activation."""
+        ...
