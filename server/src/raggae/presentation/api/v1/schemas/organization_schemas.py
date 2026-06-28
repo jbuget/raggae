@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from raggae.application.dto.agent_configuration_dto import AgentConfigurationDTO
 from raggae.domain.value_objects.organization_invitation_status import (
     OrganizationInvitationStatus,
 )
@@ -81,3 +84,77 @@ class UserPendingOrganizationInvitationResponse(BaseModel):
 
 class AcceptOrganizationInvitationRequest(BaseModel):
     token: str = Field(min_length=8, max_length=255)
+
+
+class OrgAgentConfigurationResponse(BaseModel):
+    organization_id: UUID
+    # Models
+    embedding_backend: str | None
+    embedding_model: str | None
+    embedding_api_key_credential_id: UUID | None
+    llm_backend: str | None
+    llm_model: str | None
+    llm_api_key_credential_id: UUID | None
+    # Indexing
+    chunking_strategy: str | None
+    parent_child_chunking: bool | None
+    # Retrieval
+    retrieval_strategy: str | None
+    retrieval_top_k: int | None
+    retrieval_min_score: float | None
+    # Reranking
+    reranking_enabled: bool | None
+    reranker_backend: str | None
+    reranker_model: str | None
+    reranker_candidate_multiplier: int | None
+    # Chat history
+    chat_history_window_size: int | None
+    chat_history_max_chars: int | None
+
+    @classmethod
+    def from_dto(cls, dto: AgentConfigurationDTO) -> OrgAgentConfigurationResponse:
+        return cls(
+            organization_id=dto.owner_id,
+            embedding_backend=dto.embedding_backend,
+            embedding_model=dto.embedding_model,
+            embedding_api_key_credential_id=dto.embedding_api_key_credential_id,
+            llm_backend=dto.llm_backend,
+            llm_model=dto.llm_model,
+            llm_api_key_credential_id=dto.llm_api_key_credential_id,
+            chunking_strategy=dto.chunking_strategy,
+            parent_child_chunking=dto.parent_child_chunking,
+            retrieval_strategy=dto.retrieval_strategy,
+            retrieval_top_k=dto.retrieval_top_k,
+            retrieval_min_score=dto.retrieval_min_score,
+            reranking_enabled=dto.reranking_enabled,
+            reranker_backend=dto.reranker_backend,
+            reranker_model=dto.reranker_model,
+            reranker_candidate_multiplier=dto.reranker_candidate_multiplier,
+            chat_history_window_size=dto.chat_history_window_size,
+            chat_history_max_chars=dto.chat_history_max_chars,
+        )
+
+
+class UpsertOrgAgentConfigurationRequest(BaseModel):
+    # Models
+    embedding_backend: str | None = None
+    embedding_model: str | None = None
+    embedding_api_key_credential_id: UUID | None = None
+    llm_backend: str | None = None
+    llm_model: str | None = None
+    llm_api_key_credential_id: UUID | None = None
+    # Indexing
+    chunking_strategy: str | None = None
+    parent_child_chunking: bool | None = None
+    # Retrieval
+    retrieval_strategy: str | None = None
+    retrieval_top_k: int | None = None
+    retrieval_min_score: float | None = None
+    # Reranking
+    reranking_enabled: bool | None = None
+    reranker_backend: str | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int | None = None
+    # Chat history
+    chat_history_window_size: int | None = None
+    chat_history_max_chars: int | None = None

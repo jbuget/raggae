@@ -18,6 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   useActivateModelCredential,
   useCreateModelCredential,
   useDeactivateModelCredential,
@@ -25,11 +32,12 @@ import {
   useModelCredentials,
 } from "@/lib/hooks/use-model-credentials";
 import type { ModelProvider } from "@/lib/types/api";
+import { BACKEND_LABELS } from "@/lib/constants/backends";
 
 const PROVIDERS: Array<{ value: ModelProvider; label: string; placeholder: string }> = [
-  { value: "openai", label: "OpenAI", placeholder: "sk-..." },
-  { value: "gemini", label: "Gemini", placeholder: "AIza..." },
-  { value: "anthropic", label: "Anthropic", placeholder: "sk-ant-..." },
+  { value: "openai", label: BACKEND_LABELS.openai, placeholder: "sk-..." },
+  { value: "gemini", label: BACKEND_LABELS.gemini, placeholder: "AIza..." },
+  { value: "anthropic", label: BACKEND_LABELS.anthropic, placeholder: "sk-ant-..." },
 ];
 
 export function UserApiKeysPanel() {
@@ -174,18 +182,21 @@ export function UserApiKeysPanel() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="modal-provider">{t("apiKeys.providerLabel")}</Label>
-              <select
-                id="modal-provider"
+              <Select
                 value={modalProvider}
-                onChange={(e) => setModalProvider(e.target.value as ModelProvider)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                onValueChange={(val) => setModalProvider(val as ModelProvider)}
               >
-                {PROVIDERS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="modal-provider">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

@@ -1,25 +1,13 @@
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
 
 from raggae.application.use_cases.project.create_project import CreateProject
-from raggae.domain.entities.user_model_provider_credential import UserModelProviderCredential
 from raggae.domain.exceptions.organization_exceptions import OrganizationAccessDeniedError
 from raggae.domain.exceptions.project_exceptions import (
-    InvalidProjectChatHistoryMaxCharsError,
-    InvalidProjectChatHistoryWindowSizeError,
-    InvalidProjectEmbeddingBackendError,
-    InvalidProjectLLMBackendError,
-    InvalidProjectRerankerBackendError,
-    InvalidProjectRerankerCandidateMultiplierError,
-    InvalidProjectRetrievalMinScoreError,
-    ProjectAPIKeyNotOwnedError,
     ProjectSystemPromptTooLongError,
 )
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
-from raggae.domain.value_objects.model_provider import ModelProvider
 
 
 class TestCreateProject:
@@ -28,7 +16,7 @@ class TestCreateProject:
         return AsyncMock()
 
     @pytest.fixture
-    def mock_provider_credential_repository(self) -> AsyncMock:
+    def mock_agent_configuration_repository(self) -> AsyncMock:
         return AsyncMock()
 
     @pytest.fixture
@@ -36,26 +24,17 @@ class TestCreateProject:
         return AsyncMock()
 
     @pytest.fixture
-    def mock_crypto_service(self) -> Mock:
-        crypto = Mock()
-        crypto.encrypt.side_effect = lambda value: f"enc:{value}"
-        crypto.decrypt.side_effect = lambda value: value.removeprefix("enc:")
-        crypto.fingerprint.side_effect = lambda value: f"fp:{value}"
-        return crypto
-
-    @pytest.fixture
     def use_case(
         self,
         mock_project_repository: AsyncMock,
+        mock_agent_configuration_repository: AsyncMock,
         mock_organization_member_repository: AsyncMock,
-        mock_provider_credential_repository: AsyncMock,
-        mock_crypto_service: Mock,
     ) -> CreateProject:
         return CreateProject(
             project_repository=mock_project_repository,
+            agent_configuration_repository=mock_agent_configuration_repository,
             organization_member_repository=mock_organization_member_repository,
-            provider_credential_repository=mock_provider_credential_repository,
-        ).with_crypto_service(mock_crypto_service)
+        )
 
     async def test_create_project_success(
         self,
@@ -81,210 +60,17 @@ class TestCreateProject:
         assert result.is_published is False
         mock_project_repository.save.assert_called_once()
 
-    async def test_create_project_with_ingestion_settings(
-        self,
-        use_case: CreateProject,
-        mock_project_repository: AsyncMock,
-    ) -> None:
-        # Given
-        user_id = uuid4()
-
-        # When
-        result = await use_case.execute(
-            user_id=user_id,
-            name="My Project",
-            description="A test project",
-            system_prompt="You are a helpful assistant",
-            chunking_strategy=ChunkingStrategy.SEMANTIC,
-            parent_child_chunking=True,
-        )
-
-        # Then
-        assert result.chunking_strategy == ChunkingStrategy.SEMANTIC
-        assert result.parent_child_chunking is True
-        mock_project_repository.save.assert_called_once()
-
-    async def test_create_project_with_retrieval_strategy(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        result = await use_case.execute(
-            user_id=uuid4(),
-            name="My Project",
-            description="A test project",
-            system_prompt="You are a helpful assistant",
-            retrieval_strategy="fulltext",
-        )
-
-        assert result.retrieval_strategy == "fulltext"
-
-    async def test_create_project_with_retrieval_top_k(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        result = await use_case.execute(
-            user_id=uuid4(),
-            name="My Project",
-            description="A test project",
-            system_prompt="You are a helpful assistant",
-            retrieval_top_k=12,
-        )
-
-        assert result.retrieval_top_k == 12
-
-    async def test_create_project_with_retrieval_min_score(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        result = await use_case.execute(
-            user_id=uuid4(),
-            name="My Project",
-            description="A test project",
-            system_prompt="You are a helpful assistant",
-            retrieval_min_score=0.42,
-        )
-
-        assert result.retrieval_min_score == 0.42
-
-    async def test_create_project_with_chat_history_settings(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        result = await use_case.execute(
-            user_id=uuid4(),
-            name="My Project",
-            description="A test project",
-            system_prompt="You are a helpful assistant",
-            chat_history_window_size=12,
-            chat_history_max_chars=6000,
-        )
-
-        assert result.chat_history_window_size == 12
-        assert result.chat_history_max_chars == 6000
-
-    async def test_create_project_with_reranker_settings(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        result = await use_case.execute(
-            user_id=uuid4(),
-            name="My Project",
-            description="A test project",
-            system_prompt="You are a helpful assistant",
-            reranking_enabled=True,
-            reranker_backend="cross_encoder",
-            reranker_model="cross-encoder/ms-marco-MiniLM-L-6-v2",
-            reranker_candidate_multiplier=4,
-        )
-
-        assert result.reranking_enabled is True
-        assert result.reranker_backend == "cross_encoder"
-        assert result.reranker_model == "cross-encoder/ms-marco-MiniLM-L-6-v2"
-        assert result.reranker_candidate_multiplier == 4
-
-    async def test_create_project_with_invalid_retrieval_min_score_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectRetrievalMinScoreError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="You are a helpful assistant",
-                retrieval_min_score=1.1,
-            )
-
-    async def test_create_project_with_invalid_chat_history_window_size_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectChatHistoryWindowSizeError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="You are a helpful assistant",
-                chat_history_window_size=0,
-            )
-
-    async def test_create_project_with_invalid_chat_history_max_chars_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectChatHistoryMaxCharsError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="You are a helpful assistant",
-                chat_history_max_chars=42,
-            )
-
-    async def test_create_project_with_invalid_reranker_backend_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectRerankerBackendError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="You are a helpful assistant",
-                reranker_backend="unknown",
-            )
-
-    async def test_create_project_with_invalid_reranker_multiplier_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectRerankerCandidateMultiplierError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="You are a helpful assistant",
-                reranker_candidate_multiplier=0,
-            )
-
     async def test_create_project_with_too_long_system_prompt_raises(
         self,
         use_case: CreateProject,
     ) -> None:
-        # Given
-        # When / Then
+        # Given / When / Then
         with pytest.raises(ProjectSystemPromptTooLongError):
             await use_case.execute(
                 user_id=uuid4(),
                 name="My Project",
                 description="A test project",
                 system_prompt="x" * 8001,
-            )
-
-    async def test_create_project_with_invalid_embedding_backend_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectEmbeddingBackendError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="ok",
-                embedding_backend="unsupported",
-            )
-
-    async def test_create_project_with_invalid_llm_backend_raises(
-        self,
-        use_case: CreateProject,
-    ) -> None:
-        with pytest.raises(InvalidProjectLLMBackendError):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="ok",
-                llm_backend="unsupported",
             )
 
     async def test_create_project_for_organization_requires_membership(
@@ -322,85 +108,20 @@ class TestCreateProject:
 
         assert result.organization_id == organization_id
 
-    async def test_create_project_with_non_owned_api_key_raises(
+    async def test_create_project_creates_blank_agent_configuration(
         self,
         use_case: CreateProject,
-        mock_provider_credential_repository: AsyncMock,
+        mock_agent_configuration_repository: AsyncMock,
     ) -> None:
-        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = []
-
-        with pytest.raises(ProjectAPIKeyNotOwnedError, match="not registered for this user"):
-            await use_case.execute(
-                user_id=uuid4(),
-                name="My Project",
-                description="A test project",
-                system_prompt="ok",
-                llm_backend="openai",
-                llm_api_key="sk-user-1234",
-            )
-
-    async def test_create_project_with_owned_api_key_encrypts_and_succeeds(
-        self,
-        use_case: CreateProject,
-        mock_provider_credential_repository: AsyncMock,
-    ) -> None:
-        user_id = uuid4()
-        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = [
-            UserModelProviderCredential(
-                id=uuid4(),
-                user_id=user_id,
-                provider=ModelProvider("openai"),
-                encrypted_api_key="enc:sk-user-1234",
-                key_fingerprint="fp:sk-user-1234",
-                key_suffix="1234",
-                is_active=True,
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-        ]
-
+        # Given / When
         result = await use_case.execute(
-            user_id=user_id,
+            user_id=uuid4(),
             name="My Project",
-            description="A test project",
+            description="desc",
             system_prompt="ok",
-            llm_backend="openai",
-            llm_api_key="sk-user-1234",
         )
 
-        assert result.llm_backend == "openai"
-        assert result.llm_api_key_masked is not None
-
-    async def test_create_project_with_credential_id_resolves_key_and_succeeds(
-        self,
-        use_case: CreateProject,
-        mock_provider_credential_repository: AsyncMock,
-    ) -> None:
-        user_id = uuid4()
-        credential_id = uuid4()
-        mock_provider_credential_repository.list_by_user_id_and_provider.return_value = [
-            UserModelProviderCredential(
-                id=credential_id,
-                user_id=user_id,
-                provider=ModelProvider("openai"),
-                encrypted_api_key="enc:sk-user-1234",
-                key_fingerprint="fp:sk-user-1234",
-                key_suffix="1234",
-                is_active=True,
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-        ]
-
-        result = await use_case.execute(
-            user_id=user_id,
-            name="My Project",
-            description="A test project",
-            system_prompt="ok",
-            llm_backend="openai",
-            llm_api_key_credential_id=credential_id,
-        )
-
-        assert result.llm_backend == "openai"
-        assert result.llm_api_key_masked is not None
-        assert result.llm_api_key_credential_id == credential_id
+        # Then — a blank PROJECT agent configuration should be created
+        mock_agent_configuration_repository.save.assert_called_once()
+        saved_config = mock_agent_configuration_repository.save.call_args.args[0]
+        assert saved_config.owner_id == result.id

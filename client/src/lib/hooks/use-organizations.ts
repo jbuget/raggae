@@ -25,6 +25,7 @@ export function useCreateOrganization() {
     mutationFn: (data: CreateOrganizationRequest) => createOrganization(token!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }

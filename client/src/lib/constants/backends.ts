@@ -1,0 +1,17 @@
+export const BACKEND_LABELS: Record<string, string> = {
+  openai: "OpenAI",
+  gemini: "Gemini",
+  anthropic: "Anthropic",
+  ollama: "Ollama",
+  inmemory: "InMemory",
+  cross_encoder: "Cross-encoder",
+  mmr: "MMR",
+  auto: "Auto",
+  fixed_window: "Fixed window",
+  paragraph: "Paragraph",
+  heading_section: "Heading section",
+  semantic: "Semantic",
+  hybrid: "Hybrid",
+  vector: "Vector",
+  fulltext: "Fulltext",
+};

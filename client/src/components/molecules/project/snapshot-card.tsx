@@ -7,6 +7,15 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { ProjectSnapshotResponse } from "@/lib/types/api";
 import { formatDateTime } from "@/lib/utils/format";
 
+const CHUNKING_KEY: Record<string, "chunkingAuto" | "chunkingFixed" | "chunkingParagraph" | "chunkingHeading" | "chunkingSemantic" | "chunkingTabular"> = {
+  auto: "chunkingAuto",
+  fixed_window: "chunkingFixed",
+  paragraph: "chunkingParagraph",
+  heading_section: "chunkingHeading",
+  semantic: "chunkingSemantic",
+  tabular: "chunkingTabular",
+};
+
 interface SnapshotCardProps {
   snapshot: ProjectSnapshotResponse;
   isCurrentVersion: boolean;
@@ -21,7 +30,7 @@ export function SnapshotCard({
   const t = useTranslations("projects.snapshots");
 
   return (
-    <Card className="transition-colors hover:bg-muted/30 dark:hover:bg-muted/20">
+    <Card className="gap-2 transition-colors hover:bg-muted/30 dark:hover:bg-muted/20">
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -58,21 +67,23 @@ export function SnapshotCard({
         )}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {snapshot.embedding_model && (
-            <span>
-              <span className="font-medium">{t("embeddingModel")}:</span>{" "}
-              {snapshot.embedding_model}
-            </span>
+            <span><span className="font-medium">{t("embeddingModel")}:</span> {snapshot.embedding_model}</span>
           )}
           {snapshot.llm_model && (
+            <span><span className="font-medium">{t("llmModel")}:</span> {snapshot.llm_model}</span>
+          )}
+          {snapshot.chunking_strategy && CHUNKING_KEY[snapshot.chunking_strategy] && (
             <span>
-              <span className="font-medium">{t("llmModel")}:</span>{" "}
-              {snapshot.llm_model}
+              <span className="font-medium">{t("chunking")}:</span>{" "}
+              {t(CHUNKING_KEY[snapshot.chunking_strategy])}
             </span>
           )}
-          <span>
-            <span className="font-medium">{t("retrievalStrategy")}:</span>{" "}
-            {snapshot.retrieval_strategy}
-          </span>
+          {snapshot.parent_child_chunking && (
+            <span><span className="font-medium">{t("parentChild")}</span></span>
+          )}
+          {snapshot.retrieval_strategy && (
+            <span><span className="font-medium">{t("retrievalStrategy")}:</span> {snapshot.retrieval_strategy}</span>
+          )}
         </div>
       </CardContent>
     </Card>

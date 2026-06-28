@@ -77,7 +77,7 @@ class DocumentFileMetadataExtractor:
     def _extract_pptx(self, content: bytes) -> FileMetadata:
         try:
             from pptx import Presentation
-        except ModuleNotFoundError:  # pragma: no cover - dependency management
+        except ModuleNotFoundError:
             return FileMetadata()
 
         try:

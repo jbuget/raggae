@@ -16,7 +16,7 @@ class InMemoryProjectRepository:
         return self._projects.get(project_id)
 
     async def find_by_user_id(self, user_id: UUID) -> list[Project]:
-        return [p for p in self._projects.values() if p.user_id == user_id]
+        return [p for p in self._projects.values() if p.user_id == user_id and p.organization_id is None]
 
     async def find_by_organization_id(self, organization_id: UUID) -> list[Project]:
         return [p for p in self._projects.values() if p.organization_id == organization_id]

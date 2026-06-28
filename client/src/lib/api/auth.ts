@@ -4,6 +4,8 @@ import type {
   TokenResponse,
   UpdateUserFullNameRequest,
   UpdateUserLocaleRequest,
+  UpsertUserProjectDefaultsRequest,
+  UserProjectDefaultsResponse,
   UserResponse,
 } from "@/lib/types/api";
 import { apiFetch } from "./client";
@@ -43,6 +45,23 @@ export function updateUserLocale(
 ): Promise<UserResponse> {
   return apiFetch<UserResponse>("/auth/me/locale", {
     method: "PATCH",
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export function getUserProjectDefaults(
+  token: string,
+): Promise<UserProjectDefaultsResponse | null> {
+  return apiFetch<UserProjectDefaultsResponse | null>("/auth/me/project-defaults", { token });
+}
+
+export function upsertUserProjectDefaults(
+  token: string,
+  data: UpsertUserProjectDefaultsRequest,
+): Promise<UserProjectDefaultsResponse> {
+  return apiFetch<UserProjectDefaultsResponse>("/auth/me/project-defaults", {
+    method: "PUT",
     body: JSON.stringify(data),
     token,
   });

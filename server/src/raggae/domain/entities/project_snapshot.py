@@ -1,17 +1,14 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.domain.entities.project import Project
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
+from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 
 
 @dataclass(frozen=True)
 class ProjectSnapshot:
-    """Immutable snapshot of a Project configuration at a point in time.
-
-    Encrypted API keys and transient reindex state are intentionally excluded.
-    """
+    """Immutable snapshot of a Project and its agent configuration at a point in time."""
 
     id: UUID
     project_id: UUID
@@ -19,33 +16,30 @@ class ProjectSnapshot:
     label: str | None
     created_at: datetime
     created_by_user_id: UUID
-
-    # Project configuration fields (excluding encrypted keys and reindex state)
     name: str
     description: str
     system_prompt: str
     is_published: bool
-    chunking_strategy: ChunkingStrategy
-    parent_child_chunking: bool
     organization_id: UUID | None
-    embedding_backend: str | None
-    embedding_model: str | None
-    embedding_api_key_credential_id: UUID | None
-    org_embedding_api_key_credential_id: UUID | None
-    llm_backend: str | None
-    llm_model: str | None
-    llm_api_key_credential_id: UUID | None
-    org_llm_api_key_credential_id: UUID | None
-    retrieval_strategy: str
-    retrieval_top_k: int
-    retrieval_min_score: float
-    chat_history_window_size: int
-    chat_history_max_chars: int
-    reranking_enabled: bool
-    reranker_backend: str | None
-    reranker_model: str | None
-    reranker_candidate_multiplier: int
     restored_from_version: int | None
+    # Agent configuration captured at snapshot time
+    embedding_backend: str | None = field(default=None)
+    embedding_model: str | None = field(default=None)
+    embedding_api_key_credential_id: UUID | None = field(default=None)
+    llm_backend: str | None = field(default=None)
+    llm_model: str | None = field(default=None)
+    llm_api_key_credential_id: UUID | None = field(default=None)
+    chunking_strategy: str | None = field(default=None)
+    parent_child_chunking: bool | None = field(default=None)
+    retrieval_strategy: str | None = field(default=None)
+    retrieval_top_k: int | None = field(default=None)
+    retrieval_min_score: float | None = field(default=None)
+    reranking_enabled: bool | None = field(default=None)
+    reranker_backend: str | None = field(default=None)
+    reranker_model: str | None = field(default=None)
+    reranker_candidate_multiplier: int | None = field(default=None)
+    chat_history_window_size: int | None = field(default=None)
+    chat_history_max_chars: int | None = field(default=None)
 
     @classmethod
     def from_project(
@@ -53,10 +47,10 @@ class ProjectSnapshot:
         project: Project,
         version_number: int,
         created_by_user_id: UUID,
+        agent_config: ResolvedAgentConfiguration | None = None,
         label: str | None = None,
         restored_from_version: int | None = None,
     ) -> "ProjectSnapshot":
-        """Create a new ProjectSnapshot from a Project entity."""
         return cls(
             id=uuid4(),
             project_id=project.id,
@@ -68,25 +62,27 @@ class ProjectSnapshot:
             description=project.description,
             system_prompt=project.system_prompt,
             is_published=project.is_published,
-            chunking_strategy=project.chunking_strategy,
-            parent_child_chunking=project.parent_child_chunking,
             organization_id=project.organization_id,
-            embedding_backend=project.embedding_backend,
-            embedding_model=project.embedding_model,
-            embedding_api_key_credential_id=project.embedding_api_key_credential_id,
-            org_embedding_api_key_credential_id=project.org_embedding_api_key_credential_id,
-            llm_backend=project.llm_backend,
-            llm_model=project.llm_model,
-            llm_api_key_credential_id=project.llm_api_key_credential_id,
-            org_llm_api_key_credential_id=project.org_llm_api_key_credential_id,
-            retrieval_strategy=project.retrieval_strategy,
-            retrieval_top_k=project.retrieval_top_k,
-            retrieval_min_score=project.retrieval_min_score,
-            chat_history_window_size=project.chat_history_window_size,
-            chat_history_max_chars=project.chat_history_max_chars,
-            reranking_enabled=project.reranking_enabled,
-            reranker_backend=project.reranker_backend,
-            reranker_model=project.reranker_model,
-            reranker_candidate_multiplier=project.reranker_candidate_multiplier,
             restored_from_version=restored_from_version,
+            embedding_backend=agent_config.embedding_backend if agent_config else None,
+            embedding_model=agent_config.embedding_model if agent_config else None,
+            embedding_api_key_credential_id=agent_config.embedding_api_key_credential_id
+            if agent_config
+            else None,
+            llm_backend=agent_config.llm_backend if agent_config else None,
+            llm_model=agent_config.llm_model if agent_config else None,
+            llm_api_key_credential_id=agent_config.llm_api_key_credential_id if agent_config else None,
+            chunking_strategy=agent_config.chunking_strategy if agent_config else None,
+            parent_child_chunking=agent_config.parent_child_chunking if agent_config else None,
+            retrieval_strategy=agent_config.retrieval_strategy if agent_config else None,
+            retrieval_top_k=agent_config.retrieval_top_k if agent_config else None,
+            retrieval_min_score=agent_config.retrieval_min_score if agent_config else None,
+            reranking_enabled=agent_config.reranking_enabled if agent_config else None,
+            reranker_backend=agent_config.reranker_backend if agent_config else None,
+            reranker_model=agent_config.reranker_model if agent_config else None,
+            reranker_candidate_multiplier=agent_config.reranker_candidate_multiplier
+            if agent_config
+            else None,
+            chat_history_window_size=agent_config.chat_history_window_size if agent_config else None,
+            chat_history_max_chars=agent_config.chat_history_max_chars if agent_config else None,
         )

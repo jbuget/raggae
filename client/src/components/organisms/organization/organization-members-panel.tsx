@@ -44,7 +44,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   const [role, setRole] = useState<OrganizationMemberRole>("user");
 
   return (
-    <div className="rounded-lg border p-5 space-y-6">
+    <div className="rounded-lg border bg-card p-5 space-y-6">
       <div>
         <h2 className="text-lg font-semibold">{t("title")}</h2>
         <p className="text-sm text-muted-foreground">
@@ -108,7 +108,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
             {members?.map((member) => (
               <div
                 key={member.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-3"
               >
                 <div className="text-sm">
                   <div className="flex items-baseline gap-2">
@@ -189,7 +189,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
               invitations.map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-3"
                 >
                   <div className="text-sm">
                     <div className="flex items-center gap-2">

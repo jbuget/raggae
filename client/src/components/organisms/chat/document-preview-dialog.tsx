@@ -69,6 +69,7 @@ export function DocumentPreviewDialog({
             <p className="text-sm text-destructive">{error}</p>
           )}
           {!isLoading && !error && documentUrl && documentType?.startsWith("image/") && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={documentUrl}
               alt={source?.documentName || "Document"}

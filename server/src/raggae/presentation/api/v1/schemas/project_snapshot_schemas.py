@@ -1,10 +1,7 @@
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
-
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 
 
 class ProjectSnapshotResponse(BaseModel):
@@ -18,27 +15,23 @@ class ProjectSnapshotResponse(BaseModel):
     description: str
     system_prompt: str
     is_published: bool
-    chunking_strategy: ChunkingStrategy
-    parent_child_chunking: bool
     organization_id: UUID | None
-    embedding_backend: str | None
-    embedding_model: str | None
-    embedding_api_key_credential_id: UUID | None
-    org_embedding_api_key_credential_id: UUID | None
-    llm_backend: str | None
-    llm_model: str | None
-    llm_api_key_credential_id: UUID | None
-    org_llm_api_key_credential_id: UUID | None
-    retrieval_strategy: Literal["vector", "fulltext", "hybrid"]
-    retrieval_top_k: int
-    retrieval_min_score: float
-    chat_history_window_size: int
-    chat_history_max_chars: int
-    reranking_enabled: bool
-    reranker_backend: Literal["none", "cross_encoder", "inmemory", "mmr"] | None
-    reranker_model: str | None
-    reranker_candidate_multiplier: int
     restored_from_version: int | None
+    embedding_backend: str | None = None
+    embedding_model: str | None = None
+    llm_backend: str | None = None
+    llm_model: str | None = None
+    chunking_strategy: str | None = None
+    parent_child_chunking: bool | None = None
+    retrieval_strategy: str | None = None
+    retrieval_top_k: int | None = None
+    retrieval_min_score: float | None = None
+    reranking_enabled: bool | None = None
+    reranker_backend: str | None = None
+    reranker_model: str | None = None
+    reranker_candidate_multiplier: int | None = None
+    chat_history_window_size: int | None = None
+    chat_history_max_chars: int | None = None
 
 
 class ProjectSnapshotListResponse(BaseModel):

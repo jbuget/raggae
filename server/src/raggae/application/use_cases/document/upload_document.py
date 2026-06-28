@@ -1,21 +1,32 @@
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from raggae.application.dto.document_dto import DocumentDTO
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.document_chunk_repository import (
     DocumentChunkRepository,
 )
 from raggae.application.interfaces.repositories.document_repository import DocumentRepository
+from raggae.application.interfaces.repositories.org_provider_credential_repository import (
+    OrgProviderCredentialRepository,
+)
 from raggae.application.interfaces.repositories.organization_member_repository import (
     OrganizationMemberRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.application.interfaces.repositories.provider_credential_repository import (
+    ProviderCredentialRepository,
+)
 from raggae.application.interfaces.services.file_storage_service import FileStorageService
 from raggae.application.interfaces.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver,
 )
 from raggae.application.services.document_indexing_service import DocumentIndexingService
+from raggae.domain.entities.agent_configuration import AgentConfiguration
 from raggae.domain.entities.document import Document
 from raggae.domain.entities.project import Project
 from raggae.domain.exceptions.document_exceptions import (
@@ -29,8 +40,15 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
+from raggae.domain.services.config_extractor import ConfigExtractor
+from raggae.domain.value_objects.agent_configuration_type import AgentConfigurationType
+from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.document_status import DocumentStatus
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
+from raggae.infrastructure.config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc", "pptx", "csv", "xlsx", "xls"}
 
@@ -80,6 +98,9 @@ class UploadDocument:
         project_embedding_service_resolver: ProjectEmbeddingServiceResolver | None = None,
         max_documents_per_project: int | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
+        agent_configuration_repository: AgentConfigurationRepository | None = None,
+        org_provider_credential_repository: OrgProviderCredentialRepository | None = None,
+        provider_credential_repository: ProviderCredentialRepository | None = None,
     ) -> None:
         self._document_repository = document_repository
         self._project_repository = project_repository
@@ -93,6 +114,9 @@ class UploadDocument:
         self._project_embedding_service_resolver = project_embedding_service_resolver
         self._max_documents_per_project = max_documents_per_project
         self._organization_member_repository = organization_member_repository
+        self._agent_configuration_repository = agent_configuration_repository
+        self._org_provider_credential_repository = org_provider_credential_repository
+        self._provider_credential_repository = provider_credential_repository
 
     async def execute(
         self,
@@ -107,6 +131,7 @@ class UploadDocument:
         return await self._execute_single(
             project_id=project_id,
             project=project,
+            user_id=user_id,
             file_name=file_name,
             file_content=file_content,
             content_type=content_type,
@@ -154,11 +179,13 @@ class UploadDocument:
                 document_dto = await self._execute_single(
                     project_id=project_id,
                     project=project,
+                    user_id=user_id,
                     file_name=stored_filename,
                     file_content=item.file_content,
                     content_type=item.content_type,
                 )
             except InvalidDocumentTypeError as exc:
+                logger.warning("Upload rejected [%s] %s: %s", "INVALID_FILE_TYPE", item.file_name, exc)
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -167,7 +194,8 @@ class UploadDocument:
                     )
                 )
                 continue
-            except DocumentTooLargeError:
+            except DocumentTooLargeError as exc:
+                logger.warning("Upload rejected [%s] %s: %s", "FILE_TOO_LARGE", item.file_name, exc)
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -177,6 +205,9 @@ class UploadDocument:
                 )
                 continue
             except (DocumentExtractionError, EmbeddingGenerationError) as exc:
+                logger.error(
+                    "Upload failed [%s] %s: %s", "PROCESSING_FAILED", item.file_name, exc, exc_info=True
+                )
                 errors.append(
                     UploadDocumentsErrorItem(
                         filename=item.file_name,
@@ -236,6 +267,7 @@ class UploadDocument:
         self,
         project_id: UUID,
         project: Project,
+        user_id: UUID,
         file_name: str,
         file_content: bytes,
         content_type: str,
@@ -267,16 +299,36 @@ class UploadDocument:
             if self._processing_mode == "sync" and self._document_indexing_service is not None:
                 document = document.transition_to(DocumentStatus.PROCESSING)
                 await self._document_repository.save(document)
+                encrypted_api_key = await self._resolve_embedding_api_key(project, user_id)
                 embedding_service = (
-                    self._project_embedding_service_resolver.resolve(project)
+                    self._project_embedding_service_resolver.resolve(
+                        backend=await self._resolve_embedding_backend(project, user_id),
+                        model=await self._resolve_embedding_model(project, user_id),
+                        encrypted_api_key=encrypted_api_key,
+                    )
                     if self._project_embedding_service_resolver is not None
                     else None
                 )
+                resolved = await self._resolve_config(project, user_id)
+                parent_child_chunking = (
+                    resolved.parent_child_chunking
+                    if resolved and resolved.parent_child_chunking is not None
+                    else settings.default_parent_child_chunking
+                )
+                chunking_strategy = None
+                if resolved and resolved.chunking_strategy:
+                    try:
+                        chunking_strategy = ChunkingStrategy(resolved.chunking_strategy)
+                    except ValueError:
+                        logger.warning(f"Invalid chunking strategy in config: {resolved.chunking_strategy}")
+
                 document = await self._document_indexing_service.run_pipeline(
                     document=document,
                     project=project,
                     file_content=file_content,
                     embedding_service=embedding_service,
+                    parent_child_chunking=parent_child_chunking,
+                    chunking_strategy=chunking_strategy,
                 )
                 document = document.transition_to(DocumentStatus.INDEXED)
                 await self._document_repository.save(document)
@@ -287,6 +339,60 @@ class UploadDocument:
             raise
 
         return DocumentDTO.from_entity(document)
+
+    async def _resolve_embedding_backend(self, project: Project, user_id: UUID) -> str | None:
+        resolved = await self._resolve_config(project, user_id)
+        return resolved.embedding_backend if resolved else None
+
+    async def _resolve_embedding_model(self, project: Project, user_id: UUID) -> str | None:
+        resolved = await self._resolve_config(project, user_id)
+        return resolved.embedding_model if resolved else None
+
+    async def _resolve_embedding_api_key(self, project: Project, user_id: UUID) -> str | None:
+        resolved = await self._resolve_config(project, user_id)
+        if resolved is None or resolved.embedding_api_key_credential_id is None:
+            return None
+        return await self._fetch_encrypted_key(
+            credential_id=resolved.embedding_api_key_credential_id,
+            project=project,
+            user_id=user_id,
+        )
+
+    async def _resolve_config(self, project: Project, user_id: UUID) -> ResolvedAgentConfiguration | None:
+        if self._agent_configuration_repository is None:
+            return None
+        project_config = await self._agent_configuration_repository.find_by_owner(
+            project.id, AgentConfigurationType.PROJECT
+        )
+
+        base_config = project_config or AgentConfiguration(
+            id=uuid4(), owner_id=project.id, owner_type=AgentConfigurationType.PROJECT
+        )
+
+        if project.organization_id is not None:
+            parent_config = await self._agent_configuration_repository.find_by_owner(
+                project.organization_id, AgentConfigurationType.ORGA
+            )
+        else:
+            parent_config = await self._agent_configuration_repository.find_by_owner(
+                user_id, AgentConfigurationType.USER
+            )
+
+        app_config = await self._agent_configuration_repository.find_app_defaults()
+        return ConfigExtractor.resolve(base_config, parent_config, app_config)
+
+    async def _fetch_encrypted_key(self, credential_id: UUID, project: Project, user_id: UUID) -> str | None:
+        if project.organization_id is not None and self._org_provider_credential_repository is not None:
+            org_creds = await self._org_provider_credential_repository.list_by_org_id(project.organization_id)
+            org_cred = next((c for c in org_creds if c.id == credential_id), None)
+            if org_cred is not None:
+                return org_cred.encrypted_api_key
+        if self._provider_credential_repository is not None:
+            user_creds = await self._provider_credential_repository.list_by_user_id(user_id)
+            user_cred = next((c for c in user_creds if c.id == credential_id), None)
+            if user_cred is not None:
+                return user_cred.encrypted_api_key
+        return None
 
     async def _cleanup_failed_document(self, document_id: UUID, storage_key: str) -> None:
         await self._file_storage_service.delete_file(storage_key)

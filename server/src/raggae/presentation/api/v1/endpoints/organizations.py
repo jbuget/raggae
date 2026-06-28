@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Literal, cast
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +12,9 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 )
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
+from raggae.application.use_cases.organization.get_org_agent_configuration import (
+    GetOrgAgentConfiguration,
+)
 from raggae.application.use_cases.organization.get_organization import GetOrganization
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
@@ -43,6 +46,9 @@ from raggae.application.use_cases.organization.update_organization import Update
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
 )
+from raggae.application.use_cases.organization.upsert_org_agent_configuration import (
+    UpsertOrgAgentConfiguration,
+)
 from raggae.domain.exceptions.organization_exceptions import (
     LastOrganizationOwnerError,
     OrganizationAccessDeniedError,
@@ -55,6 +61,7 @@ from raggae.presentation.api.dependencies import (
     get_create_organization_use_case,
     get_current_user_id,
     get_delete_organization_use_case,
+    get_get_org_agent_configuration_use_case,
     get_get_organization_use_case,
     get_invite_organization_member_use_case,
     get_leave_organization_use_case,
@@ -68,25 +75,25 @@ from raggae.presentation.api.dependencies import (
     get_revoke_organization_invitation_use_case,
     get_update_organization_member_role_use_case,
     get_update_organization_use_case,
+    get_upsert_org_agent_configuration_use_case,
 )
 from raggae.presentation.api.v1.schemas.organization_schemas import (
     AcceptOrganizationInvitationRequest,
     CreateOrganizationRequest,
     InviteOrganizationMemberRequest,
+    OrgAgentConfigurationResponse,
     OrganizationInvitationResponse,
     OrganizationMemberResponse,
     OrganizationResponse,
     UpdateOrganizationMemberRoleRequest,
     UpdateOrganizationRequest,
+    UpsertOrgAgentConfigurationRequest,
     UserPendingOrganizationInvitationResponse,
 )
 from raggae.presentation.api.v1.schemas.project_schemas import ProjectResponse
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 logger = logging.getLogger(__name__)
-
-ProjectRetrievalStrategy = Literal["vector", "fulltext", "hybrid"]
-ProjectRerankerBackend = Literal["none", "cross_encoder", "inmemory", "mmr"]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_user_id)])
@@ -209,43 +216,7 @@ async def list_organization_projects(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
     except OrganizationAccessDeniedError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
-    return [
-        ProjectResponse(
-            id=p.id,
-            user_id=p.user_id,
-            organization_id=p.organization_id,
-            name=p.name,
-            description=p.description,
-            system_prompt=p.system_prompt,
-            is_published=p.is_published,
-            created_at=p.created_at,
-            chunking_strategy=p.chunking_strategy,
-            parent_child_chunking=p.parent_child_chunking,
-            reindex_status=p.reindex_status,
-            reindex_progress=p.reindex_progress,
-            reindex_total=p.reindex_total,
-            embedding_backend=p.embedding_backend,
-            embedding_model=p.embedding_model,
-            embedding_api_key_masked=p.embedding_api_key_masked,
-            embedding_api_key_credential_id=p.embedding_api_key_credential_id,
-            org_embedding_api_key_credential_id=p.org_embedding_api_key_credential_id,
-            llm_backend=p.llm_backend,
-            llm_model=p.llm_model,
-            llm_api_key_masked=p.llm_api_key_masked,
-            llm_api_key_credential_id=p.llm_api_key_credential_id,
-            org_llm_api_key_credential_id=p.org_llm_api_key_credential_id,
-            retrieval_strategy=cast(ProjectRetrievalStrategy, p.retrieval_strategy),
-            retrieval_top_k=p.retrieval_top_k,
-            retrieval_min_score=p.retrieval_min_score,
-            chat_history_window_size=p.chat_history_window_size,
-            chat_history_max_chars=p.chat_history_max_chars,
-            reranking_enabled=p.reranking_enabled,
-            reranker_backend=cast(ProjectRerankerBackend | None, p.reranker_backend),
-            reranker_model=p.reranker_model,
-            reranker_candidate_multiplier=p.reranker_candidate_multiplier,
-        )
-        for p in projects
-    ]
+    return [ProjectResponse.from_dto(p) for p in projects]
 
 
 @router.patch("/{organization_id}/members/{member_id}", dependencies=[Depends(get_current_user_id)])
@@ -477,6 +448,47 @@ async def list_user_pending_organization_invitations(
 ) -> list[UserPendingOrganizationInvitationResponse]:
     invitations = await use_case.execute(user_id=user_id)
     return [UserPendingOrganizationInvitationResponse(**invitation.__dict__) for invitation in invitations]
+
+
+@router.get("/{organization_id}/project-defaults", dependencies=[Depends(get_current_user_id)])
+async def get_organization_project_defaults(
+    organization_id: UUID,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[GetOrgAgentConfiguration, Depends(get_get_org_agent_configuration_use_case)],
+) -> OrgAgentConfigurationResponse | None:
+    try:
+        result = await use_case.execute(organization_id=organization_id, user_id=user_id)
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    if result is None:
+        return None
+    return OrgAgentConfigurationResponse.from_dto(result)
+
+
+@router.put("/{organization_id}/project-defaults", dependencies=[Depends(get_current_user_id)])
+async def upsert_organization_project_defaults(
+    organization_id: UUID,
+    data: UpsertOrgAgentConfigurationRequest,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[UpsertOrgAgentConfiguration, Depends(get_upsert_org_agent_configuration_use_case)],
+) -> OrgAgentConfigurationResponse:
+    try:
+        result = await use_case.execute(
+            organization_id=organization_id,
+            user_id=user_id,
+            **data.model_dump(),
+        )
+    except OrganizationNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found") from None
+    except OrganizationAccessDeniedError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden") from None
+    logger.info(
+        "organization_project_defaults_upserted",
+        extra={"organization_id": str(organization_id), "user_id": str(user_id)},
+    )
+    return OrgAgentConfigurationResponse.from_dto(result)
 
 
 @router.post(

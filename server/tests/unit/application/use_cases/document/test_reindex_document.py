@@ -163,8 +163,8 @@ class TestReindexDocument:
             user_id=user_id,
         )
 
-        # Then
-        resolver.resolve.assert_called_once_with(project)
+        # Then — resolver called with null config (config lives in AgentConfiguration now)
+        resolver.resolve.assert_called_once_with(backend=None, model=None, encrypted_api_key=None)
         kwargs = mock_document_indexing_service.run_pipeline.await_args.kwargs
         assert kwargs["embedding_service"] is embedding_service
 

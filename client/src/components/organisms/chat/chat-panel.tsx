@@ -38,7 +38,8 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
       })
     : undefined;
 
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId);
+  const [creationOverride, setCreationOverride] = useState<{ id: string; basedOn: string | null } | null>(null);
+  const currentConversationId = creationOverride?.basedOn === conversationId ? creationOverride.id : conversationId;
   const { data: existingMessages } = useMessages(projectId, currentConversationId);
   const { send, cancel, state, streamedContent, chunks, error: streamError } = useSendMessage(projectId);
   const [optimisticMessages, setOptimisticMessages] = useState<MessageResponse[]>([]);
@@ -48,10 +49,6 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string | null>(null);
   const [isDocumentLoading, setIsDocumentLoading] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCurrentConversationId(conversationId);
-  }, [conversationId]);
 
   useEffect(() => {
     return () => {
@@ -100,7 +97,7 @@ export function ChatPanel({ projectId, conversationId }: ChatPanelProps) {
       },
       (newConversationId) => {
         setOptimisticMessages([]);
-        setCurrentConversationId(newConversationId);
+        setCreationOverride({ id: newConversationId, basedOn: conversationId });
         if (!effectiveConversationId) {
           router.push(`/projects/${projectId}/chat/${newConversationId}`);
         }

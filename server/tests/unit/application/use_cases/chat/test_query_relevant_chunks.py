@@ -147,8 +147,8 @@ class TestQueryRelevantChunks:
             limit=2,
         )
 
-        # Then
-        resolver.resolve.assert_called_once_with(project)
+        # Then — resolver called with null config (config lives in AgentConfiguration now)
+        resolver.resolve.assert_called_once_with(backend=None, model=None, encrypted_api_key=None)
         resolver_embedding_service.embed_texts.assert_awaited_once_with(["resolved embedding"])
         mock_embedding_service.embed_texts.assert_not_called()
 

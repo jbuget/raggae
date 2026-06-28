@@ -4,10 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
+from raggae.application.use_cases.user.get_user_agent_configuration import GetUserAgentConfiguration
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.application.use_cases.user.update_user_locale import UpdateUserLocale
+from raggae.application.use_cases.user.upsert_user_agent_configuration import UpsertUserAgentConfiguration
 from raggae.domain.exceptions.user_exceptions import (
     InvalidCredentialsError,
     UserAlreadyExistsError,
@@ -17,10 +19,12 @@ from raggae.domain.value_objects.locale import Locale
 from raggae.presentation.api.dependencies import (
     get_current_user_id,
     get_current_user_use_case,
+    get_get_user_agent_configuration_use_case,
     get_login_user_use_case,
     get_register_user_use_case,
     get_update_user_full_name_use_case,
     get_update_user_locale_use_case,
+    get_upsert_user_agent_configuration_use_case,
 )
 from raggae.presentation.api.v1.schemas.auth_schemas import (
     LoginUserRequest,
@@ -28,6 +32,8 @@ from raggae.presentation.api.v1.schemas.auth_schemas import (
     TokenResponse,
     UpdateUserFullNameRequest,
     UpdateUserLocaleRequest,
+    UpsertUserAgentConfigurationRequest,
+    UserAgentConfigurationResponse,
     UserResponse,
 )
 
@@ -130,3 +136,39 @@ async def update_user_locale(
             detail="User not found",
         ) from None
     return _user_response(user_dto)
+
+
+@router.get("/me/project-defaults", dependencies=[Depends(get_current_user_id)])
+async def get_user_project_defaults(
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[GetUserAgentConfiguration, Depends(get_get_user_agent_configuration_use_case)],
+) -> UserAgentConfigurationResponse | None:
+    try:
+        result = await use_case.execute(user_id=user_id)
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    if result is None:
+        return None
+    return UserAgentConfigurationResponse.from_dto(result)
+
+
+@router.put("/me/project-defaults", dependencies=[Depends(get_current_user_id)])
+async def upsert_user_project_defaults(
+    data: UpsertUserAgentConfigurationRequest,
+    user_id: Annotated[UUID, Depends(get_current_user_id)],
+    use_case: Annotated[UpsertUserAgentConfiguration, Depends(get_upsert_user_agent_configuration_use_case)],
+) -> UserAgentConfigurationResponse:
+    try:
+        result = await use_case.execute(
+            user_id=user_id,
+            **data.model_dump(),
+        )
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    return UserAgentConfigurationResponse.from_dto(result)

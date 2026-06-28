@@ -93,8 +93,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.87 0 0);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -123,6 +123,25 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: #525252 transparent;
+  }
+
+  button, [role="button"], select {
+    cursor: pointer;
+  }
+
+  button *, [role="button"] * {
+    cursor: inherit;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 2px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
   }
   html {
     font-size: 112.5%;

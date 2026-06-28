@@ -33,7 +33,7 @@ export function OrganizationProfileForm({
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? "");
 
   return (
-    <div className="rounded-lg border p-5 space-y-4">
+    <div className="rounded-lg border bg-card p-5 space-y-4">
       <div className="space-y-2">
         <Label htmlFor="org-name">{t("nameLabel")}</Label>
         <Input id="org-name" value={name} onChange={(e) => setName(e.target.value)} />

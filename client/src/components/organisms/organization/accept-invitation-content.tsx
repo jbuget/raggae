@@ -37,7 +37,7 @@ export function AcceptInvitationContent() {
           setStatus("error");
         }
       });
-  }, [authLoading, token, searchParams]);
+  }, [authLoading, token, searchParams, invitationToken, queryClient]);
 
   if (status === "loading") {
     return <p className="text-sm text-muted-foreground">{t("loading")}</p>;

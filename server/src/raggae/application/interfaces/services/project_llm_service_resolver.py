@@ -1,10 +1,14 @@
 from typing import Protocol
 
 from raggae.application.interfaces.services.llm_service import LLMService
-from raggae.domain.entities.project import Project
 
 
 class ProjectLLMServiceResolver(Protocol):
-    """Resolve the effective llm service for a project."""
+    """Resolve the effective LLM service from resolved config."""
 
-    def resolve(self, project: Project) -> LLMService: ...
+    def resolve(
+        self,
+        backend: str | None,
+        model: str | None,
+        encrypted_api_key: str | None,
+    ) -> LLMService: ...

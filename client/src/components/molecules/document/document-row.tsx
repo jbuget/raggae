@@ -22,7 +22,7 @@ import type {
   DocumentResponse,
   ProjectEmbeddingBackend,
 } from "@/lib/types/api";
-import { formatDate, formatDateTime, formatFileSize } from "@/lib/utils/format";
+import { formatDateTime, formatFileSize } from "@/lib/utils/format";
 
 interface DocumentRowProps {
   document: DocumentResponse;
@@ -112,11 +112,6 @@ export function DocumentRow({
           >
             {statusLabel}
           </Badge>
-          {document.status === "indexed" && document.last_indexed_at ? (
-            <Badge variant="outline" className="px-1.5 py-0 text-[10px] leading-4">
-              {t("indexedAt", { date: formatDateTime(document.last_indexed_at) })}
-            </Badge>
-          ) : null}
         </div>
         <div className="flex gap-3 text-xs text-muted-foreground">
           <span
@@ -127,11 +122,10 @@ export function DocumentRow({
             {document.id}
           </span>
           <span>{formatFileSize(document.file_size)}</span>
-          <span>{formatDate(document.created_at)}</span>
-          {document.status === "error" && document.error_message && (
-            <span className="text-destructive">{document.error_message}</span>
-          )}
         </div>
+        {document.status === "error" && document.error_message && (
+          <p className="text-xs text-destructive">{document.error_message}</p>
+        )}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>{t("indexDate")} {document.last_indexed_at ? formatDateTime(document.last_indexed_at) : "-"}</span>
           <span>{t("embedding")} {embeddingBackendLabel} / {embeddingModelLabel}</span>
@@ -237,6 +231,7 @@ export function DocumentRow({
               <iframe src={previewUrl} title={document.file_name} className="h-[84vh] w-full rounded-md border" />
             )}
             {!previewLoading && !previewError && previewUrl && previewType?.startsWith("image/") && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl} alt={document.file_name} className="mx-auto max-h-[84vh] object-contain" />
             )}
             {!previewLoading && !previewError && previewUrl && previewType?.startsWith("text/") && (

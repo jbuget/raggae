@@ -18,6 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   useActivateOrgModelCredential,
   useCreateOrgModelCredential,
   useDeactivateOrgModelCredential,
@@ -25,11 +32,12 @@ import {
   useOrgModelCredentials,
 } from "@/lib/hooks/use-org-model-credentials";
 import type { ModelProvider } from "@/lib/types/api";
+import { BACKEND_LABELS } from "@/lib/constants/backends";
 
 const PROVIDERS: Array<{ value: ModelProvider; label: string; placeholder: string }> = [
-  { value: "openai", label: "OpenAI", placeholder: "sk-..." },
-  { value: "gemini", label: "Gemini", placeholder: "AIza..." },
-  { value: "anthropic", label: "Anthropic", placeholder: "sk-ant-..." },
+  { value: "openai", label: BACKEND_LABELS.openai, placeholder: "sk-..." },
+  { value: "gemini", label: BACKEND_LABELS.gemini, placeholder: "AIza..." },
+  { value: "anthropic", label: BACKEND_LABELS.anthropic, placeholder: "sk-ant-..." },
 ];
 
 type OrgCredentialsPanelProps = {
@@ -124,7 +132,7 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
             return (
               <div
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-card p-3"
               >
                 <div className="flex items-center gap-2">
                   <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
@@ -181,18 +189,21 @@ export function OrgCredentialsPanel({ organizationId }: OrgCredentialsPanelProps
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="org-modal-provider">{t("providerLabel")}</Label>
-              <select
-                id="org-modal-provider"
+              <Select
                 value={modalProvider}
-                onChange={(e) => setModalProvider(e.target.value as ModelProvider)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                onValueChange={(val) => setModalProvider(val as ModelProvider)}
               >
-                {PROVIDERS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="org-modal-provider">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

@@ -25,30 +25,73 @@ export function useUploadDocument(projectId: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const processingProgressRef = useRef(0);
+
+  function stopAnimation() {
+    if (animationRef.current) {
+      clearInterval(animationRef.current);
+      animationRef.current = null;
+    }
+  }
+
+  function startProcessingAnimation(from: number) {
+    stopAnimation();
+    processingProgressRef.current = from;
+    animationRef.current = setInterval(() => {
+      // Asymptotic easing toward 95%: slows down as it approaches the cap
+      processingProgressRef.current += (95 - processingProgressRef.current) * 0.04;
+      setProgress(Math.min(94, Math.round(processingProgressRef.current)));
+    }, 250);
+  }
 
   const mutation = useMutation({
     onMutate: () => {
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      stopAnimation();
       setProgress(0);
+      setIsFinishing(false);
     },
     mutationFn: (files: File[]) =>
-      uploadDocuments(token!, projectId, files, setProgress),
+      uploadDocuments(token!, projectId, files, (xhrProgress) => {
+        if (xhrProgress >= 100) {
+          startProcessingAnimation(50);
+        } else {
+          setProgress(Math.round(xhrProgress / 2));
+        }
+      }),
     onSuccess: () => {
+      stopAnimation();
       setProgress(100);
+      setIsFinishing(true);
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
-      resetTimerRef.current = setTimeout(() => setProgress(0), 600);
+      
+      resetTimerRef.current = setTimeout(() => {
+        setProgress(0);
+        setIsFinishing(false);
+      }, 500);
     },
-    onError: () => setProgress(0),
+    onError: () => {
+      stopAnimation();
+      setProgress(0);
+      setIsFinishing(false);
+    },
   });
 
   useEffect(() => {
     return () => {
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      stopAnimation();
     };
   }, []);
 
-  return { ...mutation, progress };
+  return { 
+    ...mutation, 
+    progress, 
+    isPending: mutation.isPending || isFinishing 
+  };
 }
 
 export function useReindexDocument(projectId: string) {

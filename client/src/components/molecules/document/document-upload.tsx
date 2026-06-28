@@ -121,7 +121,10 @@ export function DocumentUpload({ onUpload, isUploading, uploadProgress = 0, disa
         {isUploading && (
           <div className="mt-4 space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{uploadProgress >= 95 ? t("processing") : t("uploading")}</span>
+              <span className="flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {uploadProgress >= 50 ? t("processing") : t("uploading")}
+              </span>
               <span>{uploadProgress}%</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">

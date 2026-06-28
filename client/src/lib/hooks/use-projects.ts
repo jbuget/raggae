@@ -5,13 +5,15 @@ import {
   createProject,
   deleteProject,
   getProject,
+  getProjectConfiguration,
   listProjects,
   publishProject,
   reindexProject,
   unpublishProject,
   updateProject,
+  updateProjectConfiguration,
 } from "@/lib/api/projects";
-import type { CreateProjectRequest, UpdateProjectRequest } from "@/lib/types/api";
+import type { CreateProjectRequest, ProjectResponse, UpdateAgentConfigurationRequest, UpdateProjectRequest } from "@/lib/types/api";
 import { useAuth } from "./use-auth";
 
 export function useProjects() {
@@ -31,6 +33,8 @@ export function useProject(projectId: string) {
     queryKey: ["projects", projectId],
     queryFn: () => getProject(token!, projectId),
     enabled: !!token && !!projectId,
+    refetchInterval: (query) =>
+      query.state.data?.reindex_status === "in_progress" ? 2000 : false,
   });
 }
 
@@ -43,6 +47,7 @@ export function useCreateProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["organization-projects"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }
@@ -69,6 +74,7 @@ export function useDeleteProject() {
     mutationFn: (projectId: string) => deleteProject(token!, projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }
@@ -79,10 +85,19 @@ export function useReindexProject(projectId: string) {
 
   return useMutation({
     mutationFn: () => reindexProject(token!, projectId),
+    onMutate: () => {
+      // Optimistically set status to in_progress so refetchInterval starts polling immediately
+      queryClient.setQueryData<ProjectResponse>(["projects", projectId], (old) =>
+        old ? { ...old, reindex_status: "in_progress", reindex_progress: 0 } : old,
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       queryClient.invalidateQueries({ queryKey: ["documents", projectId] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
     },
   });
 }
@@ -109,6 +124,29 @@ export function useUnpublishProject(projectId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+    },
+  });
+}
+
+export function useProjectConfiguration(projectId: string) {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: ["project-configuration", projectId],
+    queryFn: () => getProjectConfiguration(token!, projectId),
+    enabled: !!token && !!projectId,
+  });
+}
+
+export function useUpdateProjectConfiguration(projectId: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateAgentConfigurationRequest) =>
+      updateProjectConfiguration(token!, projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-configuration", projectId] });
     },
   });
 }

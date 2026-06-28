@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { useProject, useUpdateProject } from "@/lib/hooks/use-projects";
 
 const MAX_SYSTEM_PROMPT_LENGTH = 8000;
@@ -37,31 +38,33 @@ export function ProjectInstructionsPanel({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="max-w-3xl space-y-4">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="systemPrompt">{t("answerGeneration.promptLabel")}</Label>
-          <span className={`text-xs ${nearLimit ? "text-amber-700" : "text-muted-foreground"}`}>
-            {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
-          </span>
+    <Card className="max-w-3xl">
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="systemPrompt">{t("answerGeneration.promptLabel")}</Label>
+            <span className={`text-xs ${nearLimit ? "text-amber-700" : "text-muted-foreground"}`}>
+              {systemPromptLength}/{MAX_SYSTEM_PROMPT_LENGTH}
+            </span>
+          </div>
+          <Textarea
+            id="systemPrompt"
+            value={effectiveSystemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            placeholder={t("answerGeneration.promptPlaceholder")}
+            rows={16}
+            maxLength={MAX_SYSTEM_PROMPT_LENGTH}
+          />
+          <p className="text-xs text-muted-foreground">{t("answerGeneration.promptLimit")}</p>
         </div>
-        <Textarea
-          id="systemPrompt"
-          value={effectiveSystemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder={t("answerGeneration.promptPlaceholder")}
-          rows={16}
-          maxLength={MAX_SYSTEM_PROMPT_LENGTH}
-        />
-        <p className="text-xs text-muted-foreground">{t("answerGeneration.promptLimit")}</p>
-      </div>
-      <Button
-        className="cursor-pointer"
-        disabled={!hasChanges || updateProject.isPending}
-        onClick={handleSave}
-      >
-        {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
-      </Button>
-    </div>
+        <Button
+          className="cursor-pointer"
+          disabled={!hasChanges || updateProject.isPending}
+          onClick={handleSave}
+        >
+          {updateProject.isPending ? tCommon("saving") : t("saveChanges")}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

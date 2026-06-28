@@ -5,6 +5,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from raggae.application.config.entra_config import EntraConfig
+from raggae.application.interfaces.repositories.agent_configuration_repository import (
+    AgentConfigurationRepository,
+)
 from raggae.application.interfaces.repositories.conversation_repository import (
     ConversationRepository,
 )
@@ -125,6 +128,9 @@ from raggae.application.use_cases.organization.accept_user_organization_invitati
 )
 from raggae.application.use_cases.organization.create_organization import CreateOrganization
 from raggae.application.use_cases.organization.delete_organization import DeleteOrganization
+from raggae.application.use_cases.organization.get_org_agent_configuration import (
+    GetOrgAgentConfiguration,
+)
 from raggae.application.use_cases.organization.get_organization import GetOrganization
 from raggae.application.use_cases.organization.invite_organization_member import (
     InviteOrganizationMember,
@@ -156,15 +162,20 @@ from raggae.application.use_cases.organization.update_organization import Update
 from raggae.application.use_cases.organization.update_organization_member_role import (
     UpdateOrganizationMemberRole,
 )
+from raggae.application.use_cases.organization.upsert_org_agent_configuration import (
+    UpsertOrgAgentConfiguration,
+)
 from raggae.application.use_cases.project.create_project import CreateProject
 from raggae.application.use_cases.project.delete_project import DeleteProject
 from raggae.application.use_cases.project.get_project import GetProject
+from raggae.application.use_cases.project.get_project_configuration import GetProjectConfiguration
 from raggae.application.use_cases.project.list_accessible_projects import ListAccessibleProjects
 from raggae.application.use_cases.project.list_projects import ListProjects
 from raggae.application.use_cases.project.publish_project import PublishProject
 from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.unpublish_project import UnpublishProject
 from raggae.application.use_cases.project.update_project import UpdateProject
+from raggae.application.use_cases.project.update_project_configuration import UpdateProjectConfiguration
 from raggae.application.use_cases.project_snapshot.get_project_snapshot import GetProjectSnapshot
 from raggae.application.use_cases.project_snapshot.list_project_snapshots import ListProjectSnapshots
 from raggae.application.use_cases.project_snapshot.restore_project_snapshot import (
@@ -190,14 +201,19 @@ from raggae.application.use_cases.provider_credentials.save_provider_api_key imp
 )
 from raggae.application.use_cases.stats.get_public_stats import GetPublicStats
 from raggae.application.use_cases.user.get_current_user import GetCurrentUser
+from raggae.application.use_cases.user.get_user_agent_configuration import GetUserAgentConfiguration
 from raggae.application.use_cases.user.handle_oauth_callback import HandleOAuthCallback
 from raggae.application.use_cases.user.initiate_oauth_login import InitiateOAuthLogin
 from raggae.application.use_cases.user.login_user import LoginUser
 from raggae.application.use_cases.user.register_user import RegisterUser
 from raggae.application.use_cases.user.update_user_full_name import UpdateUserFullName
 from raggae.application.use_cases.user.update_user_locale import UpdateUserLocale
+from raggae.application.use_cases.user.upsert_user_agent_configuration import UpsertUserAgentConfiguration
 from raggae.infrastructure.cache.oauth_code_store import InMemoryOAuthCodeStore
 from raggae.infrastructure.config.settings import settings
+from raggae.infrastructure.database.repositories.in_memory_agent_configuration_repository import (
+    InMemoryAgentConfigurationRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_conversation_repository import (
     InMemoryConversationRepository,
 )
@@ -236,6 +252,9 @@ from raggae.infrastructure.database.repositories.in_memory_stats_repository impo
 )
 from raggae.infrastructure.database.repositories.in_memory_user_repository import (
     InMemoryUserRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_agent_configuration_repository import (
+    SQLAlchemyAgentConfigurationRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_conversation_repository import (
     SQLAlchemyConversationRepository,
@@ -422,6 +441,9 @@ if settings.persistence_backend == "postgres":
     _org_credential_repository: OrgProviderCredentialRepository = SQLAlchemyOrgProviderCredentialRepository(
         session_factory=SessionFactory
     )
+    _agent_configuration_repository: AgentConfigurationRepository = SQLAlchemyAgentConfigurationRepository(
+        session_factory=SessionFactory
+    )
     _organization_repository: OrganizationRepository = SQLAlchemyOrganizationRepository(
         session_factory=SessionFactory
     )
@@ -449,6 +471,7 @@ else:
     _message_repository = InMemoryMessageRepository()
     _provider_credential_repository = InMemoryProviderCredentialRepository()
     _org_credential_repository = InMemoryOrgProviderCredentialRepository()
+    _agent_configuration_repository = InMemoryAgentConfigurationRepository()
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
     _organization_invitation_repository = InMemoryOrganizationInvitationRepository()
@@ -674,9 +697,9 @@ def get_update_user_locale_use_case() -> UpdateUserLocale:
 def get_create_project_use_case() -> CreateProject:
     return CreateProject(
         project_repository=_project_repository,
+        agent_configuration_repository=_agent_configuration_repository,
         organization_member_repository=_organization_member_repository,
-        provider_credential_repository=_provider_credential_repository,
-    ).with_crypto_service(_provider_api_key_crypto_service)
+    )
 
 
 def get_get_project_use_case() -> GetProject:
@@ -699,17 +722,19 @@ def get_list_accessible_projects_use_case() -> ListAccessibleProjects:
 
 
 def get_delete_project_use_case() -> DeleteProject:
-    return DeleteProject(project_repository=_project_repository)
+    return DeleteProject(
+        project_repository=_project_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+    )
 
 
 def get_update_project_use_case() -> UpdateProject:
     return UpdateProject(
         project_repository=_project_repository,
         organization_member_repository=_organization_member_repository,
-        provider_credential_repository=_provider_credential_repository,
-        org_provider_credential_repository=_org_credential_repository,
         snapshot_repository=_project_snapshot_repository,
-    ).with_crypto_service(_provider_api_key_crypto_service)
+        agent_configuration_repository=_agent_configuration_repository,
+    )
 
 
 def get_publish_project_use_case() -> PublishProject:
@@ -733,6 +758,9 @@ def get_reindex_project_use_case() -> ReindexProject:
         file_storage_service=_file_storage_service,
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
+        agent_configuration_repository=_agent_configuration_repository,
+        org_provider_credential_repository=_org_credential_repository,
+        provider_credential_repository=_provider_credential_repository,
     )
 
 
@@ -748,6 +776,9 @@ def get_upload_document_use_case() -> UploadDocument:
         project_embedding_service_resolver=_project_embedding_service_resolver,
         max_documents_per_project=settings.max_documents_per_project,
         organization_member_repository=_organization_member_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+        org_provider_credential_repository=_org_credential_repository,
+        provider_credential_repository=_provider_credential_repository,
     )
 
 
@@ -759,6 +790,9 @@ def get_reindex_document_use_case() -> ReindexDocument:
         document_indexing_service=_document_indexing_service,
         project_embedding_service_resolver=_project_embedding_service_resolver,
         organization_member_repository=_organization_member_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+        org_provider_credential_repository=_org_credential_repository,
+        provider_credential_repository=_provider_credential_repository,
     )
 
 
@@ -855,7 +889,6 @@ def get_activate_provider_api_key_use_case() -> ActivateProviderApiKey:
 def get_deactivate_provider_api_key_use_case() -> DeactivateProviderApiKey:
     return DeactivateProviderApiKey(
         provider_credential_repository=_provider_credential_repository,
-        project_repository=_project_repository,
     )
 
 
@@ -1070,7 +1103,6 @@ def get_deactivate_org_provider_api_key_use_case() -> DeactivateOrgProviderApiKe
     return DeactivateOrgProviderApiKey(
         org_credential_repository=_org_credential_repository,
         organization_member_repository=_organization_member_repository,
-        project_repository=_project_repository,
     )
 
 
@@ -1078,7 +1110,6 @@ def get_delete_org_provider_api_key_use_case() -> DeleteOrgProviderApiKey:
     return DeleteOrgProviderApiKey(
         org_credential_repository=_org_credential_repository,
         organization_member_repository=_organization_member_repository,
-        project_repository=_project_repository,
     )
 
 
@@ -1104,6 +1135,55 @@ def get_restore_project_snapshot_use_case() -> RestoreProjectSnapshot:
         snapshot_repository=_project_snapshot_repository,
         organization_member_repository=_organization_member_repository,
     )
+
+
+def get_get_org_agent_configuration_use_case() -> GetOrgAgentConfiguration:
+    return GetOrgAgentConfiguration(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+    )
+
+
+def get_upsert_org_agent_configuration_use_case() -> UpsertOrgAgentConfiguration:
+    return UpsertOrgAgentConfiguration(
+        organization_repository=_organization_repository,
+        organization_member_repository=_organization_member_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+    )
+
+
+def get_get_user_agent_configuration_use_case() -> GetUserAgentConfiguration:
+    return GetUserAgentConfiguration(
+        user_repository=_user_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+    )
+
+
+def get_upsert_user_agent_configuration_use_case() -> UpsertUserAgentConfiguration:
+    return UpsertUserAgentConfiguration(
+        user_repository=_user_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+    )
+
+
+def get_get_project_configuration_use_case() -> GetProjectConfiguration:
+    return GetProjectConfiguration(
+        project_repository=_project_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+    )
+
+
+def get_update_project_configuration_use_case() -> UpdateProjectConfiguration:
+    return UpdateProjectConfiguration(
+        project_repository=_project_repository,
+        agent_configuration_repository=_agent_configuration_repository,
+        snapshot_repository=_project_snapshot_repository,
+    )
+
+
+def get_agent_configuration_repository() -> AgentConfigurationRepository:
+    return _agent_configuration_repository
 
 
 def get_get_public_stats_use_case() -> GetPublicStats:

@@ -32,10 +32,10 @@ export function uploadDocuments(
     if (onProgress) {
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) {
-          // Cap at 95 — the remaining 5% represents server-side processing
-          onProgress(Math.min(95, Math.round((e.loaded / e.total) * 100)));
+          onProgress(Math.round((e.loaded / e.total) * 100));
         }
       });
+      xhr.upload.addEventListener("load", () => onProgress(100));
     }
 
     xhr.addEventListener("load", () => {

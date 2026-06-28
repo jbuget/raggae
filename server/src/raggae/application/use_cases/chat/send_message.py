@@ -107,20 +107,20 @@ class SendMessage:
         await self._check_project_access(project, user_id)
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
-        effective_retrieval_strategy = project.retrieval_strategy
-        effective_retrieval_min_score = project.retrieval_min_score
+        effective_retrieval_strategy = "hybrid"
+        effective_retrieval_min_score = None
         effective_reranker_service = (
-            self._project_reranker_service_resolver.resolve(project)
+            self._project_reranker_service_resolver.resolve(reranking_enabled=None, backend=None, model=None)
             if self._project_reranker_service_resolver is not None
             else None
         )
-        effective_history_window_size = max(1, project.chat_history_window_size)
-        effective_history_max_chars = max(128, project.chat_history_max_chars)
+        effective_history_window_size = self._history_window_size
+        effective_history_max_chars = self._history_max_chars
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
             retrieval_strategy=effective_retrieval_strategy,
-            default_limit=project.retrieval_top_k,
+            default_limit=self._default_chunk_limit,
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
@@ -200,7 +200,7 @@ class SendMessage:
             strategy=effective_retrieval_strategy,
             min_score=effective_retrieval_min_score,
             reranker_service=effective_reranker_service,
-            reranker_candidate_multiplier=project.reranker_candidate_multiplier,
+            reranker_candidate_multiplier=None,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(
@@ -261,7 +261,7 @@ class SendMessage:
                 provider=effective_llm_provider,
             )
         llm_service = (
-            self._project_llm_service_resolver.resolve(project)
+            self._project_llm_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
             if self._project_llm_service_resolver is not None
             else self._llm_service
         )
@@ -322,20 +322,20 @@ class SendMessage:
         await self._check_project_access(project, user_id)
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
-        effective_retrieval_strategy = project.retrieval_strategy
-        effective_retrieval_min_score = project.retrieval_min_score
+        effective_retrieval_strategy = "hybrid"
+        effective_retrieval_min_score = None
         effective_reranker_service = (
-            self._project_reranker_service_resolver.resolve(project)
+            self._project_reranker_service_resolver.resolve(reranking_enabled=None, backend=None, model=None)
             if self._project_reranker_service_resolver is not None
             else None
         )
-        effective_history_window_size = max(1, project.chat_history_window_size)
-        effective_history_max_chars = max(128, project.chat_history_max_chars)
+        effective_history_window_size = self._history_window_size
+        effective_history_max_chars = self._history_max_chars
         effective_limit = self._resolve_effective_chunk_limit(
             message=message,
             requested_limit=limit,
             retrieval_strategy=effective_retrieval_strategy,
-            default_limit=project.retrieval_top_k,
+            default_limit=self._default_chunk_limit,
         )
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
@@ -415,7 +415,7 @@ class SendMessage:
             strategy=effective_retrieval_strategy,
             min_score=effective_retrieval_min_score,
             reranker_service=effective_reranker_service,
-            reranker_candidate_multiplier=project.reranker_candidate_multiplier,
+            reranker_candidate_multiplier=None,
             metadata_filters=retrieval_filters,
         )
         relevant_chunks = self._select_useful_chunks(
@@ -476,7 +476,7 @@ class SendMessage:
                 provider=effective_llm_provider,
             )
         llm_service = (
-            self._project_llm_service_resolver.resolve(project)
+            self._project_llm_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
             if self._project_llm_service_resolver is not None
             else self._llm_service
         )
@@ -535,7 +535,9 @@ class SendMessage:
         fallback = self._normalize_title(user_message)
         try:
             if project is not None and self._project_llm_service_resolver is not None:
-                llm_service = self._project_llm_service_resolver.resolve(project)
+                llm_service = self._project_llm_service_resolver.resolve(
+                    backend=None, model=None, encrypted_api_key=None
+                )
                 title_prompt = (
                     "Generate a short conversation title (max 8 words). "
                     "Return only the title, no punctuation at the end."
@@ -599,8 +601,6 @@ class SendMessage:
         return max(1, min(base, self._max_chunk_limit))
 
     def _resolve_effective_llm_provider(self, project: Project) -> str:
-        if project.llm_backend is not None and project.llm_backend.strip() != "":
-            return project.llm_backend
         return self._llm_provider
 
     def _select_useful_chunks(

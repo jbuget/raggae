@@ -11,7 +11,6 @@ from raggae.domain.entities.project import Project
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.domain.exceptions.project_snapshot_exceptions import ProjectSnapshotNotFoundError
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.infrastructure.database.repositories.in_memory_organization_member_repository import (
     InMemoryOrganizationMemberRepository,
@@ -60,14 +59,6 @@ class TestRestoreProjectSnapshot:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
-            retrieval_strategy="hybrid",
-            retrieval_top_k=8,
-            retrieval_min_score=0.3,
-            chat_history_window_size=8,
-            chat_history_max_chars=4000,
-            reranking_enabled=False,
-            reranker_candidate_multiplier=3,
         )
 
     async def test_restore_project_snapshot_applies_snapshot_fields_to_project(
@@ -89,14 +80,6 @@ class TestRestoreProjectSnapshot:
                 system_prompt=original_system_prompt,
                 is_published=False,
                 created_at=datetime.now(UTC),
-                chunking_strategy=ChunkingStrategy.AUTO,
-                retrieval_strategy="hybrid",
-                retrieval_top_k=8,
-                retrieval_min_score=0.3,
-                chat_history_window_size=8,
-                chat_history_max_chars=4000,
-                reranking_enabled=False,
-                reranker_candidate_multiplier=3,
             ),
             version_number=1,
             created_by_user_id=sample_project.user_id,
@@ -112,14 +95,6 @@ class TestRestoreProjectSnapshot:
             system_prompt="Updated prompt",
             is_published=False,
             created_at=sample_project.created_at,
-            chunking_strategy=ChunkingStrategy.AUTO,
-            retrieval_strategy="hybrid",
-            retrieval_top_k=8,
-            retrieval_min_score=0.3,
-            chat_history_window_size=8,
-            chat_history_max_chars=4000,
-            reranking_enabled=False,
-            reranker_candidate_multiplier=3,
         )
         await project_repository.save(updated_project)
 
@@ -274,14 +249,6 @@ class TestRestoreProjectSnapshot:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
-            retrieval_strategy="hybrid",
-            retrieval_top_k=8,
-            retrieval_min_score=0.3,
-            chat_history_window_size=8,
-            chat_history_max_chars=4000,
-            reranking_enabled=False,
-            reranker_candidate_multiplier=3,
         )
         await project_repository.save(org_project)
 
@@ -332,14 +299,6 @@ class TestRestoreProjectSnapshot:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
-            retrieval_strategy="hybrid",
-            retrieval_top_k=8,
-            retrieval_min_score=0.3,
-            chat_history_window_size=8,
-            chat_history_max_chars=4000,
-            reranking_enabled=False,
-            reranker_candidate_multiplier=3,
         )
         await project_repository.save(org_project)
 
@@ -390,14 +349,6 @@ class TestRestoreProjectSnapshot:
             system_prompt="You are helpful.",
             is_published=True,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
-            retrieval_strategy="hybrid",
-            retrieval_top_k=8,
-            retrieval_min_score=0.3,
-            chat_history_window_size=8,
-            chat_history_max_chars=4000,
-            reranking_enabled=False,
-            reranker_candidate_multiplier=3,
         )
         await project_repository.save(org_project)
 

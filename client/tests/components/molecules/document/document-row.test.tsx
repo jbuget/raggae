@@ -49,9 +49,9 @@ describe("DocumentRow", () => {
     expect(screen.getByText("2.0 KB")).toBeInTheDocument();
   });
 
-  it("should display created date", () => {
+  it("should display the document id", () => {
     renderWithProviders(<DocumentRow document={mockDoc} {...defaultProps} />);
-    expect(screen.getByText(/Jan 15, 2026/)).toBeInTheDocument();
+    expect(screen.getByText(mockDoc.id)).toBeInTheDocument();
   });
 
   it("should call onDelete after confirmation", async () => {

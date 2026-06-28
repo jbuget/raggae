@@ -10,7 +10,6 @@ from raggae.domain.entities.organization_member import OrganizationMember
 from raggae.domain.entities.project import Project
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.infrastructure.database.repositories.in_memory_organization_member_repository import (
     InMemoryOrganizationMemberRepository,
@@ -59,7 +58,6 @@ class TestListProjectSnapshots:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
         )
 
     async def test_list_project_snapshots_returns_empty_when_no_snapshots(
@@ -220,7 +218,6 @@ class TestListProjectSnapshots:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
         )
         await project_repository.save(org_project)
 
@@ -270,7 +267,6 @@ class TestListProjectSnapshots:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
         )
         await project_repository.save(org_project)
 
@@ -313,7 +309,6 @@ class TestListProjectSnapshots:
             system_prompt="You are helpful.",
             is_published=True,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
         )
         await project_repository.save(published_project)
 
@@ -356,7 +351,6 @@ class TestListProjectSnapshots:
             system_prompt="You are helpful.",
             is_published=False,
             created_at=datetime.now(UTC),
-            chunking_strategy=ChunkingStrategy.AUTO,
         )
         await project_repository.save(unpublished_project)
 

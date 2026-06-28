@@ -89,12 +89,15 @@ class DocumentIndexingService:
         project: Project,
         file_content: bytes,
         embedding_service: EmbeddingService | None = None,
+        parent_child_chunking: bool = False,
+        chunking_strategy: ChunkingStrategy | None = None,
     ) -> Document:
         effective_embedding_service = embedding_service or self._embedding_service
         document, sanitized_text, strategy = await self._prepare_document_for_chunking(
             document=document,
             project=project,
             file_content=file_content,
+            chunking_strategy=chunking_strategy,
         )
 
         extension = (
@@ -129,7 +132,7 @@ class DocumentIndexingService:
             # Tabular documents produce one chunk per row — parent-child would break that semantics.
             use_parent_child = (
                 strategy != ChunkingStrategy.TABULAR
-                and project.parent_child_chunking
+                and parent_child_chunking
                 and self._parent_child_chunking_service is not None
             )
 
@@ -158,6 +161,7 @@ class DocumentIndexingService:
         document: Document,
         project: Project,
         file_content: bytes,
+        chunking_strategy: ChunkingStrategy | None = None,
     ) -> tuple[Document, str, ChunkingStrategy]:
         extracted_text = await self._document_text_extractor.extract_text(
             file_name=document.file_name,
@@ -182,7 +186,7 @@ class DocumentIndexingService:
             strategy = ChunkingStrategy.TABULAR
             return replace(document, processing_strategy=strategy), sanitized_text, strategy
 
-        strategy = project.chunking_strategy
+        strategy = chunking_strategy or ChunkingStrategy.AUTO
         if strategy == ChunkingStrategy.AUTO:
             analysis = await self._document_structure_analyzer.analyze_text(sanitized_text)
             strategy = self._chunking_strategy_selector.select(

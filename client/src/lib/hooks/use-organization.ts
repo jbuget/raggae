@@ -27,6 +27,7 @@ export function useUpdateOrganization(organizationId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organization", organizationId] });
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }
@@ -38,6 +39,7 @@ export function useDeleteOrganization(organizationId: string) {
     mutationFn: () => deleteOrganization(token!, organizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["accessible-projects"] });
     },
   });
 }

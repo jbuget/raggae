@@ -72,6 +72,9 @@
   "settings": {
     "title": "User Settings",
     "description": "Manage your account and API keys.",
+    "tabGeneral": "General",
+    "tabApiKeys": "API Keys",
+    "tabProjects": "Projects",
     "profile": {
       "title": "Profile",
       "description": "Update your account display name.",
@@ -115,6 +118,14 @@
       "deleteConfirmTitle": "Delete API key",
       "deleteConfirmDescription": "This action cannot be undone.",
       "apiKeyPlaceholder": "Paste your API key here"
+    },
+    "userProjectDefaults": {
+      "title": "Default project settings",
+      "description": "These values are automatically suggested when you create a new project. Each project can override them individually.",
+      "saveSuccess": "Default settings saved",
+      "saveError": "Failed to save default settings",
+      "loadError": "Unable to load default settings",
+      "resetToSystem": "Reset to system defaults"
     }
   },
   "projects": {
@@ -127,6 +138,8 @@
     "notFound": "Project not found",
     "list": {
       "createTitle": "Create project",
+      "createIn": "Create in",
+      "createInPersonal": "My projects (personal)",
       "createSuccess": "Project created",
       "createError": "Failed to create project",
       "createFirst": "Create your first project",
@@ -166,7 +179,40 @@
         "history": "Versions"
       },
       "reindexingWarning": "Reindexing in progress ({progress}/{total}). Upload, chat and reindex actions are temporarily blocked.",
+      "overrideOrgDefaults": "Override organization settings",
+      "orgDefaultsApplied": "The organization enforces its settings on this section. Enable the override to customize them.",
+      "globalOverrideLabel": "Override organization settings",
+      "globalOverrideDescription": "Enable to use your own settings instead of those defined by the organization.",
+      "overrideUserDefaults": "Override your user settings",
+      "userDefaultsApplied": "Your user settings apply to this section. Enable the override to customize them.",
+      "systemDefaultsApplied": "No settings configured — system defaults are used.",
+      "orgDefaultsActive": "No parameters modified, organization settings apply.",
+      "userDefaultsActive": "No parameters modified, user settings apply.",
+      "unsavedChange": "Unsaved change",
+      "orgOverrideAll": "All organization settings are overridden.",
+      "orgOverrideSome": "Some organization settings are modified.",
+      "userOverrideAll": "All user settings are overridden.",
+      "userOverrideSome": "Some user settings are modified.",
+      "fieldHint": {
+        "inheritedFromOrg": "Inherited from organization",
+        "inheritedFromUser": "Inherited from user",
+        "customizedOrg": "Customized · org default:",
+        "customizedUser": "Customized · user default:",
+        "inheritedFromSystem": "Inherited from system",
+        "customizedSystem": "Customized · system default:",
+        "modified": "Modified — unsaved"
+      },
+      "inherited": {
+        "default": "Default",
+        "user": "Set by user",
+        "organization": "Set by organization",
+        "emptyValue": "—"
+      },
       "saveChanges": "Save changes",
+      "cancelChanges": "Discard changes",
+      "resetToInherited": "Reset to defaults",
+      "resetToOrg": "Reset to defaults",
+      "resetToUser": "Reset to defaults",
       "updateSuccess": "Project updated",
       "updateError": "Failed to update project",
       "general": {
@@ -218,7 +264,8 @@
         "reindexSuccess": "Document reindexed",
         "reindexError": "Failed to reindex document",
         "deleteSuccess": "Document deleted",
-        "deleteError": "Failed to delete document"
+        "deleteError": "Failed to delete document",
+        "noEmbeddingModel": "No embedding model configured. Uploads will fail until a model is set in the Advanced tab."
       },
       "knowledgeIndexing": {
         "title": "Knowledge indexing",
@@ -290,6 +337,11 @@
         "chatHistoryWindowNote": "Maximum number of recent conversation messages kept in prompt context.",
         "chatHistoryMaxCharsLabel": "Chat history max chars",
         "chatHistoryMaxCharsNote": "Character budget for injected conversation history in the LLM prompt."
+      },
+      "pageTitle": "Settings",
+      "advanced": {
+        "title": "Advanced Settings",
+        "description": "Configure document indexing, context retrieval strategies, and the models used."
       }
     },
     "snapshots": {
@@ -310,7 +362,15 @@
       "empty": "No versions available yet.",
       "embeddingModel": "Embedding",
       "llmModel": "LLM",
+      "chunking": "Chunking",
+      "parentChild": "Parent-child",
       "retrievalStrategy": "Retrieval",
+      "chunkingAuto": "Auto",
+      "chunkingFixed": "Fixed window",
+      "chunkingParagraph": "Paragraph",
+      "chunkingHeading": "Heading section",
+      "chunkingSemantic": "Semantic",
+      "chunkingTabular": "Tabular",
       "previous": "Previous",
       "next": "Next",
       "pageInfo": "Page {current} of {total}",
@@ -376,6 +436,7 @@
       "tabGeneral": "General",
       "tabMembers": "Members",
       "tabApiKeys": "API Keys",
+      "tabProjects": "Projects",
       "dangerZone": "Danger zone",
       "dangerDescription": "Delete this organization and all related data.",
       "deleteOrg": "Delete organization",
@@ -431,6 +492,14 @@
       "providerLabel": "Provider",
       "apiKeyLabel": "API key",
       "saveKey": "Save key"
+    },
+    "projectDefaults": {
+      "title": "Project default settings",
+      "description": "These values are automatically applied when a new project is created in this organization. Each project can override them individually.",
+      "saveSuccess": "Default settings saved",
+      "saveError": "Failed to save default settings",
+      "loadError": "Unable to load default settings",
+      "resetToSystem": "Reset to system defaults"
     }
   },
   "invitations": {
@@ -552,7 +621,9 @@
       "empty": "No chunks found for this document.",
       "error": "Unable to load chunks.",
       "chunkLabel": "Chunk #{index}",
-      "metadata": "Metadata"
+      "metadata": "Metadata",
+      "parent": "Parent",
+      "child": "Child"
     }
   },
   "sidebar": {

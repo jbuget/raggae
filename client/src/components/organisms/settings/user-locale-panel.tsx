@@ -4,6 +4,13 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUpdateUserLocale } from "@/lib/hooks/use-user-profile";
 import type { UpdateUserLocaleRequest } from "@/lib/types/api";
 
@@ -30,11 +37,10 @@ export function UserLocalePanel() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="locale-select">{t("language.label")}</Label>
-        <select
-          id="locale-select"
+        <Select
           defaultValue={currentLocale}
-          onChange={(e) => {
-            const locale = e.target.value as UpdateUserLocaleRequest["locale"];
+          onValueChange={(val) => {
+            const locale = val as UpdateUserLocaleRequest["locale"];
             setLocaleCookie(locale);
             updateUserLocale.mutate(
               { locale },
@@ -47,14 +53,21 @@ export function UserLocalePanel() {
               },
             );
           }}
-          className="flex h-9 w-full max-w-xs rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
         >
-          {LOCALE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.flag} {opt.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="locale-select" className="max-w-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LOCALE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                <span className="flex items-center gap-2">
+                  <span>{opt.flag}</span>
+                  <span>{opt.label}</span>
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </Card>
   );

@@ -148,7 +148,10 @@ class TestListAccessibleProjects:
         await org_repo.save(_org(org_id, "Corp"))
         await member_repo.save(_membership(user_id, org_id, OrganizationMemberRole.OWNER))
         await project_repo.save(_project("Personal", user_id=user_id))
-        await project_repo.save(_project("Org project", organization_id=org_id, is_published=True))
+        # Org project created by the same user — must NOT leak into personal_projects.
+        await project_repo.save(
+            _project("Org project", user_id=user_id, organization_id=org_id, is_published=True)
+        )
 
         # When
         result = await _use_case(member_repo, org_repo, project_repo).execute(user_id=user_id)

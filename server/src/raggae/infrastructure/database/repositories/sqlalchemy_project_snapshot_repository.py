@@ -4,7 +4,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from raggae.domain.entities.project_snapshot import ProjectSnapshot
-from raggae.domain.value_objects.chunking_strategy import ChunkingStrategy
 from raggae.infrastructure.database.models.project_snapshot_model import ProjectSnapshotModel
 
 
@@ -27,27 +26,35 @@ class SQLAlchemyProjectSnapshotRepository:
                 description=snapshot.description,
                 system_prompt=snapshot.system_prompt,
                 is_published=snapshot.is_published,
-                chunking_strategy=snapshot.chunking_strategy.value,
-                parent_child_chunking=snapshot.parent_child_chunking,
                 organization_id=snapshot.organization_id,
+                restored_from_version=snapshot.restored_from_version,
                 embedding_backend=snapshot.embedding_backend,
                 embedding_model=snapshot.embedding_model,
                 embedding_api_key_credential_id=snapshot.embedding_api_key_credential_id,
-                org_embedding_api_key_credential_id=snapshot.org_embedding_api_key_credential_id,
                 llm_backend=snapshot.llm_backend,
                 llm_model=snapshot.llm_model,
                 llm_api_key_credential_id=snapshot.llm_api_key_credential_id,
-                org_llm_api_key_credential_id=snapshot.org_llm_api_key_credential_id,
-                retrieval_strategy=snapshot.retrieval_strategy,
-                retrieval_top_k=snapshot.retrieval_top_k,
-                retrieval_min_score=snapshot.retrieval_min_score,
-                chat_history_window_size=snapshot.chat_history_window_size,
-                chat_history_max_chars=snapshot.chat_history_max_chars,
-                reranking_enabled=snapshot.reranking_enabled,
+                chunking_strategy=snapshot.chunking_strategy or "auto",
+                parent_child_chunking=snapshot.parent_child_chunking or False,
+                retrieval_strategy=snapshot.retrieval_strategy or "hybrid",
+                retrieval_top_k=snapshot.retrieval_top_k if snapshot.retrieval_top_k is not None else 8,
+                retrieval_min_score=snapshot.retrieval_min_score
+                if snapshot.retrieval_min_score is not None
+                else 0.3,
+                reranking_enabled=snapshot.reranking_enabled
+                if snapshot.reranking_enabled is not None
+                else False,
                 reranker_backend=snapshot.reranker_backend,
                 reranker_model=snapshot.reranker_model,
-                reranker_candidate_multiplier=snapshot.reranker_candidate_multiplier,
-                restored_from_version=snapshot.restored_from_version,
+                reranker_candidate_multiplier=snapshot.reranker_candidate_multiplier
+                if snapshot.reranker_candidate_multiplier is not None
+                else 3,
+                chat_history_window_size=snapshot.chat_history_window_size
+                if snapshot.chat_history_window_size is not None
+                else 8,
+                chat_history_max_chars=snapshot.chat_history_max_chars
+                if snapshot.chat_history_max_chars is not None
+                else 4000,
             )
             session.add(model)
             await session.commit()
@@ -117,25 +124,23 @@ class SQLAlchemyProjectSnapshotRepository:
             description=model.description,
             system_prompt=model.system_prompt,
             is_published=model.is_published,
-            chunking_strategy=ChunkingStrategy(model.chunking_strategy),
-            parent_child_chunking=model.parent_child_chunking,
             organization_id=model.organization_id,
+            restored_from_version=model.restored_from_version,
             embedding_backend=model.embedding_backend,
             embedding_model=model.embedding_model,
             embedding_api_key_credential_id=model.embedding_api_key_credential_id,
-            org_embedding_api_key_credential_id=model.org_embedding_api_key_credential_id,
             llm_backend=model.llm_backend,
             llm_model=model.llm_model,
             llm_api_key_credential_id=model.llm_api_key_credential_id,
-            org_llm_api_key_credential_id=model.org_llm_api_key_credential_id,
+            chunking_strategy=model.chunking_strategy,
+            parent_child_chunking=model.parent_child_chunking,
             retrieval_strategy=model.retrieval_strategy,
             retrieval_top_k=model.retrieval_top_k,
             retrieval_min_score=model.retrieval_min_score,
-            chat_history_window_size=model.chat_history_window_size,
-            chat_history_max_chars=model.chat_history_max_chars,
             reranking_enabled=model.reranking_enabled,
             reranker_backend=model.reranker_backend,
             reranker_model=model.reranker_model,
             reranker_candidate_multiplier=model.reranker_candidate_multiplier,
-            restored_from_version=model.restored_from_version,
+            chat_history_window_size=model.chat_history_window_size,
+            chat_history_max_chars=model.chat_history_max_chars,
         )

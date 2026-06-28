@@ -72,6 +72,9 @@
   "settings": {
     "title": "Paramètres utilisateur",
     "description": "Gérez votre compte et vos clés API.",
+    "tabGeneral": "Général",
+    "tabApiKeys": "Clés API",
+    "tabProjects": "Projets",
     "profile": {
       "title": "Profil",
       "description": "Mettez à jour votre nom d'affichage.",
@@ -115,6 +118,14 @@
       "deleteConfirmTitle": "Supprimer la clé API",
       "deleteConfirmDescription": "Cette action est irréversible.",
       "apiKeyPlaceholder": "Collez votre clé API ici"
+    },
+    "userProjectDefaults": {
+      "title": "Paramètres de projet par défaut",
+      "description": "Ces valeurs sont automatiquement suggérées lors de la création d'un nouveau projet. Chaque projet peut les surcharger individuellement.",
+      "saveSuccess": "Paramètres par défaut enregistrés",
+      "saveError": "Impossible d'enregistrer les paramètres par défaut",
+      "loadError": "Impossible de charger les paramètres par défaut",
+      "resetToSystem": "Réinitialiser aux valeurs système"
     }
   },
   "projects": {
@@ -127,6 +138,8 @@
     "notFound": "Projet introuvable",
     "list": {
       "createTitle": "Créer un projet",
+      "createIn": "Créer dans",
+      "createInPersonal": "Mes projets (personnel)",
       "createSuccess": "Projet créé",
       "createError": "Erreur lors de la création du projet",
       "createFirst": "Créer votre premier projet",
@@ -166,7 +179,40 @@
         "history": "Versions"
       },
       "reindexingWarning": "Réindexation en cours ({progress}/{total}). Les actions d'upload, chat et réindexation sont temporairement bloquées.",
+      "overrideOrgDefaults": "Surcharger les paramètres de l'organisation",
+      "orgDefaultsApplied": "L'organisation impose ses paramètres sur cette section. Activez la surcharge pour les personnaliser.",
+      "globalOverrideLabel": "Surcharger les paramètres de l'organisation",
+      "globalOverrideDescription": "Activez pour utiliser vos propres paramètres à la place de ceux définis par l'organisation.",
+      "overrideUserDefaults": "Surcharger vos paramètres utilisateur",
+      "userDefaultsApplied": "Vos paramètres utilisateur s'appliquent à cette section. Activez la surcharge pour les personnaliser.",
+      "systemDefaultsApplied": "Aucun paramètre configuré — les valeurs système sont utilisées.",
+      "orgDefaultsActive": "Aucun paramètre modifié, les paramètres de l'organisation s'appliquent.",
+      "userDefaultsActive": "Aucun paramètre modifié, les paramètres utilisateur s'appliquent.",
+      "unsavedChange": "Modification à enregistrer",
+      "orgOverrideAll": "Tous les paramètres de l'organisation sont surchargés.",
+      "orgOverrideSome": "Certains paramètres de l'organisation sont modifiés.",
+      "userOverrideAll": "Tous les paramètres utilisateur sont surchargés.",
+      "userOverrideSome": "Certains paramètres utilisateur sont modifiés.",
+      "fieldHint": {
+        "inheritedFromOrg": "Hérité de l'organisation",
+        "inheritedFromUser": "Hérité de l'utilisateur",
+        "customizedOrg": "Personnalisé · défaut org :",
+        "customizedUser": "Personnalisé · défaut utilisateur :",
+        "inheritedFromSystem": "Par défaut",
+        "customizedSystem": "Personnalisé · par défaut :",
+        "modified": "Modifié — non sauvegardé"
+      },
+      "inherited": {
+        "default": "Par défaut",
+        "user": "Défini par l'utilisateur",
+        "organization": "Défini par l'organisation",
+        "emptyValue": "—"
+      },
       "saveChanges": "Enregistrer",
+      "cancelChanges": "Annuler les modifications",
+      "resetToInherited": "Réinitialiser par défaut",
+      "resetToOrg": "Réinitialiser par défaut",
+      "resetToUser": "Réinitialiser par défaut",
       "updateSuccess": "Projet mis à jour",
       "updateError": "Erreur lors de la mise à jour du projet",
       "general": {
@@ -218,7 +264,8 @@
         "reindexSuccess": "Document réindexé",
         "reindexError": "Erreur lors de la réindexation du document",
         "deleteSuccess": "Document supprimé",
-        "deleteError": "Erreur lors de la suppression du document"
+        "deleteError": "Erreur lors de la suppression du document",
+        "noEmbeddingModel": "Aucun modèle d'embedding configuré. Les uploads échoueront tant qu'aucun modèle n'est défini dans l'onglet Avancé."
       },
       "knowledgeIndexing": {
         "title": "Indexation",
@@ -290,6 +337,11 @@
         "chatHistoryWindowNote": "Nombre maximum de messages récents conservés dans le contexte du prompt.",
         "chatHistoryMaxCharsLabel": "Budget caractères pour l'historique",
         "chatHistoryMaxCharsNote": "Budget en caractères pour l'historique de conversation injecté dans le prompt LLM."
+      },
+      "pageTitle": "Paramètres",
+      "advanced": {
+        "title": "Paramètres avancés",
+        "description": "Configurez l'indexation documentaire, les stratégies de récupération de contexte et les modèles utilisés."
       }
     },
     "snapshots": {
@@ -310,7 +362,15 @@
       "empty": "Aucune version disponible pour le moment.",
       "embeddingModel": "Embedding",
       "llmModel": "LLM",
+      "chunking": "Découpage",
+      "parentChild": "Parent-enfant",
       "retrievalStrategy": "Retrieval",
+      "chunkingAuto": "Auto",
+      "chunkingFixed": "Fenêtre fixe",
+      "chunkingParagraph": "Paragraphe",
+      "chunkingHeading": "Section par titre",
+      "chunkingSemantic": "Sémantique",
+      "chunkingTabular": "Tabulaire",
       "previous": "Précédent",
       "next": "Suivant",
       "pageInfo": "Page {current} sur {total}",
@@ -376,6 +436,7 @@
       "tabGeneral": "Général",
       "tabMembers": "Membres",
       "tabApiKeys": "Clés API",
+      "tabProjects": "Projets",
       "dangerZone": "Zone dangereuse",
       "dangerDescription": "Supprimez cette organisation et toutes les données associées.",
       "deleteOrg": "Supprimer l'organisation",
@@ -431,6 +492,14 @@
       "providerLabel": "Fournisseur",
       "apiKeyLabel": "Clé API",
       "saveKey": "Enregistrer la clé"
+    },
+    "projectDefaults": {
+      "title": "Paramètres par défaut des projets",
+      "description": "Ces valeurs sont automatiquement appliquées lors de la création d'un nouveau projet dans cette organisation. Chaque projet peut les surcharger individuellement.",
+      "saveSuccess": "Paramètres par défaut enregistrés",
+      "saveError": "Erreur lors de l'enregistrement des paramètres par défaut",
+      "loadError": "Impossible de charger les paramètres par défaut",
+      "resetToSystem": "Réinitialiser aux valeurs système"
     }
   },
   "invitations": {
@@ -552,7 +621,9 @@
       "empty": "Aucun chunk pour ce document.",
       "error": "Impossible de charger les chunks.",
       "chunkLabel": "Chunk #{index}",
-      "metadata": "Métadonnées"
+      "metadata": "Métadonnées",
+      "parent": "Parent",
+      "child": "Enfant"
     }
   },
   "sidebar": {

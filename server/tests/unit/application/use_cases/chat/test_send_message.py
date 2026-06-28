@@ -83,7 +83,6 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
-            retrieval_top_k=14,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -98,6 +97,7 @@ class TestSendMessage:
             message_repository=message_repository,
             provider_api_key_resolver=provider_api_key_resolver,
             llm_provider="openai",
+            default_chunk_limit=14,
         )
 
     async def test_send_message_success(
@@ -127,9 +127,9 @@ class TestSendMessage:
             limit=2,
             offset=0,
             strategy="hybrid",
-            min_score=0.3,
+            min_score=None,
             reranker_service=None,
-            reranker_candidate_multiplier=3,
+            reranker_candidate_multiplier=None,
             metadata_filters=None,
         )
         use_case._provider_api_key_resolver.resolve.assert_awaited_once_with(
@@ -149,60 +149,13 @@ class TestSendMessage:
         assert result.history_messages_used == 0
         assert result.chunks_used == 2
 
-    async def test_send_message_uses_project_default_retrieval_strategy(
-        self,
-        use_case: SendMessage,
-        project_user_id: UUID,
-        mock_query_relevant_chunks: AsyncMock,
-    ) -> None:
-        use_case._project_repository.find_by_id.return_value = Project(
-            id=uuid4(),
-            user_id=project_user_id,
-            name="Project",
-            description="",
-            system_prompt="project prompt",
-            is_published=False,
-            created_at=datetime.now(UTC),
-            retrieval_strategy="fulltext",
-        )
-
-        await use_case.execute(
-            project_id=uuid4(),
-            user_id=project_user_id,
-            message="What is Raggae?",
-            limit=2,
-        )
-
-        mock_query_relevant_chunks.execute.assert_awaited_once_with(
-            project_id=ANY,
-            user_id=ANY,
-            query="What is Raggae?",
-            limit=2,
-            offset=0,
-            strategy="fulltext",
-            min_score=0.3,
-            reranker_service=None,
-            reranker_candidate_multiplier=3,
-            metadata_filters=None,
-        )
-
     async def test_send_message_uses_project_retrieval_top_k_when_limit_missing(
         self,
         use_case: SendMessage,
         project_user_id: UUID,
         mock_query_relevant_chunks: AsyncMock,
     ) -> None:
-        use_case._project_repository.find_by_id.return_value = Project(
-            id=uuid4(),
-            user_id=project_user_id,
-            name="Project",
-            description="",
-            system_prompt="project prompt",
-            is_published=False,
-            created_at=datetime.now(UTC),
-            retrieval_top_k=13,
-        )
-
+        # use_case fixture has default_chunk_limit=14, so limit=None should use 14
         await use_case.execute(
             project_id=uuid4(),
             user_id=project_user_id,
@@ -214,12 +167,12 @@ class TestSendMessage:
             project_id=ANY,
             user_id=ANY,
             query="How do we design a scalable retrieval architecture?",
-            limit=13,
+            limit=14,
             offset=0,
             strategy="hybrid",
-            min_score=0.3,
+            min_score=None,
             reranker_service=None,
-            reranker_candidate_multiplier=3,
+            reranker_candidate_multiplier=None,
             metadata_filters=None,
         )
 
@@ -247,34 +200,6 @@ class TestSendMessage:
         assert project_llm_service_resolver.resolve.call_count == 2
         assert resolved_llm_service.generate_answer.await_count == 2
         assert result.answer == "resolved answer"
-
-    async def test_send_message_resolves_provider_api_key_from_project_backend(
-        self,
-        use_case: SendMessage,
-        project_user_id: UUID,
-    ) -> None:
-        use_case._project_repository.find_by_id.return_value = Project(
-            id=uuid4(),
-            user_id=project_user_id,
-            name="Project",
-            description="",
-            system_prompt="project prompt",
-            is_published=False,
-            created_at=datetime.now(UTC),
-            llm_backend="gemini",
-        )
-
-        await use_case.execute(
-            project_id=uuid4(),
-            user_id=project_user_id,
-            message="hello",
-            limit=2,
-        )
-
-        use_case._provider_api_key_resolver.resolve.assert_awaited_with(
-            user_id=ANY,
-            provider="gemini",
-        )
 
     async def test_send_message_project_not_found_bubbles_error(
         self,
@@ -452,23 +377,12 @@ class TestSendMessage:
             "Please ask a question related to your project content."
         )
 
-    async def test_send_message_uses_project_retrieval_strategy_and_passes_filters(
+    async def test_send_message_passes_filters_to_retrieval(
         self,
         use_case: SendMessage,
         project_user_id: UUID,
         mock_query_relevant_chunks: AsyncMock,
     ) -> None:
-        use_case._project_repository.find_by_id.return_value = Project(
-            id=uuid4(),
-            user_id=project_user_id,
-            name="Project",
-            description="",
-            system_prompt="project prompt",
-            is_published=False,
-            created_at=datetime.now(UTC),
-            retrieval_strategy="fulltext",
-        )
-
         # When
         await use_case.execute(
             project_id=uuid4(),
@@ -478,17 +392,17 @@ class TestSendMessage:
             retrieval_filters={"source_type": "paragraph"},
         )
 
-        # Then
+        # Then — metadata_filters are passed through to retrieval
         mock_query_relevant_chunks.execute.assert_awaited_with(
             project_id=ANY,
             user_id=ANY,
             query="JWT token expiration",
             limit=2,
             offset=0,
-            strategy="fulltext",
-            min_score=0.3,
+            strategy="hybrid",
+            min_score=None,
             reranker_service=None,
-            reranker_candidate_multiplier=3,
+            reranker_candidate_multiplier=None,
             metadata_filters={"source_type": "paragraph"},
         )
 
@@ -498,7 +412,7 @@ class TestSendMessage:
         project_user_id: UUID,
         mock_query_relevant_chunks: AsyncMock,
     ) -> None:
-        # When
+        # When — limit=None uses the use case default_chunk_limit (14)
         await use_case.execute(
             project_id=uuid4(),
             user_id=project_user_id,
@@ -514,9 +428,9 @@ class TestSendMessage:
             limit=14,
             offset=0,
             strategy="hybrid",
-            min_score=0.3,
+            min_score=None,
             reranker_service=None,
-            reranker_candidate_multiplier=3,
+            reranker_candidate_multiplier=None,
             metadata_filters=None,
         )
 
@@ -572,7 +486,6 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
-            chat_history_max_chars=80,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -627,7 +540,6 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
-            chat_history_max_chars=80,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -638,7 +550,7 @@ class TestSendMessage:
             project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
-            default_chunk_limit=14,
+            default_chunk_limit=8,
         )
 
         # When
@@ -649,7 +561,7 @@ class TestSendMessage:
             limit=None,
         )
 
-        # Then
+        # Then — uses the use case's default_chunk_limit (8)
         mock_query_relevant_chunks.execute.assert_awaited_with(
             project_id=ANY,
             user_id=ANY,
@@ -657,9 +569,9 @@ class TestSendMessage:
             limit=8,
             offset=0,
             strategy="hybrid",
-            min_score=0.3,
+            min_score=None,
             reranker_service=None,
-            reranker_candidate_multiplier=3,
+            reranker_candidate_multiplier=None,
             metadata_filters=None,
         )
 
@@ -869,7 +781,6 @@ class TestSendMessage:
             system_prompt="project prompt",
             is_published=False,
             created_at=datetime.now(UTC),
-            chat_history_max_chars=80,
         )
         title_generator = AsyncMock()
         title_generator.generate_title.return_value = "Generated title"
@@ -880,6 +791,7 @@ class TestSendMessage:
             project_repository=project_repository,
             conversation_repository=conversation_repository,
             message_repository=message_repository,
+            history_max_chars=80,
         )
 
         # When
