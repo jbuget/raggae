@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 
 @dataclass
@@ -39,3 +39,22 @@ class StatsDTO:
     fonctionnement: StatsFonctionnementDTO
     usage: StatsUsageDTO
     impact: StatsImpactDTO
+
+
+@dataclass
+class TimeSeriesPoint:
+    date: date
+    value: int
+
+
+@dataclass
+class StatsTimeSeriesDTO:
+    generated_at: datetime
+    from_date: date
+    to_date: date
+    user_messages: list[TimeSeriesPoint]
+    conversations: list[TimeSeriesPoint]
+    daily_active_users: list[TimeSeriesPoint]
+    reliable_answers: list[TimeSeriesPoint]
+    documents_indexed: list[TimeSeriesPoint]
+    projects_created: list[TimeSeriesPoint]
