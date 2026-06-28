@@ -1,14 +1,16 @@
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import func, select, text
+from sqlalchemy import Select, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from raggae.application.dto.stats_dto import (
     StatsDTO,
     StatsFonctionnementDTO,
     StatsImpactDTO,
+    StatsTimeSeriesDTO,
     StatsUsageDTO,
+    TimeSeriesPoint,
 )
 from raggae.application.interfaces.repositories.stats_repository import StatsRepository
 from raggae.infrastructure.database.models.conversation_model import ConversationModel
@@ -207,3 +209,106 @@ class SQLAlchemyStatsRepository(StatsRepository):
             multi_turn_conversations_rate_percent=round(multi_turn_rate, 1),
             average_sources_per_answer=round(float(avg_sources_row or 0), 1),
         )
+
+    async def get_timeseries(self, days: int) -> StatsTimeSeriesDTO:
+        today = datetime.now(UTC).date()
+        from_date = today - timedelta(days=days - 1)
+        from_dt = datetime.combine(from_date, datetime.min.time(), tzinfo=UTC)
+
+        async with self._session_factory() as session:
+            user_messages_rows = await self._daily_counts(
+                session,
+                select(
+                    func.date_trunc("day", MessageModel.created_at).label("bucket"),
+                    func.count().label("value"),
+                )
+                .where(MessageModel.role == "user")
+                .where(MessageModel.created_at >= from_dt)
+                .group_by("bucket"),
+            )
+
+            conversations_rows = await self._daily_counts(
+                session,
+                select(
+                    func.date_trunc("day", ConversationModel.created_at).label("bucket"),
+                    func.count().label("value"),
+                )
+                .where(ConversationModel.created_at >= from_dt)
+                .group_by("bucket"),
+            )
+
+            daily_active_users_rows = await self._daily_counts(
+                session,
+                select(
+                    func.date_trunc("day", MessageModel.created_at).label("bucket"),
+                    func.count(func.distinct(ConversationModel.user_id)).label("value"),
+                )
+                .select_from(MessageModel)
+                .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+                .where(MessageModel.role == "user")
+                .where(MessageModel.created_at >= from_dt)
+                .group_by("bucket"),
+            )
+
+            reliable_answers_rows = await self._daily_counts(
+                session,
+                select(
+                    func.date_trunc("day", MessageModel.created_at).label("bucket"),
+                    func.count().label("value"),
+                )
+                .where(MessageModel.role == "assistant")
+                .where(MessageModel.reliability_percent >= _RELIABILITY_THRESHOLD)
+                .where(MessageModel.created_at >= from_dt)
+                .group_by("bucket"),
+            )
+
+            documents_indexed_rows = await self._daily_counts(
+                session,
+                select(
+                    func.date_trunc("day", DocumentModel.created_at).label("bucket"),
+                    func.count().label("value"),
+                )
+                .where(DocumentModel.status == "indexed")
+                .where(DocumentModel.created_at >= from_dt)
+                .group_by("bucket"),
+            )
+
+            projects_created_rows = await self._daily_counts(
+                session,
+                select(
+                    func.date_trunc("day", ProjectModel.created_at).label("bucket"),
+                    func.count().label("value"),
+                )
+                .where(ProjectModel.created_at >= from_dt)
+                .group_by("bucket"),
+            )
+
+        return StatsTimeSeriesDTO(
+            generated_at=datetime.now(UTC),
+            from_date=from_date,
+            to_date=today,
+            user_messages=_fill_series(from_date, days, user_messages_rows),
+            conversations=_fill_series(from_date, days, conversations_rows),
+            daily_active_users=_fill_series(from_date, days, daily_active_users_rows),
+            reliable_answers=_fill_series(from_date, days, reliable_answers_rows),
+            documents_indexed=_fill_series(from_date, days, documents_indexed_rows),
+            projects_created=_fill_series(from_date, days, projects_created_rows),
+        )
+
+    @staticmethod
+    async def _daily_counts(session: AsyncSession, stmt: Select[tuple[datetime, int]]) -> dict[date, int]:
+        result = await session.execute(stmt)
+        buckets: dict[date, int] = {}
+        for bucket, value in result.all():
+            buckets[bucket.date() if isinstance(bucket, datetime) else bucket] = int(value)
+        return buckets
+
+
+def _fill_series(from_date: date, days: int, buckets: dict[date, int]) -> list[TimeSeriesPoint]:
+    return [
+        TimeSeriesPoint(
+            date=(d := from_date + timedelta(days=i)),
+            value=buckets.get(d, 0),
+        )
+        for i in range(days)
+    ]
