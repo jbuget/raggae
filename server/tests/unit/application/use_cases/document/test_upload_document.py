@@ -354,6 +354,53 @@ class TestUploadDocument:
                 content_type="application/pdf",
             )
 
+    @pytest.mark.parametrize(
+        "file_name,content_type",
+        [
+            ("data.csv", "text/csv"),
+            ("report.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            ("legacy.xls", "application/vnd.ms-excel"),
+        ],
+    )
+    async def test_upload_tabular_formats_accepted(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+        file_name: str,
+        content_type: str,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+        )
+
+        # When
+        result = await use_case.execute(
+            project_id=project_id,
+            user_id=user_id,
+            file_name=file_name,
+            file_content=b"content",
+            content_type=content_type,
+        )
+
+        # Then — no InvalidDocumentTypeError raised
+        assert result.file_name == file_name
+
     async def test_upload_pptx_is_accepted(
         self,
         use_case: UploadDocument,
@@ -385,6 +432,41 @@ class TestUploadDocument:
         # Then
         assert result.file_name == "deck.pptx"
         mock_file_storage_service.upload_file.assert_called_once()
+
+    async def test_upload_ods_raises_invalid_type_error(
+        self,
+        mock_document_repository: AsyncMock,
+        mock_project_repository: AsyncMock,
+        mock_file_storage_service: AsyncMock,
+    ) -> None:
+        # Given
+        user_id = uuid4()
+        project_id = uuid4()
+        mock_project_repository.find_by_id.return_value = Project(
+            id=project_id,
+            user_id=user_id,
+            name="Test",
+            description="",
+            system_prompt="",
+            is_published=False,
+            created_at=datetime.now(UTC),
+        )
+        use_case = UploadDocument(
+            document_repository=mock_document_repository,
+            project_repository=mock_project_repository,
+            file_storage_service=mock_file_storage_service,
+            max_file_size=104857600,
+        )
+
+        # When / Then
+        with pytest.raises(InvalidDocumentTypeError):
+            await use_case.execute(
+                project_id=project_id,
+                user_id=user_id,
+                file_name="spreadsheet.ods",
+                file_content=b"content",
+                content_type="application/vnd.oasis.opendocument.spreadsheet",
+            )
 
     async def test_upload_ppt_raises_invalid_document_type_error(
         self,

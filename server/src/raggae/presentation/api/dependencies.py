@@ -369,6 +369,7 @@ from raggae.infrastructure.services.openai_llm_service import OpenAILLMService
 from raggae.infrastructure.services.paragraph_text_chunker_service import (
     ParagraphTextChunkerService,
 )
+from raggae.infrastructure.services.pdf_table_extractor import PdfTableExtractor
 from raggae.infrastructure.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver as RuntimeProjectEmbeddingServiceResolver,
 )
@@ -393,6 +394,7 @@ from raggae.infrastructure.services.simple_text_sanitizer_service import (
 from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
+from raggae.infrastructure.services.tabular_text_chunker_service import TabularTextChunkerService
 
 
 def _build_embedding_service() -> EmbeddingService:
@@ -505,7 +507,10 @@ else:
     _file_storage_service = InMemoryFileStorageService()
 _embedding_service: EmbeddingService = _build_embedding_service()
 _semantic_embedding_service: EmbeddingService = _build_embedding_service()
-_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor()
+_pdf_table_extractor = PdfTableExtractor()
+_document_text_extractor: DocumentTextExtractor = MultiFormatDocumentTextExtractor(
+    pdf_table_extractor=_pdf_table_extractor
+)
 _text_sanitizer_service: TextSanitizerService = SimpleTextSanitizerService()
 _document_structure_analyzer: DocumentStructureAnalyzer = HeuristicDocumentStructureAnalyzer()
 _file_metadata_extractor: FileMetadataExtractor = DocumentFileMetadataExtractor()
@@ -516,6 +521,7 @@ if settings.persistence_backend != "postgres":
     _language_detector = InMemoryLanguageDetector(language="en")
     _keyword_extractor = InMemoryKeywordExtractor()
 _chunking_strategy_selector = DeterministicChunkingStrategySelector()
+_tabular_chunker: TextChunkerService = TabularTextChunkerService()
 if settings.text_chunker_backend == "llamaindex":
     _text_chunker_service: TextChunkerService = LlamaIndexTextChunkerService(
         chunk_size=settings.chunk_size,
@@ -558,6 +564,7 @@ _document_indexing_service = DocumentIndexingService(
     chunker_backend=settings.text_chunker_backend,
     parent_child_chunking_service=_parent_child_chunking_service,
     slide_chunker=_slide_chunker,
+    tabular_chunker=_tabular_chunker,
 )
 _token_service = JwtTokenService(secret_key="dev-secret-key", algorithm="HS256")
 _bearer = HTTPBearer(auto_error=False)

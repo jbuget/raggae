@@ -1,13 +1,28 @@
 import logging
+from collections.abc import Callable
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from raggae.domain.exceptions.document_exceptions import DocumentExtractionError
+from raggae.domain.value_objects.tabular_extensions import TABULAR_EXTENSIONS
+from raggae.infrastructure.services.tabular_document_text_extractor import (
+    TabularDocumentTextExtractor,
+)
+
+if TYPE_CHECKING:
+    from raggae.infrastructure.services.pdf_table_extractor import PdfTableExtractor, TableData
 
 logger = logging.getLogger(__name__)
 
 
 class MultiFormatDocumentTextExtractor:
-    """Extract text from txt/md/pdf/docx files with basic normalization."""
+    """Extract text from txt/md/pdf/docx/pptx/csv/xlsx/xls files with basic normalization."""
+
+    def __init__(self, pdf_table_extractor: "PdfTableExtractor | None" = None) -> None:
+        from raggae.infrastructure.services.pdf_table_extractor import PdfTableExtractor as _PTE
+
+        self._pdf_table_extractor = pdf_table_extractor or _PTE()
+        self._tabular_extractor = TabularDocumentTextExtractor()
 
     async def extract_text(self, file_name: str, content: bytes, content_type: str) -> str:
         _ = content_type
@@ -27,6 +42,8 @@ class MultiFormatDocumentTextExtractor:
             raise DocumentExtractionError(
                 "PPT (legacy binary format) is not supported. Convert to PPTX first."
             )
+        elif extension in TABULAR_EXTENSIONS:
+            return await self._tabular_extractor.extract_text(file_name, content, content_type)
         else:
             raise DocumentExtractionError(f"Unsupported extension for extraction: {extension}")
 
@@ -43,19 +60,60 @@ class MultiFormatDocumentTextExtractor:
 
     def _extract_pdf(self, content: bytes) -> str:
         try:
-            from pypdf import PdfReader
-        except ModuleNotFoundError as exc:  # pragma: no cover - dependency management
-            raise DocumentExtractionError("pypdf is required for PDF extraction") from exc
+            import pdfplumber
+        except ModuleNotFoundError as exc:  # pragma: no cover
+            raise DocumentExtractionError("pdfplumber is required for PDF extraction") from exc
+
+        tables: list[TableData] = []
+        try:
+            tables = self._pdf_table_extractor.extract_tables(content)
+        except Exception:
+            logger.warning("pdf_table_extraction_failed", exc_info=True)
+
+        bboxes_by_page: dict[int, list[tuple[float, float, float, float]]] = {}
+        for t in tables:
+            if t.bbox is not None:
+                bboxes_by_page.setdefault(t.page_number, []).append(t.bbox)
+
+        tables_by_page: dict[int, list[TableData]] = {}
+        for t in tables:
+            tables_by_page.setdefault(t.page_number, []).append(t)
 
         try:
-            reader = PdfReader(BytesIO(content))
-            parts = [
-                f"[[PAGE:{index + 1}]]\n{page.extract_text() or ''}"
-                for index, page in enumerate(reader.pages)
-            ]
+            parts: list[str] = []
+            with pdfplumber.open(BytesIO(content)) as pdf:
+                for page_num, page in enumerate(pdf.pages, start=1):
+                    page_bboxes = bboxes_by_page.get(page_num, [])
+                    if page_bboxes:
+                        filtered = page.filter(self._make_bbox_filter(page_bboxes))
+                        text = filtered.extract_text() or ""
+                    else:
+                        text = page.extract_text() or ""
+                    for table in tables_by_page.get(page_num, []):
+                        parts.append(table.to_chunk())
+                    parts.append(f"[[PAGE:{page_num}]]\n{text}")
+
             return "\n".join(parts)
-        except Exception as exc:  # pragma: no cover - file dependent
+        except Exception as exc:
             raise DocumentExtractionError(f"Failed to extract PDF text: {exc}") from exc
+
+    @staticmethod
+    def _make_bbox_filter(
+        bboxes: list[tuple[float, float, float, float]],
+    ) -> Callable[[dict[str, object]], bool]:
+
+        def keep(obj: dict[str, object]) -> bool:
+            for b in bboxes:
+                if (
+                    float(obj.get("x0", 0) or 0) >= b[0]  # type: ignore[arg-type]
+                    and float(obj.get("x1", 0) or 0) <= b[2]  # type: ignore[arg-type]
+                    and float(obj.get("top", 0) or 0) >= b[1]  # type: ignore[arg-type]
+                    and float(obj.get("bottom", 0) or 0) <= b[3]  # type: ignore[arg-type]
+                ):
+                    return False
+            return True
+
+        return keep
 
     def _extract_docx(self, content: bytes) -> str:
         try:
@@ -67,10 +125,7 @@ class MultiFormatDocumentTextExtractor:
             document = DocxDocument(BytesIO(content))
             parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
             for table in document.tables:
-                for row in table.rows:
-                    row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                    if row_cells:
-                        parts.append(" | ".join(row_cells))
+                parts.extend(self._table_to_markdown(table))
             return "\n".join(parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract DOCX text: {exc}") from exc
@@ -122,6 +177,28 @@ class MultiFormatDocumentTextExtractor:
             return "\n".join(slide_parts)
         except Exception as exc:  # pragma: no cover - file dependent
             raise DocumentExtractionError(f"Failed to extract PPTX text: {exc}") from exc
+
+    def _table_to_markdown(self, table: object) -> list[str]:
+        # Markdown format intentional: DOCX tables go through prose chunkers, not TabularTextChunkerService.
+        from docx.table import Table as DocxTable
+
+        if not isinstance(table, DocxTable):
+            return []
+        markdown_rows = []
+        for row in table.rows:
+            cells = [cell.text.strip() for cell in row.cells]
+            if any(cells):
+                markdown_rows.append(cells)
+        if not markdown_rows:
+            return []
+        lines: list[str] = []
+        header = markdown_rows[0]
+        lines.append("| " + " | ".join(header) + " |")
+        lines.append("| " + " | ".join("---" for _ in header) + " |")
+        for row in markdown_rows[1:]:
+            padded = (list(row) + [""] * len(header))[: len(header)]
+            lines.append("| " + " | ".join(padded) + " |")
+        return lines
 
     def _normalize_text(self, text: str) -> str:
         return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").split("\n")).strip()

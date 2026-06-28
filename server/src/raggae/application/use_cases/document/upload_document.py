@@ -50,7 +50,7 @@ from raggae.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc", "pptx"}
+ALLOWED_EXTENSIONS = {"txt", "md", "pdf", "docx", "doc", "pptx", "csv", "xlsx", "xls"}
 
 
 @dataclass(frozen=True)
