@@ -211,6 +211,15 @@ from raggae.application.use_cases.project.reindex_project import ReindexProject
 from raggae.application.use_cases.project.unpublish_project import UnpublishProject
 from raggae.application.use_cases.project.update_project import UpdateProject
 from raggae.application.use_cases.project.update_project_configuration import UpdateProjectConfiguration
+from raggae.application.use_cases.project_mcp.activate_project_mcp import (
+    ActivateProjectMcp,
+)
+from raggae.application.use_cases.project_mcp.deactivate_project_mcp import (
+    DeactivateProjectMcp,
+)
+from raggae.application.use_cases.project_mcp.list_project_mcp_activations import (
+    ListProjectMcpActivations,
+)
 from raggae.application.use_cases.project_snapshot.get_project_snapshot import GetProjectSnapshot
 from raggae.application.use_cases.project_snapshot.list_project_snapshots import ListProjectSnapshots
 from raggae.application.use_cases.project_snapshot.restore_project_snapshot import (
@@ -1236,6 +1245,33 @@ def get_delete_org_mcp_server_use_case() -> DeleteOrgMcpServer:
         org_mcp_server_repository=_org_mcp_server_repository,
         organization_member_repository=_organization_member_repository,
         project_mcp_activation_repository=_project_mcp_activation_repository,
+    )
+
+
+def get_list_project_mcp_activations_use_case() -> ListProjectMcpActivations:
+    return ListProjectMcpActivations(
+        project_repository=_project_repository,
+        org_mcp_server_repository=_org_mcp_server_repository,
+        project_mcp_activation_repository=_project_mcp_activation_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_activate_project_mcp_use_case() -> ActivateProjectMcp:
+    return ActivateProjectMcp(
+        project_repository=_project_repository,
+        org_mcp_server_repository=_org_mcp_server_repository,
+        project_mcp_activation_repository=_project_mcp_activation_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_deactivate_project_mcp_use_case() -> DeactivateProjectMcp:
+    return DeactivateProjectMcp(
+        project_repository=_project_repository,
+        org_mcp_server_repository=_org_mcp_server_repository,
+        project_mcp_activation_repository=_project_mcp_activation_repository,
+        organization_member_repository=_organization_member_repository,
     )
 
 
