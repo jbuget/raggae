@@ -38,7 +38,7 @@ class ListUserPendingOrganizationInvitations:
         invitations = await self._organization_invitation_repository.find_pending_by_email(user.email)
         pending_invitations: list[UserPendingOrganizationInvitationDTO] = []
         for invitation in invitations:
-            if invitation.expires_at < now:
+            if invitation.is_expired(now):
                 expired = invitation.with_status(
                     status=OrganizationInvitationStatus.EXPIRED,
                     updated_at=now,

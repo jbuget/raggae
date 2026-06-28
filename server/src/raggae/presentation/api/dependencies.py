@@ -1053,6 +1053,7 @@ def get_revoke_organization_invitation_use_case() -> RevokeOrganizationInvitatio
 
 def get_accept_organization_invitation_use_case() -> AcceptOrganizationInvitation:
     return AcceptOrganizationInvitation(
+        user_repository=_user_repository,
         organization_repository=_organization_repository,
         organization_member_repository=_organization_member_repository,
         organization_invitation_repository=_organization_invitation_repository,

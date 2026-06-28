@@ -1,5 +1,5 @@
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from raggae.domain.value_objects.organization_invitation_status import (
@@ -37,3 +37,12 @@ class OrganizationInvitation:
             expires_at=expires_at,
             updated_at=updated_at,
         )
+
+    def is_expired(self, now: datetime) -> bool:
+        return self._as_utc(self.expires_at) < self._as_utc(now)
+
+    @staticmethod
+    def _as_utc(value: datetime) -> datetime:
+        if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)

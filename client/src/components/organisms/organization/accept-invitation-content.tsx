@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { ApiError } from "@/lib/api/client";
 import { acceptOrganizationInvitation } from "@/lib/api/organizations";
+import { buildAuthRedirectPath } from "@/lib/auth/callback-url";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 type Status = "loading" | "success" | "invalid_token" | "missing_token" | "error";
@@ -17,6 +18,7 @@ export function AcceptInvitationContent() {
   const { token, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const invitationToken = searchParams.get("token");
+  const callbackUrl = invitationToken ? `/invitations/accept?${searchParams.toString()}` : null;
   const [status, setStatus] = useState<Status>(invitationToken ? "loading" : "missing_token");
   const called = useRef(false);
 
@@ -38,6 +40,28 @@ export function AcceptInvitationContent() {
         }
       });
   }, [authLoading, token, searchParams, invitationToken, queryClient]);
+
+  if (!authLoading && invitationToken && !token) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">{t("unauthenticated")}</p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={buildAuthRedirectPath("/login", callbackUrl)}
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            {t("signIn")}
+          </Link>
+          <Link
+            href={buildAuthRedirectPath("/register", callbackUrl)}
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            {t("createAccount")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (status === "loading") {
     return <p className="text-sm text-muted-foreground">{t("loading")}</p>;

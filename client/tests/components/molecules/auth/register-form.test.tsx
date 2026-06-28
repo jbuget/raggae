@@ -7,11 +7,16 @@ import { renderWithProviders } from "../../../helpers/render";
 import { server } from "../../../helpers/msw-server";
 
 const mockPush = vi.fn();
+const mockSearchParamsGet = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => ({ get: (key: string) => mockSearchParamsGet(key) }),
 }));
 
-afterEach(() => { vi.clearAllMocks(); });
+afterEach(() => {
+  vi.clearAllMocks();
+  mockSearchParamsGet.mockReturnValue(null);
+});
 
 describe("RegisterForm", () => {
   it("should render all input fields", () => {
@@ -51,6 +56,42 @@ describe("RegisterForm", () => {
     await user.type(screen.getByLabelText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /create account/i }));
     expect(mockPush).toHaveBeenCalledWith("/login");
+  });
+
+  it("should register and redirect to login with callbackUrl when provided", async () => {
+    mockSearchParamsGet.mockImplementation((key: string) =>
+      key === "callbackUrl" ? "/invitations/accept?token=abc" : null,
+    );
+    server.use(
+      http.post("/api/v1/auth/register", () =>
+        HttpResponse.json(
+          { id: "user-1", email: "test@example.com", full_name: "Test User", is_active: true, created_at: "2026-01-01T00:00:00Z" },
+          { status: 201 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<RegisterForm />);
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+    expect(mockPush).toHaveBeenCalledWith(
+      "/login?callbackUrl=%2Finvitations%2Faccept%3Ftoken%3Dabc",
+    );
+  });
+
+  it("should preserve callbackUrl on sign in link when provided", () => {
+    mockSearchParamsGet.mockImplementation((key: string) =>
+      key === "callbackUrl" ? "/invitations/accept?token=abc" : null,
+    );
+
+    renderWithProviders(<RegisterForm />);
+
+    expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute(
+      "href",
+      "/login?callbackUrl=%2Finvitations%2Faccept%3Ftoken%3Dabc",
+    );
   });
 
   it("should display an alert on 409 conflict", async () => {

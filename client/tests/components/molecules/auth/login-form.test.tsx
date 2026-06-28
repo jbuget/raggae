@@ -11,13 +11,17 @@ vi.mock("next-auth/react", async () => {
 });
 
 const mockPush = vi.fn();
+const mockSearchParamsGet = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-  useSearchParams: () => ({ get: () => null }),
+  useSearchParams: () => ({ get: (key: string) => mockSearchParamsGet(key) }),
 }));
 
 describe("LoginForm", () => {
-  afterEach(() => { vi.clearAllMocks(); });
+  afterEach(() => {
+    vi.clearAllMocks();
+    mockSearchParamsGet.mockReturnValue(null);
+  });
 
   it("should render email and password inputs", () => {
     renderWithProviders(<LoginForm />);
@@ -51,6 +55,32 @@ describe("LoginForm", () => {
       redirect: false,
     });
     expect(mockPush).toHaveBeenCalledWith("/projects");
+  });
+
+  it("should redirect to callbackUrl on success when provided", async () => {
+    mockSearchParamsGet.mockImplementation((key: string) =>
+      key === "callbackUrl" ? "/invitations/accept?token=abc" : null,
+    );
+    mockSignIn.mockResolvedValue({ error: null });
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />);
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+    expect(mockPush).toHaveBeenCalledWith("/invitations/accept?token=abc");
+  });
+
+  it("should preserve callbackUrl on register link when provided", () => {
+    mockSearchParamsGet.mockImplementation((key: string) =>
+      key === "callbackUrl" ? "/invitations/accept?token=abc" : null,
+    );
+
+    renderWithProviders(<LoginForm />);
+
+    expect(screen.getByRole("link", { name: /register/i })).toHaveAttribute(
+      "href",
+      "/register?callbackUrl=%2Finvitations%2Faccept%3Ftoken%3Dabc",
+    );
   });
 
   it("should display an error alert on failed sign in", async () => {

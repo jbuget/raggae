@@ -56,7 +56,7 @@ class AcceptUserOrganizationInvitation:
         now = datetime.now(UTC)
         if invitation.status != OrganizationInvitationStatus.PENDING:
             raise OrganizationInvitationInvalidError("Invitation is not pending")
-        if invitation.expires_at < now:
+        if invitation.is_expired(now):
             expired = invitation.with_status(
                 status=OrganizationInvitationStatus.EXPIRED,
                 updated_at=now,
