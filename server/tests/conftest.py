@@ -47,6 +47,14 @@ def _reset_repositories() -> None:
         dependencies._project_snapshot_repository, "_snapshots"
     ):
         dependencies._project_snapshot_repository._snapshots.clear()
+    if hasattr(dependencies, "_org_mcp_server_repository") and hasattr(
+        dependencies._org_mcp_server_repository, "_servers"
+    ):
+        dependencies._org_mcp_server_repository._servers.clear()
+    if hasattr(dependencies, "_project_mcp_activation_repository") and hasattr(
+        dependencies._project_mcp_activation_repository, "_activations"
+    ):
+        dependencies._project_mcp_activation_repository._activations.clear()
 
 
 @pytest.fixture

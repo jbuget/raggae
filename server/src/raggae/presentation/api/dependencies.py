@@ -18,6 +18,9 @@ from raggae.application.interfaces.repositories.document_repository import (
     DocumentRepository,
 )
 from raggae.application.interfaces.repositories.message_repository import MessageRepository
+from raggae.application.interfaces.repositories.org_mcp_server_repository import (
+    OrgMcpServerRepository,
+)
 from raggae.application.interfaces.repositories.org_provider_credential_repository import (
     OrgProviderCredentialRepository,
 )
@@ -29,6 +32,9 @@ from raggae.application.interfaces.repositories.organization_member_repository i
 )
 from raggae.application.interfaces.repositories.organization_repository import (
     OrganizationRepository,
+)
+from raggae.application.interfaces.repositories.project_mcp_activation_repository import (
+    ProjectMcpActivationRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
 from raggae.application.interfaces.repositories.project_snapshot_repository import (
@@ -60,6 +66,10 @@ from raggae.application.interfaces.services.invitation_email_service import Invi
 from raggae.application.interfaces.services.keyword_extractor import KeywordExtractor
 from raggae.application.interfaces.services.language_detector import LanguageDetector
 from raggae.application.interfaces.services.llm_service import LLMService
+from raggae.application.interfaces.services.mcp_bearer_token_crypto_service import (
+    McpBearerTokenCryptoService,
+)
+from raggae.application.interfaces.services.mcp_client import McpClient
 from raggae.application.interfaces.services.project_embedding_service_resolver import (
     ProjectEmbeddingServiceResolver,
 )
@@ -80,6 +90,7 @@ from raggae.application.interfaces.services.text_chunker_service import TextChun
 from raggae.application.interfaces.services.text_sanitizer_service import (
     TextSanitizerService,
 )
+from raggae.application.interfaces.services.url_safety_validator import UrlSafetyValidator
 from raggae.application.services.agent_configuration_resolver import (
     AgentConfigurationResolver,
 )
@@ -122,6 +133,27 @@ from raggae.application.use_cases.org_credentials.list_org_provider_api_keys imp
 )
 from raggae.application.use_cases.org_credentials.save_org_provider_api_key import (
     SaveOrgProviderApiKey,
+)
+from raggae.application.use_cases.org_mcp.activate_org_mcp_server import (
+    ActivateOrgMcpServer,
+)
+from raggae.application.use_cases.org_mcp.deactivate_org_mcp_server import (
+    DeactivateOrgMcpServer,
+)
+from raggae.application.use_cases.org_mcp.declare_org_mcp_server import (
+    DeclareOrgMcpServer,
+)
+from raggae.application.use_cases.org_mcp.delete_org_mcp_server import (
+    DeleteOrgMcpServer,
+)
+from raggae.application.use_cases.org_mcp.list_org_mcp_servers import (
+    ListOrgMcpServers,
+)
+from raggae.application.use_cases.org_mcp.refresh_org_mcp_tools import (
+    RefreshOrgMcpTools,
+)
+from raggae.application.use_cases.org_mcp.update_org_mcp_server import (
+    UpdateOrgMcpServer,
 )
 from raggae.application.use_cases.organization.accept_organization_invitation import (
     AcceptOrganizationInvitation,
@@ -230,6 +262,9 @@ from raggae.infrastructure.database.repositories.in_memory_document_repository i
 from raggae.infrastructure.database.repositories.in_memory_message_repository import (
     InMemoryMessageRepository,
 )
+from raggae.infrastructure.database.repositories.in_memory_org_mcp_server_repository import (
+    InMemoryOrgMcpServerRepository,
+)
 from raggae.infrastructure.database.repositories.in_memory_org_provider_credential_repository import (
     InMemoryOrgProviderCredentialRepository,
 )
@@ -241,6 +276,9 @@ from raggae.infrastructure.database.repositories.in_memory_organization_member_r
 )
 from raggae.infrastructure.database.repositories.in_memory_organization_repository import (
     InMemoryOrganizationRepository,
+)
+from raggae.infrastructure.database.repositories.in_memory_project_mcp_activation_repository import (
+    InMemoryProjectMcpActivationRepository,
 )
 from raggae.infrastructure.database.repositories.in_memory_project_repository import (
     InMemoryProjectRepository,
@@ -272,6 +310,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_document_repository 
 from raggae.infrastructure.database.repositories.sqlalchemy_message_repository import (
     SQLAlchemyMessageRepository,
 )
+from raggae.infrastructure.database.repositories.sqlalchemy_org_mcp_server_repository import (
+    SQLAlchemyOrgMcpServerRepository,
+)
 from raggae.infrastructure.database.repositories.sqlalchemy_org_provider_credential_repository import (
     SQLAlchemyOrgProviderCredentialRepository,
 )
@@ -283,6 +324,9 @@ from raggae.infrastructure.database.repositories.sqlalchemy_organization_member_
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_organization_repository import (
     SQLAlchemyOrganizationRepository,
+)
+from raggae.infrastructure.database.repositories.sqlalchemy_project_mcp_activation_repository import (
+    SQLAlchemyProjectMcpActivationRepository,
 )
 from raggae.infrastructure.database.repositories.sqlalchemy_project_repository import (
     SQLAlchemyProjectRepository,
@@ -311,6 +355,9 @@ from raggae.infrastructure.services.document_file_metadata_extractor import (
     DocumentFileMetadataExtractor,
 )
 from raggae.infrastructure.services.entra_oauth_provider import EntraOAuthProvider
+from raggae.infrastructure.services.fernet_mcp_bearer_token_crypto_service import (
+    FernetMcpBearerTokenCryptoService,
+)
 from raggae.infrastructure.services.fernet_provider_api_key_crypto_service import (
     FernetProviderApiKeyCryptoService,
 )
@@ -322,6 +369,7 @@ from raggae.infrastructure.services.heading_section_text_chunker_service import 
 from raggae.infrastructure.services.heuristic_document_structure_analyzer import (
     HeuristicDocumentStructureAnalyzer,
 )
+from raggae.infrastructure.services.http_mcp_client import HttpMcpClient
 from raggae.infrastructure.services.in_memory_chunk_retrieval_service import (
     InMemoryChunkRetrievalService,
 )
@@ -399,6 +447,9 @@ from raggae.infrastructure.services.sqlalchemy_chunk_retrieval_service import (
     SQLAlchemyChunkRetrievalService,
 )
 from raggae.infrastructure.services.tabular_text_chunker_service import TabularTextChunkerService
+from raggae.infrastructure.services.url_safety_validator_impl import (
+    UrlSafetyValidatorImpl,
+)
 
 
 def _build_embedding_service() -> EmbeddingService:
@@ -445,6 +496,12 @@ if settings.persistence_backend == "postgres":
     _org_credential_repository: OrgProviderCredentialRepository = SQLAlchemyOrgProviderCredentialRepository(
         session_factory=SessionFactory
     )
+    _org_mcp_server_repository: OrgMcpServerRepository = SQLAlchemyOrgMcpServerRepository(
+        session_factory=SessionFactory
+    )
+    _project_mcp_activation_repository: ProjectMcpActivationRepository = (
+        SQLAlchemyProjectMcpActivationRepository(session_factory=SessionFactory)
+    )
     _agent_configuration_repository: AgentConfigurationRepository = SQLAlchemyAgentConfigurationRepository(
         session_factory=SessionFactory
     )
@@ -475,6 +532,8 @@ else:
     _message_repository = InMemoryMessageRepository()
     _provider_credential_repository = InMemoryProviderCredentialRepository()
     _org_credential_repository = InMemoryOrgProviderCredentialRepository()
+    _org_mcp_server_repository = InMemoryOrgMcpServerRepository()
+    _project_mcp_activation_repository = InMemoryProjectMcpActivationRepository()
     _agent_configuration_repository = InMemoryAgentConfigurationRepository()
     _organization_repository = InMemoryOrganizationRepository()
     _organization_member_repository = InMemoryOrganizationMemberRepository()
@@ -490,6 +549,11 @@ _provider_api_key_crypto_service: ProviderApiKeyCryptoService = FernetProviderAp
     encryption_key=settings.credentials_encryption_key
 )
 _provider_api_key_validator: ProviderApiKeyValidator = SimpleProviderApiKeyValidator()
+_mcp_bearer_token_crypto_service: McpBearerTokenCryptoService = FernetMcpBearerTokenCryptoService(
+    inner=_provider_api_key_crypto_service
+)
+_url_safety_validator: UrlSafetyValidator = UrlSafetyValidatorImpl()
+_mcp_client: McpClient = HttpMcpClient(url_safety_validator=_url_safety_validator)
 _provider_api_key_resolver = GetEffectiveProviderApiKey(
     provider_credential_repository=_provider_credential_repository,
     provider_api_key_crypto_service=_provider_api_key_crypto_service,
@@ -1115,6 +1179,63 @@ def get_delete_org_provider_api_key_use_case() -> DeleteOrgProviderApiKey:
     return DeleteOrgProviderApiKey(
         org_credential_repository=_org_credential_repository,
         organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_declare_org_mcp_server_use_case() -> DeclareOrgMcpServer:
+    return DeclareOrgMcpServer(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+        url_safety_validator=_url_safety_validator,
+        mcp_client=_mcp_client,
+        bearer_token_crypto_service=_mcp_bearer_token_crypto_service,
+    )
+
+
+def get_list_org_mcp_servers_use_case() -> ListOrgMcpServers:
+    return ListOrgMcpServers(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_update_org_mcp_server_use_case() -> UpdateOrgMcpServer:
+    return UpdateOrgMcpServer(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+        url_safety_validator=_url_safety_validator,
+        bearer_token_crypto_service=_mcp_bearer_token_crypto_service,
+    )
+
+
+def get_refresh_org_mcp_tools_use_case() -> RefreshOrgMcpTools:
+    return RefreshOrgMcpTools(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+        mcp_client=_mcp_client,
+        bearer_token_crypto_service=_mcp_bearer_token_crypto_service,
+    )
+
+
+def get_activate_org_mcp_server_use_case() -> ActivateOrgMcpServer:
+    return ActivateOrgMcpServer(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_deactivate_org_mcp_server_use_case() -> DeactivateOrgMcpServer:
+    return DeactivateOrgMcpServer(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+    )
+
+
+def get_delete_org_mcp_server_use_case() -> DeleteOrgMcpServer:
+    return DeleteOrgMcpServer(
+        org_mcp_server_repository=_org_mcp_server_repository,
+        organization_member_repository=_organization_member_repository,
+        project_mcp_activation_repository=_project_mcp_activation_repository,
     )
 
 
