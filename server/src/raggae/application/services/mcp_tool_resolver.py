@@ -17,6 +17,7 @@ from raggae.application.interfaces.repositories.project_mcp_activation_repositor
     ProjectMcpActivationRepository,
 )
 from raggae.application.interfaces.repositories.project_repository import ProjectRepository
+from raggae.domain.value_objects.llm_tool_descriptor import LLMToolDescriptor
 from raggae.domain.value_objects.mcp_auth_type import McpAuthType
 from raggae.domain.value_objects.mcp_tool_descriptor import McpToolDescriptor
 
@@ -78,3 +79,17 @@ class McpToolResolver:
         if not slug or not original:
             return None
         return slug, original
+
+    @staticmethod
+    def to_llm_descriptors(
+        descriptors: list[McpToolDescriptor],
+    ) -> list[LLMToolDescriptor]:
+        """Project MCP descriptors onto the LLM-facing schema for tool calling."""
+        return [
+            LLMToolDescriptor(
+                name=d.prefixed_name,
+                description=d.description,
+                parameters=d.input_schema or {"type": "object", "properties": {}},
+            )
+            for d in descriptors
+        ]

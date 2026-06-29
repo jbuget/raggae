@@ -3,6 +3,7 @@ from raggae.application.interfaces.services.provider_api_key_crypto_service impo
     ProviderApiKeyCryptoService,
 )
 from raggae.infrastructure.config.settings import Settings
+from raggae.infrastructure.services.anthropic_llm_service import AnthropicLLMService
 from raggae.infrastructure.services.gemini_llm_service import GeminiLLMService
 from raggae.infrastructure.services.in_memory_llm_service import InMemoryLLMService
 from raggae.infrastructure.services.ollama_llm_service import OllamaLLMService
@@ -43,6 +44,13 @@ class ProjectLLMServiceResolver:
             )
             effective_model = model or self._resolve_default_model(effective_backend)
             return GeminiLLMService(api_key=api_key, model=effective_model)
+
+        if effective_backend == "anthropic":
+            api_key = self._resolve_api_key(
+                encrypted_api_key, self._resolve_default_api_key(effective_backend)
+            )
+            effective_model = model or self._resolve_default_model(effective_backend)
+            return AnthropicLLMService(api_key=api_key, model=effective_model)
 
         if effective_backend == "ollama":
             effective_model = model or self._resolve_default_model(effective_backend)
