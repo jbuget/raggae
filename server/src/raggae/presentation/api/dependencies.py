@@ -939,6 +939,8 @@ def get_send_message_use_case() -> SendMessage:
         project_reranker_service_resolver=_project_reranker_service_resolver,
         organization_member_repository=_organization_member_repository,
         agent_configuration_resolver=_agent_configuration_resolver,
+        mcp_tool_resolver=get_mcp_tool_resolver(),
+        mcp_tool_executor=get_mcp_tool_executor(),
         llm_provider=settings.default_llm_provider,
         default_chunk_limit=settings.retrieval_default_chunk_limit,
         history_window_size=settings.chat_history_window_size,

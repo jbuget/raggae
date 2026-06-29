@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -31,10 +32,16 @@ from raggae.application.interfaces.services.project_reranker_service_resolver im
 from raggae.application.interfaces.services.provider_api_key_resolver import (
     ProviderApiKeyResolver,
 )
+from raggae.application.interfaces.services.tool_capable_llm_service import (
+    ToolCapableLLMService,
+)
 from raggae.application.services.agent_configuration_resolver import (
     AgentConfigurationResolver,
 )
 from raggae.application.services.chat_security_policy import StaticChatSecurityPolicy
+from raggae.application.services.chat_tool_calling_session import ChatToolCallingSession
+from raggae.application.services.mcp_tool_executor import McpToolExecutor
+from raggae.application.services.mcp_tool_resolver import McpToolResolver
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
 from raggae.domain.entities.conversation import Conversation
 from raggae.domain.entities.message import Message
@@ -45,9 +52,12 @@ from raggae.domain.exceptions.project_exceptions import (
     ProjectNotFoundError,
     ProjectReindexInProgressError,
 )
+from raggae.domain.value_objects.chat_message import ChatMessage, ChatRole
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
 from raggae.domain.value_objects.resolved_agent_configuration import ResolvedAgentConfiguration
 from raggae.infrastructure.services.prompt_builder import build_rag_prompt
+
+logger = logging.getLogger(__name__)
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
 
@@ -68,6 +78,8 @@ class SendMessage:
         project_reranker_service_resolver: ProjectRerankerServiceResolver | None = None,
         organization_member_repository: OrganizationMemberRepository | None = None,
         agent_configuration_resolver: AgentConfigurationResolver | None = None,
+        mcp_tool_resolver: McpToolResolver | None = None,
+        mcp_tool_executor: McpToolExecutor | None = None,
         llm_provider: str = "openai",
         chat_security_policy: ChatSecurityPolicy | None = None,
         default_chunk_limit: int = 8,
@@ -86,6 +98,8 @@ class SendMessage:
         self._project_reranker_service_resolver = project_reranker_service_resolver
         self._organization_member_repository = organization_member_repository
         self._agent_configuration_resolver = agent_configuration_resolver
+        self._mcp_tool_resolver = mcp_tool_resolver
+        self._mcp_tool_executor = mcp_tool_executor
         self._llm_provider = llm_provider
         self._default_chunk_limit = max(1, default_chunk_limit)
         self._max_chunk_limit = max(1, max_chunk_limit)
@@ -215,6 +229,64 @@ class SendMessage:
             effective_limit,
         )
         relevant_chunks.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
+
+        # Tool-calling branch: if the project has activated MCP tools and the LLM
+        # supports them, run a tool-calling session in parallel with RAG so the
+        # model can search external systems and combine results with the
+        # locally retrieved chunks.
+        tool_calling_response = await self._maybe_run_tool_calling(
+            project=project,
+            user_id=user_id,
+            user_message=message,
+            relevant_chunks=relevant_chunks,
+            conversation_id=conversation.id,
+            current_user_message_id=current_user_message_id,
+            history_window_size=effective_history_window_size,
+            history_max_chars=effective_history_max_chars,
+        )
+        if tool_calling_response is not None:
+            answer, used_tools = tool_calling_response
+            source_documents = self._extract_source_documents(relevant_chunks)
+            reliability_percent = self._compute_reliability_percent(relevant_chunks) if relevant_chunks else 0
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=answer,
+                    source_documents=source_documents,
+                    reliability_percent=reliability_percent,
+                    created_at=datetime.now(UTC),
+                )
+            )
+            if is_new_conversation:
+                title = await self._build_conversation_title(
+                    user_message=message,
+                    assistant_answer=answer,
+                    project=project,
+                    user_id=user_id,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
+            logger.info(
+                "chat_message_used_mcp_tools",
+                extra={
+                    "project_id": str(project_id),
+                    "conversation_id": str(conversation.id),
+                    "tool_invocations": used_tools,
+                },
+            )
+            return ChatMessageResponseDTO(
+                project_id=project_id,
+                conversation_id=conversation.id,
+                message=message,
+                answer=answer,
+                chunks=relevant_chunks,
+                retrieval_strategy_used=retrieval_result.strategy_used,
+                retrieval_execution_time_ms=retrieval_result.execution_time_ms,
+                history_messages_used=0,
+                chunks_used=len(relevant_chunks),
+            )
+
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
             await self._message_repository.save(
@@ -538,6 +610,103 @@ class SendMessage:
             history_messages_used=len(conversation_history),
             chunks_used=len(relevant_chunks),
         )
+
+    async def _maybe_run_tool_calling(
+        self,
+        *,
+        project: Project,
+        user_id: UUID,
+        user_message: str,
+        relevant_chunks: list[RetrievedChunkDTO],
+        conversation_id: UUID,
+        current_user_message_id: UUID | None,
+        history_window_size: int,
+        history_max_chars: int,
+    ) -> tuple[str, list[str]] | None:
+        """If MCP tools are activated for the project and the LLM supports them,
+        run a tool-calling session and return ``(answer, used_tool_names)``;
+        return ``None`` to fall back to the standard RAG-only behavior.
+        """
+        if self._mcp_tool_resolver is None or self._mcp_tool_executor is None:
+            return None
+        if project.organization_id is None:
+            return None
+        mcp_descriptors = await self._mcp_tool_resolver.resolve(project.id)
+        if not mcp_descriptors:
+            return None
+
+        resolved_config = await self._resolve_config(project=project, user_id=user_id)
+        llm_service = await self._resolve_llm_service(
+            resolved_config=resolved_config, project=project, user_id=user_id
+        )
+        if not isinstance(llm_service, ToolCapableLLMService):
+            logger.info(
+                "chat_mcp_tools_skipped_provider_not_compatible",
+                extra={"project_id": str(project.id), "llm": type(llm_service).__name__},
+            )
+            return None
+
+        history_messages = await self._build_conversation_history(
+            conversation_id=conversation_id,
+            current_user_message_id=current_user_message_id,
+            history_window_size=history_window_size,
+            history_max_chars=history_max_chars,
+        )
+        system_message = self._build_tool_calling_system_message(
+            project=project, relevant_chunks=relevant_chunks
+        )
+        messages: list[ChatMessage] = [
+            ChatMessage(role=ChatRole.SYSTEM, content=system_message),
+        ]
+        messages.extend(
+            ChatMessage(role=ChatRole.ASSISTANT, content=line[len("Assistant: ") :])
+            if line.startswith("Assistant: ")
+            else ChatMessage(role=ChatRole.USER, content=line[len("User: ") :])
+            if line.startswith("User: ")
+            else ChatMessage(role=ChatRole.USER, content=line)
+            for line in history_messages
+        )
+        messages.append(ChatMessage(role=ChatRole.USER, content=user_message))
+
+        llm_tools = McpToolResolver.to_llm_descriptors(mcp_descriptors)
+        session = ChatToolCallingSession(llm_service=llm_service, tool_executor=self._mcp_tool_executor)
+        result = await session.run(
+            messages=messages,
+            mcp_tools=mcp_descriptors,
+            llm_tools=llm_tools,
+            organization_id=project.organization_id,
+        )
+        sanitized = self._chat_security_policy.sanitize_model_answer(result.final_answer)
+        return sanitized, result.tool_invocations
+
+    def _build_tool_calling_system_message(
+        self,
+        *,
+        project: Project,
+        relevant_chunks: list[RetrievedChunkDTO],
+    ) -> str:
+        """Compose the SYSTEM message that opens a tool-calling conversation.
+
+        Carries the project's system prompt plus any locally retrieved RAG
+        context, so the LLM can combine both knowledge sources with the
+        available MCP tools.
+        """
+        parts: list[str] = []
+        if project.system_prompt:
+            parts.append(project.system_prompt.strip())
+        if relevant_chunks:
+            context_parts = [
+                f"[Source: {chunk.document_file_name or 'unknown'}]\n{chunk.content}"
+                for chunk in relevant_chunks
+            ]
+            parts.append(
+                "Retrieved project context (use it when relevant):\n\n" + "\n\n---\n\n".join(context_parts)
+            )
+        parts.append(
+            "You can call the available MCP tools to fetch external information. "
+            "If retrieved context is sufficient, you may answer without calling tools."
+        )
+        return "\n\n".join(parts)
 
     async def _resolve_config(self, project: Project, user_id: UUID) -> ResolvedAgentConfiguration | None:
         if self._agent_configuration_resolver is None:
