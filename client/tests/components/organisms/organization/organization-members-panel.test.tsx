@@ -29,7 +29,7 @@ vi.mock("@/lib/hooks/use-organization-members", () => ({
         user_last_name: "Doe",
         user_email: "alice.doe@example.com",
         role: "owner",
-        joined_at: "2024-02-01T00:00:00Z",
+        joined_at: "2026-03-18T18:26:55.860571Z",
       },
       {
         id: "member-3",
@@ -75,7 +75,7 @@ vi.mock("@/lib/hooks/use-organization-members", () => ({
         invited_by_user_id: "user-1",
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-06-15T00:00:00Z",
+        updated_at: "2026-05-27T13:42:00Z",
       },
       {
         id: "inv-expired",
@@ -187,13 +187,18 @@ describe("OrganizationMembersPanel", () => {
     expect(screen.queryByText("Charlie Brown")).not.toBeInTheDocument();
   });
 
-  it("should display the last sent date using updated_at instead of created_at", () => {
+  it("should display member join dates with day, month, year, and time", () => {
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const row = screen.getByText("Alice Doe").closest(".rounded-md");
+    expect(row).toHaveTextContent("Joined 18/03/2026 à 18h26");
+    expect(row).not.toHaveTextContent("2026-03-18T18:26:55.860571Z");
+  });
+
+  it("should display the last sent date using updated_at with day, month, year, and time", () => {
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
     const row = screen.getByText("pending@example.com").closest(".rounded-md");
-    const expected = new Date("2024-06-15T00:00:00Z").toLocaleDateString();
-    const legacy = new Date("2024-01-01T00:00:00Z").toLocaleDateString();
-    expect(row).toHaveTextContent(expected);
-    expect(row).not.toHaveTextContent(legacy);
+    expect(row).toHaveTextContent("Sent on 27/05/2026 à 13h42");
+    expect(row).not.toHaveTextContent("01/01/2024");
   });
 
   it("should render pending invitations sorted alphabetically by email", () => {
