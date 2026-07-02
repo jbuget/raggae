@@ -491,6 +491,8 @@
       "inviteError": "Failed to invite member",
       "inviteAlreadyPending": "An invitation is already pending for this email.",
       "currentMembers": "Current members",
+      "searchPlaceholder": "Search by name or email",
+      "noMembersMatch": "No member matches your search.",
       "joined": "Joined",
       "remove": "Remove",
       "removeSuccess": "Member removed",

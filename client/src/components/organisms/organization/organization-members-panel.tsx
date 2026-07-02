@@ -23,6 +23,19 @@ import {
 
 const ROLE_OPTIONS: OrganizationMemberRole[] = ["owner", "maker", "user"];
 
+const ROLE_SORT_ORDER: Record<OrganizationMemberRole, number> = {
+  owner: 0,
+  maker: 1,
+  user: 2,
+};
+
+function memberFullName(member: {
+  user_first_name: string | null;
+  user_last_name: string | null;
+}): string {
+  return [member.user_first_name, member.user_last_name].filter(Boolean).join(" ");
+}
+
 type OrganizationMembersPanelProps = {
   organizationId: string;
 };
@@ -35,6 +48,9 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   const ownerCount = members?.filter((m) => m.role === "owner").length ?? 0;
   const { data: invitations, isLoading: invitationsLoading } =
     useOrganizationInvitations(organizationId);
+  const sortedInvitations = [...(invitations ?? [])].sort((a, b) =>
+    a.email.localeCompare(b.email),
+  );
   const inviteMember = useInviteOrganizationMember(organizationId);
   const updateRole = useUpdateOrganizationMemberRole(organizationId);
   const removeMember = useRemoveOrganizationMember(organizationId);
@@ -42,6 +58,20 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   const revokeInvitation = useRevokeOrganizationInvitation(organizationId);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrganizationMemberRole>("user");
+  const [memberSearch, setMemberSearch] = useState("");
+
+  const normalizedSearch = memberSearch.trim().toLowerCase();
+  const sortedMembers = [...(members ?? [])].sort((a, b) => {
+    const roleDiff = ROLE_SORT_ORDER[a.role] - ROLE_SORT_ORDER[b.role];
+    if (roleDiff !== 0) return roleDiff;
+    return memberFullName(a).localeCompare(memberFullName(b));
+  });
+  const filteredMembers = sortedMembers.filter((member) => {
+    if (!normalizedSearch) return true;
+    const fullName = memberFullName(member).toLowerCase();
+    const email = (member.user_email ?? "").toLowerCase();
+    return fullName.includes(normalizedSearch) || email.includes(normalizedSearch);
+  });
 
   return (
     <div className="rounded-lg border bg-card p-5 space-y-6">
@@ -101,11 +131,19 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
 
       <div className="space-y-2">
         <Label>{t("currentMembers")}</Label>
+        <Input
+          placeholder={t("searchPlaceholder")}
+          value={memberSearch}
+          onChange={(e) => setMemberSearch(e.target.value)}
+          className="max-w-sm"
+        />
         {membersLoading ? (
           <Skeleton className="h-20 w-full" />
+        ) : filteredMembers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("noMembersMatch")}</p>
         ) : (
           <div className="space-y-2">
-            {members?.map((member) => (
+            {filteredMembers.map((member) => (
               <div
                 key={member.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-3"
@@ -113,9 +151,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                 <div className="text-sm">
                   <div className="flex items-baseline gap-2">
                     <p className="font-medium">
-                      {[member.user_first_name, member.user_last_name]
-                        .filter(Boolean)
-                        .join(" ") || member.user_id}
+                      {memberFullName(member) || member.user_id}
                     </p>
                     {member.user_email && (
                       <p className="text-muted-foreground">{member.user_email}</p>
@@ -183,10 +219,10 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-2">
-            {!invitations || invitations.length === 0 ? (
+            {sortedInvitations.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noPendingInvitations")}</p>
             ) : (
-              invitations.map((invitation) => (
+              sortedInvitations.map((invitation) => (
                 <div
                   key={invitation.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-3"
@@ -199,7 +235,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       )}
                     </div>
                     <p className="text-muted-foreground">
-                      {t("sentOn")} {new Date(invitation.created_at).toLocaleDateString()}
+                      {t("sentOn")} {new Date(invitation.updated_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
