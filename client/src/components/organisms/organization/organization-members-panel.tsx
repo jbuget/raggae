@@ -36,6 +36,19 @@ function memberFullName(member: {
   return [member.user_first_name, member.user_last_name].filter(Boolean).join(" ");
 }
 
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+
+  return `${day}/${month}/${year} à ${hours}h${minutes}`;
+}
+
 type OrganizationMembersPanelProps = {
   organizationId: string;
 };
@@ -130,7 +143,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
       </div>
 
       <div className="space-y-2">
-        <Label>{t("currentMembers")}</Label>
+        <Label>{t("currentMembers")} ({members?.length ?? 0})</Label>
         <Input
           placeholder={t("searchPlaceholder")}
           value={memberSearch}
@@ -157,7 +170,9 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       <p className="text-muted-foreground">{member.user_email}</p>
                     )}
                   </div>
-                  <p className="text-muted-foreground">{t("joined")} {member.joined_at}</p>
+                  <p className="text-muted-foreground">
+                    {t("joined")} {formatDateTime(member.joined_at)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <select
@@ -214,7 +229,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
       </div>
 
       <div className="space-y-2">
-        <Label>{t("pendingInvitations")}</Label>
+        <Label>{t("pendingInvitations")} ({invitations?.length ?? 0})</Label>
         {invitationsLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (
@@ -235,7 +250,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       )}
                     </div>
                     <p className="text-muted-foreground">
-                      {t("sentOn")} {new Date(invitation.updated_at).toLocaleDateString()}
+                      {t("sentOn")} {formatDateTime(invitation.updated_at)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
