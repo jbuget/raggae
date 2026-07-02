@@ -23,6 +23,19 @@ import {
 
 const ROLE_OPTIONS: OrganizationMemberRole[] = ["owner", "maker", "user"];
 
+const ROLE_SORT_ORDER: Record<OrganizationMemberRole, number> = {
+  owner: 0,
+  maker: 1,
+  user: 2,
+};
+
+function memberFullName(member: {
+  user_first_name: string | null;
+  user_last_name: string | null;
+}): string {
+  return [member.user_first_name, member.user_last_name].filter(Boolean).join(" ");
+}
+
 type OrganizationMembersPanelProps = {
   organizationId: string;
 };
@@ -48,12 +61,14 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   const [memberSearch, setMemberSearch] = useState("");
 
   const normalizedSearch = memberSearch.trim().toLowerCase();
-  const filteredMembers = (members ?? []).filter((member) => {
+  const sortedMembers = [...(members ?? [])].sort((a, b) => {
+    const roleDiff = ROLE_SORT_ORDER[a.role] - ROLE_SORT_ORDER[b.role];
+    if (roleDiff !== 0) return roleDiff;
+    return memberFullName(a).localeCompare(memberFullName(b));
+  });
+  const filteredMembers = sortedMembers.filter((member) => {
     if (!normalizedSearch) return true;
-    const fullName = [member.user_first_name, member.user_last_name]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    const fullName = memberFullName(member).toLowerCase();
     const email = (member.user_email ?? "").toLowerCase();
     return fullName.includes(normalizedSearch) || email.includes(normalizedSearch);
   });
@@ -136,9 +151,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                 <div className="text-sm">
                   <div className="flex items-baseline gap-2">
                     <p className="font-medium">
-                      {[member.user_first_name, member.user_last_name]
-                        .filter(Boolean)
-                        .join(" ") || member.user_id}
+                      {memberFullName(member) || member.user_id}
                     </p>
                     {member.user_email && (
                       <p className="text-muted-foreground">{member.user_email}</p>

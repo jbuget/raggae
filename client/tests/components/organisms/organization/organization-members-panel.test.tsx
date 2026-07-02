@@ -143,6 +143,22 @@ describe("OrganizationMembersPanel", () => {
     expect(expiredRow).toHaveTextContent("Expired");
   });
 
+  it("should sort current members by role (owner > maker > user) then by name", () => {
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const expectedOrder = [
+      "Alice Doe",
+      "John Owner",
+      "Zoe White",
+      "Bob Smith",
+      "Charlie Brown",
+    ];
+    const nodes = expectedOrder.map((name) => screen.getByText(name));
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const relation = nodes[i].compareDocumentPosition(nodes[i + 1]);
+      expect(relation & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   it("should filter current members by name using the search input", async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
