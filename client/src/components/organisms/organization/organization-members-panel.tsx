@@ -202,7 +202,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
                       )}
                     </div>
                     <p className="text-muted-foreground">
-                      {t("sentOn")} {new Date(invitation.created_at).toLocaleDateString()}
+                      {t("sentOn")} {new Date(invitation.updated_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

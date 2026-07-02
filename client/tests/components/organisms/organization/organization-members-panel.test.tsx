@@ -34,7 +34,7 @@ vi.mock("@/lib/hooks/use-organization-members", () => ({
         invited_by_user_id: "user-1",
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-06-15T00:00:00Z",
       },
       {
         id: "inv-expired",
@@ -100,6 +100,15 @@ describe("OrganizationMembersPanel", () => {
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
     const expiredRow = screen.getByText("expired@example.com").closest("div");
     expect(expiredRow).toHaveTextContent("Expired");
+  });
+
+  it("should display the last sent date using updated_at instead of created_at", () => {
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const row = screen.getByText("pending@example.com").closest(".rounded-md");
+    const expected = new Date("2024-06-15T00:00:00Z").toLocaleDateString();
+    const legacy = new Date("2024-01-01T00:00:00Z").toLocaleDateString();
+    expect(row).toHaveTextContent(expected);
+    expect(row).not.toHaveTextContent(legacy);
   });
 
   it("should render pending invitations sorted alphabetically by email", () => {
