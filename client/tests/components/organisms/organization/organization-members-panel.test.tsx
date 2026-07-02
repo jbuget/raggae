@@ -47,6 +47,28 @@ vi.mock("@/lib/hooks/use-organization-members", () => ({
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
       },
+      {
+        id: "inv-zoe",
+        organization_id: "org-1",
+        email: "zoe@example.com",
+        role: "user",
+        status: "pending",
+        invited_by_user_id: "user-1",
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      },
+      {
+        id: "inv-alice",
+        organization_id: "org-1",
+        email: "alice@example.com",
+        role: "user",
+        status: "pending",
+        invited_by_user_id: "user-1",
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+      },
     ],
     isLoading: false,
   }),
@@ -78,5 +100,18 @@ describe("OrganizationMembersPanel", () => {
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
     const expiredRow = screen.getByText("expired@example.com").closest("div");
     expect(expiredRow).toHaveTextContent("Expired");
+  });
+
+  it("should render pending invitations sorted alphabetically by email", () => {
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const invitationEmails = [
+      "alice@example.com",
+      "expired@example.com",
+      "pending@example.com",
+      "zoe@example.com",
+    ];
+    const rendered = screen.getAllByText(/@example\.com$/).map((el) => el.textContent);
+    const filtered = rendered.filter((email) => email && invitationEmails.includes(email));
+    expect(filtered).toEqual(invitationEmails);
   });
 });

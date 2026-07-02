@@ -35,6 +35,9 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   const ownerCount = members?.filter((m) => m.role === "owner").length ?? 0;
   const { data: invitations, isLoading: invitationsLoading } =
     useOrganizationInvitations(organizationId);
+  const sortedInvitations = [...(invitations ?? [])].sort((a, b) =>
+    a.email.localeCompare(b.email),
+  );
   const inviteMember = useInviteOrganizationMember(organizationId);
   const updateRole = useUpdateOrganizationMemberRole(organizationId);
   const removeMember = useRemoveOrganizationMember(organizationId);
@@ -183,10 +186,10 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-2">
-            {!invitations || invitations.length === 0 ? (
+            {sortedInvitations.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noPendingInvitations")}</p>
             ) : (
-              invitations.map((invitation) => (
+              sortedInvitations.map((invitation) => (
                 <div
                   key={invitation.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-3"
