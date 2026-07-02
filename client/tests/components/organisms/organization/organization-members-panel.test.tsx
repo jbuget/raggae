@@ -131,6 +131,12 @@ describe("OrganizationMembersPanel", () => {
     expect(screen.getByText("john.owner@example.com")).toBeInTheDocument();
   });
 
+  it("should display member and invitation counts in section titles", () => {
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    expect(screen.getByText("Current members (5)")).toBeInTheDocument();
+    expect(screen.getByText("Pending invitations (4)")).toBeInTheDocument();
+  });
+
   it("should not show expired badge for a pending invitation within validity", () => {
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
     const pendingRow = screen.getByText("pending@example.com").closest("div");

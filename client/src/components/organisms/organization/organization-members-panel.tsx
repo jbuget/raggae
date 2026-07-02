@@ -130,7 +130,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
       </div>
 
       <div className="space-y-2">
-        <Label>{t("currentMembers")}</Label>
+        <Label>{t("currentMembers")} ({members?.length ?? 0})</Label>
         <Input
           placeholder={t("searchPlaceholder")}
           value={memberSearch}
@@ -214,7 +214,7 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
       </div>
 
       <div className="space-y-2">
-        <Label>{t("pendingInvitations")}</Label>
+        <Label>{t("pendingInvitations")} ({invitations?.length ?? 0})</Label>
         {invitationsLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (
