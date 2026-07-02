@@ -45,6 +45,18 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
   const revokeInvitation = useRevokeOrganizationInvitation(organizationId);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrganizationMemberRole>("user");
+  const [memberSearch, setMemberSearch] = useState("");
+
+  const normalizedSearch = memberSearch.trim().toLowerCase();
+  const filteredMembers = (members ?? []).filter((member) => {
+    if (!normalizedSearch) return true;
+    const fullName = [member.user_first_name, member.user_last_name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const email = (member.user_email ?? "").toLowerCase();
+    return fullName.includes(normalizedSearch) || email.includes(normalizedSearch);
+  });
 
   return (
     <div className="rounded-lg border bg-card p-5 space-y-6">
@@ -104,11 +116,19 @@ export function OrganizationMembersPanel({ organizationId }: OrganizationMembers
 
       <div className="space-y-2">
         <Label>{t("currentMembers")}</Label>
+        <Input
+          placeholder={t("searchPlaceholder")}
+          value={memberSearch}
+          onChange={(e) => setMemberSearch(e.target.value)}
+          className="max-w-sm"
+        />
         {membersLoading ? (
           <Skeleton className="h-20 w-full" />
+        ) : filteredMembers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("noMembersMatch")}</p>
         ) : (
           <div className="space-y-2">
-            {members?.map((member) => (
+            {filteredMembers.map((member) => (
               <div
                 key={member.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card p-3"

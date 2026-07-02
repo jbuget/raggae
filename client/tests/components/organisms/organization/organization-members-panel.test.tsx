@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { OrganizationMembersPanel } from "@/components/organisms/organization/organization-members-panel";
 import { renderWithProviders } from "../../../helpers/render";
@@ -19,6 +20,46 @@ vi.mock("@/lib/hooks/use-organization-members", () => ({
         user_email: "john.owner@example.com",
         role: "owner",
         joined_at: "2024-01-01T00:00:00Z",
+      },
+      {
+        id: "member-2",
+        organization_id: "org-1",
+        user_id: "user-2",
+        user_first_name: "Alice",
+        user_last_name: "Doe",
+        user_email: "alice.doe@example.com",
+        role: "owner",
+        joined_at: "2024-02-01T00:00:00Z",
+      },
+      {
+        id: "member-3",
+        organization_id: "org-1",
+        user_id: "user-3",
+        user_first_name: "Bob",
+        user_last_name: "Smith",
+        user_email: "bob.smith@example.com",
+        role: "maker",
+        joined_at: "2024-03-01T00:00:00Z",
+      },
+      {
+        id: "member-4",
+        organization_id: "org-1",
+        user_id: "user-4",
+        user_first_name: "Charlie",
+        user_last_name: "Brown",
+        user_email: "charlie.brown@example.com",
+        role: "user",
+        joined_at: "2024-04-01T00:00:00Z",
+      },
+      {
+        id: "member-5",
+        organization_id: "org-1",
+        user_id: "user-5",
+        user_first_name: "Zoe",
+        user_last_name: "White",
+        user_email: "zoe.white@example.com",
+        role: "owner",
+        joined_at: "2024-05-01T00:00:00Z",
       },
     ],
     isLoading: false,
@@ -100,6 +141,28 @@ describe("OrganizationMembersPanel", () => {
     renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
     const expiredRow = screen.getByText("expired@example.com").closest("div");
     expect(expiredRow).toHaveTextContent("Expired");
+  });
+
+  it("should filter current members by name using the search input", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const search = screen.getByPlaceholderText("Search by name or email");
+    await user.type(search, "alice");
+    expect(screen.getByText("Alice Doe")).toBeInTheDocument();
+    expect(screen.queryByText("Bob Smith")).not.toBeInTheDocument();
+    expect(screen.queryByText("Charlie Brown")).not.toBeInTheDocument();
+    expect(screen.queryByText("John Owner")).not.toBeInTheDocument();
+    expect(screen.queryByText("Zoe White")).not.toBeInTheDocument();
+  });
+
+  it("should filter current members by email using the search input", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrganizationMembersPanel organizationId="org-1" />);
+    const search = screen.getByPlaceholderText("Search by name or email");
+    await user.type(search, "bob.smith");
+    expect(screen.getByText("Bob Smith")).toBeInTheDocument();
+    expect(screen.queryByText("Alice Doe")).not.toBeInTheDocument();
+    expect(screen.queryByText("Charlie Brown")).not.toBeInTheDocument();
   });
 
   it("should display the last sent date using updated_at instead of created_at", () => {

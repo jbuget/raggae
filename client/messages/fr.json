@@ -491,6 +491,8 @@
       "inviteError": "Erreur lors de l'invitation",
       "inviteAlreadyPending": "Une invitation est déjà en attente pour cet email.",
       "currentMembers": "Membres actuels",
+      "searchPlaceholder": "Rechercher par nom ou email",
+      "noMembersMatch": "Aucun membre ne correspond à votre recherche.",
       "joined": "Rejoint le",
       "remove": "Retirer",
       "removeSuccess": "Membre retiré",
