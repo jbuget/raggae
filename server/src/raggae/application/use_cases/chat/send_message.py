@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
@@ -375,6 +376,13 @@ class SendMessage:
             llm_service = await self._resolve_llm_service(
                 resolved_config=resolved_config, project=project, user_id=user_id
             )
+        title_task: asyncio.Task[str] | None = None
+        if is_new_conversation:
+            title_task = asyncio.create_task(
+                self._build_conversation_title_from_user_message(
+                    user_message=message, project=project, user_id=user_id
+                )
+            )
         async with tracker.step("llm_generate"):
             answer = await llm_service.generate_answer(prompt)
         sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
@@ -398,14 +406,12 @@ class SendMessage:
                     created_at=datetime.now(UTC),
                 )
             )
-        if is_new_conversation:
-            async with tracker.step("conversation_title"):
-                title = await self._build_conversation_title(
-                    user_message=message,
-                    assistant_answer=answer,
-                    project=project,
-                    user_id=user_id,
-                )
+        if title_task is not None:
+            async with tracker.step("conversation_title_wait"):
+                try:
+                    title = await title_task
+                except Exception:
+                    title = self._normalize_title(message)
                 await self._conversation_repository.update_title(conversation.id, title)
         tracker.log_summary(
             logger,
@@ -623,6 +629,13 @@ class SendMessage:
             llm_service = await self._resolve_llm_service(
                 resolved_config=resolved_config, project=project, user_id=user_id
             )
+        title_task: asyncio.Task[str] | None = None
+        if is_new_conversation:
+            title_task = asyncio.create_task(
+                self._build_conversation_title_from_user_message(
+                    user_message=message, project=project, user_id=user_id
+                )
+            )
         accumulated_answer = ""
         llm_stream_started_at = perf_counter()
         first_token_at: float | None = None
@@ -672,14 +685,12 @@ class SendMessage:
                     created_at=datetime.now(UTC),
                 )
             )
-        if is_new_conversation:
-            async with tracker.step("conversation_title"):
-                title = await self._build_conversation_title(
-                    user_message=message,
-                    assistant_answer=accumulated_answer,
-                    project=project,
-                    user_id=user_id,
-                )
+        if title_task is not None:
+            async with tracker.step("conversation_title_wait"):
+                try:
+                    title = await title_task
+                except Exception:
+                    title = self._normalize_title(message)
                 await self._conversation_repository.update_title(conversation.id, title)
         tracker.log_summary(
             logger,
@@ -852,6 +863,42 @@ class SendMessage:
                 generated = await self._conversation_title_generator.generate_title(
                     user_message=user_message,
                     assistant_answer=assistant_answer,
+                )
+        except Exception:
+            return fallback
+        normalized = self._normalize_title(generated)
+        if not normalized:
+            return fallback
+        return normalized
+
+    async def _build_conversation_title_from_user_message(
+        self,
+        user_message: str,
+        project: Project,
+        user_id: UUID,
+    ) -> str:
+        """Generate the conversation title from the user message only.
+
+        Used when the title is computed in parallel with the main LLM
+        call, before the assistant answer is available.
+        """
+        fallback = self._normalize_title(user_message)
+        try:
+            if self._project_llm_service_resolver is not None:
+                resolved_config = await self._resolve_config(project=project, user_id=user_id)
+                llm_service = await self._resolve_llm_service(
+                    resolved_config=resolved_config, project=project, user_id=user_id
+                )
+                title_prompt = (
+                    "Generate a short conversation title (max 8 words) based on the user message. "
+                    "Return only the title, no punctuation at the end."
+                    f"\n\nUser message: {user_message}"
+                )
+                generated = await llm_service.generate_answer(title_prompt)
+            else:
+                generated = await self._conversation_title_generator.generate_title(
+                    user_message=user_message,
+                    assistant_answer="",
                 )
         except Exception:
             return fallback

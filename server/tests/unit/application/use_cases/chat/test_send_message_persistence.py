@@ -157,7 +157,7 @@ class TestSendMessagePersistence:
         )
         title_generator.generate_title.assert_awaited_once_with(
             user_message="hello",
-            assistant_answer="assistant answer",
+            assistant_answer="",
         )
         conversation_repository.update_title.assert_awaited_once_with(
             conversation.id,
