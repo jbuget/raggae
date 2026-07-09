@@ -59,9 +59,12 @@ async def get_model_catalog(
                 ModelEntry(id="gpt-4.1-nano", label="GPT-4.1 Nano (legacy)"),
             ],
             "gemini": [
-                ModelEntry(id="gemini-3.1-pro-preview", label="Gemini 3.1 Pro"),
-                ModelEntry(id="gemini-3-flash", label="Gemini 3 Flash"),
-                ModelEntry(id="gemini-3-deep-think-preview", label="Deep Think"),
+                ModelEntry(id="gemini-3.1-pro-preview", label="Gemini 3.1 Pro (preview)"),
+                ModelEntry(id="gemini-3-flash-preview", label="Gemini 3 Flash (preview)"),
+                ModelEntry(id="gemini-3.1-flash-lite", label="Gemini 3.1 Flash Lite (preview)"),
+                ModelEntry(id="gemini-2.5-pro", label="Gemini 2.5 Pro"),
+                ModelEntry(id="gemini-2.5-flash", label="Gemini 2.5 Flash"),
+                ModelEntry(id="gemini-2.5-flash-lite", label="Gemini 2.5 Flash Lite"),
             ],
             "anthropic": [
                 ModelEntry(id="claude-opus-4-6-20260205", label="Claude Opus 4.6"),

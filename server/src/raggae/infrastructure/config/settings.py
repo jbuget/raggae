@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     processing_mode: str = "off"
     text_chunker_backend: str = "native"
     gemini_embedding_model: str = "text-embedding-004"
-    gemini_llm_model: str = "gemini-1.5-flash"
+    gemini_llm_model: str = "gemini-3.1-pro-preview"
     ollama_base_url: str = "http://localhost:11434"
     ollama_llm_model: str = "llama3.1"
     ollama_embedding_model: str = "nomic-embed-text"
