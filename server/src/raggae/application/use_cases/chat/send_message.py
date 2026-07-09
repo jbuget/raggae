@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from time import perf_counter
 from uuid import UUID, uuid4
 
 from raggae.application.dto.chat_message_response_dto import ChatMessageResponseDTO
@@ -40,6 +41,7 @@ from raggae.application.services.agent_configuration_resolver import (
 )
 from raggae.application.services.chat_security_policy import StaticChatSecurityPolicy
 from raggae.application.services.chat_tool_calling_session import ChatToolCallingSession
+from raggae.application.services.latency_tracker import LatencyTracker
 from raggae.application.services.mcp_tool_executor import McpToolExecutor
 from raggae.application.services.mcp_tool_resolver import McpToolResolver
 from raggae.application.use_cases.chat.query_relevant_chunks import QueryRelevantChunks
@@ -121,6 +123,7 @@ class SendMessage:
         start_new_conversation: bool = False,
         retrieval_filters: dict[str, object] | None = None,
     ) -> ChatMessageResponseDTO:
+        tracker = LatencyTracker("send_message")
         project = await self._project_repository.find_by_id(project_id)
         if project is None:
             raise ProjectNotFoundError(f"Project {project_id} not found")
@@ -207,23 +210,25 @@ class SendMessage:
                 history_messages_used=0,
                 chunks_used=0,
             )
-        retrieval_query = await self._build_retrieval_query(
-            conversation_id=conversation.id,
-            current_message=message,
-            current_user_message_id=current_user_message_id,
-        )
-        retrieval_result = await self._query_relevant_chunks_use_case.execute(
-            project_id=project_id,
-            user_id=user_id,
-            query=retrieval_query,
-            limit=effective_limit,
-            offset=offset,
-            strategy=effective_retrieval_strategy,
-            min_score=effective_retrieval_min_score,
-            reranker_service=effective_reranker_service,
-            reranker_candidate_multiplier=None,
-            metadata_filters=retrieval_filters,
-        )
+        async with tracker.step("build_retrieval_query"):
+            retrieval_query = await self._build_retrieval_query(
+                conversation_id=conversation.id,
+                current_message=message,
+                current_user_message_id=current_user_message_id,
+            )
+        async with tracker.step("retrieval"):
+            retrieval_result = await self._query_relevant_chunks_use_case.execute(
+                project_id=project_id,
+                user_id=user_id,
+                query=retrieval_query,
+                limit=effective_limit,
+                offset=offset,
+                strategy=effective_retrieval_strategy,
+                min_score=effective_retrieval_min_score,
+                reranker_service=effective_reranker_service,
+                reranker_candidate_multiplier=None,
+                metadata_filters=retrieval_filters,
+            )
         relevant_chunks = self._select_useful_chunks(
             self._filter_relevant_chunks(retrieval_result.chunks),
             effective_limit,
@@ -234,45 +239,57 @@ class SendMessage:
         # supports them, run a tool-calling session in parallel with RAG so the
         # model can search external systems and combine results with the
         # locally retrieved chunks.
-        tool_calling_response = await self._maybe_run_tool_calling(
-            project=project,
-            user_id=user_id,
-            user_message=message,
-            relevant_chunks=relevant_chunks,
-            conversation_id=conversation.id,
-            current_user_message_id=current_user_message_id,
-            history_window_size=effective_history_window_size,
-            history_max_chars=effective_history_max_chars,
-        )
+        async with tracker.step("tool_calling"):
+            tool_calling_response = await self._maybe_run_tool_calling(
+                project=project,
+                user_id=user_id,
+                user_message=message,
+                relevant_chunks=relevant_chunks,
+                conversation_id=conversation.id,
+                current_user_message_id=current_user_message_id,
+                history_window_size=effective_history_window_size,
+                history_max_chars=effective_history_max_chars,
+            )
         if tool_calling_response is not None:
             answer, used_tools = tool_calling_response
             source_documents = self._extract_source_documents(relevant_chunks)
             reliability_percent = self._compute_reliability_percent(relevant_chunks) if relevant_chunks else 0
-            await self._message_repository.save(
-                Message(
-                    id=uuid4(),
-                    conversation_id=conversation.id,
-                    role="assistant",
-                    content=answer,
-                    source_documents=source_documents,
-                    reliability_percent=reliability_percent,
-                    created_at=datetime.now(UTC),
+            async with tracker.step("persist_assistant_message"):
+                await self._message_repository.save(
+                    Message(
+                        id=uuid4(),
+                        conversation_id=conversation.id,
+                        role="assistant",
+                        content=answer,
+                        source_documents=source_documents,
+                        reliability_percent=reliability_percent,
+                        created_at=datetime.now(UTC),
+                    )
                 )
-            )
             if is_new_conversation:
-                title = await self._build_conversation_title(
-                    user_message=message,
-                    assistant_answer=answer,
-                    project=project,
-                    user_id=user_id,
-                )
-                await self._conversation_repository.update_title(conversation.id, title)
+                async with tracker.step("conversation_title"):
+                    title = await self._build_conversation_title(
+                        user_message=message,
+                        assistant_answer=answer,
+                        project=project,
+                        user_id=user_id,
+                    )
+                    await self._conversation_repository.update_title(conversation.id, title)
             logger.info(
                 "chat_message_used_mcp_tools",
                 extra={
                     "project_id": str(project_id),
                     "conversation_id": str(conversation.id),
                     "tool_invocations": used_tools,
+                },
+            )
+            tracker.log_summary(
+                logger,
+                extra={
+                    "project_id": str(project_id),
+                    "conversation_id": str(conversation.id),
+                    "mode": "tool_calling",
+                    "chunks_used": len(relevant_chunks),
                 },
             )
             return ChatMessageResponseDTO(
@@ -289,25 +306,36 @@ class SendMessage:
 
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
-            await self._message_repository.save(
-                Message(
-                    id=uuid4(),
-                    conversation_id=conversation.id,
-                    role="assistant",
-                    content=fallback_answer,
-                    source_documents=[],
-                    reliability_percent=0,
-                    created_at=datetime.now(UTC),
+            async with tracker.step("persist_assistant_message"):
+                await self._message_repository.save(
+                    Message(
+                        id=uuid4(),
+                        conversation_id=conversation.id,
+                        role="assistant",
+                        content=fallback_answer,
+                        source_documents=[],
+                        reliability_percent=0,
+                        created_at=datetime.now(UTC),
+                    )
                 )
-            )
             if is_new_conversation:
-                title = await self._build_conversation_title(
-                    user_message=message,
-                    assistant_answer=fallback_answer,
-                    project=project,
-                    user_id=user_id,
-                )
-                await self._conversation_repository.update_title(conversation.id, title)
+                async with tracker.step("conversation_title"):
+                    title = await self._build_conversation_title(
+                        user_message=message,
+                        assistant_answer=fallback_answer,
+                        project=project,
+                        user_id=user_id,
+                    )
+                    await self._conversation_repository.update_title(conversation.id, title)
+            tracker.log_summary(
+                logger,
+                extra={
+                    "project_id": str(project_id),
+                    "conversation_id": str(conversation.id),
+                    "mode": "no_context",
+                    "chunks_used": 0,
+                },
+            )
             return ChatMessageResponseDTO(
                 project_id=project_id,
                 conversation_id=conversation.id,
@@ -320,31 +348,35 @@ class SendMessage:
                 chunks_used=0,
             )
         project_system_prompt = project.system_prompt
-        conversation_history = await self._build_conversation_history(
-            conversation_id=conversation.id,
-            current_user_message_id=current_user_message_id,
-            history_window_size=effective_history_window_size,
-            history_max_chars=effective_history_max_chars,
-        )
-        prompt = build_rag_prompt(
-            query=message,
-            context_chunks=[chunk.content for chunk in relevant_chunks],
-            source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
-            relevance_scores=[chunk.score for chunk in relevant_chunks],
-            project_system_prompt=project_system_prompt,
-            conversation_history=conversation_history,
-        )
-        effective_llm_provider = self._resolve_effective_llm_provider(project)
-        if self._provider_api_key_resolver is not None and effective_llm_provider in _API_KEY_PROVIDERS:
-            await self._provider_api_key_resolver.resolve(
-                user_id=user_id,
-                provider=effective_llm_provider,
+        async with tracker.step("build_history"):
+            conversation_history = await self._build_conversation_history(
+                conversation_id=conversation.id,
+                current_user_message_id=current_user_message_id,
+                history_window_size=effective_history_window_size,
+                history_max_chars=effective_history_max_chars,
             )
-        resolved_config = await self._resolve_config(project=project, user_id=user_id)
-        llm_service = await self._resolve_llm_service(
-            resolved_config=resolved_config, project=project, user_id=user_id
-        )
-        answer = await llm_service.generate_answer(prompt)
+        async with tracker.step("build_prompt"):
+            prompt = build_rag_prompt(
+                query=message,
+                context_chunks=[chunk.content for chunk in relevant_chunks],
+                source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
+                relevance_scores=[chunk.score for chunk in relevant_chunks],
+                project_system_prompt=project_system_prompt,
+                conversation_history=conversation_history,
+            )
+        effective_llm_provider = self._resolve_effective_llm_provider(project)
+        async with tracker.step("resolve_llm_service"):
+            if self._provider_api_key_resolver is not None and effective_llm_provider in _API_KEY_PROVIDERS:
+                await self._provider_api_key_resolver.resolve(
+                    user_id=user_id,
+                    provider=effective_llm_provider,
+                )
+            resolved_config = await self._resolve_config(project=project, user_id=user_id)
+            llm_service = await self._resolve_llm_service(
+                resolved_config=resolved_config, project=project, user_id=user_id
+            )
+        async with tracker.step("llm_generate"):
+            answer = await llm_service.generate_answer(prompt)
         sanitized_answer = self._chat_security_policy.sanitize_model_answer(answer)
         if sanitized_answer != answer:
             answer = sanitized_answer
@@ -353,26 +385,39 @@ class SendMessage:
         else:
             source_documents = self._extract_source_documents(relevant_chunks)
             reliability_percent = self._compute_reliability_percent(relevant_chunks)
-        await self._message_repository.save(
-            Message(
-                id=uuid4(),
-                conversation_id=conversation.id,
-                role="assistant",
-                content=answer,
-                source_documents=source_documents,
-                reliability_percent=reliability_percent,
-                llm_prompt=prompt,
-                created_at=datetime.now(UTC),
+        async with tracker.step("persist_assistant_message"):
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=answer,
+                    source_documents=source_documents,
+                    reliability_percent=reliability_percent,
+                    llm_prompt=prompt,
+                    created_at=datetime.now(UTC),
+                )
             )
-        )
         if is_new_conversation:
-            title = await self._build_conversation_title(
-                user_message=message,
-                assistant_answer=answer,
-                project=project,
-                user_id=user_id,
-            )
-            await self._conversation_repository.update_title(conversation.id, title)
+            async with tracker.step("conversation_title"):
+                title = await self._build_conversation_title(
+                    user_message=message,
+                    assistant_answer=answer,
+                    project=project,
+                    user_id=user_id,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
+        tracker.log_summary(
+            logger,
+            extra={
+                "project_id": str(project_id),
+                "conversation_id": str(conversation.id),
+                "mode": "rag",
+                "chunks_used": len(relevant_chunks),
+                "history_messages_used": len(conversation_history),
+                "llm_provider": effective_llm_provider,
+            },
+        )
         return ChatMessageResponseDTO(
             project_id=project_id,
             conversation_id=conversation.id,
@@ -396,6 +441,7 @@ class SendMessage:
         start_new_conversation: bool = False,
         retrieval_filters: dict[str, object] | None = None,
     ) -> AsyncIterator[ChatStreamEvent]:
+        tracker = LatencyTracker("send_message_stream")
         project = await self._project_repository.find_by_id(project_id)
         if project is None:
             raise ProjectNotFoundError(f"Project {project_id} not found")
@@ -482,23 +528,25 @@ class SendMessage:
                 chunks_used=0,
             )
             return
-        retrieval_query = await self._build_retrieval_query(
-            conversation_id=conversation.id,
-            current_message=message,
-            current_user_message_id=current_user_message_id,
-        )
-        retrieval_result = await self._query_relevant_chunks_use_case.execute(
-            project_id=project_id,
-            user_id=user_id,
-            query=retrieval_query,
-            limit=effective_limit,
-            offset=offset,
-            strategy=effective_retrieval_strategy,
-            min_score=effective_retrieval_min_score,
-            reranker_service=effective_reranker_service,
-            reranker_candidate_multiplier=None,
-            metadata_filters=retrieval_filters,
-        )
+        async with tracker.step("build_retrieval_query"):
+            retrieval_query = await self._build_retrieval_query(
+                conversation_id=conversation.id,
+                current_message=message,
+                current_user_message_id=current_user_message_id,
+            )
+        async with tracker.step("retrieval"):
+            retrieval_result = await self._query_relevant_chunks_use_case.execute(
+                project_id=project_id,
+                user_id=user_id,
+                query=retrieval_query,
+                limit=effective_limit,
+                offset=offset,
+                strategy=effective_retrieval_strategy,
+                min_score=effective_retrieval_min_score,
+                reranker_service=effective_reranker_service,
+                reranker_candidate_multiplier=None,
+                metadata_filters=retrieval_filters,
+            )
         relevant_chunks = self._select_useful_chunks(
             self._filter_relevant_chunks(retrieval_result.chunks),
             effective_limit,
@@ -506,25 +554,36 @@ class SendMessage:
         relevant_chunks.sort(key=lambda c: (str(c.document_id), c.chunk_index or 0))
         if not relevant_chunks:
             fallback_answer = "I could not find relevant context to answer your message."
-            await self._message_repository.save(
-                Message(
-                    id=uuid4(),
-                    conversation_id=conversation.id,
-                    role="assistant",
-                    content=fallback_answer,
-                    source_documents=[],
-                    reliability_percent=0,
-                    created_at=datetime.now(UTC),
+            async with tracker.step("persist_assistant_message"):
+                await self._message_repository.save(
+                    Message(
+                        id=uuid4(),
+                        conversation_id=conversation.id,
+                        role="assistant",
+                        content=fallback_answer,
+                        source_documents=[],
+                        reliability_percent=0,
+                        created_at=datetime.now(UTC),
+                    )
                 )
-            )
             if is_new_conversation:
-                title = await self._build_conversation_title(
-                    user_message=message,
-                    assistant_answer=fallback_answer,
-                    project=project,
-                    user_id=user_id,
-                )
-                await self._conversation_repository.update_title(conversation.id, title)
+                async with tracker.step("conversation_title"):
+                    title = await self._build_conversation_title(
+                        user_message=message,
+                        assistant_answer=fallback_answer,
+                        project=project,
+                        user_id=user_id,
+                    )
+                    await self._conversation_repository.update_title(conversation.id, title)
+            tracker.log_summary(
+                logger,
+                extra={
+                    "project_id": str(project_id),
+                    "conversation_id": str(conversation.id),
+                    "mode": "no_context",
+                    "chunks_used": 0,
+                },
+            )
             yield ChatStreamToken(token=fallback_answer)
             yield ChatStreamDone(
                 conversation_id=conversation.id,
@@ -537,36 +596,51 @@ class SendMessage:
             )
             return
         project_system_prompt = project.system_prompt
-        conversation_history = await self._build_conversation_history(
-            conversation_id=conversation.id,
-            current_user_message_id=current_user_message_id,
-            history_window_size=effective_history_window_size,
-            history_max_chars=effective_history_max_chars,
-        )
-        prompt = build_rag_prompt(
-            query=message,
-            context_chunks=[chunk.content for chunk in relevant_chunks],
-            source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
-            relevance_scores=[chunk.score for chunk in relevant_chunks],
-            project_system_prompt=project_system_prompt,
-            conversation_history=conversation_history,
-        )
-        effective_llm_provider = self._resolve_effective_llm_provider(project)
-        if self._provider_api_key_resolver is not None and effective_llm_provider in _API_KEY_PROVIDERS:
-            await self._provider_api_key_resolver.resolve(
-                user_id=user_id,
-                provider=effective_llm_provider,
+        async with tracker.step("build_history"):
+            conversation_history = await self._build_conversation_history(
+                conversation_id=conversation.id,
+                current_user_message_id=current_user_message_id,
+                history_window_size=effective_history_window_size,
+                history_max_chars=effective_history_max_chars,
             )
-        resolved_config = await self._resolve_config(project=project, user_id=user_id)
-        llm_service = await self._resolve_llm_service(
-            resolved_config=resolved_config, project=project, user_id=user_id
-        )
+        async with tracker.step("build_prompt"):
+            prompt = build_rag_prompt(
+                query=message,
+                context_chunks=[chunk.content for chunk in relevant_chunks],
+                source_filenames=[chunk.document_file_name or "" for chunk in relevant_chunks],
+                relevance_scores=[chunk.score for chunk in relevant_chunks],
+                project_system_prompt=project_system_prompt,
+                conversation_history=conversation_history,
+            )
+        effective_llm_provider = self._resolve_effective_llm_provider(project)
+        async with tracker.step("resolve_llm_service"):
+            if self._provider_api_key_resolver is not None and effective_llm_provider in _API_KEY_PROVIDERS:
+                await self._provider_api_key_resolver.resolve(
+                    user_id=user_id,
+                    provider=effective_llm_provider,
+                )
+            resolved_config = await self._resolve_config(project=project, user_id=user_id)
+            llm_service = await self._resolve_llm_service(
+                resolved_config=resolved_config, project=project, user_id=user_id
+            )
         accumulated_answer = ""
+        llm_stream_started_at = perf_counter()
+        first_token_at: float | None = None
         try:
             stream = llm_service.generate_answer_stream(prompt)
             async for token in stream:
+                if first_token_at is None:
+                    first_token_at = perf_counter()
+                    tracker.record(
+                        "llm_ttft",
+                        (first_token_at - llm_stream_started_at) * 1000.0,
+                    )
                 accumulated_answer += token
                 yield ChatStreamToken(token=token)
+            tracker.record(
+                "llm_stream_total",
+                (perf_counter() - llm_stream_started_at) * 1000.0,
+            )
             sanitized = self._chat_security_policy.sanitize_model_answer(accumulated_answer)
             if sanitized != accumulated_answer:
                 accumulated_answer = sanitized
@@ -576,31 +650,49 @@ class SendMessage:
                 source_documents = self._extract_source_documents(relevant_chunks)
                 reliability_percent = self._compute_reliability_percent(relevant_chunks)
         except LLMGenerationError as exc:
+            tracker.record(
+                "llm_stream_total",
+                (perf_counter() - llm_stream_started_at) * 1000.0,
+            )
             accumulated_answer = (
                 f"I found relevant context but could not generate an answer right now. Provider error: {exc}"
             )
             source_documents = []
             reliability_percent = 0
-        await self._message_repository.save(
-            Message(
-                id=uuid4(),
-                conversation_id=conversation.id,
-                role="assistant",
-                content=accumulated_answer,
-                source_documents=source_documents,
-                reliability_percent=reliability_percent,
-                llm_prompt=prompt,
-                created_at=datetime.now(UTC),
+        async with tracker.step("persist_assistant_message"):
+            await self._message_repository.save(
+                Message(
+                    id=uuid4(),
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=accumulated_answer,
+                    source_documents=source_documents,
+                    reliability_percent=reliability_percent,
+                    llm_prompt=prompt,
+                    created_at=datetime.now(UTC),
+                )
             )
-        )
         if is_new_conversation:
-            title = await self._build_conversation_title(
-                user_message=message,
-                assistant_answer=accumulated_answer,
-                project=project,
-                user_id=user_id,
-            )
-            await self._conversation_repository.update_title(conversation.id, title)
+            async with tracker.step("conversation_title"):
+                title = await self._build_conversation_title(
+                    user_message=message,
+                    assistant_answer=accumulated_answer,
+                    project=project,
+                    user_id=user_id,
+                )
+                await self._conversation_repository.update_title(conversation.id, title)
+        tracker.log_summary(
+            logger,
+            extra={
+                "project_id": str(project_id),
+                "conversation_id": str(conversation.id),
+                "mode": "rag_stream",
+                "chunks_used": len(relevant_chunks),
+                "history_messages_used": len(conversation_history),
+                "llm_provider": effective_llm_provider,
+                "answer_chars": len(accumulated_answer),
+            },
+        )
         yield ChatStreamDone(
             conversation_id=conversation.id,
             answer=accumulated_answer,

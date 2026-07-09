@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from time import perf_counter
 from uuid import UUID
@@ -21,8 +22,11 @@ from raggae.application.interfaces.services.project_embedding_service_resolver i
     ProjectEmbeddingServiceResolver,
 )
 from raggae.application.interfaces.services.reranker_service import RerankerService
+from raggae.application.services.latency_tracker import LatencyTracker
 from raggae.domain.exceptions.project_exceptions import ProjectNotFoundError
 from raggae.domain.value_objects.organization_member_role import OrganizationMemberRole
+
+logger = logging.getLogger(__name__)
 
 
 class QueryRelevantChunks:
@@ -65,29 +69,33 @@ class QueryRelevantChunks:
         metadata_filters: dict[str, object] | None = None,
         offset: int = 0,
     ) -> QueryRelevantChunksResultDTO:
+        tracker = LatencyTracker("query_relevant_chunks")
         started_at = perf_counter()
-        project = await self._project_repository.find_by_id(project_id)
-        if project is None:
-            raise ProjectNotFoundError(f"Project {project_id} not found")
-        if project.user_id != user_id:
-            if project.organization_id is None or self._organization_member_repository is None:
+
+        async with tracker.step("access_check"):
+            project = await self._project_repository.find_by_id(project_id)
+            if project is None:
                 raise ProjectNotFoundError(f"Project {project_id} not found")
-            member = await self._organization_member_repository.find_by_organization_and_user(
-                organization_id=project.organization_id,
-                user_id=user_id,
-            )
-            if member is None:
-                raise ProjectNotFoundError(f"Project {project_id} not found")
-            if member.role not in {OrganizationMemberRole.OWNER, OrganizationMemberRole.MAKER}:
-                if not project.is_published:
+            if project.user_id != user_id:
+                if project.organization_id is None or self._organization_member_repository is None:
                     raise ProjectNotFoundError(f"Project {project_id} not found")
+                member = await self._organization_member_repository.find_by_organization_and_user(
+                    organization_id=project.organization_id,
+                    user_id=user_id,
+                )
+                if member is None:
+                    raise ProjectNotFoundError(f"Project {project_id} not found")
+                if member.role not in {OrganizationMemberRole.OWNER, OrganizationMemberRole.MAKER}:
+                    if not project.is_published:
+                        raise ProjectNotFoundError(f"Project {project_id} not found")
 
         embedding_service = (
             self._project_embedding_service_resolver.resolve(backend=None, model=None, encrypted_api_key=None)
             if self._project_embedding_service_resolver is not None
             else self._embedding_service
         )
-        query_embedding = (await embedding_service.embed_texts([query]))[0]
+        async with tracker.step("embed_query"):
+            query_embedding = (await embedding_service.embed_texts([query]))[0]
         strategy_used = _resolve_strategy(strategy, query)
         effective_min_score = self._min_score if min_score is None else min_score
         effective_reranker_service = self._reranker_service if reranker_service is None else reranker_service
@@ -99,34 +107,54 @@ class QueryRelevantChunks:
 
         fetch_limit = limit * effective_reranker_candidate_multiplier if effective_reranker_service else limit
 
-        chunks = await self._chunk_retrieval_service.retrieve_chunks(
-            project_id=project_id,
-            query_text=query,
-            query_embedding=query_embedding,
-            limit=fetch_limit,
-            offset=offset,
-            min_score=effective_min_score,
-            strategy=strategy_used,
-            metadata_filters=metadata_filters,
-        )
+        async with tracker.step("retrieve_chunks"):
+            chunks = await self._chunk_retrieval_service.retrieve_chunks(
+                project_id=project_id,
+                query_text=query,
+                query_embedding=query_embedding,
+                limit=fetch_limit,
+                offset=offset,
+                min_score=effective_min_score,
+                strategy=strategy_used,
+                metadata_filters=metadata_filters,
+            )
+        candidates_count = len(chunks)
 
         if effective_reranker_service is not None:
-            chunks = await effective_reranker_service.rerank(
-                query,
-                chunks,
-                top_k=limit,
-                query_embedding=query_embedding,
-            )
+            async with tracker.step("rerank"):
+                chunks = await effective_reranker_service.rerank(
+                    query,
+                    chunks,
+                    top_k=limit,
+                    query_embedding=query_embedding,
+                )
         else:
             chunks = [chunk for chunk in chunks if chunk.score >= effective_min_score]
 
-        chunks = await self._expand_context_window(chunks)
-        chunks = await self._resolve_parent_context(chunks)
+        async with tracker.step("expand_context_window"):
+            chunks = await self._expand_context_window(chunks)
+        async with tracker.step("resolve_parent_context"):
+            chunks = await self._resolve_parent_context(chunks)
+
+        execution_time_ms = (perf_counter() - started_at) * 1000.0
+        tracker.log_summary(
+            logger,
+            extra={
+                "project_id": str(project_id),
+                "user_id": str(user_id),
+                "strategy": strategy_used,
+                "limit": limit,
+                "fetch_limit": fetch_limit,
+                "candidates": candidates_count,
+                "selected": len(chunks),
+                "reranker_enabled": effective_reranker_service is not None,
+            },
+        )
 
         return QueryRelevantChunksResultDTO(
             chunks=chunks,
             strategy_used=strategy_used,
-            execution_time_ms=(perf_counter() - started_at) * 1000.0,
+            execution_time_ms=execution_time_ms,
         )
 
     async def _expand_context_window(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
