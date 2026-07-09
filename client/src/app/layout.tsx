@@ -40,7 +40,10 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme')||'system';if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})()` }} />
       </head>
-      <body className={`${alegreyaSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${alegreyaSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <SessionProvider>
             <QueryProvider>
