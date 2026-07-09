@@ -13,7 +13,7 @@ async def _resolve_host(host: str) -> list[str]:
     """Default async resolver: resolves a hostname to all its A/AAAA records."""
     loop = asyncio.get_running_loop()
     infos = await loop.getaddrinfo(host, None, type=socket.SOCK_STREAM)
-    return [info[4][0] for info in infos]
+    return [str(info[4][0]) for info in infos]
 
 
 class UrlSafetyValidatorImpl:
