@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from time import perf_counter
 from uuid import UUID, uuid4
@@ -34,6 +35,7 @@ from raggae.application.interfaces.services.project_reranker_service_resolver im
 from raggae.application.interfaces.services.provider_api_key_resolver import (
     ProviderApiKeyResolver,
 )
+from raggae.application.interfaces.services.reranker_service import RerankerService
 from raggae.application.interfaces.services.tool_capable_llm_service import (
     ToolCapableLLMService,
 )
@@ -63,6 +65,24 @@ from raggae.infrastructure.services.prompt_builder import build_rag_prompt
 logger = logging.getLogger(__name__)
 
 _API_KEY_PROVIDERS = {"openai", "gemini", "anthropic"}
+
+
+@dataclass(frozen=True)
+class _EffectiveChatSettings:
+    """Retrieval, reranking and history settings resolved for the current call.
+
+    Fields already reflect the cascade project -> organization -> user -> app
+    defaults, so consumers do not need to re-apply fallbacks.
+    """
+
+    resolved_config: ResolvedAgentConfiguration | None
+    retrieval_strategy: str
+    retrieval_min_score: float | None
+    reranker_service: RerankerService | None
+    reranker_candidate_multiplier: int | None
+    history_window_size: int
+    history_max_chars: int
+    chunk_limit: int
 
 
 class SendMessage:
@@ -131,21 +151,18 @@ class SendMessage:
         await self._check_project_access(project, user_id)
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
-        effective_retrieval_strategy = "hybrid"
-        effective_retrieval_min_score = None
-        effective_reranker_service = (
-            self._project_reranker_service_resolver.resolve(reranking_enabled=None, backend=None, model=None)
-            if self._project_reranker_service_resolver is not None
-            else None
-        )
-        effective_history_window_size = self._history_window_size
-        effective_history_max_chars = self._history_max_chars
-        effective_limit = self._resolve_effective_chunk_limit(
-            message=message,
+        settings = await self._resolve_effective_chat_settings(
+            project=project,
+            user_id=user_id,
             requested_limit=limit,
-            retrieval_strategy=effective_retrieval_strategy,
-            default_limit=self._default_chunk_limit,
+            message=message,
         )
+        effective_retrieval_strategy = settings.retrieval_strategy
+        effective_retrieval_min_score = settings.retrieval_min_score
+        effective_reranker_service = settings.reranker_service
+        effective_history_window_size = settings.history_window_size
+        effective_history_max_chars = settings.history_max_chars
+        effective_limit = settings.chunk_limit
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
         current_user_message_id: UUID | None = None
@@ -227,7 +244,7 @@ class SendMessage:
                 strategy=effective_retrieval_strategy,
                 min_score=effective_retrieval_min_score,
                 reranker_service=effective_reranker_service,
-                reranker_candidate_multiplier=None,
+                reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
                 metadata_filters=retrieval_filters,
             )
         relevant_chunks = self._select_useful_chunks(
@@ -454,21 +471,18 @@ class SendMessage:
         await self._check_project_access(project, user_id)
         if project.is_reindexing():
             raise ProjectReindexInProgressError(f"Project {project_id} is currently reindexing")
-        effective_retrieval_strategy = "hybrid"
-        effective_retrieval_min_score = None
-        effective_reranker_service = (
-            self._project_reranker_service_resolver.resolve(reranking_enabled=None, backend=None, model=None)
-            if self._project_reranker_service_resolver is not None
-            else None
-        )
-        effective_history_window_size = self._history_window_size
-        effective_history_max_chars = self._history_max_chars
-        effective_limit = self._resolve_effective_chunk_limit(
-            message=message,
+        settings = await self._resolve_effective_chat_settings(
+            project=project,
+            user_id=user_id,
             requested_limit=limit,
-            retrieval_strategy=effective_retrieval_strategy,
-            default_limit=self._default_chunk_limit,
+            message=message,
         )
+        effective_retrieval_strategy = settings.retrieval_strategy
+        effective_retrieval_min_score = settings.retrieval_min_score
+        effective_reranker_service = settings.reranker_service
+        effective_history_window_size = settings.history_window_size
+        effective_history_max_chars = settings.history_max_chars
+        effective_limit = settings.chunk_limit
         is_new_conversation = conversation_id is None
         skip_user_message_save = False
         current_user_message_id: UUID | None = None
@@ -550,7 +564,7 @@ class SendMessage:
                 strategy=effective_retrieval_strategy,
                 min_score=effective_retrieval_min_score,
                 reranker_service=effective_reranker_service,
-                reranker_candidate_multiplier=None,
+                reranker_candidate_multiplier=settings.reranker_candidate_multiplier,
                 metadata_filters=retrieval_filters,
             )
         relevant_chunks = self._select_useful_chunks(
@@ -935,6 +949,75 @@ class SendMessage:
 
     def _filter_relevant_chunks(self, chunks: list[RetrievedChunkDTO]) -> list[RetrievedChunkDTO]:
         return [chunk for chunk in chunks if chunk.content.strip()]
+
+    async def _resolve_effective_chat_settings(
+        self,
+        project: Project,
+        user_id: UUID,
+        requested_limit: int | None,
+        message: str,
+    ) -> _EffectiveChatSettings:
+        """Compute retrieval, reranking and history settings from project config.
+
+        Reads the resolved agent configuration once, falls back to constructor
+        defaults for any field the cascade leaves unset. This is the single
+        place where project-level RAG settings become effective values.
+        """
+        resolved_config = await self._resolve_config(project=project, user_id=user_id)
+
+        retrieval_strategy = (
+            resolved_config.retrieval_strategy
+            if resolved_config is not None and resolved_config.retrieval_strategy is not None
+            else "hybrid"
+        )
+        retrieval_min_score = resolved_config.retrieval_min_score if resolved_config is not None else None
+
+        reranker_service: RerankerService | None = None
+        if self._project_reranker_service_resolver is not None:
+            reranker_service = self._project_reranker_service_resolver.resolve(
+                reranking_enabled=(
+                    resolved_config.reranking_enabled if resolved_config is not None else None
+                ),
+                backend=(resolved_config.reranker_backend if resolved_config is not None else None),
+                model=(resolved_config.reranker_model if resolved_config is not None else None),
+            )
+        reranker_candidate_multiplier = (
+            resolved_config.reranker_candidate_multiplier if resolved_config is not None else None
+        )
+
+        history_window_size = (
+            resolved_config.chat_history_window_size
+            if resolved_config is not None and resolved_config.chat_history_window_size is not None
+            else self._history_window_size
+        )
+        history_max_chars = (
+            resolved_config.chat_history_max_chars
+            if resolved_config is not None and resolved_config.chat_history_max_chars is not None
+            else self._history_max_chars
+        )
+
+        top_k_fallback = (
+            resolved_config.retrieval_top_k
+            if resolved_config is not None and resolved_config.retrieval_top_k is not None
+            else self._default_chunk_limit
+        )
+        chunk_limit = self._resolve_effective_chunk_limit(
+            message=message,
+            requested_limit=requested_limit,
+            retrieval_strategy=retrieval_strategy,
+            default_limit=top_k_fallback,
+        )
+
+        return _EffectiveChatSettings(
+            resolved_config=resolved_config,
+            retrieval_strategy=retrieval_strategy,
+            retrieval_min_score=retrieval_min_score,
+            reranker_service=reranker_service,
+            reranker_candidate_multiplier=reranker_candidate_multiplier,
+            history_window_size=history_window_size,
+            history_max_chars=history_max_chars,
+            chunk_limit=chunk_limit,
+        )
 
     def _resolve_effective_chunk_limit(
         self,
