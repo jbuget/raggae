@@ -34,7 +34,13 @@ from raggae.presentation.api.v1.endpoints.stats import router as stats_router
 from raggae.presentation.api.v1.endpoints.system import router as system_router
 from raggae.presentation.api.v1.endpoints.users import router as users_router
 
-logging.getLogger("raggae").setLevel(logging.INFO)
+_raggae_logger = logging.getLogger("raggae")
+_raggae_logger.setLevel(logging.INFO)
+if not _raggae_logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s"))
+    _raggae_logger.addHandler(_handler)
+    _raggae_logger.propagate = False
 logger = logging.getLogger(__name__)
 
 

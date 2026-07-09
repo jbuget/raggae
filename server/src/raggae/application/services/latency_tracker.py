@@ -51,12 +51,22 @@ class LatencyTracker:
         level: int = logging.INFO,
         extra: dict[str, object] | None = None,
     ) -> None:
+        total_ms = round(self.total_ms, 2)
+        steps = {name: round(ms, 2) for name, ms in self.steps_ms.items()}
         payload: dict[str, object] = {
             "event": "latency_summary",
             "operation": self._name,
-            "total_ms": round(self.total_ms, 2),
-            "steps_ms": {name: round(ms, 2) for name, ms in self.steps_ms.items()},
+            "total_ms": total_ms,
+            "steps_ms": steps,
         }
         if extra:
             payload.update(extra)
-        logger.log(level, "latency_summary operation=%s", self._name, extra=payload)
+        steps_str = " ".join(f"{name}={ms}ms" for name, ms in steps.items())
+        logger.log(
+            level,
+            "latency_summary operation=%s total=%sms %s",
+            self._name,
+            total_ms,
+            steps_str,
+            extra=payload,
+        )
