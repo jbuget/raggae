@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { BarChart2, Check, Github, Languages, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { SiGithub } from "@icons-pack/react-simple-icons";
+import { BarChart2, Check, Languages, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -143,7 +144,7 @@ export function UserMenu() {
               rel="noreferrer"
               className="flex cursor-pointer items-center gap-2"
             >
-              <Github size={14} />
+              <SiGithub size={14} />
               {t("sourceCode")}
             </a>
           </DropdownMenuItem>
