@@ -5,6 +5,7 @@ import {
   acceptUserOrganizationInvitation,
   listUserPendingOrganizationInvitations,
 } from "@/lib/api/organizations";
+import { refreshAcceptedOrganizationInvitationQueries } from "@/lib/query/organization-invitations";
 import { useAuth } from "./use-auth";
 
 export function useUserPendingOrganizationInvitations() {
@@ -20,10 +21,10 @@ export function useAcceptUserOrganizationInvitation() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (invitationId: string) => acceptUserOrganizationInvitation(token!, invitationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-pending-organization-invitations"] });
-      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+    mutationFn: (invitationId: string) =>
+      acceptUserOrganizationInvitation(token!, invitationId),
+    onSuccess: async () => {
+      await refreshAcceptedOrganizationInvitationQueries(queryClient);
     },
   });
 }

@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api/client";
 import { acceptOrganizationInvitation } from "@/lib/api/organizations";
 import { buildAuthRedirectPath } from "@/lib/auth/callback-url";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { refreshAcceptedOrganizationInvitationQueries } from "@/lib/query/organization-invitations";
 
 type Status = "loading" | "success" | "invalid_token" | "missing_token" | "error";
 
@@ -28,8 +29,8 @@ export function AcceptInvitationContent() {
 
     called.current = true;
     acceptOrganizationInvitation(token, { token: invitationToken })
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      .then(async () => {
+        await refreshAcceptedOrganizationInvitationQueries(queryClient);
         setStatus("success");
       })
       .catch((err: unknown) => {
