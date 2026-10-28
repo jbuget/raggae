@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import Select, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -296,7 +297,7 @@ class SQLAlchemyStatsRepository(StatsRepository):
         )
 
     @staticmethod
-    async def _daily_counts(session: AsyncSession, stmt: Select[tuple[datetime, int]]) -> dict[date, int]:
+    async def _daily_counts(session: AsyncSession, stmt: Select[Any]) -> dict[date, int]:
         result = await session.execute(stmt)
         buckets: dict[date, int] = {}
         for bucket, value in result.all():
