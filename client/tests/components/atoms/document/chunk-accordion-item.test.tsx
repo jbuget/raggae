@@ -12,6 +12,7 @@ const mockChunk: DocumentChunkResponse = {
   content: "This is a fairly long chunk content that should be truncated in preview mode when the accordion is collapsed but shown in full when it is expanded by the user.",
   created_at: "2026-01-01T00:00:00Z",
   metadata_json: null,
+  chunk_level: "standard",
 };
 
 const defaultProps = {
